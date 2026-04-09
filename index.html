@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+<html lang="ur">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Nikamma 4k v3.1 Advanced</title>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <link href="https://vjs.zencdn.net/8.10.0/video-js.css" rel="stylesheet" />
+    <script src="https://vjs.zencdn.net/8.10.0/video.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/mpegts.js@1.7.3/dist/mpegts.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    
+    <style>
+        :root { 
+            --main-color: #00bcd4; 
+            --dark-bg: #0b0b0b; 
+            --card-bg: #1a1a1a; 
+            --header-bg: #121212;
+            --splash-bg: radial-gradient(circle, #1a1a1a 0%, #0b0b0b 100%);
+            --max-width: 1200px;
+            --main-font: 'Poppins', sans-serif;
+            --nav-width: 280px;
+        }
+        
+        body { 
+            background: var(--dark-bg); color: white; 
+            font-family: var(--main-font); 
+            margin: 0; padding-bottom: 80px; overflow-x: hidden;
+            user-select: none; -webkit-tap-highlight-color: transparent;
+        }
+        .container { max-width: var(--max-width); margin: 0 auto; width: 100%; }
+        
+        /* Splash Screen */
+        #splash-screen {
+            position: fixed; top:0; left:0; width:100%; height:100%;
+            background: var(--splash-bg); z-index: 9999;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            transition: opacity 0.5s ease-out;
+        }
+        .splash-logo { 
+            width: 100px; height: 100px; border-radius: 20px; 
+            margin-bottom: 5px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.6); 
+            animation: pulse 2s infinite; 
+            object-fit: cover;
+        }
+        #splash-screen h2 { margin: 0; padding: 0; color: var(--main-color); font-weight: 800; text-transform: uppercase; letter-spacing: 2px; font-size: 24px; }
+        .splash-loader { margin-top: 10px !important; color: #444; font-size: 20px; }
+        @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.05); } 100% { transform: scale(1); } }
+        
+        header { 
+            background: var(--header-bg); padding: 12px 15px; 
+            display: flex; align-items: center; justify-content: space-between; 
+            position: sticky; top: 0; z-index: 1000; border-bottom: 1px solid #222;
+            height: 60px; box-sizing: border-box;
+        }
+        .app-name { font-weight: 800; font-size: 20px; color: var(--main-color); letter-spacing: 0.5px; text-transform: uppercase; }
+        
+        .section-label { padding: 12px 15px 5px 15px; font-weight: 600; color: #aaa; letter-spacing: 1px; font-size: 13px; text-transform: uppercase; }
+        
+        .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; padding: 10px; }
+        .card { background: var(--card-bg); border-radius: 10px; overflow: hidden; border: 1px solid #282828; cursor: pointer; transition: 0.3s; position: relative; }
+        .card img { width: 100%; aspect-ratio: 1/1; object-fit: cover; display: block; }
+        .card-title { 
+            font-size: 11px; 
+            padding: 6px 3px; 
+            text-align: center; 
+            color: #efefef; 
+            font-weight: 400;
+            white-space: nowrap; 
+            overflow: hidden; 
+            text-overflow: ellipsis;
+            background: rgba(0,0,0,0.3);
+        }
+        
+        .card.playing { background: var(--main-color) !important; border-color: #fff; transform: scale(0.95); }
+        .card.playing .card-title { color: #000 !important; font-weight: 800; }
+        
+        /* Fixed SideNav Styles */
+        .sidenav { 
+            height: 100%; 
+            width: var(--nav-width); 
+            position: fixed; 
+            z-index: 2005; 
+            top: 0; 
+            left: 0;
+            background: #111; 
+            overflow-x: hidden; 
+            transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1); 
+            transform: translateX(-100%); /* Start completely off-screen */
+            padding-top: 60px; 
+            box-shadow: 10px 0 30px rgba(0,0,0,0.5);
+        }
+        .sidenav.open {
+            transform: translateX(0); /* Move into view */
+        }
+        .sidenav a { 
+            padding: 15px 25px; 
+            text-decoration: none; 
+            font-size: 15px; 
+            font-weight: 400; 
+            color: #bbb; 
+            display: flex; 
+            align-items: center; 
+            gap: 15px; 
+            border-bottom: 1px solid #1a1a1a;
+            transition: 0.2s;
+        }
+        .sidenav a:active { background: #222; color: var(--main-color); }
+
+        /* Fixed Overlay */
+        #menu-overlay { 
+            display: none; 
+            position: fixed; 
+            top: 0; 
+            left: 0; 
+            width: 100%; 
+            height: 100%; 
+            background: rgba(0,0,0,0.7); 
+            z-index: 2004;
+            opacity: 0;
+            transition: opacity 0.4s ease;
+        }
+        #menu-overlay.visible {
+            display: block;
+            opacity: 1;
+        }
+
+        #refresh-icon { width: 100%; text-align: center; height: 0; overflow: hidden; transition: 0.3s; color: var(--main-color); font-size: 20px; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,0.5); position: relative; z-index: 999; }
+        .header-content { display: flex; width: 100%; max-width: var(--max-width); margin: 0 auto; align-items: center; justify-content: space-between; }
+        .header-left, .header-right { display: flex; align-items: center; gap: 15px; font-size: 18px; cursor: pointer; }
+        #search-container { display: none; flex: 1; align-items: center; gap: 10px; margin: 0 20px; }
+        #searchBar { flex: 1; background: #222; border: 1px solid #333; color: white; padding: 8px 15px; border-radius: 20px; outline: none; font-size: 14px; font-family: var(--main-font); }
+        #videoBox { display: none; width: 100%; background: #000; position: sticky; top: 60px; z-index: 1001; }
+        .video-js { width: 100% !important; height: 210px !important; }
+        .slider { width: 100%; height: 200px; overflow: hidden; position: relative; background: #000; margin-bottom: 5px; display: none; }
+        .slides-track { display: flex; transition: 0.7s cubic-bezier(0.25, 1, 0.5, 1); height: 100%; }
+        .slide-item { min-width: 100%; height: 100%; }
+        .slide-item img { width: 100%; height: 100%; object-fit: cover; }
+        
+        .bottom-nav { position: fixed; bottom: 0; width: 100%; background: rgba(18,18,18,0.95); display: flex; justify-content: space-around; padding: 10px 0; backdrop-filter: blur(10px); border-top: 1px solid #222; z-index: 1000; }
+        .nav-btn i { font-size: 18px; margin-bottom: 2px; display: block; }
+        .nav-btn { text-align: center; font-size: 10px; color: #888; flex: 1; cursor: pointer; font-weight: 600; letter-spacing: 0.5px; }
+        .nav-btn.active { color: var(--main-color); }
+        #update-overlay { display: none; position: fixed; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.9); z-index: 10000; flex-direction: column; align-items: center; justify-content: center; }
+        .update-box { background: var(--card-bg); padding: 30px; border-radius: 15px; border: 1px solid var(--main-color); text-align: center; width: 80%; max-width: 400px; }
+    </style>
+</head>
+<body id="swipe-area">
+<script>
+    const MASTER_LOGO = 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTf7ax2YDbvMh3IxQPzSyY1YIewn8Q_1bDgR04kRJT5-A&s=10';
+</script>
+
+<div id="splash-screen">
+    <img id="splash-logo-img" src="" class="splash-logo">
+    <script>document.getElementById('splash-logo-img').src = MASTER_LOGO;</script>
+    <h2>Nikamma 4k</h2>
+    <i class="fa fa-circle-notch fa-spin splash-loader"></i>
+</div>
+
+<div id="refresh-icon"><i class="fa fa-sync fa-spin"></i></div>
+<div id="menu-overlay" onclick="closeNav()"></div>
+
+<div id="mySidenav" class="sidenav">
+  <a href="javascript:void(0)" onclick="closeNav()" style="position:absolute; top:10px; right:20px; font-size:30px; border:none;">&times;</a>
+  <a href="#" onclick="filterData('All', null, true)"><i class="fa fa-home"></i> Home</a>
+  <a href="#" onclick="filterData('Sports', null, true)"><i class="fa fa-volleyball"></i> Live Sports</a>
+  <a href="#" onclick="filterData('Movies', null, true)"><i class="fa fa-film"></i> Movies HD</a>
+  <a href="#" id="rating-link" target="_blank"><i class="fa fa-star"></i> Rate Us</a>
+  <a href="#" id="privacy-link" target="_blank"><i class="fa fa-user-shield"></i> Privacy Policy</a>
+  <a href="#" id="share-link" onclick="shareApp(event)"><i class="fa fa-share-alt"></i> Share App</a>
+  <a href="#" onclick="location.reload()"><i class="fa fa-sync"></i> Refresh App</a>
+</div>
+
+<header>
+    <div class="header-content">
+        <div class="header-left" id="header-main">
+            <div onclick="openNav()"><i class="fa fa-bars"></i></div>
+            <div class="app-name">Nikamma 4k</div>
+        </div>
+        <div id="search-container">
+            <input type="text" id="searchBar" placeholder="Search..." onkeyup="search()">
+            <div onclick="toggleSearch(false)" style="font-size: 22px; color: var(--main-color);">&times;</div>
+        </div>
+        <div class="header-right" id="header-icons">
+            <div onclick="toggleSearch(true)"><i class="fa fa-search"></i></div>
+        </div>
+    </div>
+</header>
+
+<div id="videoBox">
+    <video id="mainVideo" class="video-js vjs-default-skin vjs-big-play-centered" controls preload="auto" playsinline></video>
+    <div style="padding:10px; display:flex; justify-content:space-between; background:#121212; align-items:center;">
+        <span id="videoTitle" style="font-size:13px; color:var(--main-color); font-weight:bold;"></span>
+        <button onclick="stopVideo()" style="background:#f44336; border:none; color:white; padding:5px 10px; border-radius:4px; font-size:11px;">CLOSE</button>
+    </div>
+</div>
+
+<div class="container">
+    <div class="slider" id="mainSlider">
+        <div class="slides-track" id="sliderTrack"></div>
+    </div>
+    <div class="section-label" id="sectionName">FOR YOU</div>
+    <div class="grid" id="mainGrid"></div>
+</div>
+
+<div class="bottom-nav">
+    <div class="nav-btn active" data-cat="All" onclick="filterData('All', this)"><i class="fa fa-house"></i>HOME</div>
+    <div class="nav-btn" data-cat="Sports" onclick="filterData('Sports', this)"><i class="fa fa-tv"></i>LIVE</div>
+    <div class="nav-btn" data-cat="Movies" onclick="filterData('Movies', this)"><i class="fa fa-clapperboard"></i>MOVIES</div>
+    <div class="nav-btn" onclick="openNav()"><i class="fa fa-bars"></i>MENU</div>
+</div>
+
+<div id="update-overlay">
+    <div class="update-box">
+        <h2 style="color: var(--main-color); font-weight:800;">Update Available!</h2>
+        <p>Please update to the latest version.</p>
+        <button id="update-btn" style="background:var(--main-color); border:none; padding:12px 25px; border-radius:25px; font-weight:bold; cursor:pointer; font-family: var(--main-font);">UPDATE NOW</button>
+    </div>
+</div>
+
+<script>
+    const SHEET1_CSV = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQD2lHL-u6zHPZKdYIVD4eXp98XipkVP4jKfxLDoNje9DeZ1726o0zFZf-gAR2kZj0ls7VhceXbbKih/pub?gid=0&single=true&output=csv';
+    const SETTINGS_CSV = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQD2lHL-u6zHPZKdYIVD4eXp98XipkVP4jKfxLDoNje9DeZ1726o0zFZf-gAR2kZj0ls7VhceXbbKih/pub?gid=1123743396&single=true&output=csv';
+    
+    const VERSION = 3.1;
+    let rawData = [];
+    let settingsData = {};
+    let currentCategory = 'All';
+    let vjsPlayer = videojs('mainVideo');
+    let tsPlayer = null;
+    let startY = 0;
+    let startX = 0;
+    let isNavOpen = false;
+
+    // Fixed Nav Functions
+    function openNav() { 
+        const sideNav = document.getElementById("mySidenav");
+        const overlay = document.getElementById("menu-overlay");
+        overlay.style.display = "block"; // Make it block first
+        setTimeout(() => {
+            sideNav.classList.add("open");
+            overlay.classList.add("visible");
+        }, 10);
+        isNavOpen = true;
+    }
+
+    function closeNav() { 
+        const sideNav = document.getElementById("mySidenav");
+        const overlay = document.getElementById("menu-overlay");
+        sideNav.classList.remove("open");
+        overlay.classList.remove("visible");
+        isNavOpen = false;
+        // Wait for animation to finish before setting display none
+        setTimeout(() => {
+            if(!isNavOpen) overlay.style.display = "none";
+        }, 400);
+    }
+
+    function toggleSearch(show) {
+        document.getElementById('header-main').style.display = show ? 'none' : 'flex';
+        document.getElementById('header-icons').style.display = show ? 'none' : 'flex';
+        document.getElementById('search-container').style.display = show ? 'flex' : 'none';
+        if(show) document.getElementById('searchBar').focus();
+    }
+
+    async function fetchData() {
+        Papa.parse(SHEET1_CSV, {
+            download: true, header: true, skipEmptyLines: true,
+            complete: function(results) {
+                rawData = results.data;
+                updateSlider();
+                filterData(currentCategory, null, false);
+                fetchSettings();
+            }
+        });
+    }
+
+    function fetchSettings() {
+        Papa.parse(SETTINGS_CSV, {
+            download: true, header: true, skipEmptyLines: true,
+            complete: function(results) {
+                if(results.data.length > 0) {
+                    settingsData = results.data[0];
+                    if(settingsData.ratingUrl) document.getElementById('rating-link').href = settingsData.ratingUrl;
+                    if(settingsData.privacyUrl) document.getElementById('privacy-link').href = settingsData.privacyUrl;
+                    if(settingsData.version && parseFloat(settingsData.version) > VERSION) {
+                        document.getElementById('update-overlay').style.display = 'flex';
+                        document.getElementById('update-btn').onclick = () => window.location.href = settingsData.updateUrl;
+                    }
+                }
+                hideRefresh();
+                document.getElementById('splash-screen').style.opacity = '0';
+                setTimeout(() => document.getElementById('splash-screen').style.display = 'none', 500);
+            }
+        });
+    }
+
+    function updateSlider() {
+        const sliders = rawData.filter(d => (d.Category || d.category || "").toLowerCase() === 'slider');
+        const track = document.getElementById('sliderTrack');
+        if(track && sliders.length > 0) {
+            track.innerHTML = sliders.map(s => {
+                let img = s.Thumbnail || s.thumbnail || s.URL || s.url || MASTER_LOGO;
+                return `<div class="slide-item"><img src="${img}" onerror="this.src='${MASTER_LOGO}'"></div>`;
+            }).join('');
+            document.getElementById('mainSlider').style.display = currentCategory === 'All' ? 'block' : 'none';
+        }
+    }
+
+    function filterData(cat, btn, shouldClose = true) {
+        currentCategory = cat;
+        if(shouldClose) closeNav();
+        const sliderDiv = document.getElementById('mainSlider');
+        const videoBox = document.getElementById('videoBox');
+        sliderDiv.style.display = (cat === 'All' && videoBox.style.display !== 'block') ? 'block' : 'none';
+        
+        document.querySelectorAll('.nav-btn').forEach(b => {
+            if(b.getAttribute('data-cat') === cat) b.classList.add('active');
+            else b.classList.remove('active');
+        });
+        document.getElementById('sectionName').innerText = cat === 'All' ? 'FOR YOU' : cat;
+        const filtered = cat === 'All' 
+            ? rawData.filter(d => (d.Category || d.category || "").toLowerCase() !== 'slider')
+            : rawData.filter(d => (d.Category || d.category || "").toLowerCase() === cat.toLowerCase());
+            
+        const grid = document.getElementById('mainGrid');
+        grid.innerHTML = filtered.map(item => {
+            let thumb = item.Thumbnail || item.thumbnail || MASTER_LOGO;
+            let itemName = item.name || item.Name || "Live TV";
+            return `
+            <div class="card" onclick="play('${item.URL || item.url}', '${itemName}', this)">
+                <img src="${thumb}" loading="lazy" onerror="this.src='${MASTER_LOGO}'">
+                <div class="card-title">${itemName}</div>
+            </div>
+        `}).join('');
+    }
+
+    function play(url, title, cardElement) {
+        if(!url) return;
+        document.querySelectorAll('.card').forEach(c => c.classList.remove('playing'));
+        if(cardElement) cardElement.classList.add('playing');
+        document.getElementById('videoBox').style.display = 'block';
+        document.getElementById('mainSlider').style.display = 'none';
+        document.getElementById('videoTitle').innerText = title;
+        window.scrollTo({top: 0, behavior: 'smooth'});
+        if (tsPlayer) { tsPlayer.unload(); tsPlayer.destroy(); tsPlayer = null; }
+        vjsPlayer.pause();
+        if (url.includes('.ts')) {
+            const videoElement = document.querySelector('#mainVideo_html5_api') || document.querySelector('#mainVideo');
+            tsPlayer = mpegts.createPlayer({ type: 'mse', isLive: true, url: url });
+            tsPlayer.attachMediaElement(videoElement);
+            tsPlayer.load();
+            tsPlayer.play();
+        } else {
+            vjsPlayer.src({ src: url, type: url.includes('m3u8') ? 'application/x-mpegURL' : 'video/mp4' });
+            vjsPlayer.play();
+        }
+    }
+
+    function stopVideo() {
+        if (tsPlayer) { tsPlayer.unload(); tsPlayer.destroy(); tsPlayer = null; }
+        vjsPlayer.pause();
+        document.getElementById('videoBox').style.display = 'none';
+        document.querySelectorAll('.card').forEach(c => c.classList.remove('playing'));
+        if(currentCategory === 'All') document.getElementById('mainSlider').style.display = 'block';
+    }
+
+    function search() {
+        let term = document.getElementById('searchBar').value.toLowerCase();
+        const filtered = rawData.filter(d => ((d.name || d.Name || "").toLowerCase().includes(term)) && (d.Category || d.category || "").toLowerCase() !== 'slider');
+        const grid = document.getElementById('mainGrid');
+        grid.innerHTML = filtered.map(item => {
+            let thumb = item.Thumbnail || item.thumbnail || MASTER_LOGO;
+            let itemName = item.name || item.Name || "Live TV";
+            return `<div class="card" onclick="play('${item.URL || item.url}', '${itemName}', this)">
+                <img src="${thumb}" loading="lazy" onerror="this.src='${MASTER_LOGO}'">
+                <div class="card-title">${itemName}</div>
+            </div>`}).join('');
+    }
+
+    function shareApp(e) {
+        if(e) e.preventDefault();
+        const shareURL = settingsData.shareUrl || window.location.href;
+        if(navigator.share) navigator.share({ title: 'Nikamma 4k', url: shareURL });
+        else window.open(shareURL, '_blank');
+    }
+
+    // ADVANCED SWIPE LOGIC
+    const swipeArea = document.getElementById('swipe-area');
+    swipeArea.addEventListener('touchstart', e => { 
+        startY = e.touches[0].pageY;
+        startX = e.touches[0].pageX;
+    }, {passive:true});
+
+    swipeArea.addEventListener('touchmove', e => {
+        let moveY = e.touches[0].pageY - startY;
+        let moveX = e.touches[0].pageX - startX;
+        if(window.scrollY === 0 && moveY > 0 && Math.abs(moveX) < 30) { 
+            document.getElementById('refresh-icon').style.height = Math.min(moveY, 60) + 'px'; 
+        }
+    }, {passive:true});
+
+    swipeArea.addEventListener('touchend', e => {
+        let endX = e.changedTouches[0].pageX;
+        let endY = e.changedTouches[0].pageY;
+        let diffX = endX - startX;
+        let diffY = endY - startY;
+
+        if (Math.abs(diffX) > Math.abs(diffY) && Math.abs(diffX) > 70) {
+            if (diffX > 0 && !isNavOpen) {
+                openNav();
+            } else if (diffX < 0 && isNavOpen) {
+                closeNav();
+            }
+        }
+
+        if(parseInt(document.getElementById('refresh-icon').style.height) >= 60) fetchData();
+        else hideRefresh();
+    });
+
+    function hideRefresh() { document.getElementById('refresh-icon').style.height = '0'; }
+    window.onload = () => {
+        fetchData();
+        let slideIndex = 0;
+        setInterval(() => {
+            const track = document.getElementById('sliderTrack');
+            if(track && track.children.length > 0) {
+                slideIndex = (slideIndex + 1) % track.children.length;
+                track.style.transform = `translateX(-${slideIndex * 100}%)`;
+            }
+        }, 4000);
+    };
+</script>
+</body>
+</html>
