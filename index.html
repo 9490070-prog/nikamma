@@ -98,17 +98,13 @@
         }
         .sidenav.open { transform: translateX(0); }
 
-        /* SideNav Header with Customizable Line Color */
         .nav-header {
             width: 100%;
-            height: 150px;
-            background: #1a1a1a;
-            display: flex;
-            align-items: center;
-            justify-content: center;
+            height: 160px;
+            background: #000;
+            position: relative;
             overflow: hidden;
-            /* LINE NUMBER 112: Yahan se color change karein */
-            border-bottom: 2px solid #333333; 
+            border-bottom: 2px solid var(--main-color); 
         }
         .nav-header img {
             width: 100%;
@@ -151,7 +147,8 @@
         #searchBar { flex: 1; background: #222; border: 1px solid #333; color: white; padding: 8px 15px; border-radius: 20px; outline: none; font-size: 14px; font-family: var(--main-font); }
         #videoBox { display: none; width: 100%; background: #000; position: sticky; top: 60px; z-index: 1001; }
         .video-js { width: 100% !important; height: 210px !important; }
-        .slider { width: 100%; height: 200px; overflow: hidden; position: relative; background: #000; margin-bottom: 5px; display: none; }
+        
+        .slider { width: 100%; height: 200px; overflow: hidden; position: relative; background: #000; margin-bottom: 5px; }
         .slides-track { display: flex; transition: 0.7s cubic-bezier(0.25, 1, 0.5, 1); height: 100%; }
         .slide-item { min-width: 100%; height: 100%; }
         .slide-item img { width: 100%; height: 100%; object-fit: cover; }
@@ -168,6 +165,8 @@
 
 <script>
     const MASTER_LOGO = 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTf7ax2YDbvMh3IxQPzSyY1YIewn8Q_1bDgR04kRJT5-A&s=10';
+    // Aapka Update kiya hua link
+    const NAV_HEADER_IMAGE = 'https://drive.google.com/thumbnail?id=1DXQpAofda-bZPS20Q-bqo6neUDznYqW9&sz=w1000';
 </script>
 
 <div id="splash-screen">
@@ -182,7 +181,8 @@
 
 <div id="mySidenav" class="sidenav">
   <div class="nav-header">
-      <img src="https://t4.ftcdn.net/jpg/10/49/51/79/360_F_1049517982_uqlTBJfsF7G2GvWfjN7oKGXJPNQbQNYC.jpg" alt="Logo">
+      <img id="nav-header-static-img" src="" onerror="this.src=MASTER_LOGO">
+      <script>document.getElementById('nav-header-static-img').src = NAV_HEADER_IMAGE;</script>
   </div>
   
   <a href="#" onclick="filterData('All', null, true)"><i class="fa fa-home"></i> Home</a>
@@ -202,7 +202,7 @@
         </div>
         <div id="search-container">
             <input type="text" id="searchBar" placeholder="Search..." onkeyup="search()">
-            <div onclick="toggleSearch(false)" style="font-size: 22px; color: var(--main-color);">&times;</div>
+            <div onclick="toggleSearch(false)" style="font-size: 22px; color: var(--main-color);">×</div>
         </div>
         <div class="header-right" id="header-icons">
             <div onclick="toggleSearch(true)"><i class="fa fa-search"></i></div>
@@ -219,7 +219,7 @@
 </div>
 
 <div class="container">
-    <div class="slider" id="mainSlider">
+    <div class="slider" id="mainSlider" style="display:none;">
         <div class="slides-track" id="sliderTrack"></div>
     </div>
     <div class="section-label" id="sectionName">FOR YOU</div>
@@ -318,14 +318,15 @@
 
     function updateSlider() {
         const sliders = rawData.filter(d => (d.Category || d.category || "").toLowerCase() === 'slider');
-        const track = document.getElementById('sliderTrack');
-        if(track && sliders.length > 0) {
-            track.innerHTML = sliders.map(s => {
-                let img = s.Thumbnail || s.thumbnail || s.URL || s.url || MASTER_LOGO;
-                return `<div class="slide-item"><img src="${img}" onerror="this.src='${MASTER_LOGO}'"></div>`;
-            }).join('');
-            document.getElementById('mainSlider').style.display = currentCategory === 'All' ? 'block' : 'none';
-        }
+        const mainTrack = document.getElementById('sliderTrack');
+        
+        const sliderHTML = sliders.map(s => {
+            let img = s.Thumbnail || s.thumbnail || s.URL || s.url || MASTER_LOGO;
+            return `<div class="slide-item"><img src="${img}" onerror="this.src='${MASTER_LOGO}'"></div>`;
+        }).join('');
+
+        if(mainTrack) mainTrack.innerHTML = sliderHTML;
+        document.getElementById('mainSlider').style.display = (currentCategory === 'All' && sliders.length > 0) ? 'block' : 'none';
     }
 
     function filterData(cat, btn, shouldClose = true) {
@@ -333,7 +334,9 @@
         if(shouldClose) closeNav();
         const sliderDiv = document.getElementById('mainSlider');
         const videoBox = document.getElementById('videoBox');
-        sliderDiv.style.display = (cat === 'All' && videoBox.style.display !== 'block') ? 'block' : 'none';
+        
+        const slidersCount = rawData.filter(d => (d.Category || d.category || "").toLowerCase() === 'slider').length;
+        sliderDiv.style.display = (cat === 'All' && videoBox.style.display !== 'block' && slidersCount > 0) ? 'block' : 'none';
         
         document.querySelectorAll('.nav-btn').forEach(b => {
             if(b.getAttribute('data-cat') === cat) b.classList.add('active');
@@ -383,7 +386,8 @@
         vjsPlayer.pause();
         document.getElementById('videoBox').style.display = 'none';
         document.querySelectorAll('.card').forEach(c => c.classList.remove('playing'));
-        if(currentCategory === 'All') document.getElementById('mainSlider').style.display = 'block';
+        const slidersCount = rawData.filter(d => (d.Category || d.category || "").toLowerCase() === 'slider').length;
+        if(currentCategory === 'All' && slidersCount > 0) document.getElementById('mainSlider').style.display = 'block';
     }
 
     function search() {
@@ -439,15 +443,17 @@
     });
 
     function hideRefresh() { document.getElementById('refresh-icon').style.height = '0'; }
+    
     window.onload = () => {
         fetchData();
         let slideIndex = 0;
         setInterval(() => {
             const track = document.getElementById('sliderTrack');
             if(track && track.children.length > 0) {
-                slideIndex = (slideIndex + 1) % track.children.length;
-                track.style.transform = `translateX(-${slideIndex * 100}%)`;
+                let currentIndex = slideIndex % track.children.length;
+                track.style.transform = `translateX(-${currentIndex * 100}%)`;
             }
+            slideIndex++;
         }, 4000);
     };
 </script>
