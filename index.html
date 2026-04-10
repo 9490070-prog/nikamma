@@ -6,7 +6,7 @@
     <meta name="msapplication-navbutton-color" content="#121212">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Nikamma 4k v3.3 | Premium HD</title>
+    <title>Nikamma 4k v3.4 | Ultimate HD</title>
     
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;800&display=swap" rel="stylesheet">
     <link href="https://vjs.zencdn.net/8.10.0/video-js.css" rel="stylesheet" />
@@ -60,18 +60,17 @@
             height: 60px; box-sizing: border-box;
         }
         
-        /* Master Logo in Header instead of menu icon */
-        .header-master-logo {
-            width: 36px;
-            height: 36px;
-            border-radius: 10px;
-            object-fit: cover;
+        /* Menu Icon in Header (Hamburger) - replaces logo */
+        .menu-icon-btn {
+            font-size: 24px;
             cursor: pointer;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+            color: var(--main-color);
+            width: 36px;
+            text-align: center;
             transition: transform 0.2s ease;
         }
-        .header-master-logo:active {
-            transform: scale(0.95);
+        .menu-icon-btn:active {
+            transform: scale(0.9);
         }
         
         .app-name { 
@@ -233,12 +232,6 @@
             0% { background-position: 200% 0; }
             100% { background-position: -200% 0; }
         }
-        
-        /* Side swipe hint animation */
-        @keyframes swipeHint {
-            0% { opacity: 0.3; transform: translateX(-5px); }
-            100% { opacity: 1; transform: translateX(0); }
-        }
     </style>
 </head>
 <body id="swipe-area">
@@ -277,8 +270,10 @@
 <header>
     <div class="header-content">
         <div class="header-left" id="header-main">
-            <!-- Master Logo instead of menu bars icon -->
-            <img id="headerLogo" class="header-master-logo" src="" alt="Logo" onclick="openNav()">
+            <!-- Menu Icon (Hamburger) instead of App Logo -->
+            <div class="menu-icon-btn" onclick="openNav()">
+                <i class="fa fa-bars"></i>
+            </div>
             <div class="app-name">Nikamma 4k</div>
         </div>
         <div id="search-container">
@@ -319,8 +314,8 @@
     <div class="nav-btn active" data-cat="All" onclick="filterData('All', this)"><i class="fa fa-house"></i>HOME</div>
     <div class="nav-btn" data-cat="Sports" onclick="filterData('Sports', this)"><i class="fa fa-tv"></i>LIVE</div>
     <div class="nav-btn" data-cat="Movies" onclick="filterData('Movies', this)"><i class="fa fa-clapperboard"></i>MOVIES</div>
-    <!-- SHOWS BUTTON REMOVED from bottom nav as requested -->
-    <div class="nav-btn" onclick="openNav()"><i class="fa fa-bars"></i>MENU</div>
+    <!-- TV SHOWS BUTTON ADDED (replaces menu icon) - with TV logo -->
+    <div class="nav-btn" data-cat="TV Shows" onclick="filterData('TV Shows', this)"><i class="fa fa-list-alt"></i>SHOWS</div>
 </div>
 
 <div id="update-overlay">
@@ -335,7 +330,7 @@
     const SHEET1_CSV = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQD2lHL-u6zHPZKdYIVD4eXp98XipkVP4jKfxLDoNje9DeZ1726o0zFZf-gAR2kZj0ls7VhceXbbKih/pub?gid=0&single=true&output=csv';
     const SETTINGS_CSV = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQD2lHL-u6zHPZKdYIVD4eXp98XipkVP4jKfxLDoNje9DeZ1726o0zFZf-gAR2kZj0ls7VhceXbbKih/pub?gid=1123743396&single=true&output=csv';
     
-    const VERSION = 3.3;
+    const VERSION = 3.4;
     let rawData = [];
     let settingsData = {};
     let currentCategory = 'All';
@@ -347,12 +342,6 @@
     let isRefreshing = false;
     let pullStartY = 0;
     let pullActive = false;
-
-    // Set header logo
-    document.addEventListener('DOMContentLoaded', () => {
-        const headerLogo = document.getElementById('headerLogo');
-        if(headerLogo) headerLogo.src = MASTER_LOGO;
-    });
 
     function openNav() { 
         const sideNav = document.getElementById("mySidenav");
@@ -764,9 +753,6 @@
     window.onload = () => {
         fetchData();
         startSlider();
-        if(document.getElementById('headerLogo')) {
-            document.getElementById('headerLogo').src = MASTER_LOGO;
-        }
     };
 </script>
 </body>
