@@ -6,7 +6,7 @@
     <meta name="msapplication-navbutton-color" content="#121212">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Nikamma 4k v3.1 Advanced</title>
+    <title>Nikamma 4k v3.3 | Premium HD</title>
     
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;800&display=swap" rel="stylesheet">
     <link href="https://vjs.zencdn.net/8.10.0/video-js.css" rel="stylesheet" />
@@ -59,7 +59,29 @@
             position: sticky; top: 0; z-index: 1000; border-bottom: 1px solid #222;
             height: 60px; box-sizing: border-box;
         }
-        .app-name { font-weight: 800; font-size: 20px; color: var(--main-color); letter-spacing: 0.5px; text-transform: uppercase; }
+        
+        /* Master Logo in Header instead of menu icon */
+        .header-master-logo {
+            width: 36px;
+            height: 36px;
+            border-radius: 10px;
+            object-fit: cover;
+            cursor: pointer;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+            transition: transform 0.2s ease;
+        }
+        .header-master-logo:active {
+            transform: scale(0.95);
+        }
+        
+        .app-name { 
+            font-weight: 800; 
+            font-size: 18px; 
+            color: var(--main-color); 
+            letter-spacing: 0.5px; 
+            text-transform: uppercase;
+            margin-left: 8px;
+        }
         
         .section-label { padding: 12px 15px 5px 15px; font-weight: 600; color: #aaa; letter-spacing: 1px; font-size: 13px; text-transform: uppercase; }
         
@@ -181,7 +203,7 @@
         }
         
         .header-content { display: flex; width: 100%; max-width: var(--max-width); margin: 0 auto; align-items: center; justify-content: space-between; }
-        .header-left, .header-right { display: flex; align-items: center; gap: 15px; font-size: 18px; cursor: pointer; }
+        .header-left, .header-right { display: flex; align-items: center; gap: 12px; font-size: 18px; cursor: pointer; }
         #search-container { display: none; flex: 1; align-items: center; gap: 10px; margin: 0 20px; }
         #searchBar { flex: 1; background: #222; border: 1px solid #333; color: white; padding: 8px 15px; border-radius: 20px; outline: none; font-size: 14px; font-family: var(--main-font); }
         #videoBox { display: none; width: 100%; background: #000; position: sticky; top: 60px; z-index: 1001; }
@@ -211,6 +233,12 @@
             0% { background-position: 200% 0; }
             100% { background-position: -200% 0; }
         }
+        
+        /* Side swipe hint animation */
+        @keyframes swipeHint {
+            0% { opacity: 0.3; transform: translateX(-5px); }
+            100% { opacity: 1; transform: translateX(0); }
+        }
     </style>
 </head>
 <body id="swipe-area">
@@ -239,6 +267,7 @@
   <a href="#" onclick="filterData('All', null, true)"><i class="fa fa-home"></i> Home</a>
   <a href="#" onclick="filterData('Sports', null, true)"><i class="fa fa-volleyball"></i> Live Sports</a>
   <a href="#" onclick="filterData('Movies', null, true)"><i class="fa fa-film"></i> Movies HD</a>
+  <a href="#" onclick="filterData('TV Shows', null, true)"><i class="fa fa-tv"></i> TV Shows</a>
   <a href="#" id="rating-link" target="_blank"><i class="fa fa-star"></i> Rate Us</a>
   <a href="#" id="privacy-link" target="_blank"><i class="fa fa-user-shield"></i> Privacy Policy</a>
   <a href="#" id="share-link" onclick="shareApp(event)"><i class="fa fa-share-alt"></i> Share App</a>
@@ -248,11 +277,12 @@
 <header>
     <div class="header-content">
         <div class="header-left" id="header-main">
-            <div onclick="openNav()"><i class="fa fa-bars"></i></div>
+            <!-- Master Logo instead of menu bars icon -->
+            <img id="headerLogo" class="header-master-logo" src="" alt="Logo" onclick="openNav()">
             <div class="app-name">Nikamma 4k</div>
         </div>
         <div id="search-container">
-            <input type="text" id="searchBar" placeholder="Search movies, sports..." onkeyup="search()">
+            <input type="text" id="searchBar" placeholder="Search movies, shows, sports..." onkeyup="search()">
             <div onclick="toggleSearch(false)" style="font-size: 22px; color: var(--main-color);">×</div>
         </div>
         <div class="header-right" id="header-icons">
@@ -289,6 +319,7 @@
     <div class="nav-btn active" data-cat="All" onclick="filterData('All', this)"><i class="fa fa-house"></i>HOME</div>
     <div class="nav-btn" data-cat="Sports" onclick="filterData('Sports', this)"><i class="fa fa-tv"></i>LIVE</div>
     <div class="nav-btn" data-cat="Movies" onclick="filterData('Movies', this)"><i class="fa fa-clapperboard"></i>MOVIES</div>
+    <!-- SHOWS BUTTON REMOVED from bottom nav as requested -->
     <div class="nav-btn" onclick="openNav()"><i class="fa fa-bars"></i>MENU</div>
 </div>
 
@@ -304,7 +335,7 @@
     const SHEET1_CSV = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQD2lHL-u6zHPZKdYIVD4eXp98XipkVP4jKfxLDoNje9DeZ1726o0zFZf-gAR2kZj0ls7VhceXbbKih/pub?gid=0&single=true&output=csv';
     const SETTINGS_CSV = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQD2lHL-u6zHPZKdYIVD4eXp98XipkVP4jKfxLDoNje9DeZ1726o0zFZf-gAR2kZj0ls7VhceXbbKih/pub?gid=1123743396&single=true&output=csv';
     
-    const VERSION = 3.1;
+    const VERSION = 3.3;
     let rawData = [];
     let settingsData = {};
     let currentCategory = 'All';
@@ -316,6 +347,12 @@
     let isRefreshing = false;
     let pullStartY = 0;
     let pullActive = false;
+
+    // Set header logo
+    document.addEventListener('DOMContentLoaded', () => {
+        const headerLogo = document.getElementById('headerLogo');
+        if(headerLogo) headerLogo.src = MASTER_LOGO;
+    });
 
     function openNav() { 
         const sideNav = document.getElementById("mySidenav");
@@ -382,7 +419,6 @@
 
     async function fetchData(isRefresh = false) {
         if(!isRefresh) {
-            // Show skeleton loading
             const grid = document.getElementById('mainGrid');
             if(grid) {
                 grid.innerHTML = `
@@ -400,9 +436,16 @@
             download: true, header: true, skipEmptyLines: true,
             complete: function(results) {
                 if(results.data && results.data.length > 0) {
-                    // Filter out empty rows
                     rawData = results.data.filter(item => {
                         return item && (item.name || item.Name || item.URL || item.url);
+                    });
+                    rawData = rawData.map(item => {
+                        let cat = (item.Category || item.category || "").trim();
+                        if(cat.toLowerCase() === "tv shows" || cat.toLowerCase() === "tvshow" || cat.toLowerCase() === "tv_show") {
+                            item.Category = "TV Shows";
+                            item.category = "TV Shows";
+                        }
+                        return item;
                     });
                 } else {
                     rawData = [];
@@ -437,7 +480,6 @@
                         document.getElementById('update-btn').onclick = () => window.location.href = settingsData.updateUrl;
                     }
                 }
-                // Hide splash screen
                 const splash = document.getElementById('splash-screen');
                 if(splash) {
                     splash.style.opacity = '0';
@@ -468,7 +510,8 @@
                 return `<div class="slide-item"><img src="${img}" onerror="this.src='${MASTER_LOGO}'"></div>`;
             }).join('');
             if(mainTrack) mainTrack.innerHTML = sliderHTML;
-            document.getElementById('mainSlider').style.display = (currentCategory === 'All' && document.getElementById('videoBox').style.display !== 'block') ? 'block' : 'none';
+            const videoBoxDisplay = document.getElementById('videoBox').style.display;
+            document.getElementById('mainSlider').style.display = (currentCategory === 'All' && videoBoxDisplay !== 'block') ? 'block' : 'none';
         } else {
             document.getElementById('mainSlider').style.display = 'none';
         }
@@ -492,7 +535,7 @@
             else b.classList.remove('active');
         });
         
-        let sectionNameText = cat === 'All' ? 'ALL CONTENT' : cat.toUpperCase();
+        let sectionNameText = cat === 'All' ? 'ALL CONTENT' : (cat === 'TV Shows' ? 'TV SHOWS' : cat.toUpperCase());
         document.getElementById('sectionName').innerText = sectionNameText;
         
         let filtered = [];
@@ -503,15 +546,14 @@
             });
         } else {
             filtered = rawData.filter(d => {
-                const category = (d.Category || d.category || "").toLowerCase();
-                return category === cat.toLowerCase();
+                const category = (d.Category || d.category || "").trim();
+                return category.toLowerCase() === cat.toLowerCase();
             });
         }
         
         const grid = document.getElementById('mainGrid');
         
         if(!filtered || filtered.length === 0) {
-            // Show empty state
             let message = '';
             let icon = 'fa-folder-open';
             if(cat === 'All') {
@@ -523,6 +565,9 @@
             } else if(cat === 'Sports') {
                 message = 'No live sports available';
                 icon = 'fa-tv';
+            } else if(cat === 'TV Shows') {
+                message = 'No TV shows found';
+                icon = 'fa-tv';
             }
             showEmptyState(grid, message, icon);
             return;
@@ -532,7 +577,6 @@
             let thumb = item.Thumbnail || item.thumbnail || MASTER_LOGO;
             let itemName = item.name || item.Name || "Untitled";
             let url = item.URL || item.url || "#";
-            // Escape for safe HTML
             itemName = itemName.replace(/[&<>]/g, function(m) {
                 if(m === '&') return '&amp;';
                 if(m === '<') return '&lt;';
@@ -637,7 +681,7 @@
         else window.open(shareURL, '_blank');
     }
 
-    // Pull to Refresh - Fixed
+    // Pull to Refresh & Side Swipe
     let touchStartY = 0;
     let touchStartX = 0;
     
@@ -654,13 +698,11 @@
         const diffY = touchY - touchStartY;
         const diffX = Math.abs(e.touches[0].pageX - touchStartX);
         
-        // Handle side menu swipe
         if (diffX > 30 && Math.abs(diffY) < 30 && !isNavOpen) {
             openNav();
             touchStartY = touchY;
         }
         
-        // Pull to refresh logic
         if (scrollTop === 0 && diffY > 0 && !isRefreshing && diffX < 30) {
             e.preventDefault();
             pullActive = true;
@@ -694,7 +736,6 @@
         pullActive = false;
     });
     
-    // Auto slider
     let slideIndex = 0;
     let sliderInterval;
     
@@ -709,7 +750,6 @@
         }, 4000);
     }
     
-    // Observe slider and restart interval when it becomes visible
     const sliderObserver = new MutationObserver(function() {
         const track = document.getElementById('sliderTrack');
         if(track && track.children.length > 0) {
@@ -717,11 +757,16 @@
         }
     });
     
-    sliderObserver.observe(document.getElementById('sliderTrack'), { childList: true, subtree: true });
+    if(document.getElementById('sliderTrack')) {
+        sliderObserver.observe(document.getElementById('sliderTrack'), { childList: true, subtree: true });
+    }
     
     window.onload = () => {
         fetchData();
         startSlider();
+        if(document.getElementById('headerLogo')) {
+            document.getElementById('headerLogo').src = MASTER_LOGO;
+        }
     };
 </script>
 </body>
