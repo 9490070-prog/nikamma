@@ -81,6 +81,27 @@
         .card.playing { background: var(--main-color) !important; border-color: #fff; transform: scale(0.95); }
         .card.playing .card-title { color: #000 !important; font-weight: 800; }
         
+        /* Empty State Styles */
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #666;
+        }
+        .empty-state i {
+            font-size: 64px;
+            margin-bottom: 20px;
+            opacity: 0.5;
+        }
+        .empty-state h3 {
+            font-size: 18px;
+            margin-bottom: 10px;
+            color: #888;
+        }
+        .empty-state p {
+            font-size: 13px;
+            color: #555;
+        }
+        
         /* SideNav Styles */
         .sidenav { 
             height: 100%; 
@@ -140,7 +161,25 @@
         }
         #menu-overlay.visible { display: block; opacity: 1; }
 
-        #refresh-icon { width: 100%; text-align: center; height: 0; overflow: hidden; transition: 0.3s; color: var(--main-color); font-size: 20px; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,0.5); position: relative; z-index: 999; }
+        /* Pull to Refresh Styles */
+        #refresh-icon { 
+            width: 100%; 
+            text-align: center; 
+            height: 0; 
+            overflow: hidden; 
+            transition: height 0.2s ease-out; 
+            color: var(--main-color); 
+            font-size: 20px; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            background: rgba(0,0,0,0.5); 
+            position: fixed;
+            top: 0;
+            left: 0;
+            z-index: 999;
+        }
+        
         .header-content { display: flex; width: 100%; max-width: var(--max-width); margin: 0 auto; align-items: center; justify-content: space-between; }
         .header-left, .header-right { display: flex; align-items: center; gap: 15px; font-size: 18px; cursor: pointer; }
         #search-container { display: none; flex: 1; align-items: center; gap: 10px; margin: 0 20px; }
@@ -159,13 +198,25 @@
         .nav-btn.active { color: var(--main-color); }
         #update-overlay { display: none; position: fixed; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.9); z-index: 10000; flex-direction: column; align-items: center; justify-content: center; }
         .update-box { background: var(--card-bg); padding: 30px; border-radius: 15px; border: 1px solid var(--main-color); text-align: center; width: 80%; max-width: 400px; }
+        
+        /* Loading skeleton */
+        .skeleton-card {
+            background: linear-gradient(90deg, #1a1a1a 25%, #2a2a2a 50%, #1a1a1a 75%);
+            background-size: 200% 100%;
+            animation: loading 1.5s infinite;
+            border-radius: 10px;
+            aspect-ratio: 1/1;
+        }
+        @keyframes loading {
+            0% { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
+        }
     </style>
 </head>
 <body id="swipe-area">
 
 <script>
     const MASTER_LOGO = 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTf7ax2YDbvMh3IxQPzSyY1YIewn8Q_1bDgR04kRJT5-A&s=10';
-    // Aapka Update kiya hua link
     const NAV_HEADER_IMAGE = 'https://drive.google.com/thumbnail?id=1DXQpAofda-bZPS20Q-bqo6neUDznYqW9&sz=w1000';
 </script>
 
@@ -176,7 +227,7 @@
     <i class="fa fa-circle-notch fa-spin splash-loader"></i>
 </div>
 
-<div id="refresh-icon"><i class="fa fa-sync fa-spin"></i></div>
+<div id="refresh-icon"><i class="fa fa-arrow-down"></i><span style="margin-left:8px">Pull to refresh</span></div>
 <div id="menu-overlay" onclick="closeNav()"></div>
 
 <div id="mySidenav" class="sidenav">
@@ -191,7 +242,7 @@
   <a href="#" id="rating-link" target="_blank"><i class="fa fa-star"></i> Rate Us</a>
   <a href="#" id="privacy-link" target="_blank"><i class="fa fa-user-shield"></i> Privacy Policy</a>
   <a href="#" id="share-link" onclick="shareApp(event)"><i class="fa fa-share-alt"></i> Share App</a>
-  <a href="#" onclick="location.reload()"><i class="fa fa-sync"></i> Refresh App</a>
+  <a href="#" onclick="refreshData()"><i class="fa fa-sync"></i> Refresh App</a>
 </div>
 
 <header>
@@ -201,7 +252,7 @@
             <div class="app-name">Nikamma 4k</div>
         </div>
         <div id="search-container">
-            <input type="text" id="searchBar" placeholder="Search..." onkeyup="search()">
+            <input type="text" id="searchBar" placeholder="Search movies, sports..." onkeyup="search()">
             <div onclick="toggleSearch(false)" style="font-size: 22px; color: var(--main-color);">×</div>
         </div>
         <div class="header-right" id="header-icons">
@@ -223,7 +274,15 @@
         <div class="slides-track" id="sliderTrack"></div>
     </div>
     <div class="section-label" id="sectionName">FOR YOU</div>
-    <div class="grid" id="mainGrid"></div>
+    <div class="grid" id="mainGrid">
+        <!-- Skeleton Loaders -->
+        <div class="skeleton-card"></div>
+        <div class="skeleton-card"></div>
+        <div class="skeleton-card"></div>
+        <div class="skeleton-card"></div>
+        <div class="skeleton-card"></div>
+        <div class="skeleton-card"></div>
+    </div>
 </div>
 
 <div class="bottom-nav">
@@ -254,6 +313,9 @@
     let startY = 0;
     let startX = 0;
     let isNavOpen = false;
+    let isRefreshing = false;
+    let pullStartY = 0;
+    let pullActive = false;
 
     function openNav() { 
         const sideNav = document.getElementById("mySidenav");
@@ -284,13 +346,79 @@
         if(show) document.getElementById('searchBar').focus();
     }
 
-    async function fetchData() {
+    function showEmptyState(grid, message, icon = 'fa-folder-open') {
+        grid.innerHTML = `
+            <div style="grid-column: 1/-1;" class="empty-state">
+                <i class="fa ${icon}"></i>
+                <h3>${message}</h3>
+                <p>Check back later for new content!</p>
+            </div>
+        `;
+    }
+
+    function refreshData() {
+        if(isRefreshing) return;
+        isRefreshing = true;
+        showRefreshIndicator(true);
+        fetchData(true);
+    }
+
+    function showRefreshIndicator(show) {
+        const refreshIcon = document.getElementById('refresh-icon');
+        if(show) {
+            refreshIcon.style.height = '50px';
+            refreshIcon.innerHTML = '<i class="fa fa-circle-notch fa-spin"></i><span style="margin-left:8px">Refreshing...</span>';
+            setTimeout(() => {
+                if(refreshIcon.style.height !== '0') {
+                    refreshIcon.style.height = '0';
+                }
+            }, 2000);
+        } else {
+            refreshIcon.style.height = '0';
+            refreshIcon.innerHTML = '<i class="fa fa-arrow-down"></i><span style="margin-left:8px">Pull to refresh</span>';
+        }
+        isRefreshing = false;
+    }
+
+    async function fetchData(isRefresh = false) {
+        if(!isRefresh) {
+            // Show skeleton loading
+            const grid = document.getElementById('mainGrid');
+            if(grid) {
+                grid.innerHTML = `
+                    <div class="skeleton-card"></div>
+                    <div class="skeleton-card"></div>
+                    <div class="skeleton-card"></div>
+                    <div class="skeleton-card"></div>
+                    <div class="skeleton-card"></div>
+                    <div class="skeleton-card"></div>
+                `;
+            }
+        }
+        
         Papa.parse(SHEET1_CSV, {
             download: true, header: true, skipEmptyLines: true,
             complete: function(results) {
-                rawData = results.data;
+                if(results.data && results.data.length > 0) {
+                    // Filter out empty rows
+                    rawData = results.data.filter(item => {
+                        return item && (item.name || item.Name || item.URL || item.url);
+                    });
+                } else {
+                    rawData = [];
+                }
                 updateSlider();
                 filterData(currentCategory, null, false);
+                fetchSettings();
+                if(isRefresh) {
+                    showRefreshIndicator(false);
+                }
+            },
+            error: function(error) {
+                console.error("CSV Parse Error:", error);
+                const grid = document.getElementById('mainGrid');
+                showEmptyState(grid, "Failed to load data!", "fa-exclamation-triangle");
+                if(isRefresh) showRefreshIndicator(false);
                 fetchSettings();
             }
         });
@@ -300,7 +428,7 @@
         Papa.parse(SETTINGS_CSV, {
             download: true, header: true, skipEmptyLines: true,
             complete: function(results) {
-                if(results.data.length > 0) {
+                if(results.data && results.data.length > 0) {
                     settingsData = results.data[0];
                     if(settingsData.ratingUrl) document.getElementById('rating-link').href = settingsData.ratingUrl;
                     if(settingsData.privacyUrl) document.getElementById('privacy-link').href = settingsData.privacyUrl;
@@ -309,24 +437,41 @@
                         document.getElementById('update-btn').onclick = () => window.location.href = settingsData.updateUrl;
                     }
                 }
-                hideRefresh();
-                document.getElementById('splash-screen').style.opacity = '0';
-                setTimeout(() => document.getElementById('splash-screen').style.display = 'none', 500);
+                // Hide splash screen
+                const splash = document.getElementById('splash-screen');
+                if(splash) {
+                    splash.style.opacity = '0';
+                    setTimeout(() => splash.style.display = 'none', 500);
+                }
+            },
+            error: function(error) {
+                console.error("Settings Parse Error:", error);
+                const splash = document.getElementById('splash-screen');
+                if(splash) {
+                    splash.style.opacity = '0';
+                    setTimeout(() => splash.style.display = 'none', 500);
+                }
             }
         });
     }
 
     function updateSlider() {
-        const sliders = rawData.filter(d => (d.Category || d.category || "").toLowerCase() === 'slider');
+        const sliders = rawData.filter(d => {
+            const category = (d.Category || d.category || "").toLowerCase();
+            return category === 'slider';
+        });
         const mainTrack = document.getElementById('sliderTrack');
         
-        const sliderHTML = sliders.map(s => {
-            let img = s.Thumbnail || s.thumbnail || s.URL || s.url || MASTER_LOGO;
-            return `<div class="slide-item"><img src="${img}" onerror="this.src='${MASTER_LOGO}'"></div>`;
-        }).join('');
-
-        if(mainTrack) mainTrack.innerHTML = sliderHTML;
-        document.getElementById('mainSlider').style.display = (currentCategory === 'All' && sliders.length > 0) ? 'block' : 'none';
+        if(sliders.length > 0) {
+            const sliderHTML = sliders.map(s => {
+                let img = s.Thumbnail || s.thumbnail || s.URL || s.url || MASTER_LOGO;
+                return `<div class="slide-item"><img src="${img}" onerror="this.src='${MASTER_LOGO}'"></div>`;
+            }).join('');
+            if(mainTrack) mainTrack.innerHTML = sliderHTML;
+            document.getElementById('mainSlider').style.display = (currentCategory === 'All' && document.getElementById('videoBox').style.display !== 'block') ? 'block' : 'none';
+        } else {
+            document.getElementById('mainSlider').style.display = 'none';
+        }
     }
 
     function filterData(cat, btn, shouldClose = true) {
@@ -335,32 +480,85 @@
         const sliderDiv = document.getElementById('mainSlider');
         const videoBox = document.getElementById('videoBox');
         
-        const slidersCount = rawData.filter(d => (d.Category || d.category || "").toLowerCase() === 'slider').length;
-        sliderDiv.style.display = (cat === 'All' && videoBox.style.display !== 'block' && slidersCount > 0) ? 'block' : 'none';
+        const sliders = rawData.filter(d => {
+            const category = (d.Category || d.category || "").toLowerCase();
+            return category === 'slider';
+        });
+        
+        sliderDiv.style.display = (cat === 'All' && videoBox.style.display !== 'block' && sliders.length > 0) ? 'block' : 'none';
         
         document.querySelectorAll('.nav-btn').forEach(b => {
             if(b.getAttribute('data-cat') === cat) b.classList.add('active');
             else b.classList.remove('active');
         });
-        document.getElementById('sectionName').innerText = cat === 'All' ? 'FOR YOU' : cat;
-        const filtered = cat === 'All' 
-            ? rawData.filter(d => (d.Category || d.category || "").toLowerCase() !== 'slider')
-            : rawData.filter(d => (d.Category || d.category || "").toLowerCase() === cat.toLowerCase());
-            
+        
+        let sectionNameText = cat === 'All' ? 'ALL CONTENT' : cat.toUpperCase();
+        document.getElementById('sectionName').innerText = sectionNameText;
+        
+        let filtered = [];
+        if(cat === 'All') {
+            filtered = rawData.filter(d => {
+                const category = (d.Category || d.category || "").toLowerCase();
+                return category !== 'slider';
+            });
+        } else {
+            filtered = rawData.filter(d => {
+                const category = (d.Category || d.category || "").toLowerCase();
+                return category === cat.toLowerCase();
+            });
+        }
+        
         const grid = document.getElementById('mainGrid');
-        grid.innerHTML = filtered.map(item => {
+        
+        if(!filtered || filtered.length === 0) {
+            // Show empty state
+            let message = '';
+            let icon = 'fa-folder-open';
+            if(cat === 'All') {
+                message = 'No content available';
+                icon = 'fa-database';
+            } else if(cat === 'Movies') {
+                message = 'No movies found';
+                icon = 'fa-film';
+            } else if(cat === 'Sports') {
+                message = 'No live sports available';
+                icon = 'fa-tv';
+            }
+            showEmptyState(grid, message, icon);
+            return;
+        }
+        
+        grid.innerHTML = filtered.map((item, index) => {
             let thumb = item.Thumbnail || item.thumbnail || MASTER_LOGO;
-            let itemName = item.name || item.Name || "Live TV";
+            let itemName = item.name || item.Name || "Untitled";
+            let url = item.URL || item.url || "#";
+            // Escape for safe HTML
+            itemName = itemName.replace(/[&<>]/g, function(m) {
+                if(m === '&') return '&amp;';
+                if(m === '<') return '&lt;';
+                if(m === '>') return '&gt;';
+                return m;
+            });
             return `
-            <div class="card" onclick="play('${item.URL || item.url}', '${itemName}', this)">
+            <div class="card" data-url="${escapeHtml(url)}" data-title="${escapeHtml(itemName)}" onclick="play('${escapeHtml(url)}', '${escapeHtml(itemName)}', this)">
                 <img src="${thumb}" loading="lazy" onerror="this.src='${MASTER_LOGO}'">
                 <div class="card-title">${itemName}</div>
             </div>
         `}).join('');
     }
+    
+    function escapeHtml(str) {
+        if(!str) return '';
+        return String(str).replace(/[&<>]/g, function(m) {
+            if(m === '&') return '&amp;';
+            if(m === '<') return '&lt;';
+            if(m === '>') return '&gt;';
+            return m;
+        });
+    }
 
     function play(url, title, cardElement) {
-        if(!url) return;
+        if(!url || url === '#') return;
         document.querySelectorAll('.card').forEach(c => c.classList.remove('playing'));
         if(cardElement) cardElement.classList.add('playing');
         document.getElementById('videoBox').style.display = 'block';
@@ -371,12 +569,20 @@
         vjsPlayer.pause();
         if (url.includes('.ts')) {
             const videoElement = document.querySelector('#mainVideo_html5_api') || document.querySelector('#mainVideo');
-            tsPlayer = mpegts.createPlayer({ type: 'mse', isLive: true, url: url });
-            tsPlayer.attachMediaElement(videoElement);
-            tsPlayer.load();
-            tsPlayer.play();
+            try {
+                tsPlayer = mpegts.createPlayer({ type: 'mse', isLive: true, url: url });
+                tsPlayer.attachMediaElement(videoElement);
+                tsPlayer.load();
+                tsPlayer.play();
+            } catch(e) {
+                console.error("TS Player Error:", e);
+                vjsPlayer.src({ src: url, type: 'video/mp4' });
+                vjsPlayer.play();
+            }
         } else {
-            vjsPlayer.src({ src: url, type: url.includes('m3u8') ? 'application/x-mpegURL' : 'video/mp4' });
+            let videoType = 'video/mp4';
+            if(url.includes('m3u8')) videoType = 'application/x-mpegURL';
+            vjsPlayer.src({ src: url, type: videoType });
             vjsPlayer.play();
         }
     }
@@ -386,21 +592,42 @@
         vjsPlayer.pause();
         document.getElementById('videoBox').style.display = 'none';
         document.querySelectorAll('.card').forEach(c => c.classList.remove('playing'));
-        const slidersCount = rawData.filter(d => (d.Category || d.category || "").toLowerCase() === 'slider').length;
-        if(currentCategory === 'All' && slidersCount > 0) document.getElementById('mainSlider').style.display = 'block';
+        const sliders = rawData.filter(d => {
+            const category = (d.Category || d.category || "").toLowerCase();
+            return category === 'slider';
+        });
+        if(currentCategory === 'All' && sliders.length > 0) document.getElementById('mainSlider').style.display = 'block';
     }
 
     function search() {
-        let term = document.getElementById('searchBar').value.toLowerCase();
-        const filtered = rawData.filter(d => ((d.name || d.Name || "").toLowerCase().includes(term)) && (d.Category || d.category || "").toLowerCase() !== 'slider');
+        let term = document.getElementById('searchBar').value.toLowerCase().trim();
         const grid = document.getElementById('mainGrid');
+        
+        if(term === '') {
+            filterData(currentCategory, null, false);
+            return;
+        }
+        
+        const filtered = rawData.filter(d => {
+            const category = (d.Category || d.category || "").toLowerCase();
+            const name = (d.name || d.Name || "").toLowerCase();
+            return name.includes(term) && category !== 'slider';
+        });
+        
+        if(filtered.length === 0) {
+            showEmptyState(grid, `No results for "${term}"`, 'fa-search');
+            return;
+        }
+        
         grid.innerHTML = filtered.map(item => {
             let thumb = item.Thumbnail || item.thumbnail || MASTER_LOGO;
-            let itemName = item.name || item.Name || "Live TV";
-            return `<div class="card" onclick="play('${item.URL || item.url}', '${itemName}', this)">
+            let itemName = item.name || item.Name || "Untitled";
+            let url = item.URL || item.url || "#";
+            return `<div class="card" onclick="play('${url.replace(/'/g, "\\'")}', '${itemName.replace(/'/g, "\\'")}', this)">
                 <img src="${thumb}" loading="lazy" onerror="this.src='${MASTER_LOGO}'">
                 <div class="card-title">${itemName}</div>
-            </div>`}).join('');
+            </div>`;
+        }).join('');
     }
 
     function shareApp(e) {
@@ -410,51 +637,91 @@
         else window.open(shareURL, '_blank');
     }
 
-    const swipeArea = document.getElementById('swipe-area');
-    swipeArea.addEventListener('touchstart', e => { 
-        startY = e.touches[0].pageY;
-        startX = e.touches[0].pageX;
-    }, {passive:true});
-
-    swipeArea.addEventListener('touchmove', e => {
-        let moveY = e.touches[0].pageY - startY;
-        let moveX = e.touches[0].pageX - startX;
-        if(window.scrollY === 0 && moveY > 0 && Math.abs(moveX) < 30) { 
-            document.getElementById('refresh-icon').style.height = Math.min(moveY, 60) + 'px'; 
+    // Pull to Refresh - Fixed
+    let touchStartY = 0;
+    let touchStartX = 0;
+    
+    document.addEventListener('touchstart', function(e) {
+        touchStartY = e.touches[0].pageY;
+        touchStartX = e.touches[0].pageX;
+        pullStartY = touchStartY;
+        pullActive = false;
+    }, {passive: true});
+    
+    document.addEventListener('touchmove', function(e) {
+        const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+        const touchY = e.touches[0].pageY;
+        const diffY = touchY - touchStartY;
+        const diffX = Math.abs(e.touches[0].pageX - touchStartX);
+        
+        // Handle side menu swipe
+        if (diffX > 30 && Math.abs(diffY) < 30 && !isNavOpen) {
+            openNav();
+            touchStartY = touchY;
         }
-    }, {passive:true});
-
-    swipeArea.addEventListener('touchend', e => {
-        let endX = e.changedTouches[0].pageX;
-        let endY = e.changedTouches[0].pageY;
-        let diffX = endX - startX;
-        let diffY = endY - startY;
-
-        if (Math.abs(diffX) > Math.abs(diffY) && Math.abs(diffX) > 70) {
-            if (diffX > 0 && !isNavOpen) {
-                openNav();
-            } else if (diffX < 0 && isNavOpen) {
-                closeNav();
+        
+        // Pull to refresh logic
+        if (scrollTop === 0 && diffY > 0 && !isRefreshing && diffX < 30) {
+            e.preventDefault();
+            pullActive = true;
+            const pullDistance = Math.min(diffY, 80);
+            const refreshIcon = document.getElementById('refresh-icon');
+            if(pullDistance > 20) {
+                refreshIcon.style.height = pullDistance + 'px';
+                if(pullDistance > 60) {
+                    refreshIcon.innerHTML = '<i class="fa fa-arrow-down"></i><span style="margin-left:8px">Release to refresh</span>';
+                } else {
+                    refreshIcon.innerHTML = '<i class="fa fa-arrow-down"></i><span style="margin-left:8px">Pull to refresh</span>';
+                }
             }
         }
-
-        if(parseInt(document.getElementById('refresh-icon').style.height) >= 60) fetchData();
-        else hideRefresh();
+    }, {passive: false});
+    
+    document.addEventListener('touchend', function(e) {
+        const refreshIcon = document.getElementById('refresh-icon');
+        const currentHeight = parseInt(refreshIcon.style.height);
+        
+        if(pullActive && currentHeight > 60 && !isRefreshing) {
+            refreshData();
+        } else {
+            refreshIcon.style.height = '0';
+            setTimeout(() => {
+                if(refreshIcon.style.height === '0px') {
+                    refreshIcon.innerHTML = '<i class="fa fa-arrow-down"></i><span style="margin-left:8px">Pull to refresh</span>';
+                }
+            }, 100);
+        }
+        pullActive = false;
     });
-
-    function hideRefresh() { document.getElementById('refresh-icon').style.height = '0'; }
+    
+    // Auto slider
+    let slideIndex = 0;
+    let sliderInterval;
+    
+    function startSlider() {
+        if(sliderInterval) clearInterval(sliderInterval);
+        sliderInterval = setInterval(() => {
+            const track = document.getElementById('sliderTrack');
+            if(track && track.children.length > 0) {
+                slideIndex = (slideIndex + 1) % track.children.length;
+                track.style.transform = `translateX(-${slideIndex * 100}%)`;
+            }
+        }, 4000);
+    }
+    
+    // Observe slider and restart interval when it becomes visible
+    const sliderObserver = new MutationObserver(function() {
+        const track = document.getElementById('sliderTrack');
+        if(track && track.children.length > 0) {
+            startSlider();
+        }
+    });
+    
+    sliderObserver.observe(document.getElementById('sliderTrack'), { childList: true, subtree: true });
     
     window.onload = () => {
         fetchData();
-        let slideIndex = 0;
-        setInterval(() => {
-            const track = document.getElementById('sliderTrack');
-            if(track && track.children.length > 0) {
-                let currentIndex = slideIndex % track.children.length;
-                track.style.transform = `translateX(-${currentIndex * 100}%)`;
-            }
-            slideIndex++;
-        }, 4000);
+        startSlider();
     };
 </script>
 </body>
