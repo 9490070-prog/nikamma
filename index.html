@@ -6,7 +6,7 @@
     <meta name="msapplication-navbutton-color" content="#121212">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Nikamma 4k v3.4 | Ultimate HD</title>
+    <title>Nikamma 4k v3.5 | Ultimate HD</title>
     
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;800&display=swap" rel="stylesheet">
     <link href="https://vjs.zencdn.net/8.10.0/video-js.css" rel="stylesheet" />
@@ -60,7 +60,6 @@
             height: 60px; box-sizing: border-box;
         }
         
-        /* Menu Icon in Header (Hamburger) - replaces logo */
         .menu-icon-btn {
             font-size: 24px;
             cursor: pointer;
@@ -102,7 +101,6 @@
         .card.playing { background: var(--main-color) !important; border-color: #fff; transform: scale(0.95); }
         .card.playing .card-title { color: #000 !important; font-weight: 800; }
         
-        /* Empty State Styles */
         .empty-state {
             text-align: center;
             padding: 60px 20px;
@@ -123,7 +121,6 @@
             color: #555;
         }
         
-        /* SideNav Styles */
         .sidenav { 
             height: 100%; 
             width: var(--nav-width); 
@@ -182,23 +179,60 @@
         }
         #menu-overlay.visible { display: block; opacity: 1; }
 
-        /* Pull to Refresh Styles */
-        #refresh-icon { 
-            width: 100%; 
-            text-align: center; 
-            height: 0; 
-            overflow: hidden; 
-            transition: height 0.2s ease-out; 
-            color: var(--main-color); 
-            font-size: 20px; 
-            display: flex; 
-            align-items: center; 
-            justify-content: center; 
-            background: rgba(0,0,0,0.5); 
+        /* Professional Pull to Refresh Styles */
+        .ptr-container {
             position: fixed;
             top: 0;
             left: 0;
+            right: 0;
             z-index: 999;
+            height: 0;
+            overflow: hidden;
+            transition: height 0.3s cubic-bezier(0.2, 0.9, 0.4, 1.1);
+            background: linear-gradient(135deg, var(--main-color) 0%, #008c9e 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+        }
+        
+        .ptr-content {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            color: white;
+            font-weight: 600;
+            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        .ptr-content i {
+            font-size: 20px;
+            transition: transform 0.3s ease;
+        }
+        
+        .ptr-content .fa-spin {
+            animation: fa-spin 1s infinite linear;
+        }
+        
+        @keyframes fa-spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .ptr-loader {
+            width: 24px;
+            height: 24px;
+            border: 2px solid rgba(255,255,255,0.3);
+            border-top-color: white;
+            border-radius: 50%;
+            animation: ptr-spin 0.8s linear infinite;
+        }
+        
+        @keyframes ptr-spin {
+            to { transform: rotate(360deg); }
         }
         
         .header-content { display: flex; width: 100%; max-width: var(--max-width); margin: 0 auto; align-items: center; justify-content: space-between; }
@@ -220,7 +254,6 @@
         #update-overlay { display: none; position: fixed; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.9); z-index: 10000; flex-direction: column; align-items: center; justify-content: center; }
         .update-box { background: var(--card-bg); padding: 30px; border-radius: 15px; border: 1px solid var(--main-color); text-align: center; width: 80%; max-width: 400px; }
         
-        /* Loading skeleton */
         .skeleton-card {
             background: linear-gradient(90deg, #1a1a1a 25%, #2a2a2a 50%, #1a1a1a 75%);
             background-size: 200% 100%;
@@ -232,6 +265,27 @@
             0% { background-position: 200% 0; }
             100% { background-position: -200% 0; }
         }
+        
+        /* Data save indicator */
+        .data-save-badge {
+            position: fixed;
+            bottom: 70px;
+            right: 10px;
+            background: rgba(0,188,212,0.9);
+            color: white;
+            padding: 5px 10px;
+            border-radius: 20px;
+            font-size: 10px;
+            font-weight: 600;
+            z-index: 999;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            pointer-events: none;
+        }
+        
+        .data-save-badge.show {
+            opacity: 1;
+        }
     </style>
 </head>
 <body id="swipe-area">
@@ -239,6 +293,10 @@
 <script>
     const MASTER_LOGO = 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTf7ax2YDbvMh3IxQPzSyY1YIewn8Q_1bDgR04kRJT5-A&s=10';
     const NAV_HEADER_IMAGE = 'https://drive.google.com/thumbnail?id=1DXQpAofda-bZPS20Q-bqo6neUDznYqW9&sz=w1000';
+    const STORAGE_KEY_DATA = 'nikamma_cached_data';
+    const STORAGE_KEY_SETTINGS = 'nikamma_cached_settings';
+    const STORAGE_KEY_TIMESTAMP = 'nikamma_cache_timestamp';
+    const CACHE_DURATION = 30 * 60 * 1000; // 30 minutes cache
 </script>
 
 <div id="splash-screen">
@@ -248,7 +306,16 @@
     <i class="fa fa-circle-notch fa-spin splash-loader"></i>
 </div>
 
-<div id="refresh-icon"><i class="fa fa-arrow-down"></i><span style="margin-left:8px">Pull to refresh</span></div>
+<!-- Professional Pull to Refresh Container -->
+<div id="ptr-container" class="ptr-container">
+    <div class="ptr-content">
+        <div id="ptr-icon">
+            <i class="fa fa-arrow-down"></i>
+        </div>
+        <span id="ptr-text">Pull to refresh</span>
+    </div>
+</div>
+
 <div id="menu-overlay" onclick="closeNav()"></div>
 
 <div id="mySidenav" class="sidenav">
@@ -264,13 +331,12 @@
   <a href="#" id="rating-link" target="_blank"><i class="fa fa-star"></i> Rate Us</a>
   <a href="#" id="privacy-link" target="_blank"><i class="fa fa-user-shield"></i> Privacy Policy</a>
   <a href="#" id="share-link" onclick="shareApp(event)"><i class="fa fa-share-alt"></i> Share App</a>
-  <a href="#" onclick="refreshData()"><i class="fa fa-sync"></i> Refresh App</a>
+  <a href="#" onclick="forceRefreshData()"><i class="fa fa-sync"></i> Force Refresh</a>
 </div>
 
 <header>
     <div class="header-content">
         <div class="header-left" id="header-main">
-            <!-- Menu Icon (Hamburger) instead of App Logo -->
             <div class="menu-icon-btn" onclick="openNav()">
                 <i class="fa fa-bars"></i>
             </div>
@@ -300,7 +366,6 @@
     </div>
     <div class="section-label" id="sectionName">FOR YOU</div>
     <div class="grid" id="mainGrid">
-        <!-- Skeleton Loaders -->
         <div class="skeleton-card"></div>
         <div class="skeleton-card"></div>
         <div class="skeleton-card"></div>
@@ -314,7 +379,6 @@
     <div class="nav-btn active" data-cat="All" onclick="filterData('All', this)"><i class="fa fa-house"></i>HOME</div>
     <div class="nav-btn" data-cat="Sports" onclick="filterData('Sports', this)"><i class="fa fa-tv"></i>LIVE</div>
     <div class="nav-btn" data-cat="Movies" onclick="filterData('Movies', this)"><i class="fa fa-clapperboard"></i>MOVIES</div>
-    <!-- TV SHOWS BUTTON ADDED (replaces menu icon) - with TV logo -->
     <div class="nav-btn" data-cat="TV Shows" onclick="filterData('TV Shows', this)"><i class="fa fa-list-alt"></i>SHOWS</div>
 </div>
 
@@ -326,166 +390,293 @@
     </div>
 </div>
 
+<div id="data-save-badge" class="data-save-badge">
+    <i class="fa fa-database"></i> Using cached data
+</div>
+
 <script>
     const SHEET1_CSV = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQD2lHL-u6zHPZKdYIVD4eXp98XipkVP4jKfxLDoNje9DeZ1726o0zFZf-gAR2kZj0ls7VhceXbbKih/pub?gid=0&single=true&output=csv';
     const SETTINGS_CSV = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQD2lHL-u6zHPZKdYIVD4eXp98XipkVP4jKfxLDoNje9DeZ1726o0zFZf-gAR2kZj0ls7VhceXbbKih/pub?gid=1123743396&single=true&output=csv';
     
-    const VERSION = 3.4;
+    const VERSION = 3.5;
     let rawData = [];
     let settingsData = {};
     let currentCategory = 'All';
     let vjsPlayer = videojs('mainVideo');
     let tsPlayer = null;
-    let startY = 0;
-    let startX = 0;
     let isNavOpen = false;
     let isRefreshing = false;
-    let pullStartY = 0;
-    let pullActive = false;
+    let ptrStartY = 0;
+    let ptrActive = false;
+    let ptrHeight = 0;
 
-    function openNav() { 
-        const sideNav = document.getElementById("mySidenav");
-        const overlay = document.getElementById("menu-overlay");
-        overlay.style.display = "block";
+    // ========== CACHE MANAGEMENT ==========
+    function saveDataToCache(data, settings) {
+        try {
+            const cacheData = {
+                rawData: data,
+                settingsData: settings,
+                timestamp: Date.now()
+            };
+            localStorage.setItem(STORAGE_KEY_DATA, JSON.stringify(cacheData));
+        } catch(e) {
+            console.error('Cache save error:', e);
+        }
+    }
+    
+    function loadDataFromCache() {
+        try {
+            const cached = localStorage.getItem(STORAGE_KEY_DATA);
+            if(cached) {
+                const cacheData = JSON.parse(cached);
+                const isExpired = (Date.now() - cacheData.timestamp) > CACHE_DURATION;
+                
+                if(cacheData.rawData && cacheData.rawData.length > 0) {
+                    rawData = cacheData.rawData;
+                    if(cacheData.settingsData) {
+                        settingsData = cacheData.settingsData;
+                        applySettings();
+                    }
+                    return !isExpired;
+                }
+            }
+        } catch(e) {
+            console.error('Cache load error:', e);
+        }
+        return false;
+    }
+    
+    function showCachedDataBadge() {
+        const badge = document.getElementById('data-save-badge');
+        badge.classList.add('show');
         setTimeout(() => {
-            sideNav.classList.add("open");
-            overlay.classList.add("visible");
-        }, 10);
-        isNavOpen = true;
+            badge.classList.remove('show');
+        }, 2000);
     }
-
-    function closeNav() { 
-        const sideNav = document.getElementById("mySidenav");
-        const overlay = document.getElementById("menu-overlay");
-        sideNav.classList.remove("open");
-        overlay.classList.remove("visible");
-        isNavOpen = false;
+    
+    // ========== PROFESSIONAL PULL TO REFRESH ==========
+    function updatePTR(status, pullDistance = 0) {
+        const ptrContainer = document.getElementById('ptr-container');
+        const ptrText = document.getElementById('ptr-text');
+        const ptrIcon = document.getElementById('ptr-icon');
+        
+        if(status === 'pull') {
+            const height = Math.min(pullDistance, 70);
+            ptrContainer.style.height = height + 'px';
+            if(pullDistance > 50) {
+                ptrText.innerText = 'Release to refresh';
+                ptrIcon.innerHTML = '<i class="fa fa-refresh"></i>';
+            } else {
+                ptrText.innerText = 'Pull to refresh';
+                ptrIcon.innerHTML = '<i class="fa fa-arrow-down"></i>';
+            }
+        } else if(status === 'release') {
+            ptrContainer.style.height = '70px';
+            ptrText.innerText = 'Refreshing...';
+            ptrIcon.innerHTML = '<div class="ptr-loader"></div>';
+        } else if(status === 'complete') {
+            ptrContainer.style.height = '0px';
+            ptrText.innerText = 'Pull to refresh';
+            ptrIcon.innerHTML = '<i class="fa fa-arrow-down"></i>';
+            setTimeout(() => {
+                if(ptrContainer.style.height === '0px') {
+                    ptrContainer.style.height = '0';
+                }
+            }, 300);
+        }
+    }
+    
+    async function performRefresh() {
+        if(isRefreshing) return;
+        isRefreshing = true;
+        updatePTR('release');
+        
+        try {
+            await fetchFreshData();
+            updatePTR('complete');
+            showCachedDataBadge();
+        } catch(e) {
+            console.error('Refresh error:', e);
+            updatePTR('complete');
+        }
+        
         setTimeout(() => {
-            if(!isNavOpen) overlay.style.display = "none";
-        }, 400);
+            isRefreshing = false;
+        }, 500);
     }
-
-    function toggleSearch(show) {
-        document.getElementById('header-main').style.display = show ? 'none' : 'flex';
-        document.getElementById('header-icons').style.display = show ? 'none' : 'flex';
-        document.getElementById('search-container').style.display = show ? 'flex' : 'none';
-        if(show) document.getElementById('searchBar').focus();
+    
+    function forceRefreshData() {
+        if(isRefreshing) return;
+        performRefresh();
+        closeNav();
     }
-
+    
+    // ========== TOUCH HANDLERS FOR PTR ==========
+    let touchStartY = 0;
+    let touchStartX = 0;
+    let isTouching = false;
+    
+    document.addEventListener('touchstart', function(e) {
+        const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+        if(scrollTop === 0 && !isRefreshing) {
+            touchStartY = e.touches[0].pageY;
+            touchStartX = e.touches[0].pageX;
+            isTouching = true;
+            ptrActive = false;
+            ptrHeight = 0;
+        }
+    }, {passive: true});
+    
+    document.addEventListener('touchmove', function(e) {
+        const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+        const touchY = e.touches[0].pageY;
+        const diffY = touchY - touchStartY;
+        const diffX = Math.abs(e.touches[0].pageX - touchStartX);
+        
+        // Side swipe to open menu
+        if(diffX > 30 && Math.abs(diffY) < 30 && !isNavOpen && touchStartX < 50) {
+            openNav();
+            touchStartY = touchY;
+        }
+        
+        // Pull to refresh logic
+        if(scrollTop === 0 && diffY > 0 && !isRefreshing && diffX < 30 && isTouching) {
+            e.preventDefault();
+            ptrActive = true;
+            ptrHeight = Math.min(diffY, 70);
+            updatePTR('pull', ptrHeight);
+        }
+    }, {passive: false});
+    
+    document.addEventListener('touchend', function(e) {
+        if(ptrActive && ptrHeight > 50 && !isRefreshing) {
+            performRefresh();
+        } else if(ptrActive) {
+            updatePTR('complete');
+        }
+        isTouching = false;
+        ptrActive = false;
+        ptrHeight = 0;
+    });
+    
+    // ========== DATA FETCHING WITH CACHE ==========
+    function fetchFreshData() {
+        return new Promise((resolve, reject) => {
+            Papa.parse(SHEET1_CSV, {
+                download: true, header: true, skipEmptyLines: true,
+                complete: function(results) {
+                    if(results.data && results.data.length > 0) {
+                        rawData = results.data.filter(item => {
+                            return item && (item.name || item.Name || item.URL || item.url);
+                        });
+                        rawData = rawData.map(item => {
+                            let cat = (item.Category || item.category || "").trim();
+                            if(cat.toLowerCase() === "tv shows" || cat.toLowerCase() === "tvshow" || cat.toLowerCase() === "tv_show") {
+                                item.Category = "TV Shows";
+                                item.category = "TV Shows";
+                            }
+                            return item;
+                        });
+                    } else {
+                        rawData = [];
+                    }
+                    
+                    Papa.parse(SETTINGS_CSV, {
+                        download: true, header: true, skipEmptyLines: true,
+                        complete: function(settingsResults) {
+                            if(settingsResults.data && settingsResults.data.length > 0) {
+                                settingsData = settingsResults.data[0];
+                                applySettings();
+                                saveDataToCache(rawData, settingsData);
+                            }
+                            updateUIAfterDataLoad();
+                            resolve();
+                        },
+                        error: function(err) {
+                            console.error("Settings parse error:", err);
+                            applySettings();
+                            saveDataToCache(rawData, settingsData);
+                            updateUIAfterDataLoad();
+                            resolve();
+                        }
+                    });
+                },
+                error: function(error) {
+                    console.error("CSV Parse Error:", error);
+                    reject(error);
+                }
+            });
+        });
+    }
+    
+    function updateUIAfterDataLoad() {
+        updateSlider();
+        filterData(currentCategory, null, false);
+        
+        // Hide splash screen
+        const splash = document.getElementById('splash-screen');
+        if(splash && splash.style.display !== 'none') {
+            splash.style.opacity = '0';
+            setTimeout(() => splash.style.display = 'none', 500);
+        }
+    }
+    
+    function applySettings() {
+        if(settingsData.ratingUrl) document.getElementById('rating-link').href = settingsData.ratingUrl;
+        if(settingsData.privacyUrl) document.getElementById('privacy-link').href = settingsData.privacyUrl;
+        if(settingsData.version && parseFloat(settingsData.version) > VERSION) {
+            document.getElementById('update-overlay').style.display = 'flex';
+            document.getElementById('update-btn').onclick = () => window.location.href = settingsData.updateUrl;
+        }
+    }
+    
+    async function fetchData() {
+        const hasValidCache = loadDataFromCache();
+        
+        if(hasValidCache && rawData.length > 0) {
+            // Show cached data immediately
+            updateSlider();
+            filterData(currentCategory, null, false);
+            showCachedDataBadge();
+            
+            // Hide splash if showing
+            const splash = document.getElementById('splash-screen');
+            if(splash) {
+                splash.style.opacity = '0';
+                setTimeout(() => splash.style.display = 'none', 500);
+            }
+            
+            // Fetch fresh data in background
+            fetchFreshData().catch(console.error);
+        } else {
+            // No cache, fetch fresh
+            try {
+                await fetchFreshData();
+            } catch(e) {
+                console.error("Initial fetch error:", e);
+                const grid = document.getElementById('mainGrid');
+                showEmptyState(grid, "Failed to load data! Pull to refresh.", "fa-exclamation-triangle");
+                const splash = document.getElementById('splash-screen');
+                if(splash) {
+                    splash.style.opacity = '0';
+                    setTimeout(() => splash.style.display = 'none', 500);
+                }
+            }
+        }
+    }
+    
+    // ========== UI FUNCTIONS ==========
     function showEmptyState(grid, message, icon = 'fa-folder-open') {
+        if(!grid) return;
         grid.innerHTML = `
             <div style="grid-column: 1/-1;" class="empty-state">
                 <i class="fa ${icon}"></i>
                 <h3>${message}</h3>
-                <p>Check back later for new content!</p>
+                <p>Pull down from top to refresh</p>
             </div>
         `;
     }
-
-    function refreshData() {
-        if(isRefreshing) return;
-        isRefreshing = true;
-        showRefreshIndicator(true);
-        fetchData(true);
-    }
-
-    function showRefreshIndicator(show) {
-        const refreshIcon = document.getElementById('refresh-icon');
-        if(show) {
-            refreshIcon.style.height = '50px';
-            refreshIcon.innerHTML = '<i class="fa fa-circle-notch fa-spin"></i><span style="margin-left:8px">Refreshing...</span>';
-            setTimeout(() => {
-                if(refreshIcon.style.height !== '0') {
-                    refreshIcon.style.height = '0';
-                }
-            }, 2000);
-        } else {
-            refreshIcon.style.height = '0';
-            refreshIcon.innerHTML = '<i class="fa fa-arrow-down"></i><span style="margin-left:8px">Pull to refresh</span>';
-        }
-        isRefreshing = false;
-    }
-
-    async function fetchData(isRefresh = false) {
-        if(!isRefresh) {
-            const grid = document.getElementById('mainGrid');
-            if(grid) {
-                grid.innerHTML = `
-                    <div class="skeleton-card"></div>
-                    <div class="skeleton-card"></div>
-                    <div class="skeleton-card"></div>
-                    <div class="skeleton-card"></div>
-                    <div class="skeleton-card"></div>
-                    <div class="skeleton-card"></div>
-                `;
-            }
-        }
-        
-        Papa.parse(SHEET1_CSV, {
-            download: true, header: true, skipEmptyLines: true,
-            complete: function(results) {
-                if(results.data && results.data.length > 0) {
-                    rawData = results.data.filter(item => {
-                        return item && (item.name || item.Name || item.URL || item.url);
-                    });
-                    rawData = rawData.map(item => {
-                        let cat = (item.Category || item.category || "").trim();
-                        if(cat.toLowerCase() === "tv shows" || cat.toLowerCase() === "tvshow" || cat.toLowerCase() === "tv_show") {
-                            item.Category = "TV Shows";
-                            item.category = "TV Shows";
-                        }
-                        return item;
-                    });
-                } else {
-                    rawData = [];
-                }
-                updateSlider();
-                filterData(currentCategory, null, false);
-                fetchSettings();
-                if(isRefresh) {
-                    showRefreshIndicator(false);
-                }
-            },
-            error: function(error) {
-                console.error("CSV Parse Error:", error);
-                const grid = document.getElementById('mainGrid');
-                showEmptyState(grid, "Failed to load data!", "fa-exclamation-triangle");
-                if(isRefresh) showRefreshIndicator(false);
-                fetchSettings();
-            }
-        });
-    }
-
-    function fetchSettings() {
-        Papa.parse(SETTINGS_CSV, {
-            download: true, header: true, skipEmptyLines: true,
-            complete: function(results) {
-                if(results.data && results.data.length > 0) {
-                    settingsData = results.data[0];
-                    if(settingsData.ratingUrl) document.getElementById('rating-link').href = settingsData.ratingUrl;
-                    if(settingsData.privacyUrl) document.getElementById('privacy-link').href = settingsData.privacyUrl;
-                    if(settingsData.version && parseFloat(settingsData.version) > VERSION) {
-                        document.getElementById('update-overlay').style.display = 'flex';
-                        document.getElementById('update-btn').onclick = () => window.location.href = settingsData.updateUrl;
-                    }
-                }
-                const splash = document.getElementById('splash-screen');
-                if(splash) {
-                    splash.style.opacity = '0';
-                    setTimeout(() => splash.style.display = 'none', 500);
-                }
-            },
-            error: function(error) {
-                console.error("Settings Parse Error:", error);
-                const splash = document.getElementById('splash-screen');
-                if(splash) {
-                    splash.style.opacity = '0';
-                    setTimeout(() => splash.style.display = 'none', 500);
-                }
-            }
-        });
-    }
-
+    
     function updateSlider() {
         const sliders = rawData.filter(d => {
             const category = (d.Category || d.category || "").toLowerCase();
@@ -493,19 +684,19 @@
         });
         const mainTrack = document.getElementById('sliderTrack');
         
-        if(sliders.length > 0) {
+        if(sliders.length > 0 && mainTrack) {
             const sliderHTML = sliders.map(s => {
                 let img = s.Thumbnail || s.thumbnail || s.URL || s.url || MASTER_LOGO;
                 return `<div class="slide-item"><img src="${img}" onerror="this.src='${MASTER_LOGO}'"></div>`;
             }).join('');
-            if(mainTrack) mainTrack.innerHTML = sliderHTML;
+            mainTrack.innerHTML = sliderHTML;
             const videoBoxDisplay = document.getElementById('videoBox').style.display;
             document.getElementById('mainSlider').style.display = (currentCategory === 'All' && videoBoxDisplay !== 'block') ? 'block' : 'none';
         } else {
             document.getElementById('mainSlider').style.display = 'none';
         }
     }
-
+    
     function filterData(cat, btn, shouldClose = true) {
         currentCategory = cat;
         if(shouldClose) closeNav();
@@ -589,7 +780,7 @@
             return m;
         });
     }
-
+    
     function play(url, title, cardElement) {
         if(!url || url === '#') return;
         document.querySelectorAll('.card').forEach(c => c.classList.remove('playing'));
@@ -619,7 +810,7 @@
             vjsPlayer.play();
         }
     }
-
+    
     function stopVideo() {
         if (tsPlayer) { tsPlayer.unload(); tsPlayer.destroy(); tsPlayer = null; }
         vjsPlayer.pause();
@@ -631,7 +822,7 @@
         });
         if(currentCategory === 'All' && sliders.length > 0) document.getElementById('mainSlider').style.display = 'block';
     }
-
+    
     function search() {
         let term = document.getElementById('searchBar').value.toLowerCase().trim();
         const grid = document.getElementById('mainGrid');
@@ -662,68 +853,42 @@
             </div>`;
         }).join('');
     }
-
+    
     function shareApp(e) {
         if(e) e.preventDefault();
         const shareURL = settingsData.shareUrl || window.location.href;
         if(navigator.share) navigator.share({ title: 'Nikamma 4k', url: shareURL });
         else window.open(shareURL, '_blank');
     }
-
-    // Pull to Refresh & Side Swipe
-    let touchStartY = 0;
-    let touchStartX = 0;
     
-    document.addEventListener('touchstart', function(e) {
-        touchStartY = e.touches[0].pageY;
-        touchStartX = e.touches[0].pageX;
-        pullStartY = touchStartY;
-        pullActive = false;
-    }, {passive: true});
+    function openNav() { 
+        const sideNav = document.getElementById("mySidenav");
+        const overlay = document.getElementById("menu-overlay");
+        overlay.style.display = "block";
+        setTimeout(() => {
+            sideNav.classList.add("open");
+            overlay.classList.add("visible");
+        }, 10);
+        isNavOpen = true;
+    }
     
-    document.addEventListener('touchmove', function(e) {
-        const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
-        const touchY = e.touches[0].pageY;
-        const diffY = touchY - touchStartY;
-        const diffX = Math.abs(e.touches[0].pageX - touchStartX);
-        
-        if (diffX > 30 && Math.abs(diffY) < 30 && !isNavOpen) {
-            openNav();
-            touchStartY = touchY;
-        }
-        
-        if (scrollTop === 0 && diffY > 0 && !isRefreshing && diffX < 30) {
-            e.preventDefault();
-            pullActive = true;
-            const pullDistance = Math.min(diffY, 80);
-            const refreshIcon = document.getElementById('refresh-icon');
-            if(pullDistance > 20) {
-                refreshIcon.style.height = pullDistance + 'px';
-                if(pullDistance > 60) {
-                    refreshIcon.innerHTML = '<i class="fa fa-arrow-down"></i><span style="margin-left:8px">Release to refresh</span>';
-                } else {
-                    refreshIcon.innerHTML = '<i class="fa fa-arrow-down"></i><span style="margin-left:8px">Pull to refresh</span>';
-                }
-            }
-        }
-    }, {passive: false});
+    function closeNav() { 
+        const sideNav = document.getElementById("mySidenav");
+        const overlay = document.getElementById("menu-overlay");
+        sideNav.classList.remove("open");
+        overlay.classList.remove("visible");
+        isNavOpen = false;
+        setTimeout(() => {
+            if(!isNavOpen) overlay.style.display = "none";
+        }, 400);
+    }
     
-    document.addEventListener('touchend', function(e) {
-        const refreshIcon = document.getElementById('refresh-icon');
-        const currentHeight = parseInt(refreshIcon.style.height);
-        
-        if(pullActive && currentHeight > 60 && !isRefreshing) {
-            refreshData();
-        } else {
-            refreshIcon.style.height = '0';
-            setTimeout(() => {
-                if(refreshIcon.style.height === '0px') {
-                    refreshIcon.innerHTML = '<i class="fa fa-arrow-down"></i><span style="margin-left:8px">Pull to refresh</span>';
-                }
-            }, 100);
-        }
-        pullActive = false;
-    });
+    function toggleSearch(show) {
+        document.getElementById('header-main').style.display = show ? 'none' : 'flex';
+        document.getElementById('header-icons').style.display = show ? 'none' : 'flex';
+        document.getElementById('search-container').style.display = show ? 'flex' : 'none';
+        if(show) document.getElementById('searchBar').focus();
+    }
     
     let slideIndex = 0;
     let sliderInterval;
@@ -736,24 +901,19 @@
                 slideIndex = (slideIndex + 1) % track.children.length;
                 track.style.transform = `translateX(-${slideIndex * 100}%)`;
             }
-        }, 4000);
+        }, 5000);
     }
     
-    const sliderObserver = new MutationObserver(function() {
+    // Initialize
+    fetchData();
+    
+    // Start slider when available
+    setInterval(() => {
         const track = document.getElementById('sliderTrack');
-        if(track && track.children.length > 0) {
+        if(track && track.children.length > 0 && !sliderInterval) {
             startSlider();
         }
-    });
-    
-    if(document.getElementById('sliderTrack')) {
-        sliderObserver.observe(document.getElementById('sliderTrack'), { childList: true, subtree: true });
-    }
-    
-    window.onload = () => {
-        fetchData();
-        startSlider();
-    };
+    }, 1000);
 </script>
 </body>
 </html>
