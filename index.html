@@ -6,7 +6,7 @@
     <meta name="msapplication-navbutton-color" content="#121212">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Nikamma 4k v3.6 | Ultimate HD</title>
+    <title>Nikamma 4k v3.8 | Ultimate HD</title>
     
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;800&display=swap" rel="stylesheet">
     <link href="https://vjs.zencdn.net/8.10.0/video-js.css" rel="stylesheet" />
@@ -84,7 +84,14 @@
         
         .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; padding: 10px; }
         .card { background: var(--card-bg); border-radius: 10px; overflow: hidden; border: 1px solid #282828; cursor: pointer; transition: 0.3s; position: relative; }
-        .card img { width: 100%; aspect-ratio: 1/1; object-fit: cover; display: block; }
+        .card img { 
+            width: 100%; 
+            aspect-ratio: 1/1; 
+            object-fit: cover; 
+            display: block;
+            background: var(--card-bg);
+            transition: filter 0.4s ease-out, opacity 0.3s ease;
+        }
         .card-title { 
             font-size: 11px; 
             padding: 6px 3px; 
@@ -178,7 +185,7 @@
         }
         #menu-overlay.visible { display: block; opacity: 1; }
 
-        /* Professional Pull to Refresh Styles - Fixed Loader */
+        /* Professional Pull to Refresh Styles - Fixed No Blue Line */
         .ptr-container {
             position: fixed;
             top: 0;
@@ -187,12 +194,12 @@
             z-index: 999;
             height: 0;
             overflow: hidden;
-            transition: height 0.25s ease-out;
-            background: linear-gradient(135deg, var(--main-color) 0%, #008c9e 100%);
+            transition: height 0.3s cubic-bezier(0.2, 0.9, 0.4, 1.1);
+            background: linear-gradient(135deg, #00bcd4 0%, #0097a7 100%);
             display: flex;
             align-items: center;
             justify-content: center;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
         }
         
         .ptr-content {
@@ -238,7 +245,13 @@
         .slider { width: 100%; height: 200px; overflow: hidden; position: relative; background: #000; margin-bottom: 5px; }
         .slides-track { display: flex; transition: 0.7s cubic-bezier(0.25, 1, 0.5, 1); height: 100%; }
         .slide-item { min-width: 100%; height: 100%; }
-        .slide-item img { width: 100%; height: 100%; object-fit: cover; }
+        .slide-item img { 
+            width: 100%; 
+            height: 100%; 
+            object-fit: cover;
+            background: #000;
+            transition: filter 0.4s ease-out;
+        }
         
         .bottom-nav { position: fixed; bottom: 0; width: 100%; background: rgba(18,18,18,0.95); display: flex; justify-content: space-around; padding: 10px 0; backdrop-filter: blur(10px); border-top: 1px solid #222; z-index: 1000; }
         .nav-btn i { font-size: 18px; margin-bottom: 2px; display: block; }
@@ -298,6 +311,23 @@
         .no-update-badge.show {
             opacity: 1;
         }
+        
+        /* Image Loading States - Blur Effect for Master Logo */
+        .img-loading {
+            filter: blur(8px);
+            transform: scale(1.02);
+            transition: filter 0.5s ease-out, transform 0.3s ease;
+        }
+        
+        .img-loaded {
+            filter: blur(0);
+            transform: scale(1);
+        }
+        
+        /* Master logo placeholder style */
+        .master-logo-placeholder {
+            filter: blur(5px);
+        }
     </style>
 </head>
 <body id="swipe-area">
@@ -308,15 +338,42 @@
     const STORAGE_KEY_DATA = 'nikamma_cached_data';
     const STORAGE_KEY_HASH = 'nikamma_data_hash';
     const CACHE_DURATION = 30 * 60 * 1000;
+    
+    // Advanced image handler with master logo blur effect
+    function handleImageError(imgElement) {
+        if(imgElement && imgElement.src !== MASTER_LOGO) {
+            imgElement.src = MASTER_LOGO;
+            imgElement.classList.add('img-loading');
+            imgElement.onerror = null;
+        }
+    }
+    
+    function handleImageLoad(imgElement) {
+        if(imgElement) {
+            // Remove blur and show actual image
+            imgElement.classList.remove('img-loading');
+            imgElement.classList.add('img-loaded');
+            // If it's master logo, keep it, otherwise replace
+            if(imgElement.src === MASTER_LOGO) {
+                // Keep master logo but remove blur
+                imgElement.classList.remove('img-loading');
+            }
+        }
+    }
+    
+    // Pre-load master logo in memory
+    const masterLogoImg = new Image();
+    masterLogoImg.src = MASTER_LOGO;
 </script>
 
 <div id="splash-screen">
-    <img id="splash-logo-img" src="" class="splash-logo">
+    <img id="splash-logo-img" src="" class="splash-logo" onerror="this.src=MASTER_LOGO">
     <script>document.getElementById('splash-logo-img').src = MASTER_LOGO;</script>
     <h2>Nikamma 4k</h2>
-    <i class="fa fa-circle-notch fa-spin splash-loader"></i>
+    <div class="splash-loader"><i class="fa fa-circle-notch fa-spin"></i> Loading...</div>
 </div>
 
+<!-- Professional Pull to Refresh - No Blue Line, Proper Gradient -->
 <div id="ptr-container" class="ptr-container">
     <div class="ptr-content">
         <div id="ptr-icon">
@@ -412,7 +469,7 @@
     const SHEET1_CSV = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQD2lHL-u6zHPZKdYIVD4eXp98XipkVP4jKfxLDoNje9DeZ1726o0zFZf-gAR2kZj0ls7VhceXbbKih/pub?gid=0&single=true&output=csv';
     const SETTINGS_CSV = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQD2lHL-u6zHPZKdYIVD4eXp98XipkVP4jKfxLDoNje9DeZ1726o0zFZf-gAR2kZj0ls7VhceXbbKih/pub?gid=1123743396&single=true&output=csv';
     
-    const VERSION = 3.6;
+    const VERSION = 3.8;
     let rawData = [];
     let settingsData = {};
     let currentCategory = 'All';
@@ -439,10 +496,8 @@
     
     function isDataSame(newData, oldData) {
         if(newData.length !== oldData.length) return false;
-        
         const newHash = generateDataHash(newData);
         const oldHash = generateDataHash(oldData);
-        
         return newHash === oldHash;
     }
     
@@ -501,7 +556,7 @@
         }, 2000);
     }
     
-    // ========== PROFESSIONAL PULL TO REFRESH WITH FIXED LOADER ==========
+    // ========== PROFESSIONAL PULL TO REFRESH ==========
     let ptrStartY = 0;
     let ptrActive = false;
     let ptrHeight = 0;
@@ -524,7 +579,6 @@
         } else if(status === 'release') {
             ptrContainer.style.height = '70px';
             ptrText.innerText = 'Refreshing...';
-            // Fixed Loader - Circle with spin animation
             ptrIcon.innerHTML = '<div class="ptr-loader"></div>';
         } else if(status === 'complete') {
             ptrContainer.style.height = '0px';
@@ -639,21 +693,17 @@
                                 newSettings = settingsResults.data[0];
                             }
                             
-                            // CHECK IF DATA IS SAME
                             const isSame = isDataSame(newRawData, rawData);
                             
                             if(!isSame && newRawData.length > 0) {
-                                // Data is different - UPDATE EVERYTHING
                                 rawData = newRawData;
                                 settingsData = newSettings;
                                 applySettings();
                                 saveDataToCache(rawData, settingsData);
                                 updateUIAfterDataLoad();
-                                resolve(true); // true means data was updated
+                                resolve(true);
                             } else {
-                                // Data is same - NO UPDATE NEEDED
                                 if(rawData.length === 0 && newRawData.length > 0) {
-                                    // First time loading
                                     rawData = newRawData;
                                     settingsData = newSettings;
                                     applySettings();
@@ -661,9 +711,8 @@
                                     updateUIAfterDataLoad();
                                     resolve(true);
                                 } else {
-                                    // Update timestamp only
                                     saveDataToCache(rawData, settingsData);
-                                    resolve(false); // false means no update needed
+                                    resolve(false);
                                 }
                             }
                         },
@@ -723,7 +772,6 @@
                 setTimeout(() => splash.style.display = 'none', 500);
             }
             
-            // Background fetch - only updates if data is different
             fetchFreshData().then(updated => {
                 if(updated) {
                     console.log("Data was updated from server");
@@ -737,7 +785,7 @@
             } catch(e) {
                 console.error("Initial fetch error:", e);
                 const grid = document.getElementById('mainGrid');
-                showEmptyState(grid, "Failed to load data! Pull to refresh.", "fa-exclamation-triangle");
+                showEmptyState(grid, "Network Error! Pull to refresh.", "fa-wifi");
                 const splash = document.getElementById('splash-screen');
                 if(splash) {
                     splash.style.opacity = '0';
@@ -769,7 +817,7 @@
         if(sliders.length > 0 && mainTrack) {
             const sliderHTML = sliders.map(s => {
                 let img = s.Thumbnail || s.thumbnail || s.URL || s.url || MASTER_LOGO;
-                return `<div class="slide-item"><img src="${img}" onerror="this.src='${MASTER_LOGO}'"></div>`;
+                return `<div class="slide-item"><img src="${img}" loading="lazy" onerror="handleImageError(this)" onload="handleImageLoad(this)" class="img-loading"></div>`;
             }).join('');
             mainTrack.innerHTML = sliderHTML;
             const videoBoxDisplay = document.getElementById('videoBox').style.display;
@@ -847,7 +895,7 @@
             });
             return `
             <div class="card" data-url="${escapeHtml(url)}" data-title="${escapeHtml(itemName)}" onclick="play('${escapeHtml(url)}', '${escapeHtml(itemName)}', this)">
-                <img src="${thumb}" loading="lazy" onerror="this.src='${MASTER_LOGO}'">
+                <img src="${thumb}" loading="lazy" onerror="handleImageError(this)" onload="handleImageLoad(this)" class="img-loading">
                 <div class="card-title">${itemName}</div>
             </div>
         `}).join('');
@@ -930,7 +978,7 @@
             let itemName = item.name || item.Name || "Untitled";
             let url = item.URL || item.url || "#";
             return `<div class="card" onclick="play('${url.replace(/'/g, "\\'")}', '${itemName.replace(/'/g, "\\'")}', this)">
-                <img src="${thumb}" loading="lazy" onerror="this.src='${MASTER_LOGO}'">
+                <img src="${thumb}" loading="lazy" onerror="handleImageError(this)" onload="handleImageLoad(this)" class="img-loading">
                 <div class="card-title">${itemName}</div>
             </div>`;
         }).join('');
