@@ -6,7 +6,7 @@
     <meta name="msapplication-navbutton-color" content="#121212">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Nikamma 4k v3.5 | Ultimate HD</title>
+    <title>Nikamma 4k v3.6 | Ultimate HD</title>
     
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;800&display=swap" rel="stylesheet">
     <link href="https://vjs.zencdn.net/8.10.0/video-js.css" rel="stylesheet" />
@@ -35,7 +35,6 @@
         }
         .container { max-width: var(--max-width); margin: 0 auto; width: 100%; }
         
-        /* Splash Screen */
         #splash-screen {
             position: fixed; top:0; left:0; width:100%; height:100%;
             background: var(--splash-bg); z-index: 9999;
@@ -179,7 +178,7 @@
         }
         #menu-overlay.visible { display: block; opacity: 1; }
 
-        /* Professional Pull to Refresh Styles */
+        /* Professional Pull to Refresh Styles - Fixed Loader */
         .ptr-container {
             position: fixed;
             top: 0;
@@ -188,7 +187,7 @@
             z-index: 999;
             height: 0;
             overflow: hidden;
-            transition: height 0.3s cubic-bezier(0.2, 0.9, 0.4, 1.1);
+            transition: height 0.25s ease-out;
             background: linear-gradient(135deg, var(--main-color) 0%, #008c9e 100%);
             display: flex;
             align-items: center;
@@ -209,30 +208,24 @@
         }
         
         .ptr-content i {
-            font-size: 20px;
-            transition: transform 0.3s ease;
+            font-size: 22px;
         }
         
-        .ptr-content .fa-spin {
-            animation: fa-spin 1s infinite linear;
-        }
-        
-        @keyframes fa-spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-        
+        /* Fixed Loader Animation */
         .ptr-loader {
             width: 24px;
             height: 24px;
-            border: 2px solid rgba(255,255,255,0.3);
-            border-top-color: white;
+            border: 3px solid rgba(255,255,255,0.4);
+            border-top: 3px solid white;
+            border-right: 3px solid white;
             border-radius: 50%;
-            animation: ptr-spin 0.8s linear infinite;
+            animation: ptrSpin 0.6s linear infinite;
+            display: inline-block;
         }
         
-        @keyframes ptr-spin {
-            to { transform: rotate(360deg); }
+        @keyframes ptrSpin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
         }
         
         .header-content { display: flex; width: 100%; max-width: var(--max-width); margin: 0 auto; align-items: center; justify-content: space-between; }
@@ -266,7 +259,6 @@
             100% { background-position: -200% 0; }
         }
         
-        /* Data save indicator */
         .data-save-badge {
             position: fixed;
             bottom: 70px;
@@ -286,6 +278,26 @@
         .data-save-badge.show {
             opacity: 1;
         }
+        
+        .no-update-badge {
+            position: fixed;
+            bottom: 70px;
+            left: 10px;
+            background: rgba(76, 175, 80, 0.9);
+            color: white;
+            padding: 5px 10px;
+            border-radius: 20px;
+            font-size: 10px;
+            font-weight: 600;
+            z-index: 999;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            pointer-events: none;
+        }
+        
+        .no-update-badge.show {
+            opacity: 1;
+        }
     </style>
 </head>
 <body id="swipe-area">
@@ -294,9 +306,8 @@
     const MASTER_LOGO = 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTf7ax2YDbvMh3IxQPzSyY1YIewn8Q_1bDgR04kRJT5-A&s=10';
     const NAV_HEADER_IMAGE = 'https://drive.google.com/thumbnail?id=1DXQpAofda-bZPS20Q-bqo6neUDznYqW9&sz=w1000';
     const STORAGE_KEY_DATA = 'nikamma_cached_data';
-    const STORAGE_KEY_SETTINGS = 'nikamma_cached_settings';
-    const STORAGE_KEY_TIMESTAMP = 'nikamma_cache_timestamp';
-    const CACHE_DURATION = 30 * 60 * 1000; // 30 minutes cache
+    const STORAGE_KEY_HASH = 'nikamma_data_hash';
+    const CACHE_DURATION = 30 * 60 * 1000;
 </script>
 
 <div id="splash-screen">
@@ -306,7 +317,6 @@
     <i class="fa fa-circle-notch fa-spin splash-loader"></i>
 </div>
 
-<!-- Professional Pull to Refresh Container -->
 <div id="ptr-container" class="ptr-container">
     <div class="ptr-content">
         <div id="ptr-icon">
@@ -394,11 +404,15 @@
     <i class="fa fa-database"></i> Using cached data
 </div>
 
+<div id="no-update-badge" class="no-update-badge">
+    <i class="fa fa-check-circle"></i> Data is up to date
+</div>
+
 <script>
     const SHEET1_CSV = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQD2lHL-u6zHPZKdYIVD4eXp98XipkVP4jKfxLDoNje9DeZ1726o0zFZf-gAR2kZj0ls7VhceXbbKih/pub?gid=0&single=true&output=csv';
     const SETTINGS_CSV = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQD2lHL-u6zHPZKdYIVD4eXp98XipkVP4jKfxLDoNje9DeZ1726o0zFZf-gAR2kZj0ls7VhceXbbKih/pub?gid=1123743396&single=true&output=csv';
     
-    const VERSION = 3.5;
+    const VERSION = 3.6;
     let rawData = [];
     let settingsData = {};
     let currentCategory = 'All';
@@ -406,19 +420,45 @@
     let tsPlayer = null;
     let isNavOpen = false;
     let isRefreshing = false;
-    let ptrStartY = 0;
-    let ptrActive = false;
-    let ptrHeight = 0;
+    let currentDataHash = '';
 
+    // ========== HASH GENERATION FOR DATA COMPARE ==========
+    function generateDataHash(data) {
+        try {
+            const importantFields = data.map(item => ({
+                name: item.name || item.Name || '',
+                url: item.URL || item.url || '',
+                category: item.Category || item.category || '',
+                thumbnail: item.Thumbnail || item.thumbnail || ''
+            }));
+            return btoa(unescape(encodeURIComponent(JSON.stringify(importantFields))));
+        } catch(e) {
+            return Date.now().toString();
+        }
+    }
+    
+    function isDataSame(newData, oldData) {
+        if(newData.length !== oldData.length) return false;
+        
+        const newHash = generateDataHash(newData);
+        const oldHash = generateDataHash(oldData);
+        
+        return newHash === oldHash;
+    }
+    
     // ========== CACHE MANAGEMENT ==========
     function saveDataToCache(data, settings) {
         try {
+            const dataHash = generateDataHash(data);
+            currentDataHash = dataHash;
             const cacheData = {
                 rawData: data,
                 settingsData: settings,
-                timestamp: Date.now()
+                timestamp: Date.now(),
+                dataHash: dataHash
             };
             localStorage.setItem(STORAGE_KEY_DATA, JSON.stringify(cacheData));
+            localStorage.setItem(STORAGE_KEY_HASH, dataHash);
         } catch(e) {
             console.error('Cache save error:', e);
         }
@@ -429,15 +469,14 @@
             const cached = localStorage.getItem(STORAGE_KEY_DATA);
             if(cached) {
                 const cacheData = JSON.parse(cached);
-                const isExpired = (Date.now() - cacheData.timestamp) > CACHE_DURATION;
-                
                 if(cacheData.rawData && cacheData.rawData.length > 0) {
                     rawData = cacheData.rawData;
+                    currentDataHash = cacheData.dataHash || '';
                     if(cacheData.settingsData) {
                         settingsData = cacheData.settingsData;
                         applySettings();
                     }
-                    return !isExpired;
+                    return true;
                 }
             }
         } catch(e) {
@@ -454,7 +493,19 @@
         }, 2000);
     }
     
-    // ========== PROFESSIONAL PULL TO REFRESH ==========
+    function showNoUpdateBadge() {
+        const badge = document.getElementById('no-update-badge');
+        badge.classList.add('show');
+        setTimeout(() => {
+            badge.classList.remove('show');
+        }, 2000);
+    }
+    
+    // ========== PROFESSIONAL PULL TO REFRESH WITH FIXED LOADER ==========
+    let ptrStartY = 0;
+    let ptrActive = false;
+    let ptrHeight = 0;
+    
     function updatePTR(status, pullDistance = 0) {
         const ptrContainer = document.getElementById('ptr-container');
         const ptrText = document.getElementById('ptr-text');
@@ -465,24 +516,22 @@
             ptrContainer.style.height = height + 'px';
             if(pullDistance > 50) {
                 ptrText.innerText = 'Release to refresh';
-                ptrIcon.innerHTML = '<i class="fa fa-refresh"></i>';
+                ptrIcon.innerHTML = '<i class="fa fa-refresh" style="font-size:20px"></i>';
             } else {
                 ptrText.innerText = 'Pull to refresh';
-                ptrIcon.innerHTML = '<i class="fa fa-arrow-down"></i>';
+                ptrIcon.innerHTML = '<i class="fa fa-arrow-down" style="font-size:20px"></i>';
             }
         } else if(status === 'release') {
             ptrContainer.style.height = '70px';
             ptrText.innerText = 'Refreshing...';
+            // Fixed Loader - Circle with spin animation
             ptrIcon.innerHTML = '<div class="ptr-loader"></div>';
         } else if(status === 'complete') {
             ptrContainer.style.height = '0px';
-            ptrText.innerText = 'Pull to refresh';
-            ptrIcon.innerHTML = '<i class="fa fa-arrow-down"></i>';
             setTimeout(() => {
-                if(ptrContainer.style.height === '0px') {
-                    ptrContainer.style.height = '0';
-                }
-            }, 300);
+                ptrText.innerText = 'Pull to refresh';
+                ptrIcon.innerHTML = '<i class="fa fa-arrow-down" style="font-size:20px"></i>';
+            }, 200);
         }
     }
     
@@ -492,9 +541,13 @@
         updatePTR('release');
         
         try {
-            await fetchFreshData();
+            const hasUpdates = await fetchFreshData();
             updatePTR('complete');
-            showCachedDataBadge();
+            if(hasUpdates) {
+                showCachedDataBadge();
+            } else {
+                showNoUpdateBadge();
+            }
         } catch(e) {
             console.error('Refresh error:', e);
             updatePTR('complete');
@@ -533,13 +586,11 @@
         const diffY = touchY - touchStartY;
         const diffX = Math.abs(e.touches[0].pageX - touchStartX);
         
-        // Side swipe to open menu
         if(diffX > 30 && Math.abs(diffY) < 30 && !isNavOpen && touchStartX < 50) {
             openNav();
             touchStartY = touchY;
         }
         
-        // Pull to refresh logic
         if(scrollTop === 0 && diffY > 0 && !isRefreshing && diffX < 30 && isTouching) {
             e.preventDefault();
             ptrActive = true;
@@ -559,17 +610,18 @@
         ptrHeight = 0;
     });
     
-    // ========== DATA FETCHING WITH CACHE ==========
+    // ========== DATA FETCHING WITH COMPARE ==========
     function fetchFreshData() {
         return new Promise((resolve, reject) => {
             Papa.parse(SHEET1_CSV, {
                 download: true, header: true, skipEmptyLines: true,
                 complete: function(results) {
+                    let newRawData = [];
                     if(results.data && results.data.length > 0) {
-                        rawData = results.data.filter(item => {
+                        newRawData = results.data.filter(item => {
                             return item && (item.name || item.Name || item.URL || item.url);
                         });
-                        rawData = rawData.map(item => {
+                        newRawData = newRawData.map(item => {
                             let cat = (item.Category || item.category || "").trim();
                             if(cat.toLowerCase() === "tv shows" || cat.toLowerCase() === "tvshow" || cat.toLowerCase() === "tv_show") {
                                 item.Category = "TV Shows";
@@ -577,27 +629,55 @@
                             }
                             return item;
                         });
-                    } else {
-                        rawData = [];
                     }
                     
                     Papa.parse(SETTINGS_CSV, {
                         download: true, header: true, skipEmptyLines: true,
                         complete: function(settingsResults) {
+                            let newSettings = {};
                             if(settingsResults.data && settingsResults.data.length > 0) {
-                                settingsData = settingsResults.data[0];
+                                newSettings = settingsResults.data[0];
+                            }
+                            
+                            // CHECK IF DATA IS SAME
+                            const isSame = isDataSame(newRawData, rawData);
+                            
+                            if(!isSame && newRawData.length > 0) {
+                                // Data is different - UPDATE EVERYTHING
+                                rawData = newRawData;
+                                settingsData = newSettings;
                                 applySettings();
                                 saveDataToCache(rawData, settingsData);
+                                updateUIAfterDataLoad();
+                                resolve(true); // true means data was updated
+                            } else {
+                                // Data is same - NO UPDATE NEEDED
+                                if(rawData.length === 0 && newRawData.length > 0) {
+                                    // First time loading
+                                    rawData = newRawData;
+                                    settingsData = newSettings;
+                                    applySettings();
+                                    saveDataToCache(rawData, settingsData);
+                                    updateUIAfterDataLoad();
+                                    resolve(true);
+                                } else {
+                                    // Update timestamp only
+                                    saveDataToCache(rawData, settingsData);
+                                    resolve(false); // false means no update needed
+                                }
                             }
-                            updateUIAfterDataLoad();
-                            resolve();
                         },
                         error: function(err) {
                             console.error("Settings parse error:", err);
-                            applySettings();
-                            saveDataToCache(rawData, settingsData);
-                            updateUIAfterDataLoad();
-                            resolve();
+                            const isSame = isDataSame(newRawData, rawData);
+                            if(!isSame && newRawData.length > 0) {
+                                rawData = newRawData;
+                                saveDataToCache(rawData, settingsData);
+                                updateUIAfterDataLoad();
+                                resolve(true);
+                            } else {
+                                resolve(false);
+                            }
                         }
                     });
                 },
@@ -613,7 +693,6 @@
         updateSlider();
         filterData(currentCategory, null, false);
         
-        // Hide splash screen
         const splash = document.getElementById('splash-screen');
         if(splash && splash.style.display !== 'none') {
             splash.style.opacity = '0';
@@ -631,25 +710,28 @@
     }
     
     async function fetchData() {
-        const hasValidCache = loadDataFromCache();
+        const hasCache = loadDataFromCache();
         
-        if(hasValidCache && rawData.length > 0) {
-            // Show cached data immediately
+        if(hasCache && rawData.length > 0) {
             updateSlider();
             filterData(currentCategory, null, false);
             showCachedDataBadge();
             
-            // Hide splash if showing
             const splash = document.getElementById('splash-screen');
             if(splash) {
                 splash.style.opacity = '0';
                 setTimeout(() => splash.style.display = 'none', 500);
             }
             
-            // Fetch fresh data in background
-            fetchFreshData().catch(console.error);
+            // Background fetch - only updates if data is different
+            fetchFreshData().then(updated => {
+                if(updated) {
+                    console.log("Data was updated from server");
+                } else {
+                    console.log("Data is same as cache, no update needed");
+                }
+            }).catch(console.error);
         } else {
-            // No cache, fetch fresh
             try {
                 await fetchFreshData();
             } catch(e) {
@@ -904,10 +986,8 @@
         }, 5000);
     }
     
-    // Initialize
     fetchData();
     
-    // Start slider when available
     setInterval(() => {
         const track = document.getElementById('sliderTrack');
         if(track && track.children.length > 0 && !sliderInterval) {
