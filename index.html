@@ -338,6 +338,10 @@
     const STORAGE_KEY_DATA = 'nikamma_cached_data';
     const STORAGE_KEY_HASH = 'nikamma_data_hash';
     const CACHE_DURATION = 30 * 60 * 1000;
+    const SPLASH_SEEN_KEY = 'nikamma_splash_seen';
+    
+    // Check if splash screen has been shown before
+    const hasSeenSplash = localStorage.getItem(SPLASH_SEEN_KEY) === 'true';
     
     // Advanced image handler with master logo blur effect
     function handleImageError(imgElement) {
@@ -353,7 +357,7 @@
             // Remove blur and show actual image
             imgElement.classList.remove('img-loading');
             imgElement.classList.add('img-loaded');
-            // If it's master logo, keep it, otherwise replace
+            // If it's master logo, keep it, but remove blur
             if(imgElement.src === MASTER_LOGO) {
                 // Keep master logo but remove blur
                 imgElement.classList.remove('img-loading');
@@ -364,9 +368,26 @@
     // Pre-load master logo in memory
     const masterLogoImg = new Image();
     masterLogoImg.src = MASTER_LOGO;
+    
+    // Function to hide splash screen immediately if not first load
+    function hideSplashImmediately() {
+        const splash = document.getElementById('splash-screen');
+        if(splash) {
+            splash.style.display = 'none';
+        }
+    }
+    
+    // Function to show splash with animation (only first time)
+    function showSplashWithAnimation() {
+        const splash = document.getElementById('splash-screen');
+        if(splash) {
+            splash.style.display = 'flex';
+            splash.style.opacity = '1';
+        }
+    }
 </script>
 
-<div id="splash-screen">
+<div id="splash-screen" style="display: none;">
     <img id="splash-logo-img" src="" class="splash-logo" onerror="this.src=MASTER_LOGO">
     <script>document.getElementById('splash-logo-img').src = MASTER_LOGO;</script>
     <h2>Nikamma 4k</h2>
@@ -742,6 +763,7 @@
         updateSlider();
         filterData(currentCategory, null, false);
         
+        // Hide splash screen after data loads (only if it was shown)
         const splash = document.getElementById('splash-screen');
         if(splash && splash.style.display !== 'none') {
             splash.style.opacity = '0';
@@ -761,25 +783,12 @@
     async function fetchData() {
         const hasCache = loadDataFromCache();
         
-        if(hasCache && rawData.length > 0) {
-            updateSlider();
-            filterData(currentCategory, null, false);
-            showCachedDataBadge();
+        // FIRST LOAD: No cache exists, show splash screen
+        if(!hasCache || rawData.length === 0) {
+            // First time loading - show splash screen
+            showSplashWithAnimation();
+            localStorage.setItem(SPLASH_SEEN_KEY, 'true');
             
-            const splash = document.getElementById('splash-screen');
-            if(splash) {
-                splash.style.opacity = '0';
-                setTimeout(() => splash.style.display = 'none', 500);
-            }
-            
-            fetchFreshData().then(updated => {
-                if(updated) {
-                    console.log("Data was updated from server");
-                } else {
-                    console.log("Data is same as cache, no update needed");
-                }
-            }).catch(console.error);
-        } else {
             try {
                 await fetchFreshData();
             } catch(e) {
@@ -792,6 +801,25 @@
                     setTimeout(() => splash.style.display = 'none', 500);
                 }
             }
+        } 
+        // SUBSEQUENT LOADS: Cache exists, hide splash immediately and load cached data
+        else {
+            // Hide splash screen immediately (no animation for subsequent loads)
+            hideSplashImmediately();
+            
+            // Load cached data immediately
+            updateSlider();
+            filterData(currentCategory, null, false);
+            showCachedDataBadge();
+            
+            // Fetch fresh data in background
+            fetchFreshData().then(updated => {
+                if(updated) {
+                    console.log("Data was updated from server");
+                } else {
+                    console.log("Data is same as cache, no update needed");
+                }
+            }).catch(console.error);
         }
     }
     
@@ -1034,6 +1062,7 @@
         }, 5000);
     }
     
+    // Initialize the app
     fetchData();
     
     setInterval(() => {
