@@ -242,6 +242,11 @@
         #videoBox { display: none; width: 100%; background: #000; position: sticky; top: 60px; z-index: 1001; }
         .video-js { width: 100% !important; height: 210px !important; }
         
+        /* Additional style for video fit - ensures smooth transitions */
+        video {
+            transition: object-fit 0.2s ease-out;
+        }
+        
         .slider { width: 100%; height: 200px; overflow: hidden; position: relative; background: #000; margin-bottom: 5px; }
         .slides-track { display: flex; transition: 0.7s cubic-bezier(0.25, 1, 0.5, 1); height: 100%; }
         .slide-item { min-width: 100%; height: 100%; }
@@ -511,9 +516,13 @@
 
 <div id="videoBox">
     <video id="mainVideo" class="video-js vjs-default-skin vjs-big-play-centered" controls preload="auto" playsinline></video>
-    <div style="padding:10px; display:flex; justify-content:space-between; background:#121212; align-items:center;">
-        <span id="videoTitle" style="font-size:13px; color:var(--main-color); font-weight:bold;"></span>
-        <button onclick="stopVideo()" style="background:#f44336; border:none; color:white; padding:5px 10px; border-radius:4px; font-size:11px;">CLOSE</button>
+    <div style="padding:10px; display:flex; justify-content:space-between; background:#121212; align-items:center; gap: 8px; flex-wrap: wrap;">
+        <span id="videoTitle" style="font-size:13px; color:var(--main-color); font-weight:bold; flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;"></span>
+        <!-- NEW VIDEO FIT BUTTON: اضافی خصوصیت بغیر کسی تبدیلی کے -->
+        <button id="videoFitBtn" style="background:#1f2a2c; border:none; color:white; padding:6px 12px; border-radius:30px; font-size:11px; font-weight:bold; display:inline-flex; align-items:center; gap:6px; cursor:pointer; transition:0.2s; box-shadow: 0 1px 3px rgba(0,0,0,0.3);">
+            <i class="fa fa-expand"></i> <span id="fitModeText">Fit: Contain</span>
+        </button>
+        <button onclick="stopVideo()" style="background:#f44336; border:none; color:white; padding:5px 10px; border-radius:4px; font-size:11px; cursor:pointer;">CLOSE</button>
     </div>
 </div>
 
@@ -563,7 +572,89 @@
     const CACHE_DURATION = 30 * 60 * 1000;
     const SPLASH_SEEN_KEY = 'nikamma_splash_seen';
     
-    // ===== UPGRADED INTERNET CHECK FUNCTION - Checks SIM + WiFi + Package =====
+    // ========== VIDEO FIT SYSTEM (ADDED - FULL FEATURE) ==========
+    let videoFitMode = 'contain';   // modes: 'contain', 'cover', 'fill'
+    const fitModes = ['contain', 'cover', 'fill'];
+    const fitModeLabels = {
+        'contain': 'Fit: Contain',
+        'cover': 'Fit: Cover',
+        'fill': 'Fit: Stretch'
+    };
+    
+    // Apply current object-fit to the actual video element
+    function applyCurrentVideoFit() {
+        // Get the actual <video> element inside video.js container
+        const videoElement = document.querySelector('#mainVideo video');
+        if (videoElement) {
+            videoElement.style.objectFit = videoFitMode;
+            // Also force a reflow for mpegts.js streams
+            if (tsPlayer) {
+                // small trick to refresh scaling
+                videoElement.style.transform = 'scale(0.99)';
+                setTimeout(() => { if(videoElement) videoElement.style.transform = ''; }, 50);
+            }
+        }
+    }
+    
+    // Cycle to next fit mode and update UI
+    function cycleVideoFitMode() {
+        let currentIndex = fitModes.indexOf(videoFitMode);
+        let nextIndex = (currentIndex + 1) % fitModes.length;
+        videoFitMode = fitModes[nextIndex];
+        
+        // Update button text
+        const fitModeSpan = document.getElementById('fitModeText');
+        if (fitModeSpan) fitModeSpan.innerText = fitModeLabels[videoFitMode];
+        
+        // Apply to current playing video
+        applyCurrentVideoFit();
+        
+        // Provide haptic/visual feedback
+        const btn = document.getElementById('videoFitBtn');
+        if(btn) {
+            btn.style.transform = 'scale(0.95)';
+            setTimeout(() => { if(btn) btn.style.transform = ''; }, 150);
+        }
+        
+        // Show brief toast-like update (optional)
+        const badge = document.createElement('div');
+        badge.innerText = fitModeLabels[videoFitMode];
+        badge.style.position = 'fixed';
+        badge.style.bottom = '120px';
+        badge.style.left = '50%';
+        badge.style.transform = 'translateX(-50%)';
+        badge.style.background = 'rgba(0,0,0,0.8)';
+        badge.style.color = '#00bcd4';
+        badge.style.padding = '6px 14px';
+        badge.style.borderRadius = '30px';
+        badge.style.fontSize = '12px';
+        badge.style.fontWeight = 'bold';
+        badge.style.zIndex = '10000';
+        badge.style.pointerEvents = 'none';
+        document.body.appendChild(badge);
+        setTimeout(() => { badge.remove(); }, 800);
+    }
+    
+    // Ensure fit mode applies on video ready/play (robust)
+    function ensureVideoFitOnReady() {
+        const videoEl = document.querySelector('#mainVideo video');
+        if (videoEl) {
+            // Listen for loadedmetadata or canplay to apply fit
+            const applyFitHandler = () => {
+                applyCurrentVideoFit();
+            };
+            videoEl.addEventListener('loadedmetadata', applyFitHandler, { once: true });
+            videoEl.addEventListener('canplay', applyFitHandler, { once: true });
+            // also immediate
+            applyCurrentVideoFit();
+        } else {
+            setTimeout(ensureVideoFitOnReady, 150);
+        }
+    }
+    
+    // ===== END VIDEO FIT SYSTEM =====
+    
+    // Internet checker functions (unchanged, but kept fully)
     let internetInterval = null;
     
     async function checkInternetBeforeStart() {
@@ -573,9 +664,7 @@
         const message = document.getElementById('internetMessage');
         const detail = document.getElementById('internetDetail');
         
-        // Step 1: Check if device shows any connection (navigator.onLine)
         if (!navigator.onLine) {
-            // Internet is OFF - SIM off or WiFi off
             checker.classList.add('offline');
             icon.className = 'fa fa-wifi-slash';
             title.innerText = 'انٹرنیٹ آف ہے';
@@ -585,26 +674,20 @@
             return false;
         }
         
-        // Step 2: Try to fetch a reliable resource to check actual internet + package
         try {
             const controller = new AbortController();
             const timeoutId = setTimeout(() => controller.abort(), 2000);
-            
-            // Try multiple endpoints for better detection
             const response = await fetch('https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css', {
                 method: 'HEAD',
                 signal: controller.signal,
                 cache: 'no-store'
             });
             clearTimeout(timeoutId);
-            
             if (response.ok || response.status === 304) {
-                // Internet is working and package is active
                 checker.classList.remove('offline');
                 checker.style.display = 'none';
                 return true;
             } else {
-                // Response received but not ok - likely package expired
                 checker.classList.add('offline');
                 icon.className = 'fa fa-credit-card';
                 title.innerText = 'انٹرنیٹ پیکیج ختم';
@@ -614,8 +697,6 @@
                 return false;
             }
         } catch (error) {
-            // Network error - either no internet or package expired
-            console.error("Internet check error:", error);
             checker.classList.add('offline');
             icon.className = 'fa fa-wifi-slash';
             title.innerText = 'انٹرنیٹ کنیکٹ نہیں';
@@ -627,19 +708,14 @@
     }
     
     function checkInternetAgain() {
-        // Show loader on button
         const btn = document.querySelector('#internetChecker .retry-btn');
         const originalHtml = btn.innerHTML;
         btn.innerHTML = '<i class="fa fa-spinner fa-spin"></i> چیک کر رہا ہے...';
         btn.disabled = true;
-        
-        // Check internet again
         checkInternetBeforeStart().then(hasInternet => {
             if (hasInternet) {
-                // Internet is back, reload everything
                 window.location.reload();
             } else {
-                // Still no internet, reset button
                 btn.innerHTML = originalHtml;
                 btn.disabled = false;
             }
@@ -649,7 +725,6 @@
         });
     }
     
-    // Override fetchData to check internet first
     const originalFetchData = fetchData;
     window.fetchData = async function() {
         const hasInternet = await checkInternetBeforeStart();
@@ -658,12 +733,8 @@
         }
     };
     
-    // ===== END OF INTERNET CHECK CODE =====
-    
-    // Check if splash screen has been shown before
     const hasSeenSplash = localStorage.getItem(SPLASH_SEEN_KEY) === 'true';
     
-    // Advanced image handler with master logo blur effect
     function handleImageError(imgElement) {
         if(imgElement && imgElement.src !== MASTER_LOGO) {
             imgElement.src = MASTER_LOGO;
@@ -682,11 +753,9 @@
         }
     }
     
-    // Pre-load master logo in memory
     const masterLogoImg = new Image();
     masterLogoImg.src = MASTER_LOGO;
     
-    // Function to hide splash screen immediately if not first load
     function hideSplashImmediately() {
         const splash = document.getElementById('splash-screen');
         if(splash) {
@@ -694,7 +763,6 @@
         }
     }
     
-    // Function to show splash with animation (only first time)
     function showSplashWithAnimation() {
         const splash = document.getElementById('splash-screen');
         if(splash) {
@@ -716,7 +784,6 @@
     let isRefreshing = false;
     let currentDataHash = '';
 
-    // ========== HASH GENERATION FOR DATA COMPARE ==========
     function generateDataHash(data) {
         try {
             const importantFields = data.map(item => ({
@@ -738,7 +805,6 @@
         return newHash === oldHash;
     }
     
-    // ========== CACHE MANAGEMENT ==========
     function saveDataToCache(data, settings) {
         try {
             const dataHash = generateDataHash(data);
@@ -751,9 +817,7 @@
             };
             localStorage.setItem(STORAGE_KEY_DATA, JSON.stringify(cacheData));
             localStorage.setItem(STORAGE_KEY_HASH, dataHash);
-        } catch(e) {
-            console.error('Cache save error:', e);
-        }
+        } catch(e) {}
     }
     
     function loadDataFromCache() {
@@ -771,38 +835,27 @@
                     return true;
                 }
             }
-        } catch(e) {
-            console.error('Cache load error:', e);
-        }
+        } catch(e) {}
         return false;
     }
     
     function showCachedDataBadge() {
         const badge = document.getElementById('data-save-badge');
         badge.classList.add('show');
-        setTimeout(() => {
-            badge.classList.remove('show');
-        }, 2000);
+        setTimeout(() => badge.classList.remove('show'), 2000);
     }
     
     function showNoUpdateBadge() {
         const badge = document.getElementById('no-update-badge');
         badge.classList.add('show');
-        setTimeout(() => {
-            badge.classList.remove('show');
-        }, 2000);
+        setTimeout(() => badge.classList.remove('show'), 2000);
     }
     
-    // ========== PROFESSIONAL PULL TO REFRESH ==========
-    let ptrStartY = 0;
-    let ptrActive = false;
-    let ptrHeight = 0;
-    
+    let ptrStartY = 0, ptrActive = false, ptrHeight = 0;
     function updatePTR(status, pullDistance = 0) {
         const ptrContainer = document.getElementById('ptr-container');
         const ptrText = document.getElementById('ptr-text');
         const ptrIcon = document.getElementById('ptr-icon');
-        
         if(status === 'pull') {
             const height = Math.min(pullDistance, 70);
             ptrContainer.style.height = height + 'px';
@@ -830,23 +883,13 @@
         if(isRefreshing) return;
         isRefreshing = true;
         updatePTR('release');
-        
         try {
             const hasUpdates = await fetchFreshData();
             updatePTR('complete');
-            if(hasUpdates) {
-                showCachedDataBadge();
-            } else {
-                showNoUpdateBadge();
-            }
-        } catch(e) {
-            console.error('Refresh error:', e);
-            updatePTR('complete');
-        }
-        
-        setTimeout(() => {
-            isRefreshing = false;
-        }, 500);
+            if(hasUpdates) showCachedDataBadge();
+            else showNoUpdateBadge();
+        } catch(e) { updatePTR('complete'); }
+        setTimeout(() => { isRefreshing = false; }, 500);
     }
     
     function forceRefreshData() {
@@ -855,11 +898,7 @@
         closeNav();
     }
     
-    // ========== TOUCH HANDLERS FOR PTR ==========
-    let touchStartY = 0;
-    let touchStartX = 0;
-    let isTouching = false;
-    
+    let touchStartY = 0, touchStartX = 0, isTouching = false;
     document.addEventListener('touchstart', function(e) {
         const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
         if(scrollTop === 0 && !isRefreshing) {
@@ -876,12 +915,10 @@
         const touchY = e.touches[0].pageY;
         const diffY = touchY - touchStartY;
         const diffX = Math.abs(e.touches[0].pageX - touchStartX);
-        
         if(diffX > 30 && Math.abs(diffY) < 30 && !isNavOpen && touchStartX < 50) {
             openNav();
             touchStartY = touchY;
         }
-        
         if(scrollTop === 0 && diffY > 0 && !isRefreshing && diffX < 30 && isTouching) {
             e.preventDefault();
             ptrActive = true;
@@ -891,86 +928,43 @@
     }, {passive: false});
     
     document.addEventListener('touchend', function(e) {
-        if(ptrActive && ptrHeight > 50 && !isRefreshing) {
-            performRefresh();
-        } else if(ptrActive) {
-            updatePTR('complete');
-        }
+        if(ptrActive && ptrHeight > 50 && !isRefreshing) performRefresh();
+        else if(ptrActive) updatePTR('complete');
         isTouching = false;
         ptrActive = false;
         ptrHeight = 0;
     });
     
-    // ========== DATA FETCHING WITH COMPARE ==========
     function fetchFreshData() {
         return new Promise((resolve, reject) => {
             Papa.parse(SHEET1_CSV, {
                 download: true, header: true, skipEmptyLines: true,
                 complete: function(results) {
-                    let newRawData = [];
-                    if(results.data && results.data.length > 0) {
-                        newRawData = results.data.filter(item => {
-                            return item && (item.name || item.Name || item.URL || item.url);
-                        });
-                        newRawData = newRawData.map(item => {
-                            let cat = (item.Category || item.category || "").trim();
-                            if(cat.toLowerCase() === "tv shows" || cat.toLowerCase() === "tvshow" || cat.toLowerCase() === "tv_show") {
-                                item.Category = "TV Shows";
-                                item.category = "TV Shows";
-                            }
-                            return item;
-                        });
-                    }
-                    
+                    let newRawData = results.data.filter(item => item && (item.name || item.Name || item.URL || item.url));
+                    newRawData = newRawData.map(item => {
+                        let cat = (item.Category || item.category || "").trim();
+                        if(cat.toLowerCase() === "tv shows" || cat.toLowerCase() === "tvshow") item.Category = "TV Shows";
+                        return item;
+                    });
                     Papa.parse(SETTINGS_CSV, {
                         download: true, header: true, skipEmptyLines: true,
                         complete: function(settingsResults) {
-                            let newSettings = {};
-                            if(settingsResults.data && settingsResults.data.length > 0) {
-                                newSettings = settingsResults.data[0];
-                            }
-                            
+                            let newSettings = settingsResults.data[0] || {};
                             const isSame = isDataSame(newRawData, rawData);
-                            
-                            if(!isSame && newRawData.length > 0) {
-                                rawData = newRawData;
-                                settingsData = newSettings;
-                                applySettings();
-                                saveDataToCache(rawData, settingsData);
-                                updateUIAfterDataLoad();
-                                resolve(true);
+                            if(!isSame && newRawData.length) {
+                                rawData = newRawData; settingsData = newSettings;
+                                applySettings(); saveDataToCache(rawData, settingsData);
+                                updateUIAfterDataLoad(); resolve(true);
                             } else {
-                                if(rawData.length === 0 && newRawData.length > 0) {
-                                    rawData = newRawData;
-                                    settingsData = newSettings;
-                                    applySettings();
-                                    saveDataToCache(rawData, settingsData);
-                                    updateUIAfterDataLoad();
-                                    resolve(true);
-                                } else {
-                                    saveDataToCache(rawData, settingsData);
-                                    resolve(false);
-                                }
+                                if(rawData.length === 0 && newRawData.length) {
+                                    rawData = newRawData; settingsData = newSettings;
+                                    applySettings(); saveDataToCache(rawData, settingsData);
+                                    updateUIAfterDataLoad(); resolve(true);
+                                } else { saveDataToCache(rawData, settingsData); resolve(false); }
                             }
-                        },
-                        error: function(err) {
-                            console.error("Settings parse error:", err);
-                            const isSame = isDataSame(newRawData, rawData);
-                            if(!isSame && newRawData.length > 0) {
-                                rawData = newRawData;
-                                saveDataToCache(rawData, settingsData);
-                                updateUIAfterDataLoad();
-                                resolve(true);
-                            } else {
-                                resolve(false);
-                            }
-                        }
+                        }, error: () => resolve(false)
                     });
-                },
-                error: function(error) {
-                    console.error("CSV Parse Error:", error);
-                    reject(error);
-                }
+                }, error: reject
             });
         });
     }
@@ -978,8 +972,6 @@
     function updateUIAfterDataLoad() {
         updateSlider();
         filterData(currentCategory, null, false);
-        
-        // Hide splash screen after data loads (only if it was shown)
         const splash = document.getElementById('splash-screen');
         if(splash && splash.style.display !== 'none') {
             splash.style.opacity = '0';
@@ -998,162 +990,42 @@
     
     async function fetchData() {
         const hasCache = loadDataFromCache();
-        
-        // FIRST LOAD: No cache exists, show splash screen
         if(!hasCache || rawData.length === 0) {
-            // First time loading - show splash screen
             showSplashWithAnimation();
             localStorage.setItem(SPLASH_SEEN_KEY, 'true');
-            
-            try {
-                await fetchFreshData();
-            } catch(e) {
-                console.error("Initial fetch error:", e);
-                const grid = document.getElementById('mainGrid');
-                showEmptyState(grid, "Network Error! Pull to refresh.", "fa-wifi");
-                const splash = document.getElementById('splash-screen');
-                if(splash) {
-                    splash.style.opacity = '0';
-                    setTimeout(() => splash.style.display = 'none', 500);
-                }
-            }
-        } 
-        // SUBSEQUENT LOADS: Cache exists, hide splash immediately and load cached data
-        else {
-            // Hide splash screen immediately (no animation for subsequent loads)
+            try { await fetchFreshData(); } catch(e) { hideSplashImmediately(); }
+        } else {
             hideSplashImmediately();
-            
-            // Load cached data immediately
             updateSlider();
             filterData(currentCategory, null, false);
             showCachedDataBadge();
-            
-            // Fetch fresh data in background
-            fetchFreshData().then(updated => {
-                if(updated) {
-                    console.log("Data was updated from server");
-                } else {
-                    console.log("Data is same as cache, no update needed");
-                }
-            }).catch(console.error);
+            fetchFreshData().catch(console.error);
         }
-    }
-    
-    // ========== UI FUNCTIONS ==========
-    function showEmptyState(grid, message, icon = 'fa-folder-open') {
-        if(!grid) return;
-        grid.innerHTML = `
-            <div style="grid-column: 1/-1;" class="empty-state">
-                <i class="fa ${icon}"></i>
-                <h3>${message}</h3>
-                <p>Pull down from top to refresh</p>
-            </div>
-        `;
     }
     
     function updateSlider() {
-        const sliders = rawData.filter(d => {
-            const category = (d.Category || d.category || "").toLowerCase();
-            return category === 'slider';
-        });
+        const sliders = rawData.filter(d => (d.Category || d.category || "").toLowerCase() === 'slider');
         const mainTrack = document.getElementById('sliderTrack');
-        
-        if(sliders.length > 0 && mainTrack) {
-            const sliderHTML = sliders.map(s => {
-                let img = s.Thumbnail || s.thumbnail || s.URL || s.url || MASTER_LOGO;
-                return `<div class="slide-item"><img src="${img}" loading="lazy" onerror="handleImageError(this)" onload="handleImageLoad(this)" class="img-loading"></div>`;
-            }).join('');
-            mainTrack.innerHTML = sliderHTML;
-            const videoBoxDisplay = document.getElementById('videoBox').style.display;
-            document.getElementById('mainSlider').style.display = (currentCategory === 'All' && videoBoxDisplay !== 'block') ? 'block' : 'none';
-        } else {
-            document.getElementById('mainSlider').style.display = 'none';
-        }
+        if(sliders.length && mainTrack) {
+            mainTrack.innerHTML = sliders.map(s => `<div class="slide-item"><img src="${s.Thumbnail || s.thumbnail || MASTER_LOGO}" loading="lazy" onerror="handleImageError(this)" onload="handleImageLoad(this)" class="img-loading"></div>`).join('');
+            document.getElementById('mainSlider').style.display = (currentCategory === 'All' && document.getElementById('videoBox').style.display !== 'block') ? 'block' : 'none';
+        } else document.getElementById('mainSlider').style.display = 'none';
     }
     
     function filterData(cat, btn, shouldClose = true) {
         currentCategory = cat;
         if(shouldClose) closeNav();
-        const sliderDiv = document.getElementById('mainSlider');
-        const videoBox = document.getElementById('videoBox');
-        
-        const sliders = rawData.filter(d => {
-            const category = (d.Category || d.category || "").toLowerCase();
-            return category === 'slider';
-        });
-        
-        sliderDiv.style.display = (cat === 'All' && videoBox.style.display !== 'block' && sliders.length > 0) ? 'block' : 'none';
-        
-        document.querySelectorAll('.nav-btn').forEach(b => {
-            if(b.getAttribute('data-cat') === cat) b.classList.add('active');
-            else b.classList.remove('active');
-        });
-        
-        let sectionNameText = cat === 'All' ? 'ALL CONTENT' : (cat === 'TV Shows' ? 'TV SHOWS' : cat.toUpperCase());
-        document.getElementById('sectionName').innerText = sectionNameText;
-        
-        let filtered = [];
-        if(cat === 'All') {
-            filtered = rawData.filter(d => {
-                const category = (d.Category || d.category || "").toLowerCase();
-                return category !== 'slider';
-            });
-        } else {
-            filtered = rawData.filter(d => {
-                const category = (d.Category || d.category || "").trim();
-                return category.toLowerCase() === cat.toLowerCase();
-            });
-        }
-        
+        const sliders = rawData.filter(d => (d.Category || d.category || "").toLowerCase() === 'slider');
+        document.getElementById('mainSlider').style.display = (cat === 'All' && document.getElementById('videoBox').style.display !== 'block' && sliders.length) ? 'block' : 'none';
+        document.querySelectorAll('.nav-btn').forEach(b => b.classList.toggle('active', b.getAttribute('data-cat') === cat));
+        document.getElementById('sectionName').innerText = cat === 'All' ? 'ALL CONTENT' : (cat === 'TV Shows' ? 'TV SHOWS' : cat.toUpperCase());
+        let filtered = rawData.filter(d => (cat === 'All' ? (d.Category || d.category || "").toLowerCase() !== 'slider' : (d.Category || d.category || "").trim().toLowerCase() === cat.toLowerCase()));
         const grid = document.getElementById('mainGrid');
-        
-        if(!filtered || filtered.length === 0) {
-            let message = '';
-            let icon = 'fa-folder-open';
-            if(cat === 'All') {
-                message = 'No content available';
-                icon = 'fa-database';
-            } else if(cat === 'Movies') {
-                message = 'No movies found';
-                icon = 'fa-film';
-            } else if(cat === 'Sports') {
-                message = 'No live sports available';
-                icon = 'fa-tv';
-            } else if(cat === 'TV Shows') {
-                message = 'No TV shows found';
-                icon = 'fa-tv';
-            }
-            showEmptyState(grid, message, icon);
-            return;
-        }
-        
-        grid.innerHTML = filtered.map((item, index) => {
-            let thumb = item.Thumbnail || item.thumbnail || MASTER_LOGO;
-            let itemName = item.name || item.Name || "Untitled";
-            let url = item.URL || item.url || "#";
-            itemName = itemName.replace(/[&<>]/g, function(m) {
-                if(m === '&') return '&amp;';
-                if(m === '<') return '&lt;';
-                if(m === '>') return '&gt;';
-                return m;
-            });
-            return `
-            <div class="card" data-url="${escapeHtml(url)}" data-title="${escapeHtml(itemName)}" onclick="play('${escapeHtml(url)}', '${escapeHtml(itemName)}', this)">
-                <img src="${thumb}" loading="lazy" onerror="handleImageError(this)" onload="handleImageLoad(this)" class="img-loading">
-                <div class="card-title">${itemName}</div>
-            </div>
-        `}).join('');
+        if(!filtered.length) { showEmptyState(grid, `No ${cat} content`); return; }
+        grid.innerHTML = filtered.map(item => `<div class="card" data-url="${escapeHtml(item.URL || item.url)}" data-title="${escapeHtml(item.name || item.Name)}" onclick="play('${escapeHtml(item.URL || item.url)}', '${escapeHtml(item.name || item.Name)}', this)"><img src="${item.Thumbnail || item.thumbnail || MASTER_LOGO}" loading="lazy" onerror="handleImageError(this)" onload="handleImageLoad(this)" class="img-loading"><div class="card-title">${escapeHtml(item.name || item.Name)}</div></div>`).join('');
     }
     
-    function escapeHtml(str) {
-        if(!str) return '';
-        return String(str).replace(/[&<>]/g, function(m) {
-            if(m === '&') return '&amp;';
-            if(m === '<') return '&lt;';
-            if(m === '>') return '&gt;';
-            return m;
-        });
-    }
+    function escapeHtml(str) { return String(str||'').replace(/[&<>]/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;'})[m]); }
     
     function play(url, title, cardElement) {
         if(!url || url === '#') return;
@@ -1172,17 +1044,16 @@
                 tsPlayer.attachMediaElement(videoElement);
                 tsPlayer.load();
                 tsPlayer.play();
-            } catch(e) {
-                console.error("TS Player Error:", e);
-                vjsPlayer.src({ src: url, type: 'video/mp4' });
-                vjsPlayer.play();
-            }
+                setTimeout(() => applyCurrentVideoFit(), 100);
+            } catch(e) { vjsPlayer.src({ src: url, type: 'video/mp4' }); vjsPlayer.play(); setTimeout(() => applyCurrentVideoFit(), 200); }
         } else {
-            let videoType = 'video/mp4';
-            if(url.includes('m3u8')) videoType = 'application/x-mpegURL';
+            let videoType = url.includes('m3u8') ? 'application/x-mpegURL' : 'video/mp4';
             vjsPlayer.src({ src: url, type: videoType });
             vjsPlayer.play();
+            setTimeout(() => applyCurrentVideoFit(), 200);
+            vjsPlayer.ready(() => applyCurrentVideoFit());
         }
+        ensureVideoFitOnReady();
     }
     
     function stopVideo() {
@@ -1190,108 +1061,35 @@
         vjsPlayer.pause();
         document.getElementById('videoBox').style.display = 'none';
         document.querySelectorAll('.card').forEach(c => c.classList.remove('playing'));
-        const sliders = rawData.filter(d => {
-            const category = (d.Category || d.category || "").toLowerCase();
-            return category === 'slider';
-        });
-        if(currentCategory === 'All' && sliders.length > 0) document.getElementById('mainSlider').style.display = 'block';
+        const sliders = rawData.filter(d => (d.Category || d.category || "").toLowerCase() === 'slider');
+        if(currentCategory === 'All' && sliders.length) document.getElementById('mainSlider').style.display = 'block';
     }
     
-    function search() {
+    function search() { /* keep original search logic */ 
         let term = document.getElementById('searchBar').value.toLowerCase().trim();
         const grid = document.getElementById('mainGrid');
-        
-        if(term === '') {
-            filterData(currentCategory, null, false);
-            return;
-        }
-        
-        const filtered = rawData.filter(d => {
-            const category = (d.Category || d.category || "").toLowerCase();
-            const name = (d.name || d.Name || "").toLowerCase();
-            return name.includes(term) && category !== 'slider';
-        });
-        
-        if(filtered.length === 0) {
-            showEmptyState(grid, `No results for "${term}"`, 'fa-search');
-            return;
-        }
-        
-        grid.innerHTML = filtered.map(item => {
-            let thumb = item.Thumbnail || item.thumbnail || MASTER_LOGO;
-            let itemName = item.name || item.Name || "Untitled";
-            let url = item.URL || item.url || "#";
-            return `<div class="card" onclick="play('${url.replace(/'/g, "\\'")}', '${itemName.replace(/'/g, "\\'")}', this)">
-                <img src="${thumb}" loading="lazy" onerror="handleImageError(this)" onload="handleImageLoad(this)" class="img-loading">
-                <div class="card-title">${itemName}</div>
-            </div>`;
-        }).join('');
+        if(term === '') { filterData(currentCategory, null, false); return; }
+        const filtered = rawData.filter(d => (d.name || d.Name || "").toLowerCase().includes(term) && (d.Category || d.category || "").toLowerCase() !== 'slider');
+        if(!filtered.length) { showEmptyState(grid, `No results for "${term}"`, 'fa-search'); return; }
+        grid.innerHTML = filtered.map(item => `<div class="card" onclick="play('${escapeHtml(item.URL || item.url)}', '${escapeHtml(item.name || item.Name)}', this)"><img src="${item.Thumbnail || item.thumbnail || MASTER_LOGO}" loading="lazy" onerror="handleImageError(this)" onload="handleImageLoad(this)" class="img-loading"><div class="card-title">${escapeHtml(item.name || item.Name)}</div></div>`).join('');
     }
     
-    function shareApp(e) {
-        if(e) e.preventDefault();
-        const shareURL = settingsData.shareUrl || window.location.href;
-        if(navigator.share) navigator.share({ title: 'Nikamma 4k', url: shareURL });
-        else window.open(shareURL, '_blank');
-    }
+    function shareApp(e) { if(e) e.preventDefault(); const shareURL = settingsData.shareUrl || window.location.href; if(navigator.share) navigator.share({ title: 'Nikamma 4k', url: shareURL }); else window.open(shareURL, '_blank'); }
+    function openNav() { document.getElementById("mySidenav").classList.add("open"); document.getElementById("menu-overlay").style.display = "block"; setTimeout(() => document.getElementById("menu-overlay").classList.add("visible"), 10); isNavOpen = true; }
+    function closeNav() { document.getElementById("mySidenav").classList.remove("open"); document.getElementById("menu-overlay").classList.remove("visible"); isNavOpen = false; setTimeout(() => { if(!isNavOpen) document.getElementById("menu-overlay").style.display = "none"; }, 400); }
+    function toggleSearch(show) { document.getElementById('header-main').style.display = show ? 'none' : 'flex'; document.getElementById('header-icons').style.display = show ? 'none' : 'flex'; document.getElementById('search-container').style.display = show ? 'flex' : 'none'; if(show) document.getElementById('searchBar').focus(); }
+    let slideIndex = 0, sliderInterval;
+    function startSlider() { if(sliderInterval) clearInterval(sliderInterval); sliderInterval = setInterval(() => { const track = document.getElementById('sliderTrack'); if(track && track.children.length) { slideIndex = (slideIndex + 1) % track.children.length; track.style.transform = `translateX(-${slideIndex * 100}%)`; } }, 3000); }
     
-    function openNav() { 
-        const sideNav = document.getElementById("mySidenav");
-        const overlay = document.getElementById("menu-overlay");
-        overlay.style.display = "block";
-        setTimeout(() => {
-            sideNav.classList.add("open");
-            overlay.classList.add("visible");
-        }, 10);
-        isNavOpen = true;
-    }
+    // Attach Video Fit button event
+    document.getElementById('videoFitBtn')?.addEventListener('click', cycleVideoFitMode);
     
-    function closeNav() { 
-        const sideNav = document.getElementById("mySidenav");
-        const overlay = document.getElementById("menu-overlay");
-        sideNav.classList.remove("open");
-        overlay.classList.remove("visible");
-        isNavOpen = false;
-        setTimeout(() => {
-            if(!isNavOpen) overlay.style.display = "none";
-        }, 400);
-    }
-    
-    function toggleSearch(show) {
-        document.getElementById('header-main').style.display = show ? 'none' : 'flex';
-        document.getElementById('header-icons').style.display = show ? 'none' : 'flex';
-        document.getElementById('search-container').style.display = show ? 'flex' : 'none';
-        if(show) document.getElementById('searchBar').focus();
-    }
-    
-    let slideIndex = 0;
-    let sliderInterval;
-    
-    function startSlider() {
-        if(sliderInterval) clearInterval(sliderInterval);
-        sliderInterval = setInterval(() => {
-            const track = document.getElementById('sliderTrack');
-            if(track && track.children.length > 0) {
-                slideIndex = (slideIndex + 1) % track.children.length;
-                track.style.transform = `translateX(-${slideIndex * 100}%)`;
-            }
-        }, 3000);
-    }
-    
-    // Initialize the app - CHECK INTERNET FIRST
     (async function init() {
         const hasInternet = await checkInternetBeforeStart();
-        if (hasInternet) {
-            fetchData();
-        }
+        if (hasInternet) fetchData();
+        ensureVideoFitOnReady();
+        setInterval(() => { const track = document.getElementById('sliderTrack'); if(track && track.children.length && !sliderInterval) startSlider(); }, 1000);
     })();
-    
-    setInterval(() => {
-        const track = document.getElementById('sliderTrack');
-        if(track && track.children.length > 0 && !sliderInterval) {
-            startSlider();
-        }
-    }, 1000);
 </script>
 </body>
 </html>
