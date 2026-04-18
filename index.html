@@ -89,8 +89,23 @@
             opacity: 1;
             pointer-events: auto;
         }
-        .top-bar { display: flex; justify-content: space-between; align-items: center; }
-        .live-tag { background: #ff3b30; color: white; padding: 3px 10px; border-radius: 4px; font-size: 11px; font-weight: bold; letter-spacing: 1px; }
+        /* TOP BAR: close LEFT + live RIGHT */
+        .top-bar { 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+            width: 100%;
+        }
+        .live-tag { 
+            background: #ff3b30; 
+            color: white; 
+            padding: 4px 12px; 
+            border-radius: 30px; 
+            font-size: 11px; 
+            font-weight: bold; 
+            letter-spacing: 1px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+        }
         .menu-bar { 
             display: flex; 
             align-items: center; 
@@ -115,6 +130,15 @@
         .icon-btn:active { transform: scale(0.95); background: rgba(255,255,255,0.1);}
         .material-icons-round { font-size: 26px; }
         .spacer { flex-grow: 1; }
+        .fit-mode-badge {
+            background: rgba(0,0,0,0.6);
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 500;
+            letter-spacing: 0.5px;
+            color: #ddd;
+        }
         @keyframes spin { to { transform: rotate(360deg); } }
         
         /* Gesture indicator overlay (volume/brightness) */
@@ -325,20 +349,23 @@
 
 <header><div class="header-content"><div class="header-left" id="header-main"><div class="menu-icon-btn" onclick="openNav()"><i class="fa fa-bars"></i></div><div class="app-name">Nikamma 4k</div></div><div id="search-container"><input type="text" id="searchBar" placeholder="Search movies, shows, sports..." onkeyup="search()"><div class="search-close" onclick="toggleSearch(false)"><i class="fas fa-times"></i></div></div><div class="header-right" id="header-icons"><div onclick="toggleSearch(true)"><i class="fa fa-search"></i></div></div></div></header>
 
-<!-- ADVANCED VIDEO PLAYER WITH FIXED FULLSCREEN & FIT + BUFFERING RECOVERY -->
+<!-- ADVANCED VIDEO PLAYER - FIXED FULLSCREEN CONTROLS + REMOVED BOTTOM CLOSE ICON -->
 <div id="videoBox">
     <div class="exo-container" id="advancedPlayerContainer">
         <div class="exo-loader" id="exoLoader"><div class="spinner"></div></div>
         <video id="advancedVideo" class="fit-fill" muted autoplay playsinline></video>
         <div class="exo-overlay" id="exoOverlay">
+            <!-- TOP BAR: CLOSE LEFT, LIVE RIGHT -->
             <div class="top-bar">
+                <button class="icon-btn" id="exoTopCloseBtn" title="Close"><span class="material-icons-round">close</span></button>
                 <div class="live-tag">LIVE</div>
-                <div id="mode-text" style="font-size: 12px; color: #aaa;">Fit: FILL</div>
             </div>
+            <!-- BOTTOM MENU: PLAY, MUTE, FIT MODE, ASPECT, FULLSCREEN (NO CLOSE BUTTON HERE) -->
             <div class="menu-bar">
                 <button class="icon-btn" id="exoPlayBtn"><span class="material-icons-round">pause</span></button>
                 <button class="icon-btn" id="exoMuteBtn"><span class="material-icons-round">volume_off</span></button>
                 <div class="spacer"></div>
+                <span id="mode-text" class="fit-mode-badge">FILL</span>
                 <button class="icon-btn" id="exoScreenSetBtn" title="Screen Fit"><span class="material-icons-round">aspect_ratio</span></button>
                 <button class="icon-btn" id="exoFullBtn" title="Fullscreen"><span class="material-icons-round">fullscreen</span></button>
             </div>
@@ -379,12 +406,14 @@
     const STORAGE_KEY_HASH = 'nikamma_data_hash';
     const SPLASH_SEEN_KEY = 'nikamma_splash_seen';
     
-    // ========== GESTURE CONTROLS ==========
+    // ========== FIXED GESTURE CONTROLS (tap to show controls, swipe for vol/bright) ==========
     let isFullscreen = false;
     let gestureActive = false;
-    let gestureStartY = 0;
+    let gestureStartY = 0, gestureStartX = 0;
     let gestureStartValue = 0;
     let gestureSide = null;
+    let gesturePrevented = false;  // true if we identified vertical swipe and prevented default
+    let activeTouchId = null;
     const gestureIndicator = document.getElementById('gestureIndicator');
     const gestureIcon = document.getElementById('gestureIcon');
     const gestureValueSpan = document.getElementById('gestureValue');
@@ -407,47 +436,74 @@
     
     function handleTouchStart(e) {
         if (!isFullscreen) return;
+        // ignore if touch started on interactive buttons (they handle their own)
         let target = e.target;
         if(target.closest && (target.closest('.icon-btn') || target.closest('.menu-bar') || target.closest('.top-bar'))) return;
-        const touchX = e.touches[0].clientX;
+        
+        const touch = e.touches[0];
+        activeTouchId = touch.identifier;
+        gestureStartX = touch.clientX;
+        gestureStartY = touch.clientY;
+        gesturePrevented = false;
+        
         const screenWidth = window.innerWidth;
-        gestureSide = touchX < screenWidth / 2 ? 'left' : 'right';
-        gestureStartY = e.touches[0].clientY;
+        gestureSide = gestureStartX < screenWidth / 2 ? 'left' : 'right';
         if (gestureSide === 'right') {
             gestureStartValue = advVideo.volume;
-            gestureIcon.className = 'fa fa-volume-up';
         } else {
             gestureStartValue = currentBrightness;
-            gestureIcon.className = 'fa fa-sun';
         }
         gestureActive = true;
-        e.preventDefault();
+        // DO NOT preventDefault here; allow tap to generate click event
     }
     
     function handleTouchMove(e) {
         if (!gestureActive || !isFullscreen) return;
-        const currentY = e.touches[0].clientY;
-        const deltaY = gestureStartY - currentY;
-        const range = gestureSide === 'right' ? 1.0 : 1.8;
-        let newValue = gestureStartValue + (deltaY / 200) * range;
-        if (gestureSide === 'right') {
-            newValue = Math.min(1.0, Math.max(0.0, newValue));
-            advVideo.volume = newValue;
-            if (advVideo.muted && newValue > 0) advVideo.muted = false;
-            if (newValue === 0) advVideo.muted = true;
-            exoMuteBtn.innerHTML = `<span class="material-icons-round">${advVideo.muted || advVideo.volume === 0 ? 'volume_off' : 'volume_up'}</span>`;
-            showGestureIndicator('fa fa-volume-up', newValue * 100);
-        } else {
-            newValue = Math.min(2.0, Math.max(0.2, newValue));
-            setVideoBrightness(newValue);
-            showGestureIndicator('fa fa-sun', ((newValue - 0.2) / 1.8) * 100);
+        // find the touch with same identifier
+        let touch = null;
+        for (let i = 0; i < e.touches.length; i++) {
+            if (e.touches[i].identifier === activeTouchId) {
+                touch = e.touches[i];
+                break;
+            }
         }
-        e.preventDefault();
+        if (!touch) return;
+        
+        const deltaY = gestureStartY - touch.clientY;
+        const deltaX = Math.abs(touch.clientX - gestureStartX);
+        // Detect vertical swipe: deltaY > 10px and more vertical than horizontal
+        if (!gesturePrevented && Math.abs(deltaY) > 12 && Math.abs(deltaY) > deltaX * 1.2) {
+            gesturePrevented = true;
+            e.preventDefault();   // block page scroll and also prevent click from firing
+        }
+        
+        if (gesturePrevented) {
+            e.preventDefault();
+            let newValue = gestureStartValue + (deltaY / 200) * (gestureSide === 'right' ? 1.0 : 1.8);
+            if (gestureSide === 'right') {
+                newValue = Math.min(1.0, Math.max(0.0, newValue));
+                advVideo.volume = newValue;
+                if (advVideo.muted && newValue > 0) advVideo.muted = false;
+                if (newValue === 0) advVideo.muted = true;
+                exoMuteBtn.innerHTML = `<span class="material-icons-round">${advVideo.muted || advVideo.volume === 0 ? 'volume_off' : 'volume_up'}</span>`;
+                showGestureIndicator('fa fa-volume-up', newValue * 100);
+            } else {
+                newValue = Math.min(2.0, Math.max(0.2, newValue));
+                setVideoBrightness(newValue);
+                const percent = ((newValue - 0.2) / 1.8) * 100;
+                showGestureIndicator('fa fa-sun', percent);
+            }
+        }
     }
     
     function handleTouchEnd(e) {
+        if (gestureActive && gesturePrevented) {
+            // swipe consumed, no click will happen
+        }
         gestureActive = false;
         gestureSide = null;
+        gesturePrevented = false;
+        activeTouchId = null;
     }
     
     function attachGestureListeners() {
@@ -456,18 +512,18 @@
         container.removeEventListener('touchstart', handleTouchStart);
         container.removeEventListener('touchmove', handleTouchMove);
         container.removeEventListener('touchend', handleTouchEnd);
-        container.addEventListener('touchstart', handleTouchStart, { passive: false });
+        container.addEventListener('touchstart', handleTouchStart, { passive: true });
         container.addEventListener('touchmove', handleTouchMove, { passive: false });
         container.addEventListener('touchend', handleTouchEnd);
     }
     
-    // ========== ADVANCED PLAYER WITH BUFFERING RECOVERY ==========
+    // ========== ADVANCED PLAYER WITH IMPROVED BUFFERING RECOVERY ==========
     let currentMpegtsPlayer = null;
     let currentHlsPlayer = null;
     let currentSourceUrl = null;
     let bufferingTimeout = null;
     let reloadAttempts = 0;
-    const MAX_RELOAD_ATTEMPTS = 3;
+    const MAX_RELOAD_ATTEMPTS = 2;
     
     const advVideo = document.getElementById('advancedVideo');
     const exoLoader = document.getElementById('exoLoader');
@@ -487,7 +543,7 @@
         advVideo.classList.remove('fit-contain', 'fit-cover', 'fit-fill');
         advVideo.classList.add('fit-' + mode);
         advVideo.style.objectFit = mode;
-        modeTextSpan.innerText = 'Fit: ' + mode.toUpperCase();
+        modeTextSpan.innerText = mode.toUpperCase();
     }
     
     function showControls() {
@@ -509,25 +565,23 @@
         }
     }
     
-    let toggleDebounce = false;
     function toggleControls() {
-        if (toggleDebounce) return;
-        toggleDebounce = true;
         if (exoOverlay.classList.contains('visible')) hideControls();
         else showControls();
-        setTimeout(() => { toggleDebounce = false; }, 200);
     }
     
     function attachToggleControls() {
         const container = document.getElementById('advancedPlayerContainer');
         if (!container) return;
-        // Only click event, no touchstart to avoid double-firing
         const handleToggle = (e) => {
-            // Don't toggle if clicking on buttons or menu bar
-            if (e.target.closest('.icon-btn') || e.target.closest('.menu-bar')) return;
+            if (e.target.closest && (e.target.closest('.icon-btn') || e.target.closest('.menu-bar') || e.target.closest('.top-bar'))) return;
             toggleControls();
         };
         container.addEventListener('click', handleToggle);
+        advVideo.addEventListener('click', (e) => {
+            e.stopPropagation();
+            toggleControls();
+        });
         advVideo.addEventListener('pause', () => showControls());
         advVideo.addEventListener('play', () => {
             if (exoOverlay.classList.contains('visible')) {
@@ -546,32 +600,46 @@
         }
     }
     
-    function reloadCurrentStream() {
+    function attemptResume() {
         if (!currentSourceUrl) return;
-        if (reloadAttempts >= MAX_RELOAD_ATTEMPTS) {
-            console.warn("Max reload attempts reached, giving up.");
-            clearBufferingTimeout();
-            exoLoader.style.display = 'none';
-            return;
+        console.log("Attempting to resume playback after buffering stall");
+        if (advVideo.readyState >= 2) {
+            advVideo.play().catch(e => console.warn("Resume play failed", e));
+        } else {
+            const currentTime = advVideo.currentTime;
+            const wasPlaying = !advVideo.paused;
+            const url = currentSourceUrl;
+            if (currentMpegtsPlayer) {
+                try { currentMpegtsPlayer.unload(); currentMpegtsPlayer.destroy(); } catch(e) {}
+                currentMpegtsPlayer = null;
+            }
+            if (currentHlsPlayer) {
+                try { currentHlsPlayer.destroy(); } catch(e) {}
+                currentHlsPlayer = null;
+            }
+            advVideo.pause();
+            advVideo.removeAttribute('src');
+            advVideo.load();
+            const isLive = url.includes('.m3u8') || url.includes('.ts') || url.includes('live');
+            loadIntoAdvancedPlayer(url, document.getElementById('videoTitle').innerText, null, wasPlaying);
+            if (!isLive && currentTime > 0 && currentTime < advVideo.duration) {
+                advVideo.addEventListener('loadedmetadata', function seekHandler() {
+                    advVideo.currentTime = currentTime;
+                    advVideo.removeEventListener('loadedmetadata', seekHandler);
+                });
+            }
         }
-        reloadAttempts++;
-        console.log(`Reloading stream (attempt ${reloadAttempts}/${MAX_RELOAD_ATTEMPTS})`);
-        const url = currentSourceUrl;
-        const title = document.getElementById('videoTitle').innerText;
-        const wasPlaying = !advVideo.paused;
-        destroyAdvancedPlayer();
-        loadIntoAdvancedPlayer(url, title, null, wasPlaying);
     }
     
     function handleWaiting() {
         if (!currentSourceUrl) return;
         clearBufferingTimeout();
         bufferingTimeout = setTimeout(() => {
-            if (advVideo.readyState < 2 || advVideo.networkState === 2) {
-                console.log("Video stuck in buffering, attempting reload");
-                reloadCurrentStream();
+            if (advVideo.readyState < 2 || advVideo.networkState === 2 || advVideo.buffered.length === 0) {
+                console.log("Video stuck in buffering, attempting resume");
+                attemptResume();
             }
-        }, 5000);
+        }, 4000);
     }
     
     function handlePlaying() {
@@ -579,10 +647,17 @@
         reloadAttempts = 0;
     }
     
+    function handleStalled() {
+        if (!currentSourceUrl) return;
+        console.log("Stalled event, attempting resume");
+        attemptResume();
+    }
+    
     function handleError(e) {
         console.error("Video error:", e);
         if (currentSourceUrl && reloadAttempts < MAX_RELOAD_ATTEMPTS) {
-            reloadCurrentStream();
+            reloadAttempts++;
+            attemptResume();
         }
     }
     
@@ -601,6 +676,7 @@
         advVideo.load();
         advVideo.removeEventListener('waiting', handleWaiting);
         advVideo.removeEventListener('playing', handlePlaying);
+        advVideo.removeEventListener('stalled', handleStalled);
         advVideo.removeEventListener('error', handleError);
     }
     
@@ -614,6 +690,7 @@
         
         advVideo.addEventListener('waiting', handleWaiting);
         advVideo.addEventListener('playing', handlePlaying);
+        advVideo.addEventListener('stalled', handleStalled);
         advVideo.addEventListener('error', handleError);
         
         const isTs = url.includes('.ts') || url.includes('transportstream');
@@ -640,8 +717,8 @@
                 });
                 currentHlsPlayer.on(Hls.Events.ERROR, (evt, data) => {
                     if (data.fatal) {
-                        console.error("HLS fatal error, reloading", data);
-                        reloadCurrentStream();
+                        console.error("HLS fatal error, attempting resume");
+                        attemptResume();
                     }
                 });
             } catch(e) { fallbackNative(url, autoPlay); }
@@ -680,6 +757,8 @@
         exoFullBtn.innerHTML = `<span class="material-icons-round">${isFs ? 'fullscreen_exit' : 'fullscreen'}</span>`;
         if (!isFs) {
             setVideoFitMode();
+        } else {
+            setTimeout(() => { if (exoOverlay && !advVideo.paused) showControls(); }, 100);
         }
     }
     
@@ -687,6 +766,14 @@
     document.addEventListener('webkitfullscreenchange', updateFullscreenIcon);
     
     function attachPlayerControls() {
+        const exoTopCloseBtn = document.getElementById('exoTopCloseBtn');
+        if (exoTopCloseBtn) {
+            exoTopCloseBtn.onclick = (e) => {
+                e.stopPropagation();
+                stopVideo();
+            };
+        }
+        
         exoPlayBtn.onclick = (e) => {
             e.stopPropagation();
             if (advVideo.paused) {
