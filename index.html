@@ -509,21 +509,25 @@
         }
     }
     
+    let toggleDebounce = false;
     function toggleControls() {
+        if (toggleDebounce) return;
+        toggleDebounce = true;
         if (exoOverlay.classList.contains('visible')) hideControls();
         else showControls();
+        setTimeout(() => { toggleDebounce = false; }, 200);
     }
     
     function attachToggleControls() {
         const container = document.getElementById('advancedPlayerContainer');
         if (!container) return;
-        // Use both click and touchstart for fullscreen reliability
+        // Only click event, no touchstart to avoid double-firing
         const handleToggle = (e) => {
+            // Don't toggle if clicking on buttons or menu bar
             if (e.target.closest('.icon-btn') || e.target.closest('.menu-bar')) return;
             toggleControls();
         };
         container.addEventListener('click', handleToggle);
-        container.addEventListener('touchstart', handleToggle, { passive: false });
         advVideo.addEventListener('pause', () => showControls());
         advVideo.addEventListener('play', () => {
             if (exoOverlay.classList.contains('visible')) {
@@ -608,7 +612,6 @@
         exoLoader.style.display = 'flex';
         advVideo.muted = true;
         
-        // Add event listeners for buffering recovery
         advVideo.addEventListener('waiting', handleWaiting);
         advVideo.addEventListener('playing', handlePlaying);
         advVideo.addEventListener('error', handleError);
