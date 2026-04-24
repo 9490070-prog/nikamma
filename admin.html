@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>Nikamma 4k Pro Admin - Logo Fixed</title>
+    <title>Nikamma 4k Pro Admin - Professional</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
@@ -31,7 +31,7 @@
             position: fixed;
             inset: 0;
             background: rgba(10,12,16,0.96);
-            display: flex;
+            display: none;
             flex-direction: column;
             align-items: center;
             justify-content: center;
@@ -344,7 +344,7 @@
             font-size: 10px;
         }
         
-        /* EDITOR MODAL */
+        /* EDITOR MODAL - PROFESSIONAL STYLE */
         .editor-modal {
             display: none;
             position: fixed;
@@ -435,15 +435,39 @@
         }
         .btn-submit-editor { background: #0f7b3a; color: white; }
         .btn-cancel-editor { background: #3a3a3a; color: white; }
-        .image-picker-area {
-            background: #0f131c;
+        
+        /* PROFESSIONAL IMAGE PICKER BUTTON */
+        .professional-picker {
+            background: linear-gradient(135deg, #1e2a3a, #0f131c);
             border: 2px dashed var(--primary);
             border-radius: 18px;
-            padding: 12px;
+            padding: 20px;
             text-align: center;
-            margin-bottom: 12px;
+            margin-bottom: 15px;
             cursor: pointer;
+            transition: all 0.3s ease;
         }
+        .professional-picker:hover {
+            background: linear-gradient(135deg, #253545, #1a1f2a);
+            border-color: #ffaa44;
+            transform: scale(1.01);
+        }
+        .picker-icon {
+            font-size: 38px;
+            color: var(--primary);
+            margin-bottom: 8px;
+        }
+        .picker-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: white;
+            margin-bottom: 4px;
+        }
+        .picker-sub {
+            font-size: 10px;
+            color: #888;
+        }
+        
         .slider-row { display: flex; gap: 8px; }
         .slider-row .slider-group { flex: 1; }
         
@@ -456,12 +480,17 @@
             font-weight: bold;
             cursor: pointer;
             font-size: 11px;
+            transition: all 0.2s;
+        }
+        .editor-trigger-btn:hover {
+            transform: scale(0.98);
+            opacity: 0.9;
         }
     </style>
 </head>
 <body>
 
-<div id="processing-overlay" style="display:none">
+<div id="processing-overlay">
     <div class="spinner"></div>
     <p>Processing...</p>
 </div>
@@ -477,7 +506,7 @@
             <p>Content Management System</p>
         </div>
     </div>
-    <button class="refresh-btn" onclick="fetchAllData()"><i class="fa fa-sync-alt"></i> Refresh Data</button>
+    <button class="refresh-btn" onclick="refreshData()"><i class="fa fa-sync-alt"></i> Refresh Data</button>
 </div>
 
 <div class="info-note">
@@ -508,14 +537,14 @@
 
 <div class="fab" onclick="openAddModal()"><i class="fa fa-plus"></i></div>
 
-<!-- IMAGE EDITOR MODAL -->
+<!-- IMAGE EDITOR MODAL - PROFESSIONAL -->
 <div id="editorModal" class="editor-modal">
     <div class="editor-card">
-        <h3 style="text-align:center; margin-bottom:12px; font-size:18px;">✂️ Image Editor</h3>
-        <div class="image-picker-area" onclick="document.getElementById('editorImageInput').click()">
-            <i class="fa fa-cloud-upload-alt" style="font-size: 24px; color: var(--primary);"></i>
-            <p style="margin-top: 6px; font-size:12px;"><strong>Click to select image</strong></p>
-            <p style="font-size: 10px; color:#888;">JPG, PNG, WEBP supported</p>
+        <h3 style="text-align:center; margin-bottom:12px; font-size:18px;">✂️ Professional Image Editor</h3>
+        <div class="professional-picker" onclick="document.getElementById('editorImageInput').click()">
+            <div class="picker-icon"><i class="fa fa-cloud-upload-alt"></i></div>
+            <div class="picker-title">Choose Image File</div>
+            <div class="picker-sub">Click or drag & drop (JPG, PNG, WEBP)</div>
         </div>
         <input type="file" id="editorImageInput" accept="image/*" style="display:none">
         <div class="canvas-container">
@@ -615,6 +644,7 @@
     let editContext = { isEdit: false, rowIndex: null, oldFileId: null, oldThumbUrl: null };
     let isLoading = false;
     let pendingCroppedBlob = null;
+    let processingTimeout = null;
     
     // Editor variables
     let editorImg = new Image();
@@ -629,7 +659,16 @@
     const editMoveYSlider = document.getElementById('editMoveYSlider');
     
     function showProcessing(show) {
-        document.getElementById('processing-overlay').style.display = show ? 'flex' : 'none';
+        const overlay = document.getElementById('processing-overlay');
+        if (show) {
+            overlay.style.display = 'flex';
+        } else {
+            // Small delay to ensure UI doesn't flicker
+            if (processingTimeout) clearTimeout(processingTimeout);
+            processingTimeout = setTimeout(() => {
+                overlay.style.display = 'none';
+            }, 300);
+        }
     }
     
     function setLoader(percent) {
@@ -659,25 +698,25 @@
         }
     }
     
-    // Load logo image on page load
     function loadLogo() {
         const logoContainer = document.getElementById('logoIcon');
         if (logoContainer) {
-            // Try to load from fixed logo URL
-            const logoUrl = LOGO_URL;
             const img = new Image();
             img.onload = function() {
-                logoContainer.innerHTML = `<img src="${logoUrl}" alt="Logo">`;
+                logoContainer.innerHTML = `<img src="${LOGO_URL}" alt="Logo">`;
             };
             img.onerror = function() {
-                // Keep default icon if image fails
                 logoContainer.innerHTML = '<i class="fa fa-film"></i>';
             };
-            img.src = logoUrl;
+            img.src = LOGO_URL;
         }
     }
     
-    // ========== FAST FETCH DATA WITH PARALLEL LOADING ==========
+    function refreshData() {
+        if (isLoading) return;
+        fetchAllData();
+    }
+    
     async function fetchAllData() {
         if (isLoading) return;
         isLoading = true;
@@ -685,7 +724,6 @@
         showProcessing(true);
         
         try {
-            // Parallel fetch for faster loading
             const [mainResponse, settingsResponse] = await Promise.all([
                 fetch(MAIN_CSV_URL),
                 fetch(SETTINGS_CSV_URL)
@@ -732,11 +770,11 @@
             
         } catch (error) {
             console.error("Fetch error:", error);
-            showProcessing(false);
             showToast('✗ Error: ' + error.message, true);
             mainData = [];
             settingsData = [];
             renderCurrentTable();
+            showProcessing(false);
         } finally {
             isLoading = false;
         }
@@ -748,7 +786,6 @@
             await fetch(url, { method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'application/json' }, body: data ? JSON.stringify(data) : null });
             return { success: true };
         } catch (error) {
-            console.error("API Error:", error);
             return { success: false, error: error.message };
         }
     }
@@ -822,15 +859,10 @@
             
             if (imageData) payload.imageData = imageData;
             
-            const result = await callAPI("save", payload);
-            
-            if (result.success) {
-                showToast("✓ Save request sent! Refreshing...");
-                closeModal();
-                setTimeout(() => fetchAllData(), 1500);
-            } else {
-                throw new Error(result.error || "Save failed");
-            }
+            await callAPI("save", payload);
+            showToast("✓ Save request sent! Refreshing...");
+            closeModal();
+            setTimeout(() => fetchAllData(), 1500);
         } catch (err) {
             showToast(err.message, true);
         } finally {
@@ -1044,7 +1076,7 @@
                     <button class="action-btn edit-i" onclick='openEditMain(${rowNum}, ${JSON.stringify(item).replace(/'/g, "&#39;")})'><i class="fa fa-edit"></i></button>
                     <button class="action-btn edit-image-i" onclick='openImageEditorWithUrl("${item.thumbnail}")' title="Crop Image"><i class="fa fa-crop"></i></button>
                     <button class="action-btn del-i" onclick="deleteRecordItem('Sheet1', ${rowNum}, '${item.fileId}')"><i class="fa fa-trash"></i></button>
-                </td>
+                  </td>
             </tr>`;
         });
         tbody.innerHTML = html;
@@ -1068,7 +1100,7 @@
                 <td>
                     <button class="action-btn edit-i" onclick='openEditSettings(${rowNum}, ${JSON.stringify(item).replace(/'/g, "&#39;")})'><i class="fa fa-edit"></i></button>
                     <button class="action-btn del-i" onclick="deleteRecordItem('settings', ${rowNum}, '')"><i class="fa fa-trash"></i></button>
-                </td>
+                  </td>
             </tr>`;
         });
         tbody.innerHTML = html;
@@ -1143,9 +1175,9 @@
         pendingCroppedBlob = null;
     }
     
-    // Initialize - Load logo and data
+    // Initialize
     window.addEventListener('load', () => {
-        console.log("Nikamma Admin - Logo Fixed Version");
+        console.log("Nikamma Admin - Professional Version with Single Processing Overlay");
         loadLogo();
         fetchAllData();
     });
