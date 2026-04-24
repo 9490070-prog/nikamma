@@ -3,9 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>Nikamma 4k Pro Admin - with Image Editor & Box Move</title>
+    <title>Nikamma 4k Pro Admin - Logo Fixed</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         
@@ -16,6 +17,7 @@
             --border: #2a313c;
             --text-primary: #f0f3f8;
             --danger: #ff5c5c;
+            --success: #4caf50;
         }
 
         body {
@@ -60,40 +62,75 @@
 
         .header {
             background: var(--card-bg);
-            padding: 16px 24px;
+            padding: 14px 20px;
             display: flex;
             justify-content: space-between;
             align-items: center;
             border-bottom: 1px solid var(--border);
+            flex-wrap: wrap;
+            gap: 10px;
         }
         
-        .logo-area h1 { font-size: 1.6rem; font-weight: 800; }
-        .logo-area span { color: var(--primary); }
+        .logo-area {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        
+        .logo-icon {
+            width: 42px;
+            height: 42px;
+            border-radius: 12px;
+            background: linear-gradient(135deg, #00bcd4, #0097a7);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            flex-shrink: 0;
+        }
+        .logo-icon img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        .logo-icon i {
+            font-size: 22px;
+            color: white;
+        }
+        
+        .logo-text h1 { font-size: 1.3rem; font-weight: 800; margin: 0; }
+        .logo-text span { color: var(--primary); }
+        .logo-text p { font-size: 10px; color: #888; margin: 0; }
         
         .refresh-btn {
             background: rgba(0,188,212,0.12);
             border: 1px solid var(--primary);
             color: var(--primary);
-            padding: 8px 16px;
+            padding: 7px 14px;
             border-radius: 40px;
             cursor: pointer;
+            font-size: 13px;
+            transition: all 0.2s;
         }
+        .refresh-btn:hover { background: rgba(0,188,212,0.25); }
 
         .tabs {
             display: flex;
             gap: 8px;
-            padding: 16px 24px 0;
+            padding: 14px 20px 0;
             border-bottom: 1px solid var(--border);
         }
         
         .tab-btn {
-            padding: 10px 24px;
+            padding: 8px 20px;
             background: transparent;
             border: none;
             color: #a0aab8;
             font-weight: 600;
             border-radius: 30px;
             cursor: pointer;
+            font-size: 13px;
+            transition: all 0.2s;
         }
         
         .tab-btn.active {
@@ -101,7 +138,7 @@
             color: #000;
         }
 
-        .content-area { padding: 24px; }
+        .content-area { padding: 20px; }
         
         .table-card {
             background: var(--card-bg);
@@ -113,39 +150,49 @@
         table {
             width: 100%;
             border-collapse: collapse;
-            min-width: 700px;
+            min-width: 650px;
         }
         
         th, td {
-            padding: 14px 12px;
+            padding: 12px 10px;
             text-align: left;
             border-bottom: 1px solid var(--border);
+            font-size: 13px;
         }
         
         th {
             background: rgba(0,188,212,0.05);
             color: var(--primary);
+            font-size: 12px;
         }
         
         .thumb {
             width: 48px;
             height: 48px;
-            border-radius: 12px;
+            border-radius: 10px;
             object-fit: cover;
             cursor: pointer;
+            background: #1a1f2a;
+            display: block;
+            transition: transform 0.2s;
         }
+        .thumb:hover { transform: scale(1.05); }
         
         .action-btn {
             background: none;
             border: none;
-            font-size: 1.2rem;
-            margin: 0 6px;
+            font-size: 0.9rem;
+            margin: 0 2px;
             cursor: pointer;
-            padding: 6px 10px;
+            padding: 4px 6px;
+            border-radius: 6px;
+            transition: all 0.2s;
         }
         
+        .action-btn:hover { background: rgba(255,255,255,0.1); }
         .edit-i { color: var(--primary); }
         .del-i { color: var(--danger); }
+        .edit-image-i { color: #ffaa44; font-size: 0.8rem; }
 
         .modal {
             display: none;
@@ -161,179 +208,85 @@
             background: #1a1f2a;
             width: 92%;
             max-width: 520px;
-            padding: 28px;
-            border-radius: 32px;
+            padding: 24px;
+            border-radius: 28px;
             border: 1px solid var(--border);
-        }
-        
-        /* EDITOR MODAL */
-        .editor-modal {
-            display: none;
-            position: fixed;
-            inset: 0;
-            background: #000000ee;
-            z-index: 20000;
-            align-items: center;
-            justify-content: center;
-            padding: 20px;
+            max-height: 90vh;
             overflow-y: auto;
-        }
-        .editor-card {
-            background: #1a1f2a;
-            border-radius: 35px;
-            max-width: 650px;
-            width: 100%;
-            margin: auto;
-            padding: 20px;
-            border: 1px solid var(--border);
-        }
-        .canvas-container {
-            background: #2c2c2c;
-            border-radius: 25px;
-            padding: 10px;
-            margin-bottom: 20px;
-            display: flex;
-            justify-content: center;
-            position: relative;
-        }
-        canvas {
-            background: #333;
-            border-radius: 15px;
-            display: block;
-            width: 100%;
-            height: auto;
-            cursor: grab;
-            touch-action: none;
-        }
-        canvas:active { cursor: grabbing; }
-        .slider-group {
-            margin-bottom: 18px;
-            background: #2a2a2a;
-            padding: 12px;
-            border-radius: 50px;
-        }
-        .slider-group label {
-            color: #ddd;
-            display: block;
-            margin-bottom: 8px;
-            font-size: 0.85rem;
-            text-align: center;
-        }
-        input[type="range"] {
-            width: 100%;
-            height: 5px;
-            -webkit-appearance: none;
-            background: #4a4a4a;
-            border-radius: 5px;
-        }
-        input[type="range"]:focus { outline: none; }
-        input[type="range"]::-webkit-slider-thumb {
-            -webkit-appearance: none;
-            width: 22px;
-            height: 22px;
-            background: #0a84ff;
-            border-radius: 50%;
-            cursor: pointer;
-            box-shadow: 0 0 5px white;
-        }
-        .value-badge {
-            display: inline-block;
-            background: #0a84ff;
-            padding: 2px 10px;
-            border-radius: 20px;
-            font-size: 0.7rem;
-            margin-right: 8px;
-        }
-        .editor-actions {
-            display: flex;
-            gap: 12px;
-            margin-top: 20px;
-        }
-        .editor-actions button {
-            flex: 1;
-            padding: 14px;
-            border-radius: 50px;
-            font-weight: bold;
-            border: none;
-            cursor: pointer;
-        }
-        .btn-submit-editor {
-            background: #0f7b3a;
-            color: white;
-        }
-        .btn-cancel-editor {
-            background: #3a3a3a;
-            color: white;
-        }
-        .image-picker-area {
-            background: #0f131c;
-            border: 1px dashed var(--border);
-            border-radius: 20px;
-            padding: 15px;
-            text-align: center;
-            margin-bottom: 15px;
-            cursor: pointer;
-        }
-        .image-picker-area:hover {
-            border-color: var(--primary);
         }
         
         input, select {
             width: 100%;
-            padding: 12px 14px;
-            margin: 8px 0 16px;
+            padding: 10px 12px;
+            margin: 6px 0 14px;
             background: #0f131c;
             border: 1px solid var(--border);
             color: #fff;
-            border-radius: 18px;
+            border-radius: 16px;
+            font-family: inherit;
+            font-size: 13px;
+        }
+        
+        label {
+            font-size: 12px;
+            color: #aaa;
+            margin-top: 6px;
+            display: block;
         }
         
         .btn-save {
             width: 100%;
-            padding: 14px;
+            padding: 12px;
             background: var(--primary);
             border: none;
             border-radius: 40px;
             font-weight: 800;
             cursor: pointer;
             margin-top: 12px;
+            font-size: 14px;
+            transition: all 0.2s;
         }
+        .btn-save:active { transform: scale(0.98); }
         
         .fab {
             position: fixed;
-            bottom: 28px;
-            right: 28px;
-            width: 62px;
-            height: 62px;
+            bottom: 24px;
+            right: 24px;
+            width: 56px;
+            height: 56px;
             background: var(--primary);
-            border-radius: 30px;
+            border-radius: 28px;
             display: flex;
             align-items: center;
             justify-content: center;
             color: #000;
             cursor: pointer;
-            font-size: 28px;
+            font-size: 24px;
             z-index: 999;
+            box-shadow: 0 4px 12px rgba(0,188,212,0.3);
+            transition: transform 0.2s;
         }
+        .fab:active { transform: scale(0.95); }
         
         .badge-cat {
             background: #1e2a36;
-            padding: 4px 12px;
-            border-radius: 40px;
-            font-size: 0.75rem;
+            padding: 3px 10px;
+            border-radius: 30px;
+            font-size: 11px;
             display: inline-block;
         }
         
         .toast {
             position: fixed;
-            bottom: 30px;
+            bottom: 80px;
             left: 50%;
             transform: translateX(-50%);
             background: #2ecc71;
             color: white;
-            padding: 12px 24px;
-            border-radius: 60px;
+            padding: 10px 20px;
+            border-radius: 50px;
             font-weight: 600;
+            font-size: 13px;
             z-index: 11000;
             animation: slideUp 0.3s ease;
         }
@@ -345,12 +298,164 @@
             to { opacity: 1; transform: translateX(-50%) translateY(0); }
         }
         
-        .slider-row {
+        .info-note {
+            background: rgba(0,188,212,0.08);
+            padding: 8px 15px;
+            border-radius: 10px;
+            font-size: 11px;
+            margin: 12px 20px 0 20px;
+            color: var(--primary);
+        }
+        
+        .status-badge {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 9px;
+            font-weight: bold;
+            margin-left: 8px;
+        }
+        .status-success { background: var(--success); color: white; }
+        
+        .image-preview-area {
+            margin: 8px 0;
+            padding: 10px;
+            background: #0f131c;
+            border-radius: 14px;
+            text-align: center;
+            display: none;
+        }
+        .image-preview-area img {
+            max-width: 100%;
+            max-height: 100px;
+            border-radius: 10px;
+            border: 1px solid var(--border);
+        }
+        
+        .empty-row {
+            text-align: center;
+            padding: 30px;
+            color: #666;
+            font-size: 13px;
+        }
+        
+        small {
+            color: #888;
+            font-size: 10px;
+        }
+        
+        /* EDITOR MODAL */
+        .editor-modal {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: #000000ee;
+            z-index: 20000;
+            align-items: center;
+            justify-content: center;
+            padding: 15px;
+            overflow-y: auto;
+        }
+        .editor-card {
+            background: #1a1f2a;
+            border-radius: 30px;
+            max-width: 600px;
+            width: 100%;
+            margin: auto;
+            padding: 18px;
+            border: 1px solid var(--border);
+        }
+        .canvas-container {
+            background: #2c2c2c;
+            border-radius: 20px;
+            padding: 8px;
+            margin-bottom: 15px;
+            display: flex;
+            justify-content: center;
+        }
+        canvas {
+            background: #333;
+            border-radius: 12px;
+            display: block;
+            width: 100%;
+            height: auto;
+            cursor: grab;
+        }
+        canvas:active { cursor: grabbing; }
+        .slider-group {
+            margin-bottom: 12px;
+            background: #2a2a2a;
+            padding: 10px;
+            border-radius: 40px;
+        }
+        .slider-group label {
+            color: #ddd;
+            display: block;
+            margin-bottom: 6px;
+            font-size: 11px;
+            text-align: center;
+        }
+        input[type="range"] {
+            width: 100%;
+            height: 4px;
+            -webkit-appearance: none;
+            background: #4a4a4a;
+            border-radius: 4px;
+            margin: 0;
+        }
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 18px;
+            height: 18px;
+            background: #0a84ff;
+            border-radius: 50%;
+            cursor: pointer;
+        }
+        .value-badge {
+            display: inline-block;
+            background: #0a84ff;
+            padding: 2px 8px;
+            border-radius: 20px;
+            font-size: 10px;
+            margin-right: 6px;
+        }
+        .editor-actions {
             display: flex;
             gap: 10px;
+            margin-top: 15px;
         }
-        .slider-row .slider-group {
+        .editor-actions button {
             flex: 1;
+            padding: 12px;
+            border-radius: 50px;
+            font-weight: bold;
+            border: none;
+            cursor: pointer;
+            font-size: 13px;
+        }
+        .btn-submit-editor { background: #0f7b3a; color: white; }
+        .btn-cancel-editor { background: #3a3a3a; color: white; }
+        .image-picker-area {
+            background: #0f131c;
+            border: 2px dashed var(--primary);
+            border-radius: 18px;
+            padding: 12px;
+            text-align: center;
+            margin-bottom: 12px;
+            cursor: pointer;
+        }
+        .slider-row { display: flex; gap: 8px; }
+        .slider-row .slider-group { flex: 1; }
+        
+        .editor-trigger-btn {
+            background: linear-gradient(135deg, #ffaa44, #ff8844);
+            border: none;
+            color: #000;
+            padding: 8px 16px;
+            border-radius: 40px;
+            font-weight: bold;
+            cursor: pointer;
+            font-size: 11px;
         }
     </style>
 </head>
@@ -358,102 +463,87 @@
 
 <div id="processing-overlay" style="display:none">
     <div class="spinner"></div>
-    <p style="margin-top:14px;">Processing...</p>
+    <p>Processing...</p>
 </div>
 <div class="loader-bar" id="loader"></div>
 
 <div class="header">
     <div class="logo-area">
-        <h1>🎬 <span>Nikamma 4k</span> Pro Admin</h1>
+        <div class="logo-icon" id="logoIcon">
+            <i class="fa fa-film"></i>
+        </div>
+        <div class="logo-text">
+            <h1><span>Nikamma 4k</span> Pro Admin</h1>
+            <p>Content Management System</p>
+        </div>
     </div>
-    <button class="refresh-btn" onclick="fetchDashboardData()">
-        <i class="fa fa-sync-alt"></i> Refresh
-    </button>
+    <button class="refresh-btn" onclick="fetchAllData()"><i class="fa fa-sync-alt"></i> Refresh Data</button>
+</div>
+
+<div class="info-note">
+    <i class="fa fa-image"></i> <strong>Click thumbnail or Crop to edit image</strong> | Google Drive images fixed
 </div>
 
 <div class="tabs">
-    <button class="tab-btn active" id="btn-main" onclick="switchTab('main')">📦 Content</button>
-    <button class="tab-btn" id="btn-settings" onclick="switchTab('settings')">⚙️ Settings</button>
+    <button class="tab-btn active" id="btn-main" onclick="switchTab('main')">📦 Content (Movies/Sports/TV)</button>
+    <button class="tab-btn" id="btn-settings" onclick="switchTab('settings')">⚙️ App Settings</button>
 </div>
 
 <div class="content-area">
     <div class="table-card">
         <table id="table-main">
             <thead><tr><th>THUMB</th><th>NAME</th><th>CATEGORY</th><th>URL</th><th>ACTION</th></tr></thead>
-            <tbody id="body-main"></tbody>
+            <tbody id="body-main">
+                <tr><td colspan="5" class="empty-row">Loading data...<br><i class="fa fa-spinner fa-spin"></i></td></tr>
+            </tbody>
         </table>
         <table id="table-set" style="display:none">
             <thead><tr><th>APP NAME</th><th>BASE URL</th><th>VERSION</th><th>UPDATE URL</th><th>ACTION</th></tr></thead>
-            <tbody id="body-set"></tbody>
+            <tbody id="body-set">
+                <tr><td colspan="5" class="empty-row">Loading settings...<br><i class="fa fa-spinner fa-spin"></i></td></tr>
+            </tbody>
         </table>
     </div>
 </div>
 
-<div class="fab" onclick="openImageEditor()">
-    <i class="fa fa-plus"></i>
-</div>
+<div class="fab" onclick="openAddModal()"><i class="fa fa-plus"></i></div>
 
-<!-- EDITOR MODAL with 6 Sliders -->
+<!-- IMAGE EDITOR MODAL -->
 <div id="editorModal" class="editor-modal">
     <div class="editor-card">
-        <h3 style="text-align:center; margin-bottom:15px;">✂️ تصویر ایڈٹ کریں - 6 سلائیڈرز</h3>
-        
-        <div class="image-picker-area" id="imagePickerArea" onclick="document.getElementById('editorImageInput').click()">
+        <h3 style="text-align:center; margin-bottom:12px; font-size:18px;">✂️ Image Editor</h3>
+        <div class="image-picker-area" onclick="document.getElementById('editorImageInput').click()">
             <i class="fa fa-cloud-upload-alt" style="font-size: 24px; color: var(--primary);"></i>
-            <p style="margin-top: 8px;">📸 تصویر منتخب کریں</p>
-            <small>JPG, PNG, GIF</small>
+            <p style="margin-top: 6px; font-size:12px;"><strong>Click to select image</strong></p>
+            <p style="font-size: 10px; color:#888;">JPG, PNG, WEBP supported</p>
         </div>
         <input type="file" id="editorImageInput" accept="image/*" style="display:none">
-        
         <div class="canvas-container">
             <canvas id="editCanvas" width="500" height="500"></canvas>
         </div>
-        
         <div class="slider-row">
-            <div class="slider-group">
-                <label>📏 چوڑائی <span id="editWidthVal" class="value-badge">300px</span></label>
-                <input type="range" id="editWidthSlider" min="100" max="480" step="5" value="300">
-            </div>
-            <div class="slider-group">
-                <label>📐 اونچائی <span id="editHeightVal" class="value-badge">300px</span></label>
-                <input type="range" id="editHeightSlider" min="100" max="480" step="5" value="300">
-            </div>
+            <div class="slider-group"><label>Width <span id="editWidthVal" class="value-badge">300px</span></label><input type="range" id="editWidthSlider" min="100" max="480" step="5" value="300"></div>
+            <div class="slider-group"><label>Height <span id="editHeightVal" class="value-badge">300px</span></label><input type="range" id="editHeightSlider" min="100" max="480" step="5" value="300"></div>
         </div>
-        
         <div class="slider-row">
-            <div class="slider-group">
-                <label>🔍 زوم <span id="editZoomVal" class="value-badge">100%</span></label>
-                <input type="range" id="editZoomSlider" min="0.3" max="2.5" step="0.01" value="1">
-            </div>
-            <div class="slider-group">
-                <label>⚪ گولائی <span id="editRoundVal" class="value-badge">0%</span></label>
-                <input type="range" id="editRoundSlider" min="0" max="50" step="1" value="0">
-            </div>
+            <div class="slider-group"><label>Zoom <span id="editZoomVal" class="value-badge">100%</span></label><input type="range" id="editZoomSlider" min="0.3" max="2.5" step="0.01" value="1"></div>
+            <div class="slider-group"><label>Round <span id="editRoundVal" class="value-badge">0%</span></label><input type="range" id="editRoundSlider" min="0" max="50" step="1" value="0"></div>
         </div>
-        
         <div class="slider-row">
-            <div class="slider-group">
-                <label>⬅️ بائیں/دائیں (Move X) <span id="editMoveXVal" class="value-badge">0px</span></label>
-                <input type="range" id="editMoveXSlider" min="-200" max="200" step="5" value="0">
-            </div>
-            <div class="slider-group">
-                <label>⬆️ اوپر/نیچے (Move Y) <span id="editMoveYVal" class="value-badge">0px</span></label>
-                <input type="range" id="editMoveYSlider" min="-200" max="200" step="5" value="0">
-            </div>
+            <div class="slider-group"><label>Move X <span id="editMoveXVal" class="value-badge">0px</span></label><input type="range" id="editMoveXSlider" min="-200" max="200" step="5" value="0"></div>
+            <div class="slider-group"><label>Move Y <span id="editMoveYVal" class="value-badge">0px</span></label><input type="range" id="editMoveYSlider" min="-200" max="200" step="5" value="0"></div>
         </div>
-        
         <div class="editor-actions">
-            <button class="btn-submit-editor" id="submitEditorBtn">✅ Submit & Save</button>
+            <button class="btn-submit-editor" id="submitEditorBtn">✅ Apply & Use</button>
             <button class="btn-cancel-editor" id="cancelEditorBtn">❌ Cancel</button>
         </div>
     </div>
 </div>
 
-<!-- Original Modal -->
+<!-- MAIN MODAL -->
 <div class="modal" id="globalModal">
     <div class="modal-content">
-        <h3 id="modal-title">Add New Entry</h3>
-        
+        <h3 id="modal-title" style="font-size:18px;">Add/Edit Entry</h3>
         <div id="form-main-fields">
             <input type="text" id="inp-title" placeholder="Name *">
             <select id="inp-category-select">
@@ -464,10 +554,16 @@
             </select>
             <input type="text" id="inp-link" placeholder="Video URL *">
             <label>📷 Thumbnail Image</label>
-            <input type="file" id="inp-image-upload" accept="image/*">
-            <small style="color:#888;">Image will be uploaded to Drive</small>
+            <div style="display: flex; gap: 8px; margin-bottom: 10px;">
+                <input type="file" id="inp-image-upload" accept="image/*" style="flex:1;" onchange="previewImageFile(this)">
+                <button type="button" class="editor-trigger-btn" onclick="openInlineImageEditor()"><i class="fa fa-crop"></i> Edit</button>
+            </div>
+            <div id="imagePreviewArea" class="image-preview-area">
+                <img id="previewImg" src="">
+                <small>Cropped image preview</small>
+            </div>
+            <small style="color:#888;"><i class="fa fa-google-drive"></i> Use Edit to crop & resize before upload</small>
         </div>
-        
         <div id="form-settings-fields" style="display:none;">
             <input type="text" id="set-appname" placeholder="App Name">
             <input type="text" id="set-baseurl" placeholder="Base URL">
@@ -477,86 +573,52 @@
             <input type="text" id="set-privacyurl" placeholder="Privacy URL">
             <input type="text" id="set-shareurl" placeholder="Share URL">
         </div>
-        
-        <button class="btn-save" id="saveMasterBtn" onclick="performSave()">💾 SAVE DATA</button>
-        <button class="cancel-modal" onclick="closeModal()" style="width:100%; margin-top:10px; background:none; border:none; color:#888; cursor:pointer;">Cancel</button>
+        <button class="btn-save" id="saveMasterBtn" onclick="performSave()">💾 SAVE</button>
+        <button onclick="closeModal()" style="width:100%; margin-top:8px; background:none; border:none; color:#888; cursor:pointer; font-size:13px;">Cancel</button>
     </div>
 </div>
 
 <script>
-    // ========== API CONFIGURATION ==========
-    const API_BASE = "https://script.google.com/macros/s/AKfycbxAHesasQ468bD-cq-oKO7TtJoEFlEIxIaNcW015PCOBTJq1pl3Jckck5O604KGYjqoyw/exec";
-    
-    // Universal API caller with JSONP support for GET (bypasses CORS)
-    function callAPI(action, data = null, method = "GET") {
-        return new Promise((resolve, reject) => {
-            try {
-                if (method === "GET") {
-                    // Use JSONP for GET requests to bypass CORS
-                    const callbackName = `jsonp_${Date.now()}_${Math.random().toString(36).substr(2, 8)}`;
-                    const script = document.createElement('script');
-                    
-                    window[callbackName] = function(response) {
-                        delete window[callbackName];
-                        document.body.removeChild(script);
-                        resolve(response);
-                    };
-                    
-                    let url = `${API_BASE}?api=${action}&callback=${callbackName}`;
-                    script.src = url;
-                    script.onerror = () => {
-                        delete window[callbackName];
-                        document.body.removeChild(script);
-                        reject(new Error("Network error - Check if API is deployed correctly"));
-                    };
-                    document.body.appendChild(script);
-                } else {
-                    // For POST/DELETE - using fetch with no-cors mode
-                    let url = `${API_BASE}?api=${action}`;
-                    fetch(url, {
-                        method: method,
-                        headers: { "Content-Type": "application/json" },
-                        body: data ? JSON.stringify(data) : null,
-                        mode: 'cors'
-                    })
-                    .then(async (response) => {
-                        const text = await response.text();
-                        try {
-                            const result = JSON.parse(text);
-                            resolve(result);
-                        } catch(e) {
-                            resolve({ success: true, message: "Request sent successfully" });
-                        }
-                    })
-                    .catch((error) => {
-                        console.error("Fetch error:", error);
-                        // Try with no-cors as fallback
-                        fetch(url, {
-                            method: method,
-                            headers: { "Content-Type": "application/json" },
-                            body: data ? JSON.stringify(data) : null,
-                            mode: 'no-cors'
-                        }).then(() => {
-                            resolve({ success: true, message: "Request sent (no-cors mode)" });
-                        }).catch(reject);
-                    });
-                }
-            } catch(error) {
-                reject(error);
-            }
-        });
+    // ========== GOOGLE DRIVE THUMBNAIL CONVERTER ==========
+    function convertToWorkingThumbnailUrl(url) {
+        if (!url) return null;
+        if (url.includes('drive.google.com/thumbnail?id=')) return url;
+        let fileId = null;
+        const match1 = url.match(/\/d\/([^\/]+)/);
+        if (match1) fileId = match1[1];
+        if (!fileId) { const match2 = url.match(/[?&]id=([^&]+)/); if (match2) fileId = match2[1]; }
+        if (!fileId) { const match3 = url.match(/open\?id=([^&]+)/); if (match3) fileId = match3[1]; }
+        if (!fileId) { const match4 = url.match(/thumbnail\?id=([^&]+)/); if (match4) fileId = match4[1]; }
+        if (fileId) return `https://drive.google.com/thumbnail?id=${fileId}&sz=w500`;
+        if (url.startsWith('http') && (url.includes('.jpg') || url.includes('.png') || url.includes('.jpeg') || url.includes('.webp'))) return url;
+        return null;
     }
     
-    // ========== ORIGINAL VARIABLES (No Changes) ==========
+    function extractFileIdFromUrl(url) {
+        if (!url) return '';
+        const match = url.match(/thumbnail\?id=([^&]+)/);
+        if (match) return match[1];
+        const match2 = url.match(/\/d\/([^\/]+)/);
+        if (match2) return match2[1];
+        return '';
+    }
+    
+    // ========== CONFIGURATION ==========
+    const MAIN_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQD2lHL-u6zHPZKdYIVD4eXp98XipkVP4jKfxLDoNje9DeZ1726o0zFZf-gAR2kZj0ls7VhceXbbKih/pub?gid=0&single=true&output=csv";
+    const SETTINGS_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQD2lHL-u6zHPZKdYIVD4eXp98XipkVP4jKfxLDoNje9DeZ1726o0zFZf-gAR2kZj0ls7VhceXbbKih/pub?gid=1123743396&single=true&output=csv";
+    const LOGO_URL = "https://drive.google.com/thumbnail?id=1DXQpAofda-bZPS20Q-bqo6neUDznYqW9&sz=w200";
+    const API_BASE = "https://script.google.com/macros/s/AKfycbz1X6A2NNHPD2X4k2FB9J5nEKfPsfZPgyNZ71F4kFE_iSkjy4MiC5Y8zak8s9uv8nDvyQ/exec";
+    
     let currentTab = 'main';
-    let mainData = [], settingsData = [];
+    let mainData = [];
+    let settingsData = [];
     let editContext = { isEdit: false, rowIndex: null, oldFileId: null, oldThumbUrl: null };
+    let isLoading = false;
+    let pendingCroppedBlob = null;
     
     // Editor variables
     let editorImg = new Image();
     let editorImgLoaded = false;
-    let currentCroppedBlob = null;
-
     const editCanvas = document.getElementById('editCanvas');
     const editCtx = editCanvas.getContext('2d');
     const editWidthSlider = document.getElementById('editWidthSlider');
@@ -565,218 +627,130 @@
     const editRoundSlider = document.getElementById('editRoundSlider');
     const editMoveXSlider = document.getElementById('editMoveXSlider');
     const editMoveYSlider = document.getElementById('editMoveYSlider');
-
-    // ========== UTILITY FUNCTIONS ==========
+    
     function showProcessing(show) {
-        const overlay = document.getElementById('processing-overlay');
-        if (overlay) overlay.style.display = show ? 'flex' : 'none';
+        document.getElementById('processing-overlay').style.display = show ? 'flex' : 'none';
     }
-
+    
     function setLoader(percent) {
-        const loader = document.getElementById('loader');
-        if (loader) loader.style.width = percent + '%';
+        document.getElementById('loader').style.width = percent + '%';
     }
-
+    
     function showToast(message, isError = false) {
         const toast = document.createElement('div');
         toast.className = 'toast' + (isError ? ' error' : '');
         toast.textContent = message;
         document.body.appendChild(toast);
-        setTimeout(() => toast.remove(), 3000);
-    }
-
-    // ========== EDITOR FUNCTIONS ==========
-    function updateEditValues() {
-        document.getElementById('editWidthVal').innerText = editWidthSlider.value + "px";
-        document.getElementById('editHeightVal').innerText = editHeightSlider.value + "px";
-        document.getElementById('editZoomVal').innerText = Math.round(editZoomSlider.value * 100) + "%";
-        document.getElementById('editRoundVal').innerText = editRoundSlider.value + "%";
-        document.getElementById('editMoveXVal').innerText = editMoveXSlider.value + "px";
-        document.getElementById('editMoveYVal').innerText = editMoveYSlider.value + "px";
-        drawEditCanvas();
+        setTimeout(() => toast.remove(), 2500);
     }
     
-    function drawEditCanvas() {
-        if(!editorImgLoaded) return;
-        editCtx.clearRect(0, 0, 500, 500);
-        const zoom = parseFloat(editZoomSlider.value);
-        const boxW = parseFloat(editWidthSlider.value);
-        const boxH = parseFloat(editHeightSlider.value);
-        const roundP = parseFloat(editRoundSlider.value);
-        const moveX = parseFloat(editMoveXSlider.value);
-        const moveY = parseFloat(editMoveYSlider.value);
-        
-        const drawW = editorImg.width * zoom;
-        const drawH = editorImg.height * zoom;
-        const imgX = (500 - drawW) / 2;
-        const imgY = (500 - drawH) / 2;
-        
-        editCtx.drawImage(editorImg, imgX, imgY, drawW, drawH);
-        
-        const startX = ((500 - boxW) / 2) + moveX;
-        const startY = ((500 - boxH) / 2) + moveY;
-        const radius = (Math.min(boxW, boxH) / 2) * (roundP / 50);
-        
-        editCtx.save();
-        editCtx.strokeStyle = "#ffaa44";
-        editCtx.lineWidth = 3;
-        editCtx.beginPath();
-        editCtx.moveTo(startX + radius, startY);
-        editCtx.lineTo(startX + boxW - radius, startY);
-        editCtx.quadraticCurveTo(startX + boxW, startY, startX + boxW, startY + radius);
-        editCtx.lineTo(startX + boxW, startY + boxH - radius);
-        editCtx.quadraticCurveTo(startX + boxW, startY + boxH, startX + boxW - radius, startY + boxH);
-        editCtx.lineTo(startX + radius, startY + boxH);
-        editCtx.quadraticCurveTo(startX, startY + boxH, startX, startY + boxH - radius);
-        editCtx.lineTo(startX, startY + radius);
-        editCtx.quadraticCurveTo(startX, startY, startX + radius, startY);
-        editCtx.closePath();
-        editCtx.stroke();
-        
-        editCtx.beginPath();
-        editCtx.moveTo(startX + radius + 2, startY + 2);
-        editCtx.lineTo(startX + boxW - radius - 2, startY + 2);
-        editCtx.quadraticCurveTo(startX + boxW - 2, startY + 2, startX + boxW - 2, startY + radius + 2);
-        editCtx.lineTo(startX + boxW - 2, startY + boxH - radius - 2);
-        editCtx.quadraticCurveTo(startX + boxW - 2, startY + boxH - 2, startX + boxW - radius - 2, startY + boxH - 2);
-        editCtx.lineTo(startX + radius + 2, startY + boxH - 2);
-        editCtx.quadraticCurveTo(startX + 2, startY + boxH - 2, startX + 2, startY + boxH - radius - 2);
-        editCtx.lineTo(startX + 2, startY + radius + 2);
-        editCtx.quadraticCurveTo(startX + 2, startY + 2, startX + radius + 2, startY + 2);
-        editCtx.closePath();
-        editCtx.strokeStyle = "#00ffcc";
-        editCtx.lineWidth = 1.5;
-        editCtx.stroke();
-        editCtx.restore();
-    }
-    
-    function centerEditImage() {
-        if(!editorImgLoaded) return;
-        drawEditCanvas();
-    }
-    
-    function getCroppedBlob(callback) {
-        const boxW = parseFloat(editWidthSlider.value);
-        const boxH = parseFloat(editHeightSlider.value);
-        const moveX = parseFloat(editMoveXSlider.value);
-        const moveY = parseFloat(editMoveYSlider.value);
-        const startX = ((500 - boxW) / 2) + moveX;
-        const startY = ((500 - boxH) / 2) + moveY;
-        
-        const safeX = Math.max(0, Math.min(startX, 500 - boxW));
-        const safeY = Math.max(0, Math.min(startY, 500 - boxH));
-        
-        const cropCanvas = document.createElement('canvas');
-        cropCanvas.width = boxW;
-        cropCanvas.height = boxH;
-        const cropCtx = cropCanvas.getContext('2d');
-        cropCtx.drawImage(editCanvas, safeX, safeY, boxW, boxH, 0, 0, boxW, boxH);
-        cropCanvas.toBlob(callback, 'image/jpeg', 0.85);
-    }
-    
-    function openImageEditor() {
-        document.getElementById('editorModal').style.display = 'flex';
-        editWidthSlider.value = "300";
-        editHeightSlider.value = "300";
-        editZoomSlider.value = "1";
-        editRoundSlider.value = "0";
-        editMoveXSlider.value = "0";
-        editMoveYSlider.value = "0";
-        updateEditValues();
-        
-        editorImg.src = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='500' height='500' viewBox='0 0 500 500'%3E%3Crect width='500' height='500' fill='%23333'/%3E%3Ctext x='250' y='250' text-anchor='middle' fill='%230a84ff' font-size='20'%3E📸 Select Image%3C/text%3E%3C/svg%3E";
-        editorImg.onload = () => { editorImgLoaded = true; centerEditImage(); };
-        editorImgLoaded = true;
-        centerEditImage();
-    }
-    
-    document.getElementById('editorImageInput').addEventListener('change', (e) => {
-        const file = e.target.files[0];
-        if(file && file.type.startsWith('image/')) {
+    function previewImageFile(input) {
+        const previewArea = document.getElementById('imagePreviewArea');
+        const previewImg = document.getElementById('previewImg');
+        if (input.files && input.files[0]) {
             const reader = new FileReader();
-            reader.onload = (ev) => {
-                editorImg = new Image();
-                editorImg.onload = () => {
-                    editorImgLoaded = true;
-                    centerEditImage();
-                    updateEditValues();
-                    showToast("✅ تصویر لوڈ ہوگئی!");
-                };
-                editorImg.src = ev.target.result;
+            reader.onload = function(e) {
+                previewImg.src = e.target.result;
+                previewArea.style.display = 'block';
             };
-            reader.readAsDataURL(file);
+            reader.readAsDataURL(input.files[0]);
+        } else {
+            previewArea.style.display = 'none';
         }
-    });
-    
-    document.getElementById('submitEditorBtn').addEventListener('click', () => {
-        if(!editorImgLoaded || editorImg.src.includes("Select Image")) {
-            showToast("پہلے تصویر منتخب کریں", true);
-            return;
-        }
-        
-        getCroppedBlob((blob) => {
-            if(blob) {
-                currentCroppedBlob = blob;
-                document.getElementById('editorModal').style.display = 'none';
-                openAddModalWithBlob();
-                showToast("✅ تصویر کراپ ہوگئی، اب تفصیلات بھریں");
-            } else {
-                showToast("Cropping failed", true);
-            }
-        });
-    });
-    
-    document.getElementById('cancelEditorBtn').addEventListener('click', () => {
-        document.getElementById('editorModal').style.display = 'none';
-        currentCroppedBlob = null;
-    });
-    
-    function openAddModalWithBlob() {
-        editContext = { isEdit: false, rowIndex: null, oldFileId: null, oldThumbUrl: null };
-        document.getElementById('modal-title').innerText = "➕ Add New Content";
-        document.getElementById('form-main-fields').style.display = 'block';
-        document.getElementById('form-settings-fields').style.display = 'none';
-        document.getElementById('inp-title').value = '';
-        document.getElementById('inp-category-select').value = 'Movies';
-        document.getElementById('inp-link').value = '';
-        document.getElementById('inp-image-upload').value = '';
-        document.getElementById('globalModal').style.display = 'flex';
     }
     
-    // ========== API FUNCTIONS ==========
-    async function fetchDashboardData() {
-        setLoader(30);
+    // Load logo image on page load
+    function loadLogo() {
+        const logoContainer = document.getElementById('logoIcon');
+        if (logoContainer) {
+            // Try to load from fixed logo URL
+            const logoUrl = LOGO_URL;
+            const img = new Image();
+            img.onload = function() {
+                logoContainer.innerHTML = `<img src="${logoUrl}" alt="Logo">`;
+            };
+            img.onerror = function() {
+                // Keep default icon if image fails
+                logoContainer.innerHTML = '<i class="fa fa-film"></i>';
+            };
+            img.src = logoUrl;
+        }
+    }
+    
+    // ========== FAST FETCH DATA WITH PARALLEL LOADING ==========
+    async function fetchAllData() {
+        if (isLoading) return;
+        isLoading = true;
+        setLoader(20);
         showProcessing(true);
         
         try {
-            const response = await callAPI("data");
+            // Parallel fetch for faster loading
+            const [mainResponse, settingsResponse] = await Promise.all([
+                fetch(MAIN_CSV_URL),
+                fetch(SETTINGS_CSV_URL)
+            ]);
             
-            if (response && response.success) {
-                mainData = response.main || [];
-                settingsData = response.settings || [];
-                renderCurrentTable();
-                showToast('✓ Loaded ' + mainData.length + ' items');
-            } else {
-                throw new Error(response?.error || 'No data received. Make sure Apps Script is deployed and Sheets have data.');
+            const mainText = await mainResponse.text();
+            const mainParsed = Papa.parse(mainText, { header: true, skipEmptyLines: true });
+            
+            mainData = [];
+            mainParsed.data.forEach(row => {
+                if (row.Name || row.name || row.URL || row.url) {
+                    const name = row.Name || row.name || "";
+                    const category = row.Category || row.category || "Movies";
+                    const url = row.URL || row.url || "";
+                    let rawThumb = row.Thumbnail || row.thumbnail || "";
+                    const workingThumb = convertToWorkingThumbnailUrl(rawThumb);
+                    const finalThumb = workingThumb || 'https://via.placeholder.com/48/12161c?text=No+Img';
+                    const fileId = extractFileIdFromUrl(rawThumb) || extractFileIdFromUrl(workingThumb) || "";
+                    mainData.push({ name, category, url, thumbnail: finalThumb, fileId });
+                }
+            });
+            
+            const settingsText = await settingsResponse.text();
+            const settingsParsed = Papa.parse(settingsText, { header: true, skipEmptyLines: true });
+            
+            settingsData = [];
+            if (settingsParsed.data.length > 0) {
+                const s = settingsParsed.data[0];
+                settingsData.push({
+                    name: s.Name || s.name || "",
+                    url: s.URL || s.url || s.baseUrl || "",
+                    version: s.Version || s.version || "1.0",
+                    updateUrl: s.UpdateUrl || s.updateUrl || "",
+                    ratingUrl: s.RatingUrl || s.ratingUrl || "",
+                    privacyUrl: s.PrivacyUrl || s.privacyUrl || "",
+                    shareUrl: s.ShareUrl || s.shareUrl || ""
+                });
             }
+            
+            renderCurrentTable();
+            showToast(`✓ Loaded ${mainData.length} items`);
             setLoader(100);
             showProcessing(false);
+            
         } catch (error) {
+            console.error("Fetch error:", error);
             showProcessing(false);
             showToast('✗ Error: ' + error.message, true);
-            // Load demo data if API fails
-            loadDemoData();
+            mainData = [];
+            settingsData = [];
+            renderCurrentTable();
+        } finally {
+            isLoading = false;
         }
     }
     
-    function loadDemoData() {
-        mainData = [
-            ["Sample Movie - Demo", "Movies", "https://example.com/video1", "https://via.placeholder.com/100/00bcd4?text=Demo1", "demo123"],
-            ["Cricket Highlights - Demo", "Sports", "https://example.com/video2", "https://via.placeholder.com/100/ffaa44?text=Demo2", "demo456"]
-        ];
-        settingsData = [["Nikamma App Demo", "https://api.base.com", "1.0", "https://update.com", "", "", ""]];
-        renderCurrentTable();
-        showToast('⚠️ Demo mode - API not connected', true);
+    async function callAPI(action, data = null) {
+        try {
+            const url = `${API_BASE}?api=${action}`;
+            await fetch(url, { method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'application/json' }, body: data ? JSON.stringify(data) : null });
+            return { success: true };
+        } catch (error) {
+            console.error("API Error:", error);
+            return { success: false, error: error.message };
+        }
     }
     
     async function performSave() {
@@ -801,125 +775,174 @@
                 const category = document.getElementById('inp-category-select').value;
                 const link = document.getElementById('inp-link').value.trim();
                 
-                if (!title) throw new Error("Name is required");
-                if (!link) throw new Error("URL is required");
+                if (!title) throw new Error("Name required");
+                if (!link) throw new Error("URL required");
                 
                 payload.title = title;
                 payload.category = category;
                 payload.link = link;
                 
-                if(currentCroppedBlob) {
+                if (pendingCroppedBlob) {
                     imageData = await new Promise((resolve) => {
                         const reader = new FileReader();
                         reader.onload = (e) => resolve({
                             data: e.target.result.split(',')[1],
                             mimeType: 'image/jpeg',
-                            name: `cropped_${Date.now()}.jpg`
+                            name: `img_${Date.now()}.jpg`
                         });
-                        reader.readAsDataURL(currentCroppedBlob);
+                        reader.readAsDataURL(pendingCroppedBlob);
                     });
-                    currentCroppedBlob = null;
+                    pendingCroppedBlob = null;
                 } else {
                     const fileInput = document.getElementById('inp-image-upload');
                     if (fileInput.files.length > 0) {
-                        imageData = await getFileData(fileInput);
+                        const file = fileInput.files[0];
+                        imageData = await new Promise((resolve) => {
+                            const reader = new FileReader();
+                            reader.onload = (e) => resolve({
+                                data: e.target.result.split(',')[1],
+                                mimeType: file.type,
+                                name: file.name
+                            });
+                            reader.readAsDataURL(file);
+                        });
                     }
                 }
             } else {
-                const name = document.getElementById('set-appname').value.trim();
-                if (!name) throw new Error("App Name is required");
-                payload.name = name;
+                payload.name = document.getElementById('set-appname').value.trim();
                 payload.url = document.getElementById('set-baseurl').value.trim();
                 payload.version = document.getElementById('set-version').value.trim();
                 payload.updateUrl = document.getElementById('set-updateurl').value.trim();
                 payload.ratingUrl = document.getElementById('set-ratingurl').value.trim();
                 payload.privacyUrl = document.getElementById('set-privacyurl').value.trim();
                 payload.shareUrl = document.getElementById('set-shareurl').value.trim();
+                
+                if (!payload.name) throw new Error("App Name required");
             }
             
             if (imageData) payload.imageData = imageData;
             
-            const result = await callAPI("save", payload, "POST");
+            const result = await callAPI("save", payload);
             
-            if (result && result.success) {
-                showToast("✓ Data saved!");
+            if (result.success) {
+                showToast("✓ Save request sent! Refreshing...");
                 closeModal();
-                fetchDashboardData();
+                setTimeout(() => fetchAllData(), 1500);
             } else {
-                throw new Error(result?.error || "Save failed");
+                throw new Error(result.error || "Save failed");
             }
-            
-            saveBtn.disabled = false;
-            saveBtn.innerText = "💾 SAVE DATA";
-            setLoader(100);
-            showProcessing(false);
-                
         } catch (err) {
             showToast(err.message, true);
+        } finally {
             saveBtn.disabled = false;
-            saveBtn.innerText = "💾 SAVE DATA";
+            saveBtn.innerText = "💾 SAVE";
+            setLoader(100);
             showProcessing(false);
         }
     }
     
     async function deleteRecordItem(sheetName, rowIndex, fileId) {
-        if (!confirm("⚠️ Delete permanently? Image will also be deleted from Drive.")) return;
-        
+        if (!confirm("⚠️ Delete this item permanently?")) return;
         showProcessing(true);
-        
         try {
-            const result = await callAPI("delete", { rowIndex, fileId, sheetName }, "DELETE");
-            
-            if (result && result.success) {
-                showToast("✓ Deleted successfully");
-                fetchDashboardData();
-            } else {
-                showToast("✗ Delete failed", true);
-                showProcessing(false);
-            }
+            await callAPI("delete", { rowIndex, fileId, sheetName });
+            showToast("✓ Deleted! Refreshing...");
+            setTimeout(() => fetchAllData(), 1500);
         } catch (error) {
-            showToast("✗ Error: " + error.message, true);
+            showToast("✗ Delete failed", true);
             showProcessing(false);
         }
     }
-
-    // ========== RENDER FUNCTIONS ==========
-    function renderCurrentTable() {
-        if (currentTab === 'main') renderMainTable();
-        else renderSettingsTable();
+    
+    // ========== IMAGE EDITOR FUNCTIONS ==========
+    function updateEditValues() {
+        document.getElementById('editWidthVal').innerText = editWidthSlider.value + "px";
+        document.getElementById('editHeightVal').innerText = editHeightSlider.value + "px";
+        document.getElementById('editZoomVal').innerText = Math.round(editZoomSlider.value * 100) + "%";
+        document.getElementById('editRoundVal').innerText = editRoundSlider.value + "%";
+        document.getElementById('editMoveXVal').innerText = editMoveXSlider.value + "px";
+        document.getElementById('editMoveYVal').innerText = editMoveYSlider.value + "px";
+        drawEditCanvas();
     }
-
-    function renderMainTable() {
-        const tbody = document.getElementById('body-main');
-        if (!mainData || !mainData.length) {
-            tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding:40px;">✨ No content. Click + to add ✨</td></tr>';
-            return;
-        }
+    
+    function drawEditCanvas() {
+        if(!editorImgLoaded) return;
+        editCtx.clearRect(0, 0, 500, 500);
+        const zoom = parseFloat(editZoomSlider.value);
+        const boxW = parseFloat(editWidthSlider.value);
+        const boxH = parseFloat(editHeightSlider.value);
+        const moveX = parseFloat(editMoveXSlider.value);
+        const moveY = parseFloat(editMoveYSlider.value);
+        const drawW = editorImg.width * zoom;
+        const drawH = editorImg.height * zoom;
+        const imgX = (500 - drawW) / 2;
+        const imgY = (500 - drawH) / 2;
+        editCtx.drawImage(editorImg, imgX, imgY, drawW, drawH);
+        const startX = ((500 - boxW) / 2) + moveX;
+        const startY = ((500 - boxH) / 2) + moveY;
+        editCtx.save();
+        editCtx.strokeStyle = "#ffaa44";
+        editCtx.lineWidth = 3;
+        editCtx.strokeRect(startX, startY, boxW, boxH);
+        editCtx.restore();
+    }
+    
+    function getCroppedBlob(callback) {
+        const boxW = parseFloat(editWidthSlider.value);
+        const boxH = parseFloat(editHeightSlider.value);
+        const moveX = parseFloat(editMoveXSlider.value);
+        const moveY = parseFloat(editMoveYSlider.value);
+        const startX = ((500 - boxW) / 2) + moveX;
+        const startY = ((500 - boxH) / 2) + moveY;
+        const safeX = Math.max(0, Math.min(startX, 500 - boxW));
+        const safeY = Math.max(0, Math.min(startY, 500 - boxH));
+        const cropCanvas = document.createElement('canvas');
+        cropCanvas.width = boxW;
+        cropCanvas.height = boxH;
+        const cropCtx = cropCanvas.getContext('2d');
+        cropCtx.drawImage(editCanvas, safeX, safeY, boxW, boxH, 0, 0, boxW, boxH);
+        cropCanvas.toBlob(callback, 'image/jpeg', 0.85);
+    }
+    
+    function openInlineImageEditor() {
+        document.getElementById('editorModal').style.display = 'flex';
+        editWidthSlider.value = "300";
+        editHeightSlider.value = "300";
+        editZoomSlider.value = "1";
+        editRoundSlider.value = "0";
+        editMoveXSlider.value = "0";
+        editMoveYSlider.value = "0";
+        updateEditValues();
+        editorImgLoaded = false;
+        drawEditCanvas();
         
-        let html = '';
-        mainData.forEach((row, idx) => {
-            const name = row[0] || 'Untitled';
-            const category = row[1] || 'Movies';
-            const url = row[2] || '#';
-            const thumbUrl = row[3] || 'https://via.placeholder.com/48';
-            const fileId = row[4] || '';
-            const rowNum = idx + 2;
-            
-            html += `<tr>
-                <td><img src="${thumbUrl}" class="thumb" onerror="this.src='https://via.placeholder.com/48'" title="Click to edit" onclick='openImageEditorWithUrl("${thumbUrl}")'></td>
-                <td><strong>${escapeHtml(name)}</strong></td>
-                <td><span class="badge-cat">${escapeHtml(category)}</span></td>
-                <td style="max-width:250px; overflow:hidden;">${escapeHtml(url)}</td>
-                <td>
-                    <button class="action-btn edit-i" onclick='openEditMain(${rowNum}, ${JSON.stringify(row).replace(/'/g, "&#39;")})'><i class="fa fa-edit"></i></button>
-                    <button class="action-btn del-i" onclick="deleteRecordItem('Sheet1', ${rowNum}, '${fileId}')"><i class="fa fa-trash"></i></button>
-                </td>
-            </td>`;
-        });
-        tbody.innerHTML = html;
+        const fileInput = document.getElementById('inp-image-upload');
+        if (fileInput.files.length > 0) {
+            const reader = new FileReader();
+            reader.onload = (ev) => {
+                editorImg = new Image();
+                editorImg.onload = () => {
+                    editorImgLoaded = true;
+                    drawEditCanvas();
+                    updateEditValues();
+                };
+                editorImg.src = ev.target.result;
+            };
+            reader.readAsDataURL(fileInput.files[0]);
+        } else {
+            editorImg.src = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='500' height='500' viewBox='0 0 500 500'%3E%3Crect width='500' height='500' fill='%23333'/%3E%3Ctext x='250' y='250' text-anchor='middle' fill='%230a84ff' font-size='20'%3E📸 Select%3C/text%3E%3C/svg%3E";
+            editorImg.onload = () => {
+                editorImgLoaded = true;
+                drawEditCanvas();
+            };
+        }
     }
     
     function openImageEditorWithUrl(imageUrl) {
+        if (!imageUrl || imageUrl.includes('placeholder')) {
+            showToast("No valid image URL", true);
+            return;
+        }
         document.getElementById('editorModal').style.display = 'flex';
         editWidthSlider.value = "300";
         editHeightSlider.value = "300";
@@ -933,44 +956,124 @@
         editorImg.crossOrigin = "Anonymous";
         editorImg.onload = () => {
             editorImgLoaded = true;
-            centerEditImage();
+            drawEditCanvas();
             updateEditValues();
         };
         editorImg.onerror = () => {
-            showToast("تصویر لوڈ نہیں ہو سکی", true);
+            showToast("Image load failed", true);
         };
         editorImg.src = imageUrl;
     }
-
-    function renderSettingsTable() {
-        const tbody = document.getElementById('body-set');
-        if (!settingsData || !settingsData.length) {
-            tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding:40px;">⚙️ No settings. Click + to add ⚙️</td></tr>';
+    
+    document.getElementById('editorImageInput').addEventListener('change', (e) => {
+        const file = e.target.files[0];
+        if(file && file.type.startsWith('image/')) {
+            const reader = new FileReader();
+            reader.onload = (ev) => {
+                editorImg = new Image();
+                editorImg.onload = () => {
+                    editorImgLoaded = true;
+                    drawEditCanvas();
+                    updateEditValues();
+                    showToast("✅ Image loaded!");
+                };
+                editorImg.src = ev.target.result;
+            };
+            reader.readAsDataURL(file);
+        }
+    });
+    
+    document.getElementById('submitEditorBtn').addEventListener('click', () => {
+        if(!editorImgLoaded) {
+            showToast("Select an image first", true);
+            return;
+        }
+        getCroppedBlob((blob) => {
+            if(blob) {
+                pendingCroppedBlob = blob;
+                document.getElementById('editorModal').style.display = 'none';
+                const previewArea = document.getElementById('imagePreviewArea');
+                const previewImg = document.getElementById('previewImg');
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    previewImg.src = e.target.result;
+                    previewArea.style.display = 'block';
+                };
+                reader.readAsDataURL(blob);
+                showToast("✅ Cropped ready");
+            } else {
+                showToast("Cropping failed", true);
+            }
+        });
+    });
+    
+    document.getElementById('cancelEditorBtn').addEventListener('click', () => {
+        document.getElementById('editorModal').style.display = 'none';
+        pendingCroppedBlob = null;
+    });
+    
+    editWidthSlider.addEventListener('input', updateEditValues);
+    editHeightSlider.addEventListener('input', updateEditValues);
+    editZoomSlider.addEventListener('input', updateEditValues);
+    editRoundSlider.addEventListener('input', updateEditValues);
+    editMoveXSlider.addEventListener('input', updateEditValues);
+    editMoveYSlider.addEventListener('input', updateEditValues);
+    
+    // ========== RENDER FUNCTIONS ==========
+    function renderCurrentTable() {
+        if (currentTab === 'main') renderMainTable();
+        else renderSettingsTable();
+    }
+    
+    function renderMainTable() {
+        const tbody = document.getElementById('body-main');
+        if (!mainData.length) {
+            tbody.innerHTML = '<tr><td colspan="5" class="empty-row">✨ No content. Click + to add ✨</td></tr>';
             return;
         }
         
         let html = '';
-        settingsData.forEach((row, idx) => {
-            const name = row[0] || '';
-            const url = row[1] || '';
-            const version = row[2] || '';
-            const updateUrl = row[3] || '';
+        mainData.forEach((item, idx) => {
             const rowNum = idx + 2;
-            
             html += `<tr>
-                <td><strong>${escapeHtml(name)}</strong></td>
-                <td style="max-width:200px;">${escapeHtml(url)}</td>
-                <td>v${escapeHtml(version)}</td>
-                <td style="max-width:200px;">${escapeHtml(updateUrl)}</td>
+                <td><img src="${item.thumbnail}" class="thumb" onerror="this.src='https://via.placeholder.com/48?text=Error'" onclick='openImageEditorWithUrl("${item.thumbnail}")' title="Click to edit image"></td>
+                <td><strong>${escapeHtml(item.name)}</strong></td>
+                <td><span class="badge-cat">${escapeHtml(item.category)}</span></td>
+                <td style="max-width:200px; overflow:hidden;">${escapeHtml(item.url)}</td>
                 <td>
-                    <button class="action-btn edit-i" onclick='openEditSettings(${rowNum}, ${JSON.stringify(row).replace(/'/g, "&#39;")})'><i class="fa fa-edit"></i></button>
+                    <button class="action-btn edit-i" onclick='openEditMain(${rowNum}, ${JSON.stringify(item).replace(/'/g, "&#39;")})'><i class="fa fa-edit"></i></button>
+                    <button class="action-btn edit-image-i" onclick='openImageEditorWithUrl("${item.thumbnail}")' title="Crop Image"><i class="fa fa-crop"></i></button>
+                    <button class="action-btn del-i" onclick="deleteRecordItem('Sheet1', ${rowNum}, '${item.fileId}')"><i class="fa fa-trash"></i></button>
+                </td>
+            </tr>`;
+        });
+        tbody.innerHTML = html;
+    }
+    
+    function renderSettingsTable() {
+        const tbody = document.getElementById('body-set');
+        if (!settingsData.length) {
+            tbody.innerHTML = '<tr><td colspan="5" class="empty-row">⚙️ No settings. Click + to add ⚙️</td></tr>';
+            return;
+        }
+        
+        let html = '';
+        settingsData.forEach((item, idx) => {
+            const rowNum = idx + 2;
+            html += `<tr>
+                <td><strong>${escapeHtml(item.name)}</strong></td>
+                <td>${escapeHtml(item.url)}</td>
+                <td>v${escapeHtml(item.version)}</td>
+                <td>${escapeHtml(item.updateUrl)}</td>
+                <td>
+                    <button class="action-btn edit-i" onclick='openEditSettings(${rowNum}, ${JSON.stringify(item).replace(/'/g, "&#39;")})'><i class="fa fa-edit"></i></button>
                     <button class="action-btn del-i" onclick="deleteRecordItem('settings', ${rowNum}, '')"><i class="fa fa-trash"></i></button>
                 </td>
             </tr>`;
         });
         tbody.innerHTML = html;
     }
-
+    
     function escapeHtml(str) {
         if (!str) return '';
         return String(str).replace(/[&<>]/g, function(m) {
@@ -980,7 +1083,7 @@
             return m;
         });
     }
-
+    
     function switchTab(tab) {
         currentTab = tab;
         document.getElementById('table-main').style.display = tab === 'main' ? 'table' : 'none';
@@ -989,72 +1092,63 @@
         document.getElementById('btn-settings').classList.toggle('active', tab === 'settings');
         renderCurrentTable();
     }
-
-    function openEditMain(rowNum, rowData) {
+    
+    function openAddModal() {
+        editContext = { isEdit: false, rowIndex: null, oldFileId: null, oldThumbUrl: null };
+        pendingCroppedBlob = null;
+        document.getElementById('modal-title').innerText = "➕ Add New Content";
+        document.getElementById('form-main-fields').style.display = 'block';
+        document.getElementById('form-settings-fields').style.display = 'none';
+        document.getElementById('inp-title').value = '';
+        document.getElementById('inp-category-select').value = 'Movies';
+        document.getElementById('inp-link').value = '';
+        document.getElementById('inp-image-upload').value = '';
+        document.getElementById('imagePreviewArea').style.display = 'none';
+        document.getElementById('globalModal').style.display = 'flex';
+    }
+    
+    function openEditMain(rowNum, item) {
         currentTab = 'main';
-        editContext = { isEdit: true, rowIndex: rowNum, oldFileId: rowData[4] || '', oldThumbUrl: rowData[3] || '' };
-        
+        editContext = { isEdit: true, rowIndex: rowNum, oldFileId: item.fileId || '', oldThumbUrl: item.thumbnail || '' };
+        pendingCroppedBlob = null;
         document.getElementById('modal-title').innerText = "✏️ Edit Content";
         document.getElementById('form-main-fields').style.display = 'block';
         document.getElementById('form-settings-fields').style.display = 'none';
-        document.getElementById('inp-title').value = rowData[0] || '';
-        document.getElementById('inp-category-select').value = rowData[1] || 'Movies';
-        document.getElementById('inp-link').value = rowData[2] || '';
+        document.getElementById('inp-title').value = item.name || '';
+        document.getElementById('inp-category-select').value = item.category || 'Movies';
+        document.getElementById('inp-link').value = item.url || '';
         document.getElementById('inp-image-upload').value = '';
+        document.getElementById('imagePreviewArea').style.display = 'none';
         document.getElementById('globalModal').style.display = 'flex';
     }
-
-    function openEditSettings(rowNum, rowData) {
+    
+    function openEditSettings(rowNum, item) {
         currentTab = 'settings';
         editContext = { isEdit: true, rowIndex: rowNum, oldFileId: null, oldThumbUrl: null };
-        
         document.getElementById('modal-title').innerText = "✏️ Edit Settings";
         document.getElementById('form-main-fields').style.display = 'none';
         document.getElementById('form-settings-fields').style.display = 'block';
-        document.getElementById('set-appname').value = rowData[0] || '';
-        document.getElementById('set-baseurl').value = rowData[1] || '';
-        document.getElementById('set-version').value = rowData[2] || '';
-        document.getElementById('set-updateurl').value = rowData[3] || '';
-        document.getElementById('set-ratingurl').value = rowData[4] || '';
-        document.getElementById('set-privacyurl').value = rowData[5] || '';
-        document.getElementById('set-shareurl').value = rowData[6] || '';
+        document.getElementById('set-appname').value = item.name || '';
+        document.getElementById('set-baseurl').value = item.url || '';
+        document.getElementById('set-version').value = item.version || '';
+        document.getElementById('set-updateurl').value = item.updateUrl || '';
+        document.getElementById('set-ratingurl').value = item.ratingUrl || '';
+        document.getElementById('set-privacyurl').value = item.privacyUrl || '';
+        document.getElementById('set-shareurl').value = item.shareUrl || '';
         document.getElementById('globalModal').style.display = 'flex';
     }
-
+    
     function closeModal() {
         document.getElementById('globalModal').style.display = 'none';
-        currentCroppedBlob = null;
+        pendingCroppedBlob = null;
     }
-
-    function getFileData(fileInput) {
-        return new Promise((resolve) => {
-            if (!fileInput.files || !fileInput.files.length) {
-                resolve(null);
-                return;
-            }
-            const file = fileInput.files[0];
-            const reader = new FileReader();
-            reader.onload = (e) => resolve({
-                data: e.target.result.split(',')[1],
-                mimeType: file.type,
-                name: file.name
-            });
-            reader.readAsDataURL(file);
-        });
-    }
-
-    // Slider event listeners
-    editWidthSlider.addEventListener('input', updateEditValues);
-    editHeightSlider.addEventListener('input', updateEditValues);
-    editZoomSlider.addEventListener('input', updateEditValues);
-    editRoundSlider.addEventListener('input', updateEditValues);
-    editMoveXSlider.addEventListener('input', updateEditValues);
-    editMoveYSlider.addEventListener('input', updateEditValues);
     
-    // Initialize
-    setTimeout(() => {
-        fetchDashboardData();
-    }, 100);
+    // Initialize - Load logo and data
+    window.addEventListener('load', () => {
+        console.log("Nikamma Admin - Logo Fixed Version");
+        loadLogo();
+        fetchAllData();
+    });
 </script>
 </body>
 </html>
