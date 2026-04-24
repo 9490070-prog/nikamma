@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>Nikamma 4k Pro Admin - Professional</title>
+    <title>Nikamma 4k Pro Admin - Ultimate Professional</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
@@ -436,32 +436,52 @@
         .btn-submit-editor { background: #0f7b3a; color: white; }
         .btn-cancel-editor { background: #3a3a3a; color: white; }
         
-        /* PROFESSIONAL IMAGE PICKER BUTTON */
+        /* PROFESSIONAL IMAGE PICKER BUTTON - ENHANCED */
         .professional-picker {
             background: linear-gradient(135deg, #1e2a3a, #0f131c);
             border: 2px dashed var(--primary);
             border-radius: 18px;
-            padding: 20px;
+            padding: 20px 15px;
             text-align: center;
             margin-bottom: 15px;
             cursor: pointer;
             transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        .professional-picker::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(0,188,212,0.1), transparent);
+            transition: left 0.5s ease;
+        }
+        .professional-picker:hover::before {
+            left: 100%;
         }
         .professional-picker:hover {
             background: linear-gradient(135deg, #253545, #1a1f2a);
             border-color: #ffaa44;
-            transform: scale(1.01);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(0,188,212,0.2);
         }
         .picker-icon {
-            font-size: 38px;
+            font-size: 42px;
             color: var(--primary);
-            margin-bottom: 8px;
+            margin-bottom: 10px;
+            transition: transform 0.3s ease;
+        }
+        .professional-picker:hover .picker-icon {
+            transform: scale(1.1);
         }
         .picker-title {
             font-size: 14px;
-            font-weight: 600;
+            font-weight: 700;
             color: white;
-            margin-bottom: 4px;
+            margin-bottom: 5px;
         }
         .picker-sub {
             font-size: 10px;
@@ -481,10 +501,30 @@
             cursor: pointer;
             font-size: 11px;
             transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 6px;
         }
         .editor-trigger-btn:hover {
             transform: scale(0.98);
             opacity: 0.9;
+        }
+        
+        /* Image upload area styling */
+        .image-upload-wrapper {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 10px;
+            align-items: center;
+        }
+        .image-upload-wrapper input[type="file"] {
+            flex: 1;
+            margin: 0;
+            background: #0f131c;
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 8px 12px;
+            font-size: 12px;
         }
     </style>
 </head>
@@ -510,7 +550,7 @@
 </div>
 
 <div class="info-note">
-    <i class="fa fa-image"></i> <strong>Click thumbnail or Crop to edit image</strong> | Google Drive images fixed
+    <i class="fa fa-image"></i> <strong>Click thumbnail or 🖌️ Crop to edit image</strong> | Google Drive images fixed | Zoom default 0%
 </div>
 
 <div class="tabs">
@@ -555,7 +595,7 @@
             <div class="slider-group"><label>Height <span id="editHeightVal" class="value-badge">300px</span></label><input type="range" id="editHeightSlider" min="100" max="480" step="5" value="300"></div>
         </div>
         <div class="slider-row">
-            <div class="slider-group"><label>Zoom <span id="editZoomVal" class="value-badge">100%</span></label><input type="range" id="editZoomSlider" min="0.3" max="2.5" step="0.01" value="1"></div>
+            <div class="slider-group"><label>Zoom <span id="editZoomVal" class="value-badge">0%</span></label><input type="range" id="editZoomSlider" min="0.4" max="2.5" step="0.01" value="01"></div>
             <div class="slider-group"><label>Round <span id="editRoundVal" class="value-badge">0%</span></label><input type="range" id="editRoundSlider" min="0" max="50" step="1" value="0"></div>
         </div>
         <div class="slider-row">
@@ -583,15 +623,15 @@
             </select>
             <input type="text" id="inp-link" placeholder="Video URL *">
             <label>📷 Thumbnail Image</label>
-            <div style="display: flex; gap: 8px; margin-bottom: 10px;">
-                <input type="file" id="inp-image-upload" accept="image/*" style="flex:1;" onchange="previewImageFile(this)">
-                <button type="button" class="editor-trigger-btn" onclick="openInlineImageEditor()"><i class="fa fa-crop"></i> Edit</button>
+            <div class="image-upload-wrapper">
+                <input type="file" id="inp-image-upload" accept="image/*" onchange="previewImageFile(this)">
+                <button type="button" class="editor-trigger-btn" onclick="openInlineImageEditor()"><i class="fa fa-crop"></i> Edit Image</button>
             </div>
             <div id="imagePreviewArea" class="image-preview-area">
                 <img id="previewImg" src="">
                 <small>Cropped image preview</small>
             </div>
-            <small style="color:#888;"><i class="fa fa-google-drive"></i> Use Edit to crop & resize before upload</small>
+            <small style="color:#888;"><i class="fa fa-google-drive"></i> Use Edit Image to crop & resize before upload | Zoom: 0% default</small>
         </div>
         <div id="form-settings-fields" style="display:none;">
             <input type="text" id="set-appname" placeholder="App Name">
@@ -663,7 +703,6 @@
         if (show) {
             overlay.style.display = 'flex';
         } else {
-            // Small delay to ensure UI doesn't flicker
             if (processingTimeout) clearTimeout(processingTimeout);
             processingTimeout = setTimeout(() => {
                 overlay.style.display = 'none';
@@ -702,36 +741,23 @@
         const logoContainer = document.getElementById('logoIcon');
         if (logoContainer) {
             const img = new Image();
-            img.onload = function() {
-                logoContainer.innerHTML = `<img src="${LOGO_URL}" alt="Logo">`;
-            };
-            img.onerror = function() {
-                logoContainer.innerHTML = '<i class="fa fa-film"></i>';
-            };
+            img.onload = function() { logoContainer.innerHTML = `<img src="${LOGO_URL}" alt="Logo">`; };
+            img.onerror = function() { logoContainer.innerHTML = '<i class="fa fa-film"></i>'; };
             img.src = LOGO_URL;
         }
     }
     
-    function refreshData() {
-        if (isLoading) return;
-        fetchAllData();
-    }
+    function refreshData() { if (!isLoading) fetchAllData(); }
     
     async function fetchAllData() {
         if (isLoading) return;
         isLoading = true;
         setLoader(20);
         showProcessing(true);
-        
         try {
-            const [mainResponse, settingsResponse] = await Promise.all([
-                fetch(MAIN_CSV_URL),
-                fetch(SETTINGS_CSV_URL)
-            ]);
-            
+            const [mainResponse, settingsResponse] = await Promise.all([fetch(MAIN_CSV_URL), fetch(SETTINGS_CSV_URL)]);
             const mainText = await mainResponse.text();
             const mainParsed = Papa.parse(mainText, { header: true, skipEmptyLines: true });
-            
             mainData = [];
             mainParsed.data.forEach(row => {
                 if (row.Name || row.name || row.URL || row.url) {
@@ -745,39 +771,20 @@
                     mainData.push({ name, category, url, thumbnail: finalThumb, fileId });
                 }
             });
-            
             const settingsText = await settingsResponse.text();
             const settingsParsed = Papa.parse(settingsText, { header: true, skipEmptyLines: true });
-            
-            settingsData = [];
-            if (settingsParsed.data.length > 0) {
-                const s = settingsParsed.data[0];
-                settingsData.push({
-                    name: s.Name || s.name || "",
-                    url: s.URL || s.url || s.baseUrl || "",
-                    version: s.Version || s.version || "1.0",
-                    updateUrl: s.UpdateUrl || s.updateUrl || "",
-                    ratingUrl: s.RatingUrl || s.ratingUrl || "",
-                    privacyUrl: s.PrivacyUrl || s.privacyUrl || "",
-                    shareUrl: s.ShareUrl || s.shareUrl || ""
-                });
-            }
-            
+            settingsData = settingsParsed.data.length ? [settingsParsed.data[0]] : [];
             renderCurrentTable();
             showToast(`✓ Loaded ${mainData.length} items`);
             setLoader(100);
             showProcessing(false);
-            
         } catch (error) {
-            console.error("Fetch error:", error);
             showToast('✗ Error: ' + error.message, true);
             mainData = [];
             settingsData = [];
             renderCurrentTable();
             showProcessing(false);
-        } finally {
-            isLoading = false;
-        }
+        } finally { isLoading = false; }
     }
     
     async function callAPI(action, data = null) {
@@ -785,9 +792,7 @@
             const url = `${API_BASE}?api=${action}`;
             await fetch(url, { method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'application/json' }, body: data ? JSON.stringify(data) : null });
             return { success: true };
-        } catch (error) {
-            return { success: false, error: error.message };
-        }
+        } catch (error) { return { success: false, error: error.message }; }
     }
     
     async function performSave() {
@@ -796,37 +801,20 @@
         saveBtn.innerText = "⏳ Saving...";
         setLoader(30);
         showProcessing(true);
-        
         try {
             let imageData = null;
-            let payload = {
-                sheet: currentTab === 'main' ? "Sheet1" : "settings",
-                isEdit: editContext.isEdit,
-                rowIdx: editContext.rowIndex,
-                existingFileId: editContext.oldFileId || "",
-                existingThumb: editContext.oldThumbUrl || ""
-            };
-            
+            let payload = { sheet: currentTab === 'main' ? "Sheet1" : "settings", isEdit: editContext.isEdit, rowIdx: editContext.rowIndex, existingFileId: editContext.oldFileId || "", existingThumb: editContext.oldThumbUrl || "" };
             if (currentTab === 'main') {
                 const title = document.getElementById('inp-title').value.trim();
                 const category = document.getElementById('inp-category-select').value;
                 const link = document.getElementById('inp-link').value.trim();
-                
                 if (!title) throw new Error("Name required");
                 if (!link) throw new Error("URL required");
-                
-                payload.title = title;
-                payload.category = category;
-                payload.link = link;
-                
+                payload.title = title; payload.category = category; payload.link = link;
                 if (pendingCroppedBlob) {
                     imageData = await new Promise((resolve) => {
                         const reader = new FileReader();
-                        reader.onload = (e) => resolve({
-                            data: e.target.result.split(',')[1],
-                            mimeType: 'image/jpeg',
-                            name: `img_${Date.now()}.jpg`
-                        });
+                        reader.onload = (e) => resolve({ data: e.target.result.split(',')[1], mimeType: 'image/jpeg', name: `img_${Date.now()}.jpg` });
                         reader.readAsDataURL(pendingCroppedBlob);
                     });
                     pendingCroppedBlob = null;
@@ -836,11 +824,7 @@
                         const file = fileInput.files[0];
                         imageData = await new Promise((resolve) => {
                             const reader = new FileReader();
-                            reader.onload = (e) => resolve({
-                                data: e.target.result.split(',')[1],
-                                mimeType: file.type,
-                                name: file.name
-                            });
+                            reader.onload = (e) => resolve({ data: e.target.result.split(',')[1], mimeType: file.type, name: file.name });
                             reader.readAsDataURL(file);
                         });
                     }
@@ -853,24 +837,15 @@
                 payload.ratingUrl = document.getElementById('set-ratingurl').value.trim();
                 payload.privacyUrl = document.getElementById('set-privacyurl').value.trim();
                 payload.shareUrl = document.getElementById('set-shareurl').value.trim();
-                
                 if (!payload.name) throw new Error("App Name required");
             }
-            
             if (imageData) payload.imageData = imageData;
-            
             await callAPI("save", payload);
             showToast("✓ Save request sent! Refreshing...");
             closeModal();
             setTimeout(() => fetchAllData(), 1500);
-        } catch (err) {
-            showToast(err.message, true);
-        } finally {
-            saveBtn.disabled = false;
-            saveBtn.innerText = "💾 SAVE";
-            setLoader(100);
-            showProcessing(false);
-        }
+        } catch (err) { showToast(err.message, true); }
+        finally { saveBtn.disabled = false; saveBtn.innerText = "💾 SAVE"; setLoader(100); showProcessing(false); }
     }
     
     async function deleteRecordItem(sheetName, rowIndex, fileId) {
@@ -880,17 +855,15 @@
             await callAPI("delete", { rowIndex, fileId, sheetName });
             showToast("✓ Deleted! Refreshing...");
             setTimeout(() => fetchAllData(), 1500);
-        } catch (error) {
-            showToast("✗ Delete failed", true);
-            showProcessing(false);
-        }
+        } catch (error) { showToast("✗ Delete failed", true); showProcessing(false); }
     }
     
-    // ========== IMAGE EDITOR FUNCTIONS ==========
+    // ========== IMAGE EDITOR FUNCTIONS - ZERO DEFAULT ==========
     function updateEditValues() {
         document.getElementById('editWidthVal').innerText = editWidthSlider.value + "px";
         document.getElementById('editHeightVal').innerText = editHeightSlider.value + "px";
-        document.getElementById('editZoomVal').innerText = Math.round(editZoomSlider.value * 100) + "%";
+        let zoomPercent = Math.round(editZoomSlider.value * 100);
+        document.getElementById('editZoomVal').innerText = zoomPercent + "%";
         document.getElementById('editRoundVal').innerText = editRoundSlider.value + "%";
         document.getElementById('editMoveXVal').innerText = editMoveXSlider.value + "px";
         document.getElementById('editMoveYVal').innerText = editMoveYSlider.value + "px";
@@ -905,11 +878,12 @@
         const boxH = parseFloat(editHeightSlider.value);
         const moveX = parseFloat(editMoveXSlider.value);
         const moveY = parseFloat(editMoveYSlider.value);
-        const drawW = editorImg.width * zoom;
-        const drawH = editorImg.height * zoom;
+        let drawW = editorImg.width * zoom;
+        let drawH = editorImg.height * zoom;
+        if (zoom === 0) { drawW = 1; drawH = 1; }
         const imgX = (500 - drawW) / 2;
         const imgY = (500 - drawH) / 2;
-        editCtx.drawImage(editorImg, imgX, imgY, drawW, drawH);
+        if (zoom > 0) editCtx.drawImage(editorImg, imgX, imgY, drawW, drawH);
         const startX = ((500 - boxW) / 2) + moveX;
         const startY = ((500 - boxH) / 2) + moveY;
         editCtx.save();
@@ -929,8 +903,7 @@
         const safeX = Math.max(0, Math.min(startX, 500 - boxW));
         const safeY = Math.max(0, Math.min(startY, 500 - boxH));
         const cropCanvas = document.createElement('canvas');
-        cropCanvas.width = boxW;
-        cropCanvas.height = boxH;
+        cropCanvas.width = boxW; cropCanvas.height = boxH;
         const cropCtx = cropCanvas.getContext('2d');
         cropCtx.drawImage(editCanvas, safeX, safeY, boxW, boxH, 0, 0, boxW, boxH);
         cropCanvas.toBlob(callback, 'image/jpeg', 0.85);
@@ -940,60 +913,42 @@
         document.getElementById('editorModal').style.display = 'flex';
         editWidthSlider.value = "300";
         editHeightSlider.value = "300";
-        editZoomSlider.value = "1";
+        editZoomSlider.value = "0";
         editRoundSlider.value = "0";
         editMoveXSlider.value = "0";
         editMoveYSlider.value = "0";
         updateEditValues();
         editorImgLoaded = false;
         drawEditCanvas();
-        
         const fileInput = document.getElementById('inp-image-upload');
         if (fileInput.files.length > 0) {
             const reader = new FileReader();
             reader.onload = (ev) => {
                 editorImg = new Image();
-                editorImg.onload = () => {
-                    editorImgLoaded = true;
-                    drawEditCanvas();
-                    updateEditValues();
-                };
+                editorImg.onload = () => { editorImgLoaded = true; drawEditCanvas(); updateEditValues(); };
                 editorImg.src = ev.target.result;
             };
             reader.readAsDataURL(fileInput.files[0]);
         } else {
             editorImg.src = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='500' height='500' viewBox='0 0 500 500'%3E%3Crect width='500' height='500' fill='%23333'/%3E%3Ctext x='250' y='250' text-anchor='middle' fill='%230a84ff' font-size='20'%3E📸 Select%3C/text%3E%3C/svg%3E";
-            editorImg.onload = () => {
-                editorImgLoaded = true;
-                drawEditCanvas();
-            };
+            editorImg.onload = () => { editorImgLoaded = true; drawEditCanvas(); };
         }
     }
     
     function openImageEditorWithUrl(imageUrl) {
-        if (!imageUrl || imageUrl.includes('placeholder')) {
-            showToast("No valid image URL", true);
-            return;
-        }
+        if (!imageUrl || imageUrl.includes('placeholder')) { showToast("No valid image URL", true); return; }
         document.getElementById('editorModal').style.display = 'flex';
         editWidthSlider.value = "300";
         editHeightSlider.value = "300";
-        editZoomSlider.value = "1";
+        editZoomSlider.value = "0";
         editRoundSlider.value = "0";
         editMoveXSlider.value = "0";
         editMoveYSlider.value = "0";
         updateEditValues();
-        
         editorImg = new Image();
         editorImg.crossOrigin = "Anonymous";
-        editorImg.onload = () => {
-            editorImgLoaded = true;
-            drawEditCanvas();
-            updateEditValues();
-        };
-        editorImg.onerror = () => {
-            showToast("Image load failed", true);
-        };
+        editorImg.onload = () => { editorImgLoaded = true; drawEditCanvas(); updateEditValues(); };
+        editorImg.onerror = () => { showToast("Image load failed", true); };
         editorImg.src = imageUrl;
     }
     
@@ -1003,12 +958,7 @@
             const reader = new FileReader();
             reader.onload = (ev) => {
                 editorImg = new Image();
-                editorImg.onload = () => {
-                    editorImgLoaded = true;
-                    drawEditCanvas();
-                    updateEditValues();
-                    showToast("✅ Image loaded!");
-                };
+                editorImg.onload = () => { editorImgLoaded = true; drawEditCanvas(); updateEditValues(); showToast("✅ Image loaded!"); };
                 editorImg.src = ev.target.result;
             };
             reader.readAsDataURL(file);
@@ -1016,10 +966,7 @@
     });
     
     document.getElementById('submitEditorBtn').addEventListener('click', () => {
-        if(!editorImgLoaded) {
-            showToast("Select an image first", true);
-            return;
-        }
+        if(!editorImgLoaded) { showToast("Select an image first", true); return; }
         getCroppedBlob((blob) => {
             if(blob) {
                 pendingCroppedBlob = blob;
@@ -1027,15 +974,10 @@
                 const previewArea = document.getElementById('imagePreviewArea');
                 const previewImg = document.getElementById('previewImg');
                 const reader = new FileReader();
-                reader.onload = (e) => {
-                    previewImg.src = e.target.result;
-                    previewArea.style.display = 'block';
-                };
+                reader.onload = (e) => { previewImg.src = e.target.result; previewArea.style.display = 'block'; };
                 reader.readAsDataURL(blob);
                 showToast("✅ Cropped ready");
-            } else {
-                showToast("Cropping failed", true);
-            }
+            } else { showToast("Cropping failed", true); }
         });
     });
     
@@ -1052,18 +994,11 @@
     editMoveYSlider.addEventListener('input', updateEditValues);
     
     // ========== RENDER FUNCTIONS ==========
-    function renderCurrentTable() {
-        if (currentTab === 'main') renderMainTable();
-        else renderSettingsTable();
-    }
+    function renderCurrentTable() { currentTab === 'main' ? renderMainTable() : renderSettingsTable(); }
     
     function renderMainTable() {
         const tbody = document.getElementById('body-main');
-        if (!mainData.length) {
-            tbody.innerHTML = '<tr><td colspan="5" class="empty-row">✨ No content. Click + to add ✨</td></tr>';
-            return;
-        }
-        
+        if (!mainData.length) { tbody.innerHTML = '<tr><td colspan="5" class="empty-row">✨ No content. Click + to add ✨</td></table>'; return; }
         let html = '';
         mainData.forEach((item, idx) => {
             const rowNum = idx + 2;
@@ -1076,7 +1011,7 @@
                     <button class="action-btn edit-i" onclick='openEditMain(${rowNum}, ${JSON.stringify(item).replace(/'/g, "&#39;")})'><i class="fa fa-edit"></i></button>
                     <button class="action-btn edit-image-i" onclick='openImageEditorWithUrl("${item.thumbnail}")' title="Crop Image"><i class="fa fa-crop"></i></button>
                     <button class="action-btn del-i" onclick="deleteRecordItem('Sheet1', ${rowNum}, '${item.fileId}')"><i class="fa fa-trash"></i></button>
-                  </td>
+                </td>
             </tr>`;
         });
         tbody.innerHTML = html;
@@ -1084,11 +1019,7 @@
     
     function renderSettingsTable() {
         const tbody = document.getElementById('body-set');
-        if (!settingsData.length) {
-            tbody.innerHTML = '<tr><td colspan="5" class="empty-row">⚙️ No settings. Click + to add ⚙️</td></tr>';
-            return;
-        }
-        
+        if (!settingsData.length) { tbody.innerHTML = '<tr><td colspan="5" class="empty-row">⚙️ No settings. Click + to add ⚙️</td></tr>'; return; }
         let html = '';
         settingsData.forEach((item, idx) => {
             const rowNum = idx + 2;
@@ -1100,21 +1031,13 @@
                 <td>
                     <button class="action-btn edit-i" onclick='openEditSettings(${rowNum}, ${JSON.stringify(item).replace(/'/g, "&#39;")})'><i class="fa fa-edit"></i></button>
                     <button class="action-btn del-i" onclick="deleteRecordItem('settings', ${rowNum}, '')"><i class="fa fa-trash"></i></button>
-                  </td>
+                </td>
             </tr>`;
         });
         tbody.innerHTML = html;
     }
     
-    function escapeHtml(str) {
-        if (!str) return '';
-        return String(str).replace(/[&<>]/g, function(m) {
-            if (m === '&') return '&amp;';
-            if (m === '<') return '&lt;';
-            if (m === '>') return '&gt;';
-            return m;
-        });
-    }
+    function escapeHtml(str) { if (!str) return ''; return String(str).replace(/[&<>]/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[m])); }
     
     function switchTab(tab) {
         currentTab = tab;
@@ -1170,17 +1093,9 @@
         document.getElementById('globalModal').style.display = 'flex';
     }
     
-    function closeModal() {
-        document.getElementById('globalModal').style.display = 'none';
-        pendingCroppedBlob = null;
-    }
+    function closeModal() { document.getElementById('globalModal').style.display = 'none'; pendingCroppedBlob = null; }
     
-    // Initialize
-    window.addEventListener('load', () => {
-        console.log("Nikamma Admin - Professional Version with Single Processing Overlay");
-        loadLogo();
-        fetchAllData();
-    });
+    window.addEventListener('load', () => { loadLogo(); fetchAllData(); });
 </script>
 </body>
 </html>
