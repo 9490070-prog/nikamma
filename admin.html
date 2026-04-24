@@ -487,31 +487,64 @@
     // ========== API CONFIGURATION ==========
     const API_BASE = "https://script.google.com/macros/s/AKfycbyZjQJBPQJ1BVhJlAIZprB18OCerKosvQvgG9Gl6YwLt7kQ8l6ZsozyA5e4WFOHKHENcA/exec";
     
-    // Universal API caller
-    async function callAPI(action, data = null, method = "GET") {
-        try {
-            let url = `${API_BASE}?api=${action}`;
-            let options = { 
-                method: method, 
-                headers: { "Content-Type": "application/json" },
-                mode: 'no-cors' // For Google Apps Script compatibility
-            };
-            
-            if (data && (method === "POST" || method === "DELETE" || method === "PUT")) {
-                options.body = JSON.stringify(data);
-            }
-            
-            const response = await fetch(url, options);
-            const text = await response.text();
+    // Universal API caller with JSONP support for GET (bypasses CORS)
+    function callAPI(action, data = null, method = "GET") {
+        return new Promise((resolve, reject) => {
             try {
-                return JSON.parse(text);
-            } catch(e) {
-                return { success: true, data: text };
+                if (method === "GET") {
+                    // Use JSONP for GET requests to bypass CORS
+                    const callbackName = `jsonp_${Date.now()}_${Math.random().toString(36).substr(2, 8)}`;
+                    const script = document.createElement('script');
+                    
+                    window[callbackName] = function(response) {
+                        delete window[callbackName];
+                        document.body.removeChild(script);
+                        resolve(response);
+                    };
+                    
+                    let url = `${API_BASE}?api=${action}&callback=${callbackName}`;
+                    script.src = url;
+                    script.onerror = () => {
+                        delete window[callbackName];
+                        document.body.removeChild(script);
+                        reject(new Error("Network error - Check if API is deployed correctly"));
+                    };
+                    document.body.appendChild(script);
+                } else {
+                    // For POST/DELETE - using fetch with no-cors mode
+                    let url = `${API_BASE}?api=${action}`;
+                    fetch(url, {
+                        method: method,
+                        headers: { "Content-Type": "application/json" },
+                        body: data ? JSON.stringify(data) : null,
+                        mode: 'cors'
+                    })
+                    .then(async (response) => {
+                        const text = await response.text();
+                        try {
+                            const result = JSON.parse(text);
+                            resolve(result);
+                        } catch(e) {
+                            resolve({ success: true, message: "Request sent successfully" });
+                        }
+                    })
+                    .catch((error) => {
+                        console.error("Fetch error:", error);
+                        // Try with no-cors as fallback
+                        fetch(url, {
+                            method: method,
+                            headers: { "Content-Type": "application/json" },
+                            body: data ? JSON.stringify(data) : null,
+                            mode: 'no-cors'
+                        }).then(() => {
+                            resolve({ success: true, message: "Request sent (no-cors mode)" });
+                        }).catch(reject);
+                    });
+                }
+            } catch(error) {
+                reject(error);
             }
-        } catch (error) {
-            console.error("API Error:", error);
-            return { success: false, error: error.message };
-        }
+        });
     }
     
     // ========== ORIGINAL VARIABLES (No Changes) ==========
@@ -533,13 +566,15 @@
     const editMoveXSlider = document.getElementById('editMoveXSlider');
     const editMoveYSlider = document.getElementById('editMoveYSlider');
 
-    // ========== UTILITY FUNCTIONS (No Changes) ==========
+    // ========== UTILITY FUNCTIONS ==========
     function showProcessing(show) {
-        document.getElementById('processing-overlay').style.display = show ? 'flex' : 'none';
+        const overlay = document.getElementById('processing-overlay');
+        if (overlay) overlay.style.display = show ? 'flex' : 'none';
     }
 
     function setLoader(percent) {
-        document.getElementById('loader').style.width = percent + '%';
+        const loader = document.getElementById('loader');
+        if (loader) loader.style.width = percent + '%';
     }
 
     function showToast(message, isError = false) {
@@ -550,7 +585,7 @@
         setTimeout(() => toast.remove(), 3000);
     }
 
-    // ========== EDITOR FUNCTIONS (No Changes) ==========
+    // ========== EDITOR FUNCTIONS ==========
     function updateEditValues() {
         document.getElementById('editWidthVal').innerText = editWidthSlider.value + "px";
         document.getElementById('editHeightVal').innerText = editHeightSlider.value + "px";
@@ -708,7 +743,42 @@
         document.getElementById('globalModal').style.display = 'flex';
     }
     
-    // ========== MODIFIED: performSave with API ==========
+    // ========== API FUNCTIONS ==========
+    async function fetchDashboardData() {
+        setLoader(30);
+        showProcessing(true);
+        
+        try {
+            const response = await callAPI("data");
+            
+            if (response && response.success) {
+                mainData = response.main || [];
+                settingsData = response.settings || [];
+                renderCurrentTable();
+                showToast('✓ Loaded ' + mainData.length + ' items');
+            } else {
+                throw new Error(response?.error || 'No data received. Make sure Apps Script is deployed and Sheets have data.');
+            }
+            setLoader(100);
+            showProcessing(false);
+        } catch (error) {
+            showProcessing(false);
+            showToast('✗ Error: ' + error.message, true);
+            // Load demo data if API fails
+            loadDemoData();
+        }
+    }
+    
+    function loadDemoData() {
+        mainData = [
+            ["Sample Movie - Demo", "Movies", "https://example.com/video1", "https://via.placeholder.com/100/00bcd4?text=Demo1", "demo123"],
+            ["Cricket Highlights - Demo", "Sports", "https://example.com/video2", "https://via.placeholder.com/100/ffaa44?text=Demo2", "demo456"]
+        ];
+        settingsData = [["Nikamma App Demo", "https://api.base.com", "1.0", "https://update.com", "", "", ""]];
+        renderCurrentTable();
+        showToast('⚠️ Demo mode - API not connected', true);
+    }
+    
     async function performSave() {
         const saveBtn = document.getElementById('saveMasterBtn');
         saveBtn.disabled = true;
@@ -772,7 +842,7 @@
             const result = await callAPI("save", payload, "POST");
             
             if (result && result.success) {
-                showToast("✓ Data saved! Thumbnail uploaded to Drive");
+                showToast("✓ Data saved!");
                 closeModal();
                 fetchDashboardData();
             } else {
@@ -791,32 +861,7 @@
             showProcessing(false);
         }
     }
-
-    // ========== MODIFIED: fetchDashboardData with API ==========
-    async function fetchDashboardData() {
-        setLoader(30);
-        showProcessing(true);
-        
-        try {
-            const response = await callAPI("data");
-            
-            if (response && response.success) {
-                mainData = response.main || [];
-                settingsData = response.settings || [];
-                renderCurrentTable();
-                showToast('✓ Loaded ' + mainData.length + ' items');
-            } else {
-                throw new Error(response?.error || 'Unknown error');
-            }
-            setLoader(100);
-            showProcessing(false);
-        } catch (error) {
-            showProcessing(false);
-            showToast('✗ Error: ' + error.message, true);
-        }
-    }
-
-    // ========== MODIFIED: deleteRecordItem with API ==========
+    
     async function deleteRecordItem(sheetName, rowIndex, fileId) {
         if (!confirm("⚠️ Delete permanently? Image will also be deleted from Drive.")) return;
         
@@ -838,7 +883,7 @@
         }
     }
 
-    // ========== ORIGINAL RENDER FUNCTIONS (No Changes) ==========
+    // ========== RENDER FUNCTIONS ==========
     function renderCurrentTable() {
         if (currentTab === 'main') renderMainTable();
         else renderSettingsTable();
@@ -846,7 +891,7 @@
 
     function renderMainTable() {
         const tbody = document.getElementById('body-main');
-        if (!mainData.length) {
+        if (!mainData || !mainData.length) {
             tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding:40px;">✨ No content. Click + to add ✨</td></tr>';
             return;
         }
@@ -869,7 +914,7 @@
                     <button class="action-btn edit-i" onclick='openEditMain(${rowNum}, ${JSON.stringify(row).replace(/'/g, "&#39;")})'><i class="fa fa-edit"></i></button>
                     <button class="action-btn del-i" onclick="deleteRecordItem('Sheet1', ${rowNum}, '${fileId}')"><i class="fa fa-trash"></i></button>
                 </td>
-            </tr>`;
+            </td>`;
         });
         tbody.innerHTML = html;
     }
@@ -899,7 +944,7 @@
 
     function renderSettingsTable() {
         const tbody = document.getElementById('body-set');
-        if (!settingsData.length) {
+        if (!settingsData || !settingsData.length) {
             tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding:40px;">⚙️ No settings. Click + to add ⚙️</td></tr>';
             return;
         }
