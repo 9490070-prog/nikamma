@@ -1,0 +1,1015 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>Nikamma 4k Pro Admin - with Image Editor & Box Move</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        :root {
+            --primary: #00bcd4;
+            --bg-dark: #0a0c10;
+            --card-bg: #12161c;
+            --border: #2a313c;
+            --text-primary: #f0f3f8;
+            --danger: #ff5c5c;
+        }
+
+        body {
+            background: var(--bg-dark);
+            color: var(--text-primary);
+            font-family: 'Inter', sans-serif;
+            padding-bottom: 90px;
+        }
+
+        #processing-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(10,12,16,0.96);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 10000;
+        }
+        
+        .spinner {
+            width: 52px;
+            height: 52px;
+            border: 5px solid #2a313c;
+            border-top-color: var(--primary);
+            border-radius: 50%;
+            animation: spin 0.9s linear infinite;
+        }
+        
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        .loader-bar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            height: 3px;
+            background: var(--primary);
+            z-index: 10001;
+            transition: width 0.25s;
+            width: 0%;
+        }
+
+        .header {
+            background: var(--card-bg);
+            padding: 16px 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--border);
+        }
+        
+        .logo-area h1 { font-size: 1.6rem; font-weight: 800; }
+        .logo-area span { color: var(--primary); }
+        
+        .refresh-btn {
+            background: rgba(0,188,212,0.12);
+            border: 1px solid var(--primary);
+            color: var(--primary);
+            padding: 8px 16px;
+            border-radius: 40px;
+            cursor: pointer;
+        }
+
+        .tabs {
+            display: flex;
+            gap: 8px;
+            padding: 16px 24px 0;
+            border-bottom: 1px solid var(--border);
+        }
+        
+        .tab-btn {
+            padding: 10px 24px;
+            background: transparent;
+            border: none;
+            color: #a0aab8;
+            font-weight: 600;
+            border-radius: 30px;
+            cursor: pointer;
+        }
+        
+        .tab-btn.active {
+            background: var(--primary);
+            color: #000;
+        }
+
+        .content-area { padding: 24px; }
+        
+        .table-card {
+            background: var(--card-bg);
+            border-radius: 20px;
+            border: 1px solid var(--border);
+            overflow-x: auto;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 700px;
+        }
+        
+        th, td {
+            padding: 14px 12px;
+            text-align: left;
+            border-bottom: 1px solid var(--border);
+        }
+        
+        th {
+            background: rgba(0,188,212,0.05);
+            color: var(--primary);
+        }
+        
+        .thumb {
+            width: 48px;
+            height: 48px;
+            border-radius: 12px;
+            object-fit: cover;
+            cursor: pointer;
+        }
+        
+        .action-btn {
+            background: none;
+            border: none;
+            font-size: 1.2rem;
+            margin: 0 6px;
+            cursor: pointer;
+            padding: 6px 10px;
+        }
+        
+        .edit-i { color: var(--primary); }
+        .del-i { color: var(--danger); }
+
+        .modal {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.85);
+            z-index: 2000;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .modal-content {
+            background: #1a1f2a;
+            width: 92%;
+            max-width: 520px;
+            padding: 28px;
+            border-radius: 32px;
+            border: 1px solid var(--border);
+        }
+        
+        /* EDITOR MODAL */
+        .editor-modal {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: #000000ee;
+            z-index: 20000;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            overflow-y: auto;
+        }
+        .editor-card {
+            background: #1a1f2a;
+            border-radius: 35px;
+            max-width: 650px;
+            width: 100%;
+            margin: auto;
+            padding: 20px;
+            border: 1px solid var(--border);
+        }
+        .canvas-container {
+            background: #2c2c2c;
+            border-radius: 25px;
+            padding: 10px;
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: center;
+            position: relative;
+        }
+        canvas {
+            background: #333;
+            border-radius: 15px;
+            display: block;
+            width: 100%;
+            height: auto;
+            cursor: grab;
+            touch-action: none;
+        }
+        canvas:active { cursor: grabbing; }
+        .slider-group {
+            margin-bottom: 18px;
+            background: #2a2a2a;
+            padding: 12px;
+            border-radius: 50px;
+        }
+        .slider-group label {
+            color: #ddd;
+            display: block;
+            margin-bottom: 8px;
+            font-size: 0.85rem;
+            text-align: center;
+        }
+        input[type="range"] {
+            width: 100%;
+            height: 5px;
+            -webkit-appearance: none;
+            background: #4a4a4a;
+            border-radius: 5px;
+        }
+        input[type="range"]:focus { outline: none; }
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 22px;
+            height: 22px;
+            background: #0a84ff;
+            border-radius: 50%;
+            cursor: pointer;
+            box-shadow: 0 0 5px white;
+        }
+        .value-badge {
+            display: inline-block;
+            background: #0a84ff;
+            padding: 2px 10px;
+            border-radius: 20px;
+            font-size: 0.7rem;
+            margin-right: 8px;
+        }
+        .editor-actions {
+            display: flex;
+            gap: 12px;
+            margin-top: 20px;
+        }
+        .editor-actions button {
+            flex: 1;
+            padding: 14px;
+            border-radius: 50px;
+            font-weight: bold;
+            border: none;
+            cursor: pointer;
+        }
+        .btn-submit-editor {
+            background: #0f7b3a;
+            color: white;
+        }
+        .btn-cancel-editor {
+            background: #3a3a3a;
+            color: white;
+        }
+        .image-picker-area {
+            background: #0f131c;
+            border: 1px dashed var(--border);
+            border-radius: 20px;
+            padding: 15px;
+            text-align: center;
+            margin-bottom: 15px;
+            cursor: pointer;
+        }
+        .image-picker-area:hover {
+            border-color: var(--primary);
+        }
+        
+        input, select {
+            width: 100%;
+            padding: 12px 14px;
+            margin: 8px 0 16px;
+            background: #0f131c;
+            border: 1px solid var(--border);
+            color: #fff;
+            border-radius: 18px;
+        }
+        
+        .btn-save {
+            width: 100%;
+            padding: 14px;
+            background: var(--primary);
+            border: none;
+            border-radius: 40px;
+            font-weight: 800;
+            cursor: pointer;
+            margin-top: 12px;
+        }
+        
+        .fab {
+            position: fixed;
+            bottom: 28px;
+            right: 28px;
+            width: 62px;
+            height: 62px;
+            background: var(--primary);
+            border-radius: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #000;
+            cursor: pointer;
+            font-size: 28px;
+            z-index: 999;
+        }
+        
+        .badge-cat {
+            background: #1e2a36;
+            padding: 4px 12px;
+            border-radius: 40px;
+            font-size: 0.75rem;
+            display: inline-block;
+        }
+        
+        .toast {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #2ecc71;
+            color: white;
+            padding: 12px 24px;
+            border-radius: 60px;
+            font-weight: 600;
+            z-index: 11000;
+            animation: slideUp 0.3s ease;
+        }
+        
+        .toast.error { background: #e04444; }
+        
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateX(-50%) translateY(20px); }
+            to { opacity: 1; transform: translateX(-50%) translateY(0); }
+        }
+        
+        .slider-row {
+            display: flex;
+            gap: 10px;
+        }
+        .slider-row .slider-group {
+            flex: 1;
+        }
+    </style>
+</head>
+<body>
+
+<div id="processing-overlay" style="display:none">
+    <div class="spinner"></div>
+    <p style="margin-top:14px;">Processing...</p>
+</div>
+<div class="loader-bar" id="loader"></div>
+
+<div class="header">
+    <div class="logo-area">
+        <h1>🎬 <span>Nikamma 4k</span> Pro Admin</h1>
+    </div>
+    <button class="refresh-btn" onclick="fetchDashboardData()">
+        <i class="fa fa-sync-alt"></i> Refresh
+    </button>
+</div>
+
+<div class="tabs">
+    <button class="tab-btn active" id="btn-main" onclick="switchTab('main')">📦 Content</button>
+    <button class="tab-btn" id="btn-settings" onclick="switchTab('settings')">⚙️ Settings</button>
+</div>
+
+<div class="content-area">
+    <div class="table-card">
+        <table id="table-main">
+            <thead><tr><th>THUMB</th><th>NAME</th><th>CATEGORY</th><th>URL</th><th>ACTION</th></tr></thead>
+            <tbody id="body-main"></tbody>
+        </table>
+        <table id="table-set" style="display:none">
+            <thead><tr><th>APP NAME</th><th>BASE URL</th><th>VERSION</th><th>UPDATE URL</th><th>ACTION</th></tr></thead>
+            <tbody id="body-set"></tbody>
+        </table>
+    </div>
+</div>
+
+<div class="fab" onclick="openImageEditor()">
+    <i class="fa fa-plus"></i>
+</div>
+
+<!-- EDITOR MODAL with 6 Sliders -->
+<div id="editorModal" class="editor-modal">
+    <div class="editor-card">
+        <h3 style="text-align:center; margin-bottom:15px;">✂️ تصویر ایڈٹ کریں - 6 سلائیڈرز</h3>
+        
+        <div class="image-picker-area" id="imagePickerArea" onclick="document.getElementById('editorImageInput').click()">
+            <i class="fa fa-cloud-upload-alt" style="font-size: 24px; color: var(--primary);"></i>
+            <p style="margin-top: 8px;">📸 تصویر منتخب کریں</p>
+            <small>JPG, PNG, GIF</small>
+        </div>
+        <input type="file" id="editorImageInput" accept="image/*" style="display:none">
+        
+        <div class="canvas-container">
+            <canvas id="editCanvas" width="500" height="500"></canvas>
+        </div>
+        
+        <div class="slider-row">
+            <div class="slider-group">
+                <label>📏 چوڑائی <span id="editWidthVal" class="value-badge">300px</span></label>
+                <input type="range" id="editWidthSlider" min="100" max="480" step="5" value="300">
+            </div>
+            <div class="slider-group">
+                <label>📐 اونچائی <span id="editHeightVal" class="value-badge">300px</span></label>
+                <input type="range" id="editHeightSlider" min="100" max="480" step="5" value="300">
+            </div>
+        </div>
+        
+        <div class="slider-row">
+            <div class="slider-group">
+                <label>🔍 زوم <span id="editZoomVal" class="value-badge">100%</span></label>
+                <input type="range" id="editZoomSlider" min="0.3" max="2.5" step="0.01" value="1">
+            </div>
+            <div class="slider-group">
+                <label>⚪ گولائی <span id="editRoundVal" class="value-badge">0%</span></label>
+                <input type="range" id="editRoundSlider" min="0" max="50" step="1" value="0">
+            </div>
+        </div>
+        
+        <div class="slider-row">
+            <div class="slider-group">
+                <label>⬅️ بائیں/دائیں (Move X) <span id="editMoveXVal" class="value-badge">0px</span></label>
+                <input type="range" id="editMoveXSlider" min="-200" max="200" step="5" value="0">
+            </div>
+            <div class="slider-group">
+                <label>⬆️ اوپر/نیچے (Move Y) <span id="editMoveYVal" class="value-badge">0px</span></label>
+                <input type="range" id="editMoveYSlider" min="-200" max="200" step="5" value="0">
+            </div>
+        </div>
+        
+        <div class="editor-actions">
+            <button class="btn-submit-editor" id="submitEditorBtn">✅ Submit & Save</button>
+            <button class="btn-cancel-editor" id="cancelEditorBtn">❌ Cancel</button>
+        </div>
+    </div>
+</div>
+
+<!-- Original Modal -->
+<div class="modal" id="globalModal">
+    <div class="modal-content">
+        <h3 id="modal-title">Add New Entry</h3>
+        
+        <div id="form-main-fields">
+            <input type="text" id="inp-title" placeholder="Name *">
+            <select id="inp-category-select">
+                <option value="Movies">🎬 Movies</option>
+                <option value="Sports">⚽ Sports</option>
+                <option value="TV Shows">📺 TV Shows</option>
+                <option value="Slider">🖼️ Slider</option>
+            </select>
+            <input type="text" id="inp-link" placeholder="Video URL *">
+            <label>📷 Thumbnail Image</label>
+            <input type="file" id="inp-image-upload" accept="image/*">
+            <small style="color:#888;">Image will be uploaded to Drive</small>
+        </div>
+        
+        <div id="form-settings-fields" style="display:none;">
+            <input type="text" id="set-appname" placeholder="App Name">
+            <input type="text" id="set-baseurl" placeholder="Base URL">
+            <input type="text" id="set-version" placeholder="Version">
+            <input type="text" id="set-updateurl" placeholder="Update URL">
+            <input type="text" id="set-ratingurl" placeholder="Rating URL">
+            <input type="text" id="set-privacyurl" placeholder="Privacy URL">
+            <input type="text" id="set-shareurl" placeholder="Share URL">
+        </div>
+        
+        <button class="btn-save" id="saveMasterBtn" onclick="performSave()">💾 SAVE DATA</button>
+        <button class="cancel-modal" onclick="closeModal()" style="width:100%; margin-top:10px; background:none; border:none; color:#888; cursor:pointer;">Cancel</button>
+    </div>
+</div>
+
+<script>
+    // ========== API CONFIGURATION ==========
+    const API_BASE = "https://script.google.com/macros/s/AKfycbyZjQJBPQJ1BVhJlAIZprB18OCerKosvQvgG9Gl6YwLt7kQ8l6ZsozyA5e4WFOHKHENcA/exec";
+    
+    // Universal API caller
+    async function callAPI(action, data = null, method = "GET") {
+        try {
+            let url = `${API_BASE}?api=${action}`;
+            let options = { 
+                method: method, 
+                headers: { "Content-Type": "application/json" },
+                mode: 'no-cors' // For Google Apps Script compatibility
+            };
+            
+            if (data && (method === "POST" || method === "DELETE" || method === "PUT")) {
+                options.body = JSON.stringify(data);
+            }
+            
+            const response = await fetch(url, options);
+            const text = await response.text();
+            try {
+                return JSON.parse(text);
+            } catch(e) {
+                return { success: true, data: text };
+            }
+        } catch (error) {
+            console.error("API Error:", error);
+            return { success: false, error: error.message };
+        }
+    }
+    
+    // ========== ORIGINAL VARIABLES (No Changes) ==========
+    let currentTab = 'main';
+    let mainData = [], settingsData = [];
+    let editContext = { isEdit: false, rowIndex: null, oldFileId: null, oldThumbUrl: null };
+    
+    // Editor variables
+    let editorImg = new Image();
+    let editorImgLoaded = false;
+    let currentCroppedBlob = null;
+
+    const editCanvas = document.getElementById('editCanvas');
+    const editCtx = editCanvas.getContext('2d');
+    const editWidthSlider = document.getElementById('editWidthSlider');
+    const editHeightSlider = document.getElementById('editHeightSlider');
+    const editZoomSlider = document.getElementById('editZoomSlider');
+    const editRoundSlider = document.getElementById('editRoundSlider');
+    const editMoveXSlider = document.getElementById('editMoveXSlider');
+    const editMoveYSlider = document.getElementById('editMoveYSlider');
+
+    // ========== UTILITY FUNCTIONS (No Changes) ==========
+    function showProcessing(show) {
+        document.getElementById('processing-overlay').style.display = show ? 'flex' : 'none';
+    }
+
+    function setLoader(percent) {
+        document.getElementById('loader').style.width = percent + '%';
+    }
+
+    function showToast(message, isError = false) {
+        const toast = document.createElement('div');
+        toast.className = 'toast' + (isError ? ' error' : '');
+        toast.textContent = message;
+        document.body.appendChild(toast);
+        setTimeout(() => toast.remove(), 3000);
+    }
+
+    // ========== EDITOR FUNCTIONS (No Changes) ==========
+    function updateEditValues() {
+        document.getElementById('editWidthVal').innerText = editWidthSlider.value + "px";
+        document.getElementById('editHeightVal').innerText = editHeightSlider.value + "px";
+        document.getElementById('editZoomVal').innerText = Math.round(editZoomSlider.value * 100) + "%";
+        document.getElementById('editRoundVal').innerText = editRoundSlider.value + "%";
+        document.getElementById('editMoveXVal').innerText = editMoveXSlider.value + "px";
+        document.getElementById('editMoveYVal').innerText = editMoveYSlider.value + "px";
+        drawEditCanvas();
+    }
+    
+    function drawEditCanvas() {
+        if(!editorImgLoaded) return;
+        editCtx.clearRect(0, 0, 500, 500);
+        const zoom = parseFloat(editZoomSlider.value);
+        const boxW = parseFloat(editWidthSlider.value);
+        const boxH = parseFloat(editHeightSlider.value);
+        const roundP = parseFloat(editRoundSlider.value);
+        const moveX = parseFloat(editMoveXSlider.value);
+        const moveY = parseFloat(editMoveYSlider.value);
+        
+        const drawW = editorImg.width * zoom;
+        const drawH = editorImg.height * zoom;
+        const imgX = (500 - drawW) / 2;
+        const imgY = (500 - drawH) / 2;
+        
+        editCtx.drawImage(editorImg, imgX, imgY, drawW, drawH);
+        
+        const startX = ((500 - boxW) / 2) + moveX;
+        const startY = ((500 - boxH) / 2) + moveY;
+        const radius = (Math.min(boxW, boxH) / 2) * (roundP / 50);
+        
+        editCtx.save();
+        editCtx.strokeStyle = "#ffaa44";
+        editCtx.lineWidth = 3;
+        editCtx.beginPath();
+        editCtx.moveTo(startX + radius, startY);
+        editCtx.lineTo(startX + boxW - radius, startY);
+        editCtx.quadraticCurveTo(startX + boxW, startY, startX + boxW, startY + radius);
+        editCtx.lineTo(startX + boxW, startY + boxH - radius);
+        editCtx.quadraticCurveTo(startX + boxW, startY + boxH, startX + boxW - radius, startY + boxH);
+        editCtx.lineTo(startX + radius, startY + boxH);
+        editCtx.quadraticCurveTo(startX, startY + boxH, startX, startY + boxH - radius);
+        editCtx.lineTo(startX, startY + radius);
+        editCtx.quadraticCurveTo(startX, startY, startX + radius, startY);
+        editCtx.closePath();
+        editCtx.stroke();
+        
+        editCtx.beginPath();
+        editCtx.moveTo(startX + radius + 2, startY + 2);
+        editCtx.lineTo(startX + boxW - radius - 2, startY + 2);
+        editCtx.quadraticCurveTo(startX + boxW - 2, startY + 2, startX + boxW - 2, startY + radius + 2);
+        editCtx.lineTo(startX + boxW - 2, startY + boxH - radius - 2);
+        editCtx.quadraticCurveTo(startX + boxW - 2, startY + boxH - 2, startX + boxW - radius - 2, startY + boxH - 2);
+        editCtx.lineTo(startX + radius + 2, startY + boxH - 2);
+        editCtx.quadraticCurveTo(startX + 2, startY + boxH - 2, startX + 2, startY + boxH - radius - 2);
+        editCtx.lineTo(startX + 2, startY + radius + 2);
+        editCtx.quadraticCurveTo(startX + 2, startY + 2, startX + radius + 2, startY + 2);
+        editCtx.closePath();
+        editCtx.strokeStyle = "#00ffcc";
+        editCtx.lineWidth = 1.5;
+        editCtx.stroke();
+        editCtx.restore();
+    }
+    
+    function centerEditImage() {
+        if(!editorImgLoaded) return;
+        drawEditCanvas();
+    }
+    
+    function getCroppedBlob(callback) {
+        const boxW = parseFloat(editWidthSlider.value);
+        const boxH = parseFloat(editHeightSlider.value);
+        const moveX = parseFloat(editMoveXSlider.value);
+        const moveY = parseFloat(editMoveYSlider.value);
+        const startX = ((500 - boxW) / 2) + moveX;
+        const startY = ((500 - boxH) / 2) + moveY;
+        
+        const safeX = Math.max(0, Math.min(startX, 500 - boxW));
+        const safeY = Math.max(0, Math.min(startY, 500 - boxH));
+        
+        const cropCanvas = document.createElement('canvas');
+        cropCanvas.width = boxW;
+        cropCanvas.height = boxH;
+        const cropCtx = cropCanvas.getContext('2d');
+        cropCtx.drawImage(editCanvas, safeX, safeY, boxW, boxH, 0, 0, boxW, boxH);
+        cropCanvas.toBlob(callback, 'image/jpeg', 0.85);
+    }
+    
+    function openImageEditor() {
+        document.getElementById('editorModal').style.display = 'flex';
+        editWidthSlider.value = "300";
+        editHeightSlider.value = "300";
+        editZoomSlider.value = "1";
+        editRoundSlider.value = "0";
+        editMoveXSlider.value = "0";
+        editMoveYSlider.value = "0";
+        updateEditValues();
+        
+        editorImg.src = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='500' height='500' viewBox='0 0 500 500'%3E%3Crect width='500' height='500' fill='%23333'/%3E%3Ctext x='250' y='250' text-anchor='middle' fill='%230a84ff' font-size='20'%3E📸 Select Image%3C/text%3E%3C/svg%3E";
+        editorImg.onload = () => { editorImgLoaded = true; centerEditImage(); };
+        editorImgLoaded = true;
+        centerEditImage();
+    }
+    
+    document.getElementById('editorImageInput').addEventListener('change', (e) => {
+        const file = e.target.files[0];
+        if(file && file.type.startsWith('image/')) {
+            const reader = new FileReader();
+            reader.onload = (ev) => {
+                editorImg = new Image();
+                editorImg.onload = () => {
+                    editorImgLoaded = true;
+                    centerEditImage();
+                    updateEditValues();
+                    showToast("✅ تصویر لوڈ ہوگئی!");
+                };
+                editorImg.src = ev.target.result;
+            };
+            reader.readAsDataURL(file);
+        }
+    });
+    
+    document.getElementById('submitEditorBtn').addEventListener('click', () => {
+        if(!editorImgLoaded || editorImg.src.includes("Select Image")) {
+            showToast("پہلے تصویر منتخب کریں", true);
+            return;
+        }
+        
+        getCroppedBlob((blob) => {
+            if(blob) {
+                currentCroppedBlob = blob;
+                document.getElementById('editorModal').style.display = 'none';
+                openAddModalWithBlob();
+                showToast("✅ تصویر کراپ ہوگئی، اب تفصیلات بھریں");
+            } else {
+                showToast("Cropping failed", true);
+            }
+        });
+    });
+    
+    document.getElementById('cancelEditorBtn').addEventListener('click', () => {
+        document.getElementById('editorModal').style.display = 'none';
+        currentCroppedBlob = null;
+    });
+    
+    function openAddModalWithBlob() {
+        editContext = { isEdit: false, rowIndex: null, oldFileId: null, oldThumbUrl: null };
+        document.getElementById('modal-title').innerText = "➕ Add New Content";
+        document.getElementById('form-main-fields').style.display = 'block';
+        document.getElementById('form-settings-fields').style.display = 'none';
+        document.getElementById('inp-title').value = '';
+        document.getElementById('inp-category-select').value = 'Movies';
+        document.getElementById('inp-link').value = '';
+        document.getElementById('inp-image-upload').value = '';
+        document.getElementById('globalModal').style.display = 'flex';
+    }
+    
+    // ========== MODIFIED: performSave with API ==========
+    async function performSave() {
+        const saveBtn = document.getElementById('saveMasterBtn');
+        saveBtn.disabled = true;
+        saveBtn.innerText = "⏳ Saving...";
+        setLoader(30);
+        showProcessing(true);
+        
+        try {
+            let imageData = null;
+            let payload = {
+                sheet: currentTab === 'main' ? "Sheet1" : "settings",
+                isEdit: editContext.isEdit,
+                rowIdx: editContext.rowIndex,
+                existingFileId: editContext.oldFileId || "",
+                existingThumb: editContext.oldThumbUrl || ""
+            };
+            
+            if (currentTab === 'main') {
+                const title = document.getElementById('inp-title').value.trim();
+                const category = document.getElementById('inp-category-select').value;
+                const link = document.getElementById('inp-link').value.trim();
+                
+                if (!title) throw new Error("Name is required");
+                if (!link) throw new Error("URL is required");
+                
+                payload.title = title;
+                payload.category = category;
+                payload.link = link;
+                
+                if(currentCroppedBlob) {
+                    imageData = await new Promise((resolve) => {
+                        const reader = new FileReader();
+                        reader.onload = (e) => resolve({
+                            data: e.target.result.split(',')[1],
+                            mimeType: 'image/jpeg',
+                            name: `cropped_${Date.now()}.jpg`
+                        });
+                        reader.readAsDataURL(currentCroppedBlob);
+                    });
+                    currentCroppedBlob = null;
+                } else {
+                    const fileInput = document.getElementById('inp-image-upload');
+                    if (fileInput.files.length > 0) {
+                        imageData = await getFileData(fileInput);
+                    }
+                }
+            } else {
+                const name = document.getElementById('set-appname').value.trim();
+                if (!name) throw new Error("App Name is required");
+                payload.name = name;
+                payload.url = document.getElementById('set-baseurl').value.trim();
+                payload.version = document.getElementById('set-version').value.trim();
+                payload.updateUrl = document.getElementById('set-updateurl').value.trim();
+                payload.ratingUrl = document.getElementById('set-ratingurl').value.trim();
+                payload.privacyUrl = document.getElementById('set-privacyurl').value.trim();
+                payload.shareUrl = document.getElementById('set-shareurl').value.trim();
+            }
+            
+            if (imageData) payload.imageData = imageData;
+            
+            const result = await callAPI("save", payload, "POST");
+            
+            if (result && result.success) {
+                showToast("✓ Data saved! Thumbnail uploaded to Drive");
+                closeModal();
+                fetchDashboardData();
+            } else {
+                throw new Error(result?.error || "Save failed");
+            }
+            
+            saveBtn.disabled = false;
+            saveBtn.innerText = "💾 SAVE DATA";
+            setLoader(100);
+            showProcessing(false);
+                
+        } catch (err) {
+            showToast(err.message, true);
+            saveBtn.disabled = false;
+            saveBtn.innerText = "💾 SAVE DATA";
+            showProcessing(false);
+        }
+    }
+
+    // ========== MODIFIED: fetchDashboardData with API ==========
+    async function fetchDashboardData() {
+        setLoader(30);
+        showProcessing(true);
+        
+        try {
+            const response = await callAPI("data");
+            
+            if (response && response.success) {
+                mainData = response.main || [];
+                settingsData = response.settings || [];
+                renderCurrentTable();
+                showToast('✓ Loaded ' + mainData.length + ' items');
+            } else {
+                throw new Error(response?.error || 'Unknown error');
+            }
+            setLoader(100);
+            showProcessing(false);
+        } catch (error) {
+            showProcessing(false);
+            showToast('✗ Error: ' + error.message, true);
+        }
+    }
+
+    // ========== MODIFIED: deleteRecordItem with API ==========
+    async function deleteRecordItem(sheetName, rowIndex, fileId) {
+        if (!confirm("⚠️ Delete permanently? Image will also be deleted from Drive.")) return;
+        
+        showProcessing(true);
+        
+        try {
+            const result = await callAPI("delete", { rowIndex, fileId, sheetName }, "DELETE");
+            
+            if (result && result.success) {
+                showToast("✓ Deleted successfully");
+                fetchDashboardData();
+            } else {
+                showToast("✗ Delete failed", true);
+                showProcessing(false);
+            }
+        } catch (error) {
+            showToast("✗ Error: " + error.message, true);
+            showProcessing(false);
+        }
+    }
+
+    // ========== ORIGINAL RENDER FUNCTIONS (No Changes) ==========
+    function renderCurrentTable() {
+        if (currentTab === 'main') renderMainTable();
+        else renderSettingsTable();
+    }
+
+    function renderMainTable() {
+        const tbody = document.getElementById('body-main');
+        if (!mainData.length) {
+            tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding:40px;">✨ No content. Click + to add ✨</td></tr>';
+            return;
+        }
+        
+        let html = '';
+        mainData.forEach((row, idx) => {
+            const name = row[0] || 'Untitled';
+            const category = row[1] || 'Movies';
+            const url = row[2] || '#';
+            const thumbUrl = row[3] || 'https://via.placeholder.com/48';
+            const fileId = row[4] || '';
+            const rowNum = idx + 2;
+            
+            html += `<tr>
+                <td><img src="${thumbUrl}" class="thumb" onerror="this.src='https://via.placeholder.com/48'" title="Click to edit" onclick='openImageEditorWithUrl("${thumbUrl}")'></td>
+                <td><strong>${escapeHtml(name)}</strong></td>
+                <td><span class="badge-cat">${escapeHtml(category)}</span></td>
+                <td style="max-width:250px; overflow:hidden;">${escapeHtml(url)}</td>
+                <td>
+                    <button class="action-btn edit-i" onclick='openEditMain(${rowNum}, ${JSON.stringify(row).replace(/'/g, "&#39;")})'><i class="fa fa-edit"></i></button>
+                    <button class="action-btn del-i" onclick="deleteRecordItem('Sheet1', ${rowNum}, '${fileId}')"><i class="fa fa-trash"></i></button>
+                </td>
+            </tr>`;
+        });
+        tbody.innerHTML = html;
+    }
+    
+    function openImageEditorWithUrl(imageUrl) {
+        document.getElementById('editorModal').style.display = 'flex';
+        editWidthSlider.value = "300";
+        editHeightSlider.value = "300";
+        editZoomSlider.value = "1";
+        editRoundSlider.value = "0";
+        editMoveXSlider.value = "0";
+        editMoveYSlider.value = "0";
+        updateEditValues();
+        
+        editorImg = new Image();
+        editorImg.crossOrigin = "Anonymous";
+        editorImg.onload = () => {
+            editorImgLoaded = true;
+            centerEditImage();
+            updateEditValues();
+        };
+        editorImg.onerror = () => {
+            showToast("تصویر لوڈ نہیں ہو سکی", true);
+        };
+        editorImg.src = imageUrl;
+    }
+
+    function renderSettingsTable() {
+        const tbody = document.getElementById('body-set');
+        if (!settingsData.length) {
+            tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding:40px;">⚙️ No settings. Click + to add ⚙️</td></tr>';
+            return;
+        }
+        
+        let html = '';
+        settingsData.forEach((row, idx) => {
+            const name = row[0] || '';
+            const url = row[1] || '';
+            const version = row[2] || '';
+            const updateUrl = row[3] || '';
+            const rowNum = idx + 2;
+            
+            html += `<tr>
+                <td><strong>${escapeHtml(name)}</strong></td>
+                <td style="max-width:200px;">${escapeHtml(url)}</td>
+                <td>v${escapeHtml(version)}</td>
+                <td style="max-width:200px;">${escapeHtml(updateUrl)}</td>
+                <td>
+                    <button class="action-btn edit-i" onclick='openEditSettings(${rowNum}, ${JSON.stringify(row).replace(/'/g, "&#39;")})'><i class="fa fa-edit"></i></button>
+                    <button class="action-btn del-i" onclick="deleteRecordItem('settings', ${rowNum}, '')"><i class="fa fa-trash"></i></button>
+                </td>
+            </tr>`;
+        });
+        tbody.innerHTML = html;
+    }
+
+    function escapeHtml(str) {
+        if (!str) return '';
+        return String(str).replace(/[&<>]/g, function(m) {
+            if (m === '&') return '&amp;';
+            if (m === '<') return '&lt;';
+            if (m === '>') return '&gt;';
+            return m;
+        });
+    }
+
+    function switchTab(tab) {
+        currentTab = tab;
+        document.getElementById('table-main').style.display = tab === 'main' ? 'table' : 'none';
+        document.getElementById('table-set').style.display = tab === 'settings' ? 'table' : 'none';
+        document.getElementById('btn-main').classList.toggle('active', tab === 'main');
+        document.getElementById('btn-settings').classList.toggle('active', tab === 'settings');
+        renderCurrentTable();
+    }
+
+    function openEditMain(rowNum, rowData) {
+        currentTab = 'main';
+        editContext = { isEdit: true, rowIndex: rowNum, oldFileId: rowData[4] || '', oldThumbUrl: rowData[3] || '' };
+        
+        document.getElementById('modal-title').innerText = "✏️ Edit Content";
+        document.getElementById('form-main-fields').style.display = 'block';
+        document.getElementById('form-settings-fields').style.display = 'none';
+        document.getElementById('inp-title').value = rowData[0] || '';
+        document.getElementById('inp-category-select').value = rowData[1] || 'Movies';
+        document.getElementById('inp-link').value = rowData[2] || '';
+        document.getElementById('inp-image-upload').value = '';
+        document.getElementById('globalModal').style.display = 'flex';
+    }
+
+    function openEditSettings(rowNum, rowData) {
+        currentTab = 'settings';
+        editContext = { isEdit: true, rowIndex: rowNum, oldFileId: null, oldThumbUrl: null };
+        
+        document.getElementById('modal-title').innerText = "✏️ Edit Settings";
+        document.getElementById('form-main-fields').style.display = 'none';
+        document.getElementById('form-settings-fields').style.display = 'block';
+        document.getElementById('set-appname').value = rowData[0] || '';
+        document.getElementById('set-baseurl').value = rowData[1] || '';
+        document.getElementById('set-version').value = rowData[2] || '';
+        document.getElementById('set-updateurl').value = rowData[3] || '';
+        document.getElementById('set-ratingurl').value = rowData[4] || '';
+        document.getElementById('set-privacyurl').value = rowData[5] || '';
+        document.getElementById('set-shareurl').value = rowData[6] || '';
+        document.getElementById('globalModal').style.display = 'flex';
+    }
+
+    function closeModal() {
+        document.getElementById('globalModal').style.display = 'none';
+        currentCroppedBlob = null;
+    }
+
+    function getFileData(fileInput) {
+        return new Promise((resolve) => {
+            if (!fileInput.files || !fileInput.files.length) {
+                resolve(null);
+                return;
+            }
+            const file = fileInput.files[0];
+            const reader = new FileReader();
+            reader.onload = (e) => resolve({
+                data: e.target.result.split(',')[1],
+                mimeType: file.type,
+                name: file.name
+            });
+            reader.readAsDataURL(file);
+        });
+    }
+
+    // Slider event listeners
+    editWidthSlider.addEventListener('input', updateEditValues);
+    editHeightSlider.addEventListener('input', updateEditValues);
+    editZoomSlider.addEventListener('input', updateEditValues);
+    editRoundSlider.addEventListener('input', updateEditValues);
+    editMoveXSlider.addEventListener('input', updateEditValues);
+    editMoveYSlider.addEventListener('input', updateEditValues);
+    
+    // Initialize
+    setTimeout(() => {
+        fetchDashboardData();
+    }, 100);
+</script>
+</body>
+</html>
