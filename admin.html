@@ -214,7 +214,7 @@
             overflow-y: auto;
         }
         
-        input, select {
+        input, select, textarea {
             width: 100%;
             padding: 10px 12px;
             margin: 6px 0 14px;
@@ -335,7 +335,6 @@
             font-size: 12px;
         }
 
-        /* Crop Editor Modal */
         .crop-modal {
             display: none;
             position: fixed;
@@ -414,6 +413,17 @@
             margin-top: 8px;
             text-align: center;
         }
+        
+        .url-cell {
+            max-width: 250px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        .url-cell:hover {
+            white-space: normal;
+            word-break: break-all;
+        }
     </style>
 </head>
 <body>
@@ -451,15 +461,15 @@
             <tbody id="body-main">
                 <tr><td colspan="5" class="empty-row">Loading data...</td></tr>
             </tbody>
-        </table>
+         </>
         <table id="table-set" style="display:none">
             <thead>
-                <tr><th>APP NAME</th><th>BASE URL</th><th>VERSION</th><th>UPDATE URL</th><th>ACTION</th></tr>
+                <tr><th>APP NAME</th><th>BASE URL</th><th>VERSION</th><th>UPDATE URL</th><th>ACTION</th> </tr>
             </thead>
             <tbody id="body-set">
                 <tr><td colspan="5" class="empty-row">Loading settings...</td></tr>
             </tbody>
-        </table>
+         </>
     </div>
 </div>
 
@@ -537,46 +547,27 @@
     // ========== CRITICAL: STORE URL IN EXACT GOOGLE DRIVE THUMBNAIL FORMAT ==========
     function convertToWorkingThumbnailUrl(url) {
         if (!url) return null;
-        // ALREADY PERFECT FORMAT
         if (url.match(/drive\.google\.com\/thumbnail\?id=[^&]+&sz=w500/)) return url;
         
         let fileId = null;
-        // Extract ID from various Google Drive formats
         const patterns = [
-            /\/d\/([^\/]+)/,                    // /d/FILE_ID
-            /[?&]id=([^&]+)/,                   // ?id=FILE_ID
-            /open\?id=([^&]+)/,                 // open?id=FILE_ID
-            /thumbnail\?id=([^&]+)/,            // thumbnail?id=FILE_ID
-            /uc\?id=([^&]+)/,                   // uc?id=FILE_ID
-            /file\/d\/([^\/]+)/,                // file/d/FILE_ID
-            /drive\.google\.com\/[^?]*\?id=([^&]+)/  // various
+            /\/d\/([^\/]+)/, /[?&]id=([^&]+)/, /open\?id=([^&]+)/,
+            /thumbnail\?id=([^&]+)/, /uc\?id=([^&]+)/, /file\/d\/([^\/]+)/
         ];
         for (const pattern of patterns) {
             const match = url.match(pattern);
-            if (match && match[1]) {
-                fileId = match[1];
-                break;
-            }
+            if (match && match[1]) { fileId = match[1]; break; }
         }
         
-        if (fileId) {
-            // EXACT REQUIRED FORMAT
-            return `https://drive.google.com/thumbnail?id=${fileId}&sz=w500`;
-        }
-        
-        // If direct image URL (jpg/png etc), keep as is
-        if (url.startsWith('http') && /\.(jpg|jpeg|png|webp|gif)(\?|$)/i.test(url)) {
-            return url;
-        }
-        
+        if (fileId) return `https://drive.google.com/thumbnail?id=${fileId}&sz=w500`;
+        if (url.startsWith('http') && /\.(jpg|jpeg|png|webp|gif)(\?|$)/i.test(url)) return url;
         return null;
     }
     
     function extractFileIdFromUrl(url) {
         if (!url) return '';
         const match = url.match(/thumbnail\?id=([^&]+)/);
-        if (match) return match[1];
-        return '';
+        return match ? match[1] : '';
     }
     
     // ========== CONFIGURATION ==========
@@ -611,7 +602,7 @@
         toast.className = 'toast' + (isError ? ' error' : '');
         toast.textContent = message;
         document.body.appendChild(toast);
-        setTimeout(() => toast.remove(), 2500);
+        setTimeout(() => toast.remove(), 3000);
     }
     
     function previewImageFile(input) {
@@ -622,7 +613,7 @@
             reader.onload = function(e) {
                 previewImg.src = e.target.result;
                 previewArea.style.display = 'block';
-                pendingCroppedBlob = input.files[0]; // store original file
+                pendingCroppedBlob = input.files[0];
             };
             reader.readAsDataURL(input.files[0]);
         } else {
@@ -653,7 +644,7 @@
             const mainText = await mainResponse.text();
             const mainParsed = Papa.parse(mainText, { header: true, skipEmptyLines: true });
             mainData = [];
-            mainParsed.data.forEach(row => {
+            mainParsed.data.forEach((row, idx) => {
                 if ((row.Name || row.name) || (row.URL || row.url)) {
                     const name = row.Name || row.name || "";
                     const category = row.Category || row.category || "Movies";
@@ -662,12 +653,12 @@
                     const workingThumb = convertToWorkingThumbnailUrl(rawThumb);
                     const finalThumb = workingThumb || 'https://via.placeholder.com/48/12161c?text=No+Img';
                     const fileId = extractFileIdFromUrl(workingThumb || rawThumb) || "";
-                    mainData.push({ name, category, url, thumbnail: finalThumb, fileId, rawThumb: rawThumb });
+                    mainData.push({ name, category, url, thumbnail: finalThumb, fileId, rawThumb: rawThumb, rowNum: idx + 2 });
                 }
             });
             const settingsText = await settingsResponse.text();
             const settingsParsed = Papa.parse(settingsText, { header: true, skipEmptyLines: true });
-            settingsData = settingsParsed.data.length ? [settingsParsed.data[0]] : [];
+            settingsData = settingsParsed.data.filter(row => row.name).map((row, idx) => ({ ...row, rowNum: idx + 2 }));
             renderCurrentTable();
             showToast(`✓ Loaded ${mainData.length} items`);
             setLoader(100);
@@ -681,12 +672,32 @@
         } finally { isLoading = false; }
     }
     
+    // FIXED: Proper API call with response handling
     async function callAPI(action, data = null) {
         try {
             const url = `${API_BASE}?api=${action}`;
-            await fetch(url, { method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'application/json' }, body: data ? JSON.stringify(data) : null });
-            return { success: true };
-        } catch (error) { return { success: false, error: error.message }; }
+            const response = await fetch(url, { 
+                method: 'POST', 
+                headers: { 'Content-Type': 'application/json' }, 
+                body: data ? JSON.stringify(data) : null 
+            });
+            
+            // Try to parse response
+            let result = { success: true };
+            try {
+                const text = await response.text();
+                if (text && text.length > 0) {
+                    result = JSON.parse(text);
+                }
+            } catch (e) {
+                console.log("Response not JSON, assuming success");
+            }
+            
+            return result;
+        } catch (error) { 
+            console.error("API Error:", error);
+            return { success: false, error: error.message }; 
+        }
     }
     
     async function performSave() {
@@ -697,7 +708,12 @@
         showProcessing(true);
         try {
             let imageData = null;
-            let payload = { sheet: currentTab === 'main' ? "Sheet1" : "settings", isEdit: editContext.isEdit, rowIdx: editContext.rowIndex, existingFileId: editContext.oldFileId || "" };
+            let payload = { 
+                sheet: currentTab === 'main' ? "Sheet1" : "settings", 
+                isEdit: editContext.isEdit, 
+                rowIdx: editContext.rowIndex, 
+                existingFileId: editContext.oldFileId || "" 
+            };
             
             if (currentTab === 'main') {
                 const title = document.getElementById('inp-title').value.trim();
@@ -739,10 +755,16 @@
             }
             
             if (imageData) payload.imageData = imageData;
-            await callAPI("save", payload);
-            showToast("✓ Save request sent! Refreshing...");
-            closeModal();
-            setTimeout(() => fetchAllData(), 1500);
+            
+            const result = await callAPI("save", payload);
+            
+            if (result.success) {
+                showToast("✓ Saved successfully! Refreshing...");
+                closeModal();
+                await fetchAllData(); // Refresh immediately after save
+            } else {
+                throw new Error(result.error || "Save failed");
+            }
         } catch (err) {
             showToast(err.message, true);
         } finally {
@@ -757,11 +779,15 @@
         if (!confirm("⚠️ Delete this item permanently?")) return;
         showProcessing(true);
         try {
-            await callAPI("delete", { rowIndex, fileId, sheetName });
-            showToast("✓ Deleted! Refreshing...");
-            setTimeout(() => fetchAllData(), 1500);
+            const result = await callAPI("delete", { rowIndex, fileId, sheetName });
+            if (result.success) {
+                showToast("✓ Deleted successfully! Refreshing...");
+                await fetchAllData(); // Refresh immediately after delete
+            } else {
+                throw new Error(result.error || "Delete failed");
+            }
         } catch (error) {
-            showToast("✗ Delete failed", true);
+            showToast("✗ Delete failed: " + error.message, true);
             showProcessing(false);
         }
     }
@@ -867,16 +893,15 @@
             return;
         }
         let html = '';
-        mainData.forEach((item, idx) => {
-            const rowNum = idx + 2;
+        mainData.forEach((item) => {
             html += `<tr>
                 <td><img src="${item.thumbnail}" class="thumb" onerror="this.src='https://via.placeholder.com/48?text=Err'" title="Click to view thumbnail"></td>
                 <td><strong>${escapeHtml(item.name)}</strong></td>
                 <td><span class="badge-cat">${escapeHtml(item.category)}</span></td>
-                <td style="max-width:200px; overflow:hidden;">${escapeHtml(item.url)}</td>
+                <td class="url-cell" title="${escapeHtml(item.url)}">${escapeHtml(item.url)}</td>
                 <td>
-                    <button class="action-btn edit-i" onclick='openEditMain(${rowNum}, ${JSON.stringify(item).replace(/'/g, "&#39;")})'><i class="fa fa-edit"></i></button>
-                    <button class="action-btn del-i" onclick="deleteRecordItem('Sheet1', ${rowNum}, '${item.fileId}')"><i class="fa fa-trash"></i></button>
+                    <button class="action-btn edit-i" onclick='openEditMain(${item.rowNum}, ${JSON.stringify(item).replace(/'/g, "&#39;")})'><i class="fa fa-edit"></i></button>
+                    <button class="action-btn del-i" onclick="deleteRecordItem('Sheet1', ${item.rowNum}, '${item.fileId}')"><i class="fa fa-trash"></i></button>
                 </td>
             </tr>`;
         });
@@ -890,16 +915,15 @@
             return;
         }
         let html = '';
-        settingsData.forEach((item, idx) => {
-            const rowNum = idx + 2;
+        settingsData.forEach((item) => {
             html += `<tr>
                 <td><strong>${escapeHtml(item.name)}</strong></td>
-                <td>${escapeHtml(item.url)}</td>
+                <td class="url-cell" title="${escapeHtml(item.url)}">${escapeHtml(item.url)}</td>
                 <td>v${escapeHtml(item.version)}</td>
-                <td>${escapeHtml(item.updateUrl)}</td>
+                <td class="url-cell" title="${escapeHtml(item.updateUrl)}">${escapeHtml(item.updateUrl)}</td>
                 <td>
-                    <button class="action-btn edit-i" onclick='openEditSettings(${rowNum}, ${JSON.stringify(item).replace(/'/g, "&#39;")})'><i class="fa fa-edit"></i></button>
-                    <button class="action-btn del-i" onclick="deleteRecordItem('settings', ${rowNum}, '')"><i class="fa fa-trash"></i></button>
+                    <button class="action-btn edit-i" onclick='openEditSettings(${item.rowNum}, ${JSON.stringify(item).replace(/'/g, "&#39;")})'><i class="fa fa-edit"></i></button>
+                    <button class="action-btn del-i" onclick="deleteRecordItem('settings', ${item.rowNum}, '')"><i class="fa fa-trash"></i></button>
                 </td>
             </tr>`;
         });
@@ -932,7 +956,6 @@
     }
     
     function openEditMain(rowNum, item) {
-        currentTab = 'main';
         editContext = { isEdit: true, rowIndex: rowNum, oldFileId: item.fileId || '', oldThumbUrl: item.thumbnail || '' };
         pendingCroppedBlob = null;
         document.getElementById('modal-title').innerText = "✏️ Edit Content";
@@ -947,7 +970,6 @@
     }
     
     function openEditSettings(rowNum, item) {
-        currentTab = 'settings';
         editContext = { isEdit: true, rowIndex: rowNum, oldFileId: null, oldThumbUrl: null };
         document.getElementById('modal-title').innerText = "✏️ Edit Settings";
         document.getElementById('form-main-fields').style.display = 'none';
@@ -969,6 +991,11 @@
     window.openEditSettings = openEditSettings;
     window.deleteRecordItem = deleteRecordItem;
     window.openCropEditor = openCropEditor;
+    window.refreshData = refreshData;
+    window.switchTab = switchTab;
+    window.openAddModal = openAddModal;
+    window.closeModal = closeModal;
+    window.performSave = performSave;
 </script>
 </body>
 </html>
