@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>Nikamma 4k Pro Admin - Professional</title>
+    <title>Nikamma 4k Pro Admin - FIXED (Fresh Load)</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
@@ -705,7 +705,7 @@
         img.src = LOGO_URL;
     }
     
-    // MAIN FETCH FUNCTION - WORKING
+    // MAIN FETCH FUNCTION - NO CACHE
     async function fetchAllData() {
         if (isLoading) return;
         isLoading = true;
@@ -713,7 +713,8 @@
         showProcessing(true);
         
         try {
-            const mainResponse = await fetch(MAIN_CSV_URL);
+            // Force no-cache
+            const mainResponse = await fetch(MAIN_CSV_URL, { cache: "no-store", headers: { "Cache-Control": "no-cache" } });
             const mainText = await mainResponse.text();
             const mainParsed = Papa.parse(mainText, { header: true, skipEmptyLines: true });
             
@@ -733,7 +734,7 @@
                 });
             }
             
-            const settingsResponse = await fetch(SETTINGS_CSV_URL);
+            const settingsResponse = await fetch(SETTINGS_CSV_URL, { cache: "no-store", headers: { "Cache-Control": "no-cache" } });
             const settingsText = await settingsResponse.text();
             const settingsParsed = Papa.parse(settingsText, { header: true, skipEmptyLines: true });
             
@@ -846,6 +847,7 @@
             await callAPI("save", payload);
             showToast("✓ Saved! Refreshing list...");
             closeModal();
+            // IMPORTANT: Fresh load after save
             await fetchAllData();
             
         } catch (err) {
@@ -863,6 +865,7 @@
         try {
             await callAPI("delete", { rowIndex, fileId, sheetName });
             showToast("✓ Deleted! Refreshing...");
+            // IMPORTANT: Fresh load after delete
             await fetchAllData();
         } catch (error) {
             showToast("✗ Delete failed", true);
@@ -1155,7 +1158,7 @@
     
     // Initialize
     window.addEventListener('load', () => {
-        console.log("Nikamma Admin - Professional Version");
+        console.log("Nikamma Admin - Professional Version - FIXED");
         loadLogo();
         fetchAllData();
     });
