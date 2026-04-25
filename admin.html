@@ -524,11 +524,11 @@
             <p>Content Management System</p>
         </div>
     </div>
-    <button class="refresh-btn" onclick="manualHardRefresh()"><i class="fa fa-sync-alt"></i> Refresh Data</button>
+    <button class="refresh-btn" onclick="fetchAllData()"><i class="fa fa-sync-alt"></i> Refresh Data</button>
 </div>
 
 <div class="info-note">
-    <i class="fa fa-image"></i> <strong>Click thumbnail to edit image</strong> | Auto-refresh after save/delete
+    <i class="fa fa-image"></i> <strong>Click thumbnail to edit image</strong> | Auto-refresh after save/delete | Zoom default 100%
 </div>
 
 <div class="tabs">
@@ -670,12 +670,10 @@
     let editContext = { isEdit: false, rowIndex: null, oldFileId: null, oldThumbUrl: null };
     let isLoading = false;
     let pendingCroppedBlob = null;
-    let processingTimeout = null;
     
     // Editor variables
     let editorImg = new Image();
     let editorImgLoaded = false;
-    let currentEditingImageBlob = null;
     const editCanvas = document.getElementById('editCanvas');
     const editCtx = editCanvas.getContext('2d');
     const editWidthSlider = document.getElementById('editWidthSlider');
@@ -687,21 +685,18 @@
     
     function showProcessing(show) {
         const overlay = document.getElementById('processing-overlay');
-        if (show) {
-            overlay.style.display = 'flex';
-        } else {
-            if (processingTimeout) clearTimeout(processingTimeout);
-            processingTimeout = setTimeout(() => { overlay.style.display = 'none'; }, 200);
-        }
+        if (show) overlay.style.display = 'flex';
+        else overlay.style.display = 'none';
     }
     
     function setLoader(percent) { document.getElementById('loader').style.width = percent + '%'; }
+    
     function showToast(message, isError = false) {
         const toast = document.createElement('div');
         toast.className = 'toast' + (isError ? ' error' : '');
         toast.textContent = message;
         document.body.appendChild(toast);
-        setTimeout(() => toast.remove(), 2600);
+        setTimeout(() => toast.remove(), 2500);
     }
     
     function loadLogo() {
@@ -712,18 +707,21 @@
         img.src = LOGO_URL;
     }
     
+    // MAIN FETCH FUNCTION - WORKING
     async function fetchAllData() {
         if (isLoading) return;
         isLoading = true;
         setLoader(20);
         showProcessing(true);
+        
         try {
-            const [mainResponse, settingsResponse] = await Promise.all([fetch(MAIN_CSV_URL), fetch(SETTINGS_CSV_URL)]);
+            const mainResponse = await fetch(MAIN_CSV_URL);
             const mainText = await mainResponse.text();
             const mainParsed = Papa.parse(mainText, { header: true, skipEmptyLines: true });
+            
             mainData = [];
-            mainParsed.data.forEach(row => {
-                if (row.Name || row.name || row.URL || row.url) {
+            if (mainParsed.data && mainParsed.data.length > 0) {
+                mainParsed.data.forEach(row => {
                     const name = row.Name || row.name || "";
                     const category = row.Category || row.category || "Movies";
                     const url = row.URL || row.url || "";
@@ -731,28 +729,52 @@
                     const workingThumb = convertToWorkingThumbnailUrl(rawThumb);
                     const finalThumb = workingThumb || 'https://via.placeholder.com/48/12161c?text=No+Img';
                     const fileId = extractFileIdFromUrl(rawThumb) || extractFileIdFromUrl(workingThumb) || "";
-                    mainData.push({ name, category, url, thumbnail: finalThumb, fileId });
-                }
-            });
+                    if (name || url) {
+                        mainData.push({ name, category, url, thumbnail: finalThumb, fileId });
+                    }
+                });
+            }
+            
+            const settingsResponse = await fetch(SETTINGS_CSV_URL);
             const settingsText = await settingsResponse.text();
             const settingsParsed = Papa.parse(settingsText, { header: true, skipEmptyLines: true });
+            
             settingsData = [];
-            if (settingsParsed.data.length > 0) {
+            if (settingsParsed.data && settingsParsed.data.length > 0) {
                 const s = settingsParsed.data[0];
-                settingsData.push({ name: s.Name || s.name || "", url: s.URL || s.url || s.baseUrl || "", version: s.Version || s.version || "1.0", updateUrl: s.UpdateUrl || s.updateUrl || "", ratingUrl: s.RatingUrl || s.ratingUrl || "", privacyUrl: s.PrivacyUrl || s.privacyUrl || "", shareUrl: s.ShareUrl || s.shareUrl || "" });
+                settingsData.push({
+                    name: s.Name || s.name || "",
+                    url: s.URL || s.url || s.baseUrl || "",
+                    version: s.Version || s.version || "1.0",
+                    updateUrl: s.UpdateUrl || s.updateUrl || "",
+                    ratingUrl: s.RatingUrl || s.ratingUrl || "",
+                    privacyUrl: s.PrivacyUrl || s.privacyUrl || "",
+                    shareUrl: s.ShareUrl || s.shareUrl || ""
+                });
             }
+            
             renderCurrentTable();
             showToast(`✓ Loaded ${mainData.length} items`);
             setLoader(100);
+            
         } catch (error) {
-            showToast('✗ Error: ' + error.message, true);
+            console.error("Fetch error:", error);
+            showToast('✗ Error loading data: ' + error.message, true);
             renderCurrentTable();
-        } finally { isLoading = false; showProcessing(false); }
+        } finally {
+            isLoading = false;
+            showProcessing(false);
+        }
     }
     
     async function callAPI(action, data = null) {
-        try { await fetch(`${API_BASE}?api=${action}`, { method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'application/json' }, body: data ? JSON.stringify(data) : null }); return { success: true }; }
-        catch (error) { return { success: false, error: error.message }; }
+        try {
+            const url = `${API_BASE}?api=${action}&t=${Date.now()}`;
+            await fetch(url, { method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'application/json' }, body: data ? JSON.stringify(data) : null });
+            return { success: true };
+        } catch (error) {
+            return { success: false, error: error.message };
+        }
     }
     
     async function performSave() {
@@ -760,20 +782,37 @@
         saveBtn.disabled = true;
         saveBtn.innerText = "⏳ Saving...";
         showProcessing(true);
+        
         try {
             let imageData = null;
-            let payload = { sheet: currentTab === 'main' ? "Sheet1" : "settings", isEdit: editContext.isEdit, rowIdx: editContext.rowIndex, existingFileId: editContext.oldFileId || "", existingThumb: editContext.oldThumbUrl || "" };
+            let payload = {
+                sheet: currentTab === 'main' ? "Sheet1" : "settings",
+                isEdit: editContext.isEdit,
+                rowIdx: editContext.rowIndex,
+                existingFileId: editContext.oldFileId || "",
+                existingThumb: editContext.oldThumbUrl || ""
+            };
+            
             if (currentTab === 'main') {
                 const title = document.getElementById('inp-title').value.trim();
                 const category = document.getElementById('inp-category-select').value;
                 const link = document.getElementById('inp-link').value.trim();
+                
                 if (!title) throw new Error("Name required");
                 if (!link) throw new Error("URL required");
-                payload.title = title; payload.category = category; payload.link = link;
+                
+                payload.title = title;
+                payload.category = category;
+                payload.link = link;
+                
                 if (pendingCroppedBlob) {
                     imageData = await new Promise((resolve) => {
                         const reader = new FileReader();
-                        reader.onload = (e) => resolve({ data: e.target.result.split(',')[1], mimeType: 'image/jpeg', name: `img_${Date.now()}.jpg` });
+                        reader.onload = (e) => resolve({
+                            data: e.target.result.split(',')[1],
+                            mimeType: 'image/jpeg',
+                            name: `img_${Date.now()}.jpg`
+                        });
                         reader.readAsDataURL(pendingCroppedBlob);
                     });
                     pendingCroppedBlob = null;
@@ -783,7 +822,11 @@
                         const file = fileInput.files[0];
                         imageData = await new Promise((resolve) => {
                             const reader = new FileReader();
-                            reader.onload = (e) => resolve({ data: e.target.result.split(',')[1], mimeType: file.type, name: file.name });
+                            reader.onload = (e) => resolve({
+                                data: e.target.result.split(',')[1],
+                                mimeType: file.type,
+                                name: file.name
+                            });
                             reader.readAsDataURL(file);
                         });
                     }
@@ -796,15 +839,24 @@
                 payload.ratingUrl = document.getElementById('set-ratingurl').value.trim();
                 payload.privacyUrl = document.getElementById('set-privacyurl').value.trim();
                 payload.shareUrl = document.getElementById('set-shareurl').value.trim();
+                
                 if (!payload.name) throw new Error("App Name required");
             }
+            
             if (imageData) payload.imageData = imageData;
+            
             await callAPI("save", payload);
             showToast("✓ Saved! Refreshing list...");
             closeModal();
             await fetchAllData();
-        } catch (err) { showToast(err.message, true); }
-        finally { saveBtn.disabled = false; saveBtn.innerText = "💾 SAVE"; showProcessing(false); }
+            
+        } catch (err) {
+            showToast(err.message, true);
+        } finally {
+            saveBtn.disabled = false;
+            saveBtn.innerText = "💾 SAVE";
+            showProcessing(false);
+        }
     }
     
     async function deleteRecordItem(sheetName, rowIndex, fileId) {
@@ -814,12 +866,13 @@
             await callAPI("delete", { rowIndex, fileId, sheetName });
             showToast("✓ Deleted! Refreshing...");
             await fetchAllData();
-        } catch (error) { showToast("✗ Delete failed", true); showProcessing(false); }
+        } catch (error) {
+            showToast("✗ Delete failed", true);
+            showProcessing(false);
+        }
     }
     
-    function manualHardRefresh() { fetchAllData(); }
-    
-    // ========== FILE PICKER & EDITOR INTEGRATION ==========
+    // ========== FILE PICKER & EDITOR ==========
     function triggerFilePicker() {
         document.getElementById('inp-image-upload').click();
     }
@@ -831,12 +884,20 @@
                 const previewImg = document.getElementById('previewImg');
                 previewImg.src = e.target.result;
                 document.getElementById('imagePreviewArea').style.display = 'block';
-                // Store current file for editing
-                currentEditingImageBlob = input.files[0];
                 showToast("Image selected. Click 'Edit Image' to crop/resize.");
             };
             reader.readAsDataURL(input.files[0]);
         }
+    }
+    
+    function resetEditorToDefault() {
+        editZoomSlider.value = "1";
+        editMoveXSlider.value = "0";
+        editMoveYSlider.value = "0";
+        editRoundSlider.value = "0";
+        editWidthSlider.value = "300";
+        editHeightSlider.value = "300";
+        updateEditValues();
     }
     
     function openImageEditorFromModal() {
@@ -851,14 +912,7 @@
             editorImg = new Image();
             editorImg.onload = () => {
                 editorImgLoaded = true;
-                // Reset sliders
-                editWidthSlider.value = Math.min(300, editorImg.width);
-                editHeightSlider.value = Math.min(300, editorImg.height);
-                editZoomSlider.value = 1;
-                editMoveXSlider.value = 0;
-                editMoveYSlider.value = 0;
-                editRoundSlider.value = 0;
-                updateEditValues();
+                resetEditorToDefault();
                 document.getElementById('editorModal').style.display = 'flex';
                 drawEditCanvas();
             };
@@ -867,7 +921,6 @@
         reader.readAsDataURL(file);
     }
     
-    // EDITOR FUNCTIONS
     function updateEditValues() {
         document.getElementById('editWidthVal').innerText = editWidthSlider.value + "px";
         document.getElementById('editHeightVal').innerText = editHeightSlider.value + "px";
@@ -908,26 +961,20 @@
         startX = Math.max(0, Math.min(startX, 500 - boxW));
         startY = Math.max(0, Math.min(startY, 500 - boxH));
         const cropCanvas = document.createElement('canvas');
-        cropCanvas.width = boxW; cropCanvas.height = boxH;
+        cropCanvas.width = boxW;
+        cropCanvas.height = boxH;
         const cropCtx = cropCanvas.getContext('2d');
         cropCtx.drawImage(editCanvas, startX, startY, boxW, boxH, 0, 0, boxW, boxH);
         cropCanvas.toBlob(callback, 'image/jpeg', 0.85);
     }
     
-    // Thumbnail click editor (for existing images)
     function openImageEditorWithUrl(imageUrl) {
         if(!imageUrl || imageUrl.includes('placeholder')) {
             showToast("No valid image to edit", true);
             return;
         }
+        resetEditorToDefault();
         document.getElementById('editorModal').style.display = 'flex';
-        editWidthSlider.value = "300";
-        editHeightSlider.value = "300";
-        editZoomSlider.value = "1";
-        editMoveXSlider.value = "0";
-        editMoveYSlider.value = "0";
-        editRoundSlider.value = "0";
-        updateEditValues();
         editorImg = new Image();
         editorImg.crossOrigin = "Anonymous";
         editorImg.onload = () => {
@@ -944,7 +991,12 @@
             const reader = new FileReader();
             reader.onload = (ev) => {
                 editorImg = new Image();
-                editorImg.onload = () => { editorImgLoaded = true; drawEditCanvas(); updateEditValues(); };
+                editorImg.onload = () => {
+                    editorImgLoaded = true;
+                    resetEditorToDefault();
+                    drawEditCanvas();
+                    updateEditValues();
+                };
                 editorImg.src = ev.target.result;
             };
             reader.readAsDataURL(e.target.files[0]);
@@ -963,12 +1015,10 @@
                 reader.onload = (e) => {
                     previewImg.src = e.target.result;
                     previewArea.style.display = 'block';
-                    // Also update file input to use cropped blob for saving
                     const dataTransfer = new DataTransfer();
                     const newFile = new File([blob], "edited_image.jpg", { type: "image/jpeg" });
                     dataTransfer.items.add(newFile);
                     document.getElementById('inp-image-upload').files = dataTransfer.files;
-                    currentEditingImageBlob = newFile;
                     showToast("✅ Cropped image ready for upload");
                 };
                 reader.readAsDataURL(blob);
@@ -983,11 +1033,18 @@
     [editWidthSlider, editHeightSlider, editZoomSlider, editRoundSlider, editMoveXSlider, editMoveYSlider].forEach(slider => slider.addEventListener('input', updateEditValues));
     
     // ========== RENDER FUNCTIONS ==========
-    function renderCurrentTable() { currentTab === 'main' ? renderMainTable() : renderSettingsTable(); }
+    function renderCurrentTable() {
+        if (currentTab === 'main') renderMainTable();
+        else renderSettingsTable();
+    }
     
     function renderMainTable() {
         const tbody = document.getElementById('body-main');
-        if (!mainData.length) { tbody.innerHTML = '</td><td colspan="5" class="empty-row">✨ No content. Click + to add ✨</td></tr>'; return; }
+        if (!mainData.length) {
+            tbody.innerHTML = '<tr><td colspan="5" class="empty-row">✨ No content. Click + to add ✨</td></tr>';
+            return;
+        }
+        
         let html = '';
         mainData.forEach((item, idx) => {
             const rowNum = idx + 2;
@@ -1007,7 +1064,11 @@
     
     function renderSettingsTable() {
         const tbody = document.getElementById('body-set');
-        if (!settingsData.length) { tbody.innerHTML = '<tr><td colspan="5" class="empty-row">⚙️ No settings. Click + to add ⚙️</td></tr>'; return; }
+        if (!settingsData.length) {
+            tbody.innerHTML = '<tr><td colspan="5" class="empty-row">⚙️ No settings. Click + to add ⚙️</td></tr>';
+            return;
+        }
+        
         let html = '';
         settingsData.forEach((item, idx) => {
             const rowNum = idx + 2;
@@ -1025,7 +1086,15 @@
         tbody.innerHTML = html;
     }
     
-    function escapeHtml(str) { if (!str) return ''; return String(str).replace(/[&<>]/g, m => m === '&' ? '&amp;' : m === '<' ? '&lt;' : '&gt;'); }
+    function escapeHtml(str) {
+        if (!str) return '';
+        return String(str).replace(/[&<>]/g, function(m) {
+            if (m === '&') return '&amp;';
+            if (m === '<') return '&lt;';
+            if (m === '>') return '&gt;';
+            return m;
+        });
+    }
     
     function switchTab(tab) {
         currentTab = tab;
@@ -1039,7 +1108,6 @@
     function openAddModal() {
         editContext = { isEdit: false, rowIndex: null, oldFileId: null, oldThumbUrl: null };
         pendingCroppedBlob = null;
-        currentEditingImageBlob = null;
         document.getElementById('modal-title').innerText = "➕ Add New Content";
         document.getElementById('form-main-fields').style.display = 'block';
         document.getElementById('form-settings-fields').style.display = 'none';
@@ -1087,7 +1155,12 @@
         pendingCroppedBlob = null;
     }
     
-    window.addEventListener('load', () => { loadLogo(); fetchAllData(); });
+    // Initialize
+    window.addEventListener('load', () => {
+        console.log("Nikamma Admin - Professional Version");
+        loadLogo();
+        fetchAllData();
+    });
 </script>
 </body>
 </html>
