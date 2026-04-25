@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>Nikamma 4k Pro Admin - Ultimate CMS</title>
+    <title>Nikamma 4k Pro Admin - Professional</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
@@ -192,6 +192,7 @@
         .action-btn:hover { background: rgba(255,255,255,0.1); }
         .edit-i { color: var(--primary); }
         .del-i { color: var(--danger); }
+        .edit-image-i { color: #ffaa44; font-size: 0.8rem; }
 
         .modal {
             display: none;
@@ -214,7 +215,7 @@
             overflow-y: auto;
         }
         
-        input, select, textarea {
+        input, select {
             width: 100%;
             padding: 10px 12px;
             margin: 6px 0 14px;
@@ -297,6 +298,25 @@
             to { opacity: 1; transform: translateX(-50%) translateY(0); }
         }
         
+        .info-note {
+            background: rgba(0,188,212,0.08);
+            padding: 8px 15px;
+            border-radius: 10px;
+            font-size: 11px;
+            margin: 12px 20px 0 20px;
+            color: var(--primary);
+        }
+        
+        .status-badge {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 9px;
+            font-weight: bold;
+            margin-left: 8px;
+        }
+        .status-success { background: var(--success); color: white; }
+        
         .image-preview-area {
             margin: 8px 0;
             padding: 10px;
@@ -319,23 +339,13 @@
             font-size: 13px;
         }
         
-        .image-upload-wrapper {
-            display: flex;
-            gap: 10px;
-            margin-bottom: 10px;
-            align-items: center;
+        small {
+            color: #888;
+            font-size: 10px;
         }
-        .image-upload-wrapper input[type="file"] {
-            flex: 1;
-            margin: 0;
-            background: #0f131c;
-            border: 1px solid var(--border);
-            border-radius: 16px;
-            padding: 8px 12px;
-            font-size: 12px;
-        }
-
-        .crop-modal {
+        
+        /* EDITOR MODAL - PROFESSIONAL STYLE */
+        .editor-modal {
             display: none;
             position: fixed;
             inset: 0;
@@ -344,35 +354,77 @@
             align-items: center;
             justify-content: center;
             padding: 15px;
+            overflow-y: auto;
         }
-        .crop-card {
+        .editor-card {
             background: #1a1f2a;
             border-radius: 30px;
-            max-width: 550px;
+            max-width: 600px;
             width: 100%;
-            padding: 20px;
+            margin: auto;
+            padding: 18px;
             border: 1px solid var(--border);
         }
-        .crop-canvas-container {
+        .canvas-container {
             background: #2c2c2c;
             border-radius: 20px;
             padding: 8px;
             margin-bottom: 15px;
-            text-align: center;
+            display: flex;
+            justify-content: center;
         }
         canvas {
             background: #333;
             border-radius: 12px;
-            max-width: 100%;
+            display: block;
+            width: 100%;
             height: auto;
-            cursor: move;
+            cursor: grab;
         }
-        .crop-actions {
+        canvas:active { cursor: grabbing; }
+        .slider-group {
+            margin-bottom: 12px;
+            background: #2a2a2a;
+            padding: 10px;
+            border-radius: 40px;
+        }
+        .slider-group label {
+            color: #ddd;
+            display: block;
+            margin-bottom: 6px;
+            font-size: 11px;
+            text-align: center;
+        }
+        input[type="range"] {
+            width: 100%;
+            height: 4px;
+            -webkit-appearance: none;
+            background: #4a4a4a;
+            border-radius: 4px;
+            margin: 0;
+        }
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 18px;
+            height: 18px;
+            background: #0a84ff;
+            border-radius: 50%;
+            cursor: pointer;
+        }
+        .value-badge {
+            display: inline-block;
+            background: #0a84ff;
+            padding: 2px 8px;
+            border-radius: 20px;
+            font-size: 10px;
+            margin-right: 6px;
+        }
+        .editor-actions {
             display: flex;
             gap: 10px;
             margin-top: 15px;
         }
-        .crop-actions button {
+        .editor-actions button {
             flex: 1;
             padding: 12px;
             border-radius: 50px;
@@ -381,10 +433,45 @@
             cursor: pointer;
             font-size: 13px;
         }
-        .btn-crop-apply { background: #0f7b3a; color: white; }
-        .btn-crop-cancel { background: #3a3a3a; color: white; }
+        .btn-submit-editor { background: #0f7b3a; color: white; }
+        .btn-cancel-editor { background: #3a3a3a; color: white; }
         
-        .crop-btn {
+        /* PROFESSIONAL IMAGE PICKER BUTTON */
+        .professional-picker {
+            background: linear-gradient(135deg, #1e2a3a, #0f131c);
+            border: 2px dashed var(--primary);
+            border-radius: 18px;
+            padding: 20px;
+            text-align: center;
+            margin-bottom: 15px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .professional-picker:hover {
+            background: linear-gradient(135deg, #253545, #1a1f2a);
+            border-color: #ffaa44;
+            transform: scale(1.01);
+        }
+        .picker-icon {
+            font-size: 38px;
+            color: var(--primary);
+            margin-bottom: 8px;
+        }
+        .picker-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: white;
+            margin-bottom: 4px;
+        }
+        .picker-sub {
+            font-size: 10px;
+            color: #888;
+        }
+        
+        .slider-row { display: flex; gap: 8px; }
+        .slider-row .slider-group { flex: 1; }
+        
+        .editor-trigger-btn {
             background: linear-gradient(135deg, #ffaa44, #ff8844);
             border: none;
             color: #000;
@@ -394,35 +481,10 @@
             cursor: pointer;
             font-size: 11px;
             transition: all 0.2s;
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            white-space: nowrap;
         }
-        .crop-btn:hover { opacity: 0.9; transform: scale(0.98); }
-        
-        .slider-group { margin-bottom: 12px; }
-        .slider-group label { font-size: 11px; margin-bottom: 4px; }
-        input[type="range"] { margin: 0; }
-        
-        .drive-note {
-            background: rgba(0,188,212,0.1);
-            padding: 8px;
-            border-radius: 12px;
-            font-size: 10px;
-            margin-top: 8px;
-            text-align: center;
-        }
-        
-        .url-cell {
-            max-width: 250px;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            white-space: nowrap;
-        }
-        .url-cell:hover {
-            white-space: normal;
-            word-break: break-all;
+        .editor-trigger-btn:hover {
+            transform: scale(0.98);
+            opacity: 0.9;
         }
     </style>
 </head>
@@ -447,6 +509,10 @@
     <button class="refresh-btn" onclick="refreshData()"><i class="fa fa-sync-alt"></i> Refresh Data</button>
 </div>
 
+<div class="info-note">
+    <i class="fa fa-image"></i> <strong>Click thumbnail or Crop to edit image</strong> | Google Drive images fixed
+</div>
+
 <div class="tabs">
     <button class="tab-btn active" id="btn-main" onclick="switchTab('main')">📦 Content (Movies/Sports/TV)</button>
     <button class="tab-btn" id="btn-settings" onclick="switchTab('settings')">⚙️ App Settings</button>
@@ -455,50 +521,50 @@
 <div class="content-area">
     <div class="table-card">
         <table id="table-main">
-            <thead>
-                <tr><th>THUMB</th><th>NAME</th><th>CATEGORY</th><th>URL</th><th>ACTION</th></tr>
-            </thead>
+            <thead><tr><th>THUMB</th><th>NAME</th><th>CATEGORY</th><th>URL</th><th>ACTION</th></tr></thead>
             <tbody id="body-main">
-                <tr><td colspan="5" class="empty-row">Loading data...</td></tr>
+                <tr><td colspan="5" class="empty-row">Loading data...<br><i class="fa fa-spinner fa-spin"></i></td></tr>
             </tbody>
-         </>
+        </table>
         <table id="table-set" style="display:none">
-            <thead>
-                <tr><th>APP NAME</th><th>BASE URL</th><th>VERSION</th><th>UPDATE URL</th><th>ACTION</th> </tr>
-            </thead>
+            <thead><tr><th>APP NAME</th><th>BASE URL</th><th>VERSION</th><th>UPDATE URL</th><th>ACTION</th></tr></thead>
             <tbody id="body-set">
-                <tr><td colspan="5" class="empty-row">Loading settings...</td></tr>
+                <tr><td colspan="5" class="empty-row">Loading settings...<br><i class="fa fa-spinner fa-spin"></i></td></tr>
             </tbody>
-         </>
+        </table>
     </div>
 </div>
 
 <div class="fab" onclick="openAddModal()"><i class="fa fa-plus"></i></div>
 
-<!-- CROP EDITOR MODAL -->
-<div id="cropModal" class="crop-modal">
-    <div class="crop-card">
-        <h3 style="text-align:center; margin-bottom:12px;">✂️ Crop Image</h3>
-        <div class="crop-canvas-container">
-            <canvas id="cropCanvas" width="400" height="400"></canvas>
+<!-- IMAGE EDITOR MODAL - PROFESSIONAL -->
+<div id="editorModal" class="editor-modal">
+    <div class="editor-card">
+        <h3 style="text-align:center; margin-bottom:12px; font-size:18px;">✂️ Professional Image Editor</h3>
+        <div class="professional-picker" onclick="document.getElementById('editorImageInput').click()">
+            <div class="picker-icon"><i class="fa fa-cloud-upload-alt"></i></div>
+            <div class="picker-title">Choose Image File</div>
+            <div class="picker-sub">Click or drag & drop (JPG, PNG, WEBP)</div>
         </div>
-        <div class="slider-group">
-            <label>Zoom <span id="zoomVal" class="badge-cat">100%</span></label>
-            <input type="range" id="zoomSlider" min="0.5" max="2.5" step="0.01" value="1">
+        <input type="file" id="editorImageInput" accept="image/*" style="display:none">
+        <div class="canvas-container">
+            <canvas id="editCanvas" width="500" height="500"></canvas>
         </div>
-        <div style="display:flex; gap:10px;">
-            <div class="slider-group" style="flex:1">
-                <label>Crop Width <span id="cropWVal" class="badge-cat">200px</span></label>
-                <input type="range" id="cropWidthSlider" min="100" max="380" step="5" value="200">
-            </div>
-            <div class="slider-group" style="flex:1">
-                <label>Crop Height <span id="cropHVal" class="badge-cat">200px</span></label>
-                <input type="range" id="cropHeightSlider" min="100" max="380" step="5" value="200">
-            </div>
+        <div class="slider-row">
+            <div class="slider-group"><label>Width <span id="editWidthVal" class="value-badge">300px</span></label><input type="range" id="editWidthSlider" min="100" max="480" step="5" value="300"></div>
+            <div class="slider-group"><label>Height <span id="editHeightVal" class="value-badge">300px</span></label><input type="range" id="editHeightSlider" min="100" max="480" step="5" value="300"></div>
         </div>
-        <div class="crop-actions">
-            <button class="btn-crop-apply" id="applyCropBtn">✅ Apply</button>
-            <button class="btn-crop-cancel" id="cancelCropBtn">❌ Cancel</button>
+        <div class="slider-row">
+            <div class="slider-group"><label>Zoom <span id="editZoomVal" class="value-badge">100%</span></label><input type="range" id="editZoomSlider" min="0.3" max="2.5" step="0.01" value="1"></div>
+            <div class="slider-group"><label>Round <span id="editRoundVal" class="value-badge">0%</span></label><input type="range" id="editRoundSlider" min="0" max="50" step="1" value="0"></div>
+        </div>
+        <div class="slider-row">
+            <div class="slider-group"><label>Move X <span id="editMoveXVal" class="value-badge">0px</span></label><input type="range" id="editMoveXSlider" min="-200" max="200" step="5" value="0"></div>
+            <div class="slider-group"><label>Move Y <span id="editMoveYVal" class="value-badge">0px</span></label><input type="range" id="editMoveYSlider" min="-200" max="200" step="5" value="0"></div>
+        </div>
+        <div class="editor-actions">
+            <button class="btn-submit-editor" id="submitEditorBtn">✅ Apply & Use</button>
+            <button class="btn-cancel-editor" id="cancelEditorBtn">❌ Cancel</button>
         </div>
     </div>
 </div>
@@ -516,18 +582,16 @@
                 <option value="Slider">🖼️ Slider</option>
             </select>
             <input type="text" id="inp-link" placeholder="Video URL *">
-            <label>📷 Thumbnail Image (Google Drive or upload)</label>
-            <div class="image-upload-wrapper">
-                <input type="file" id="inp-image-upload" accept="image/*" onchange="previewImageFile(this)">
-                <button type="button" class="crop-btn" onclick="openCropEditor()"><i class="fa fa-crop"></i> Crop</button>
+            <label>📷 Thumbnail Image</label>
+            <div style="display: flex; gap: 8px; margin-bottom: 10px;">
+                <input type="file" id="inp-image-upload" accept="image/*" style="flex:1;" onchange="previewImageFile(this)">
+                <button type="button" class="editor-trigger-btn" onclick="openInlineImageEditor()"><i class="fa fa-crop"></i> Edit</button>
             </div>
             <div id="imagePreviewArea" class="image-preview-area">
                 <img id="previewImg" src="">
-                <small>Image preview</small>
+                <small>Cropped image preview</small>
             </div>
-            <div class="drive-note">
-                <i class="fab fa-google-drive"></i> Google Drive links automatically convert to working thumbnail format
-            </div>
+            <small style="color:#888;"><i class="fa fa-google-drive"></i> Use Edit to crop & resize before upload</small>
         </div>
         <div id="form-settings-fields" style="display:none;">
             <input type="text" id="set-appname" placeholder="App Name">
@@ -544,37 +608,35 @@
 </div>
 
 <script>
-    // ========== CRITICAL: STORE URL IN EXACT GOOGLE DRIVE THUMBNAIL FORMAT ==========
+    // ========== GOOGLE DRIVE THUMBNAIL CONVERTER ==========
     function convertToWorkingThumbnailUrl(url) {
         if (!url) return null;
-        if (url.match(/drive\.google\.com\/thumbnail\?id=[^&]+&sz=w500/)) return url;
-        
+        if (url.includes('drive.google.com/thumbnail?id=')) return url;
         let fileId = null;
-        const patterns = [
-            /\/d\/([^\/]+)/, /[?&]id=([^&]+)/, /open\?id=([^&]+)/,
-            /thumbnail\?id=([^&]+)/, /uc\?id=([^&]+)/, /file\/d\/([^\/]+)/
-        ];
-        for (const pattern of patterns) {
-            const match = url.match(pattern);
-            if (match && match[1]) { fileId = match[1]; break; }
-        }
-        
+        const match1 = url.match(/\/d\/([^\/]+)/);
+        if (match1) fileId = match1[1];
+        if (!fileId) { const match2 = url.match(/[?&]id=([^&]+)/); if (match2) fileId = match2[1]; }
+        if (!fileId) { const match3 = url.match(/open\?id=([^&]+)/); if (match3) fileId = match3[1]; }
+        if (!fileId) { const match4 = url.match(/thumbnail\?id=([^&]+)/); if (match4) fileId = match4[1]; }
         if (fileId) return `https://drive.google.com/thumbnail?id=${fileId}&sz=w500`;
-        if (url.startsWith('http') && /\.(jpg|jpeg|png|webp|gif)(\?|$)/i.test(url)) return url;
+        if (url.startsWith('http') && (url.includes('.jpg') || url.includes('.png') || url.includes('.jpeg') || url.includes('.webp'))) return url;
         return null;
     }
     
     function extractFileIdFromUrl(url) {
         if (!url) return '';
         const match = url.match(/thumbnail\?id=([^&]+)/);
-        return match ? match[1] : '';
+        if (match) return match[1];
+        const match2 = url.match(/\/d\/([^\/]+)/);
+        if (match2) return match2[1];
+        return '';
     }
     
     // ========== CONFIGURATION ==========
     const MAIN_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQD2lHL-u6zHPZKdYIVD4eXp98XipkVP4jKfxLDoNje9DeZ1726o0zFZf-gAR2kZj0ls7VhceXbbKih/pub?gid=0&single=true&output=csv";
     const SETTINGS_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQD2lHL-u6zHPZKdYIVD4eXp98XipkVP4jKfxLDoNje9DeZ1726o0zFZf-gAR2kZj0ls7VhceXbbKih/pub?gid=1123743396&single=true&output=csv";
     const LOGO_URL = "https://drive.google.com/thumbnail?id=1DXQpAofda-bZPS20Q-bqo6neUDznYqW9&sz=w200";
-    const API_BASE = "https://script.google.com/macros/s/AKfycbxSk62f66t50yO1YVVrk-6s_1NrKa1ZyZEd_4suD8GYcUf54qwjfircv5KICUMiUI-7/exec";
+    const API_BASE = "https://script.google.com/macros/s/AKfycbwsr65dUswzt0ztj3chZEAaYoYQ-n94w-hrUlI7s6WugP3ZkRQp7rIL_iu2_gtavas9MQ/exec";
     
     let currentTab = 'main';
     let mainData = [];
@@ -582,15 +644,31 @@
     let editContext = { isEdit: false, rowIndex: null, oldFileId: null, oldThumbUrl: null };
     let isLoading = false;
     let pendingCroppedBlob = null;
+    let processingTimeout = null;
     
-    // Crop editor variables
-    let cropImageLoaded = false;
-    let cropOriginalImg = new Image();
-    let cropCanvas = document.getElementById('cropCanvas');
-    let cropCtx = cropCanvas.getContext('2d');
+    // Editor variables
+    let editorImg = new Image();
+    let editorImgLoaded = false;
+    const editCanvas = document.getElementById('editCanvas');
+    const editCtx = editCanvas.getContext('2d');
+    const editWidthSlider = document.getElementById('editWidthSlider');
+    const editHeightSlider = document.getElementById('editHeightSlider');
+    const editZoomSlider = document.getElementById('editZoomSlider');
+    const editRoundSlider = document.getElementById('editRoundSlider');
+    const editMoveXSlider = document.getElementById('editMoveXSlider');
+    const editMoveYSlider = document.getElementById('editMoveYSlider');
     
     function showProcessing(show) {
-        document.getElementById('processing-overlay').style.display = show ? 'flex' : 'none';
+        const overlay = document.getElementById('processing-overlay');
+        if (show) {
+            overlay.style.display = 'flex';
+        } else {
+            // Small delay to ensure UI doesn't flicker
+            if (processingTimeout) clearTimeout(processingTimeout);
+            processingTimeout = setTimeout(() => {
+                overlay.style.display = 'none';
+            }, 300);
+        }
     }
     
     function setLoader(percent) {
@@ -602,7 +680,7 @@
         toast.className = 'toast' + (isError ? ' error' : '');
         toast.textContent = message;
         document.body.appendChild(toast);
-        setTimeout(() => toast.remove(), 3000);
+        setTimeout(() => toast.remove(), 2500);
     }
     
     function previewImageFile(input) {
@@ -613,12 +691,10 @@
             reader.onload = function(e) {
                 previewImg.src = e.target.result;
                 previewArea.style.display = 'block';
-                pendingCroppedBlob = input.files[0];
             };
             reader.readAsDataURL(input.files[0]);
         } else {
             previewArea.style.display = 'none';
-            pendingCroppedBlob = null;
         }
     }
     
@@ -626,77 +702,91 @@
         const logoContainer = document.getElementById('logoIcon');
         if (logoContainer) {
             const img = new Image();
-            img.onload = function() { logoContainer.innerHTML = `<img src="${LOGO_URL}" alt="Logo">`; };
-            img.onerror = function() { logoContainer.innerHTML = '<i class="fa fa-film"></i>'; };
+            img.onload = function() {
+                logoContainer.innerHTML = `<img src="${LOGO_URL}" alt="Logo">`;
+            };
+            img.onerror = function() {
+                logoContainer.innerHTML = '<i class="fa fa-film"></i>';
+            };
             img.src = LOGO_URL;
         }
     }
     
-    function refreshData() { if (!isLoading) fetchAllData(); }
+    function refreshData() {
+        if (isLoading) return;
+        fetchAllData();
+    }
     
     async function fetchAllData() {
         if (isLoading) return;
         isLoading = true;
         setLoader(20);
         showProcessing(true);
+        
         try {
-            const [mainResponse, settingsResponse] = await Promise.all([fetch(MAIN_CSV_URL), fetch(SETTINGS_CSV_URL)]);
+            const [mainResponse, settingsResponse] = await Promise.all([
+                fetch(MAIN_CSV_URL),
+                fetch(SETTINGS_CSV_URL)
+            ]);
+            
             const mainText = await mainResponse.text();
             const mainParsed = Papa.parse(mainText, { header: true, skipEmptyLines: true });
+            
             mainData = [];
-            mainParsed.data.forEach((row, idx) => {
-                if ((row.Name || row.name) || (row.URL || row.url)) {
+            mainParsed.data.forEach(row => {
+                if (row.Name || row.name || row.URL || row.url) {
                     const name = row.Name || row.name || "";
                     const category = row.Category || row.category || "Movies";
                     const url = row.URL || row.url || "";
                     let rawThumb = row.Thumbnail || row.thumbnail || "";
                     const workingThumb = convertToWorkingThumbnailUrl(rawThumb);
                     const finalThumb = workingThumb || 'https://via.placeholder.com/48/12161c?text=No+Img';
-                    const fileId = extractFileIdFromUrl(workingThumb || rawThumb) || "";
-                    mainData.push({ name, category, url, thumbnail: finalThumb, fileId, rawThumb: rawThumb, rowNum: idx + 2 });
+                    const fileId = extractFileIdFromUrl(rawThumb) || extractFileIdFromUrl(workingThumb) || "";
+                    mainData.push({ name, category, url, thumbnail: finalThumb, fileId });
                 }
             });
+            
             const settingsText = await settingsResponse.text();
             const settingsParsed = Papa.parse(settingsText, { header: true, skipEmptyLines: true });
-            settingsData = settingsParsed.data.filter(row => row.name).map((row, idx) => ({ ...row, rowNum: idx + 2 }));
+            
+            settingsData = [];
+            if (settingsParsed.data.length > 0) {
+                const s = settingsParsed.data[0];
+                settingsData.push({
+                    name: s.Name || s.name || "",
+                    url: s.URL || s.url || s.baseUrl || "",
+                    version: s.Version || s.version || "1.0",
+                    updateUrl: s.UpdateUrl || s.updateUrl || "",
+                    ratingUrl: s.RatingUrl || s.ratingUrl || "",
+                    privacyUrl: s.PrivacyUrl || s.privacyUrl || "",
+                    shareUrl: s.ShareUrl || s.shareUrl || ""
+                });
+            }
+            
             renderCurrentTable();
             showToast(`✓ Loaded ${mainData.length} items`);
             setLoader(100);
             showProcessing(false);
+            
         } catch (error) {
+            console.error("Fetch error:", error);
             showToast('✗ Error: ' + error.message, true);
             mainData = [];
             settingsData = [];
             renderCurrentTable();
             showProcessing(false);
-        } finally { isLoading = false; }
+        } finally {
+            isLoading = false;
+        }
     }
     
-    // FIXED: Proper API call with response handling
     async function callAPI(action, data = null) {
         try {
             const url = `${API_BASE}?api=${action}`;
-            const response = await fetch(url, { 
-                method: 'POST', 
-                headers: { 'Content-Type': 'application/json' }, 
-                body: data ? JSON.stringify(data) : null 
-            });
-            
-            // Try to parse response
-            let result = { success: true };
-            try {
-                const text = await response.text();
-                if (text && text.length > 0) {
-                    result = JSON.parse(text);
-                }
-            } catch (e) {
-                console.log("Response not JSON, assuming success");
-            }
-            
-            return result;
-        } catch (error) { 
-            console.error("API Error:", error);
-            return { success: false, error: error.message }; 
+            await fetch(url, { method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'application/json' }, body: data ? JSON.stringify(data) : null });
+            return { success: true };
+        } catch (error) {
+            return { success: false, error: error.message };
         }
     }
     
@@ -706,21 +796,25 @@
         saveBtn.innerText = "⏳ Saving...";
         setLoader(30);
         showProcessing(true);
+        
         try {
             let imageData = null;
-            let payload = { 
-                sheet: currentTab === 'main' ? "Sheet1" : "settings", 
-                isEdit: editContext.isEdit, 
-                rowIdx: editContext.rowIndex, 
-                existingFileId: editContext.oldFileId || "" 
+            let payload = {
+                sheet: currentTab === 'main' ? "Sheet1" : "settings",
+                isEdit: editContext.isEdit,
+                rowIdx: editContext.rowIndex,
+                existingFileId: editContext.oldFileId || "",
+                existingThumb: editContext.oldThumbUrl || ""
             };
             
             if (currentTab === 'main') {
                 const title = document.getElementById('inp-title').value.trim();
                 const category = document.getElementById('inp-category-select').value;
                 const link = document.getElementById('inp-link').value.trim();
+                
                 if (!title) throw new Error("Name required");
                 if (!link) throw new Error("URL required");
+                
                 payload.title = title;
                 payload.category = category;
                 payload.link = link;
@@ -728,7 +822,11 @@
                 if (pendingCroppedBlob) {
                     imageData = await new Promise((resolve) => {
                         const reader = new FileReader();
-                        reader.onload = (e) => resolve({ data: e.target.result.split(',')[1], mimeType: pendingCroppedBlob.type || 'image/jpeg', name: `img_${Date.now()}.jpg` });
+                        reader.onload = (e) => resolve({
+                            data: e.target.result.split(',')[1],
+                            mimeType: 'image/jpeg',
+                            name: `img_${Date.now()}.jpg`
+                        });
                         reader.readAsDataURL(pendingCroppedBlob);
                     });
                     pendingCroppedBlob = null;
@@ -738,7 +836,11 @@
                         const file = fileInput.files[0];
                         imageData = await new Promise((resolve) => {
                             const reader = new FileReader();
-                            reader.onload = (e) => resolve({ data: e.target.result.split(',')[1], mimeType: file.type, name: file.name });
+                            reader.onload = (e) => resolve({
+                                data: e.target.result.split(',')[1],
+                                mimeType: file.type,
+                                name: file.name
+                            });
                             reader.readAsDataURL(file);
                         });
                     }
@@ -751,20 +853,16 @@
                 payload.ratingUrl = document.getElementById('set-ratingurl').value.trim();
                 payload.privacyUrl = document.getElementById('set-privacyurl').value.trim();
                 payload.shareUrl = document.getElementById('set-shareurl').value.trim();
+                
                 if (!payload.name) throw new Error("App Name required");
             }
             
             if (imageData) payload.imageData = imageData;
             
-            const result = await callAPI("save", payload);
-            
-            if (result.success) {
-                showToast("✓ Saved successfully! Refreshing...");
-                closeModal();
-                await fetchAllData(); // Refresh immediately after save
-            } else {
-                throw new Error(result.error || "Save failed");
-            }
+            await callAPI("save", payload);
+            showToast("✓ Save request sent! Refreshing...");
+            closeModal();
+            setTimeout(() => fetchAllData(), 1500);
         } catch (err) {
             showToast(err.message, true);
         } finally {
@@ -779,112 +877,185 @@
         if (!confirm("⚠️ Delete this item permanently?")) return;
         showProcessing(true);
         try {
-            const result = await callAPI("delete", { rowIndex, fileId, sheetName });
-            if (result.success) {
-                showToast("✓ Deleted successfully! Refreshing...");
-                await fetchAllData(); // Refresh immediately after delete
-            } else {
-                throw new Error(result.error || "Delete failed");
-            }
+            await callAPI("delete", { rowIndex, fileId, sheetName });
+            showToast("✓ Deleted! Refreshing...");
+            setTimeout(() => fetchAllData(), 1500);
         } catch (error) {
-            showToast("✗ Delete failed: " + error.message, true);
+            showToast("✗ Delete failed", true);
             showProcessing(false);
         }
     }
     
-    // ========== CROP EDITOR FUNCTIONS ==========
-    function drawCropCanvas() {
-        if (!cropImageLoaded) return;
-        cropCtx.clearRect(0, 0, 400, 400);
-        const zoom = parseFloat(document.getElementById('zoomSlider').value);
-        const drawW = cropOriginalImg.width * zoom;
-        const drawH = cropOriginalImg.height * zoom;
-        const imgX = (400 - drawW) / 2;
-        const imgY = (400 - drawH) / 2;
-        cropCtx.drawImage(cropOriginalImg, imgX, imgY, drawW, drawH);
+    // ========== IMAGE EDITOR FUNCTIONS ==========
+    function updateEditValues() {
+        document.getElementById('editWidthVal').innerText = editWidthSlider.value + "px";
+        document.getElementById('editHeightVal').innerText = editHeightSlider.value + "px";
+        document.getElementById('editZoomVal').innerText = Math.round(editZoomSlider.value * 100) + "%";
+        document.getElementById('editRoundVal').innerText = editRoundSlider.value + "%";
+        document.getElementById('editMoveXVal').innerText = editMoveXSlider.value + "px";
+        document.getElementById('editMoveYVal').innerText = editMoveYSlider.value + "px";
+        drawEditCanvas();
+    }
+    
+    function drawEditCanvas() {
+        if(!editorImgLoaded) return;
+        editCtx.clearRect(0, 0, 500, 500);
+        const zoom = parseFloat(editZoomSlider.value);
+        const boxW = parseFloat(editWidthSlider.value);
+        const boxH = parseFloat(editHeightSlider.value);
+        const moveX = parseFloat(editMoveXSlider.value);
+        const moveY = parseFloat(editMoveYSlider.value);
+        const drawW = editorImg.width * zoom;
+        const drawH = editorImg.height * zoom;
+        const imgX = (500 - drawW) / 2;
+        const imgY = (500 - drawH) / 2;
+        editCtx.drawImage(editorImg, imgX, imgY, drawW, drawH);
+        const startX = ((500 - boxW) / 2) + moveX;
+        const startY = ((500 - boxH) / 2) + moveY;
+        editCtx.save();
+        editCtx.strokeStyle = "#ffaa44";
+        editCtx.lineWidth = 3;
+        editCtx.strokeRect(startX, startY, boxW, boxH);
+        editCtx.restore();
+    }
+    
+    function getCroppedBlob(callback) {
+        const boxW = parseFloat(editWidthSlider.value);
+        const boxH = parseFloat(editHeightSlider.value);
+        const moveX = parseFloat(editMoveXSlider.value);
+        const moveY = parseFloat(editMoveYSlider.value);
+        const startX = ((500 - boxW) / 2) + moveX;
+        const startY = ((500 - boxH) / 2) + moveY;
+        const safeX = Math.max(0, Math.min(startX, 500 - boxW));
+        const safeY = Math.max(0, Math.min(startY, 500 - boxH));
+        const cropCanvas = document.createElement('canvas');
+        cropCanvas.width = boxW;
+        cropCanvas.height = boxH;
+        const cropCtx = cropCanvas.getContext('2d');
+        cropCtx.drawImage(editCanvas, safeX, safeY, boxW, boxH, 0, 0, boxW, boxH);
+        cropCanvas.toBlob(callback, 'image/jpeg', 0.85);
+    }
+    
+    function openInlineImageEditor() {
+        document.getElementById('editorModal').style.display = 'flex';
+        editWidthSlider.value = "300";
+        editHeightSlider.value = "300";
+        editZoomSlider.value = "1";
+        editRoundSlider.value = "0";
+        editMoveXSlider.value = "0";
+        editMoveYSlider.value = "0";
+        updateEditValues();
+        editorImgLoaded = false;
+        drawEditCanvas();
         
-        const cropW = parseFloat(document.getElementById('cropWidthSlider').value);
-        const cropH = parseFloat(document.getElementById('cropHeightSlider').value);
-        const startX = (400 - cropW) / 2;
-        const startY = (400 - cropH) / 2;
-        cropCtx.strokeStyle = "#ffaa44";
-        cropCtx.lineWidth = 3;
-        cropCtx.strokeRect(startX, startY, cropW, cropH);
-    }
-    
-    function updateCropValues() {
-        document.getElementById('zoomVal').innerHTML = Math.round(parseFloat(document.getElementById('zoomSlider').value) * 100) + "%";
-        document.getElementById('cropWVal').innerHTML = document.getElementById('cropWidthSlider').value + "px";
-        document.getElementById('cropHVal').innerHTML = document.getElementById('cropHeightSlider').value + "px";
-        drawCropCanvas();
-    }
-    
-    function getCroppedImage(callback) {
-        const cropW = parseFloat(document.getElementById('cropWidthSlider').value);
-        const cropH = parseFloat(document.getElementById('cropHeightSlider').value);
-        const startX = (400 - cropW) / 2;
-        const startY = (400 - cropH) / 2;
-        
-        const tempCanvas = document.createElement('canvas');
-        tempCanvas.width = cropW;
-        tempCanvas.height = cropH;
-        const tempCtx = tempCanvas.getContext('2d');
-        tempCtx.drawImage(cropCanvas, startX, startY, cropW, cropH, 0, 0, cropW, cropH);
-        tempCanvas.toBlob(callback, 'image/jpeg', 0.85);
-    }
-    
-    function openCropEditor() {
         const fileInput = document.getElementById('inp-image-upload');
-        if (fileInput.files.length === 0) {
-            showToast("Please select an image first", true);
+        if (fileInput.files.length > 0) {
+            const reader = new FileReader();
+            reader.onload = (ev) => {
+                editorImg = new Image();
+                editorImg.onload = () => {
+                    editorImgLoaded = true;
+                    drawEditCanvas();
+                    updateEditValues();
+                };
+                editorImg.src = ev.target.result;
+            };
+            reader.readAsDataURL(fileInput.files[0]);
+        } else {
+            editorImg.src = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='500' height='500' viewBox='0 0 500 500'%3E%3Crect width='500' height='500' fill='%23333'/%3E%3Ctext x='250' y='250' text-anchor='middle' fill='%230a84ff' font-size='20'%3E📸 Select%3C/text%3E%3C/svg%3E";
+            editorImg.onload = () => {
+                editorImgLoaded = true;
+                drawEditCanvas();
+            };
+        }
+    }
+    
+    function openImageEditorWithUrl(imageUrl) {
+        if (!imageUrl || imageUrl.includes('placeholder')) {
+            showToast("No valid image URL", true);
             return;
         }
+        document.getElementById('editorModal').style.display = 'flex';
+        editWidthSlider.value = "300";
+        editHeightSlider.value = "300";
+        editZoomSlider.value = "1";
+        editRoundSlider.value = "0";
+        editMoveXSlider.value = "0";
+        editMoveYSlider.value = "0";
+        updateEditValues();
         
-        const reader = new FileReader();
-        reader.onload = function(e) {
-            cropOriginalImg = new Image();
-            cropOriginalImg.onload = function() {
-                cropImageLoaded = true;
-                document.getElementById('zoomSlider').value = 1;
-                document.getElementById('cropWidthSlider').value = 200;
-                document.getElementById('cropHeightSlider').value = 200;
-                updateCropValues();
-                document.getElementById('cropModal').style.display = 'flex';
-            };
-            cropOriginalImg.src = e.target.result;
+        editorImg = new Image();
+        editorImg.crossOrigin = "Anonymous";
+        editorImg.onload = () => {
+            editorImgLoaded = true;
+            drawEditCanvas();
+            updateEditValues();
         };
-        reader.readAsDataURL(fileInput.files[0]);
+        editorImg.onerror = () => {
+            showToast("Image load failed", true);
+        };
+        editorImg.src = imageUrl;
     }
     
-    document.getElementById('zoomSlider').addEventListener('input', updateCropValues);
-    document.getElementById('cropWidthSlider').addEventListener('input', updateCropValues);
-    document.getElementById('cropHeightSlider').addEventListener('input', updateCropValues);
+    document.getElementById('editorImageInput').addEventListener('change', (e) => {
+        const file = e.target.files[0];
+        if(file && file.type.startsWith('image/')) {
+            const reader = new FileReader();
+            reader.onload = (ev) => {
+                editorImg = new Image();
+                editorImg.onload = () => {
+                    editorImgLoaded = true;
+                    drawEditCanvas();
+                    updateEditValues();
+                    showToast("✅ Image loaded!");
+                };
+                editorImg.src = ev.target.result;
+            };
+            reader.readAsDataURL(file);
+        }
+    });
     
-    document.getElementById('applyCropBtn').addEventListener('click', function() {
-        if (!cropImageLoaded) return;
-        getCroppedImage(function(blob) {
-            if (blob) {
+    document.getElementById('submitEditorBtn').addEventListener('click', () => {
+        if(!editorImgLoaded) {
+            showToast("Select an image first", true);
+            return;
+        }
+        getCroppedBlob((blob) => {
+            if(blob) {
                 pendingCroppedBlob = blob;
-                document.getElementById('cropModal').style.display = 'none';
+                document.getElementById('editorModal').style.display = 'none';
                 const previewArea = document.getElementById('imagePreviewArea');
                 const previewImg = document.getElementById('previewImg');
                 const reader = new FileReader();
-                reader.onload = function(e) {
+                reader.onload = (e) => {
                     previewImg.src = e.target.result;
                     previewArea.style.display = 'block';
-                    showToast("✓ Cropped image ready");
                 };
                 reader.readAsDataURL(blob);
+                showToast("✅ Cropped ready");
+            } else {
+                showToast("Cropping failed", true);
             }
         });
     });
     
-    document.getElementById('cancelCropBtn').addEventListener('click', function() {
-        document.getElementById('cropModal').style.display = 'none';
+    document.getElementById('cancelEditorBtn').addEventListener('click', () => {
+        document.getElementById('editorModal').style.display = 'none';
+        pendingCroppedBlob = null;
     });
     
+    editWidthSlider.addEventListener('input', updateEditValues);
+    editHeightSlider.addEventListener('input', updateEditValues);
+    editZoomSlider.addEventListener('input', updateEditValues);
+    editRoundSlider.addEventListener('input', updateEditValues);
+    editMoveXSlider.addEventListener('input', updateEditValues);
+    editMoveYSlider.addEventListener('input', updateEditValues);
+    
     // ========== RENDER FUNCTIONS ==========
-    function renderCurrentTable() { currentTab === 'main' ? renderMainTable() : renderSettingsTable(); }
+    function renderCurrentTable() {
+        if (currentTab === 'main') renderMainTable();
+        else renderSettingsTable();
+    }
     
     function renderMainTable() {
         const tbody = document.getElementById('body-main');
@@ -892,17 +1063,20 @@
             tbody.innerHTML = '<tr><td colspan="5" class="empty-row">✨ No content. Click + to add ✨</td></tr>';
             return;
         }
+        
         let html = '';
-        mainData.forEach((item) => {
+        mainData.forEach((item, idx) => {
+            const rowNum = idx + 2;
             html += `<tr>
-                <td><img src="${item.thumbnail}" class="thumb" onerror="this.src='https://via.placeholder.com/48?text=Err'" title="Click to view thumbnail"></td>
+                <td><img src="${item.thumbnail}" class="thumb" onerror="this.src='https://via.placeholder.com/48?text=Error'" onclick='openImageEditorWithUrl("${item.thumbnail}")' title="Click to edit image"></td>
                 <td><strong>${escapeHtml(item.name)}</strong></td>
                 <td><span class="badge-cat">${escapeHtml(item.category)}</span></td>
-                <td class="url-cell" title="${escapeHtml(item.url)}">${escapeHtml(item.url)}</td>
+                <td style="max-width:200px; overflow:hidden;">${escapeHtml(item.url)}</td>
                 <td>
-                    <button class="action-btn edit-i" onclick='openEditMain(${item.rowNum}, ${JSON.stringify(item).replace(/'/g, "&#39;")})'><i class="fa fa-edit"></i></button>
-                    <button class="action-btn del-i" onclick="deleteRecordItem('Sheet1', ${item.rowNum}, '${item.fileId}')"><i class="fa fa-trash"></i></button>
-                </td>
+                    <button class="action-btn edit-i" onclick='openEditMain(${rowNum}, ${JSON.stringify(item).replace(/'/g, "&#39;")})'><i class="fa fa-edit"></i></button>
+                    <button class="action-btn edit-image-i" onclick='openImageEditorWithUrl("${item.thumbnail}")' title="Crop Image"><i class="fa fa-crop"></i></button>
+                    <button class="action-btn del-i" onclick="deleteRecordItem('Sheet1', ${rowNum}, '${item.fileId}')"><i class="fa fa-trash"></i></button>
+                  </td>
             </tr>`;
         });
         tbody.innerHTML = html;
@@ -914,23 +1088,33 @@
             tbody.innerHTML = '<tr><td colspan="5" class="empty-row">⚙️ No settings. Click + to add ⚙️</td></tr>';
             return;
         }
+        
         let html = '';
-        settingsData.forEach((item) => {
+        settingsData.forEach((item, idx) => {
+            const rowNum = idx + 2;
             html += `<tr>
                 <td><strong>${escapeHtml(item.name)}</strong></td>
-                <td class="url-cell" title="${escapeHtml(item.url)}">${escapeHtml(item.url)}</td>
+                <td>${escapeHtml(item.url)}</td>
                 <td>v${escapeHtml(item.version)}</td>
-                <td class="url-cell" title="${escapeHtml(item.updateUrl)}">${escapeHtml(item.updateUrl)}</td>
+                <td>${escapeHtml(item.updateUrl)}</td>
                 <td>
-                    <button class="action-btn edit-i" onclick='openEditSettings(${item.rowNum}, ${JSON.stringify(item).replace(/'/g, "&#39;")})'><i class="fa fa-edit"></i></button>
-                    <button class="action-btn del-i" onclick="deleteRecordItem('settings', ${item.rowNum}, '')"><i class="fa fa-trash"></i></button>
-                </td>
+                    <button class="action-btn edit-i" onclick='openEditSettings(${rowNum}, ${JSON.stringify(item).replace(/'/g, "&#39;")})'><i class="fa fa-edit"></i></button>
+                    <button class="action-btn del-i" onclick="deleteRecordItem('settings', ${rowNum}, '')"><i class="fa fa-trash"></i></button>
+                  </td>
             </tr>`;
         });
         tbody.innerHTML = html;
     }
     
-    function escapeHtml(str) { if (!str) return ''; return String(str).replace(/[&<>]/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[m])); }
+    function escapeHtml(str) {
+        if (!str) return '';
+        return String(str).replace(/[&<>]/g, function(m) {
+            if (m === '&') return '&amp;';
+            if (m === '<') return '&lt;';
+            if (m === '>') return '&gt;';
+            return m;
+        });
+    }
     
     function switchTab(tab) {
         currentTab = tab;
@@ -956,6 +1140,7 @@
     }
     
     function openEditMain(rowNum, item) {
+        currentTab = 'main';
         editContext = { isEdit: true, rowIndex: rowNum, oldFileId: item.fileId || '', oldThumbUrl: item.thumbnail || '' };
         pendingCroppedBlob = null;
         document.getElementById('modal-title').innerText = "✏️ Edit Content";
@@ -970,6 +1155,7 @@
     }
     
     function openEditSettings(rowNum, item) {
+        currentTab = 'settings';
         editContext = { isEdit: true, rowIndex: rowNum, oldFileId: null, oldThumbUrl: null };
         document.getElementById('modal-title').innerText = "✏️ Edit Settings";
         document.getElementById('form-main-fields').style.display = 'none';
@@ -984,18 +1170,17 @@
         document.getElementById('globalModal').style.display = 'flex';
     }
     
-    function closeModal() { document.getElementById('globalModal').style.display = 'none'; pendingCroppedBlob = null; }
+    function closeModal() {
+        document.getElementById('globalModal').style.display = 'none';
+        pendingCroppedBlob = null;
+    }
     
-    window.addEventListener('load', () => { loadLogo(); fetchAllData(); });
-    window.openEditMain = openEditMain;
-    window.openEditSettings = openEditSettings;
-    window.deleteRecordItem = deleteRecordItem;
-    window.openCropEditor = openCropEditor;
-    window.refreshData = refreshData;
-    window.switchTab = switchTab;
-    window.openAddModal = openAddModal;
-    window.closeModal = closeModal;
-    window.performSave = performSave;
+    // Initialize
+    window.addEventListener('load', () => {
+        console.log("Nikamma Admin - Professional Version with Single Processing Overlay");
+        loadLogo();
+        fetchAllData();
+    });
 </script>
 </body>
 </html>
