@@ -1,3 +1,5 @@
+Here is the upgraded HTML code that removes the duplicate image edit icon, professionalizes the image picker, and fixes the refresh issues.
+```html
 <!DOCTYPE html>
 <html>
 <head>
@@ -192,7 +194,6 @@
         .action-btn:hover { background: rgba(255,255,255,0.1); }
         .edit-i { color: var(--primary); }
         .del-i { color: var(--danger); }
-        .edit-image-i { color: #ffaa44; font-size: 0.8rem; }
 
         .modal {
             display: none;
@@ -344,6 +345,63 @@
             font-size: 10px;
         }
         
+        /* PROFESSIONAL IMAGE PICKER BUTTON - REDESIGNED & ELEGANT */
+        .professional-picker-main {
+            background: linear-gradient(145deg, #0f131c, #0a0d14);
+            border: 1.5px solid rgba(0,188,212,0.4);
+            border-radius: 24px;
+            padding: 12px 16px;
+            margin: 6px 0 14px;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.2, 0.9, 0.4, 1.1);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+        }
+        .professional-picker-main:hover {
+            border-color: var(--primary);
+            background: #121824;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(0,188,212,0.2);
+        }
+        .picker-left {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+        .picker-icon-big {
+            width: 44px;
+            height: 44px;
+            background: rgba(0,188,212,0.12);
+            border-radius: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            color: var(--primary);
+        }
+        .picker-text h4 {
+            font-size: 13px;
+            font-weight: 600;
+            margin-bottom: 2px;
+        }
+        .picker-text p {
+            font-size: 10px;
+            color: #8a94a4;
+        }
+        .editor-badge {
+            background: #ffaa4422;
+            padding: 5px 12px;
+            border-radius: 40px;
+            font-size: 11px;
+            font-weight: 500;
+            color: #ffaa44;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        
         /* EDITOR MODAL - PROFESSIONAL STYLE */
         .editor-modal {
             display: none;
@@ -364,6 +422,7 @@
             margin: auto;
             padding: 18px;
             border: 1px solid var(--border);
+            box-shadow: 0 20px 35px rgba(0,0,0,0.5);
         }
         .canvas-container {
             background: #2c2c2c;
@@ -436,38 +495,6 @@
         .btn-submit-editor { background: #0f7b3a; color: white; }
         .btn-cancel-editor { background: #3a3a3a; color: white; }
         
-        /* PROFESSIONAL IMAGE PICKER BUTTON */
-        .professional-picker {
-            background: linear-gradient(135deg, #1e2a3a, #0f131c);
-            border: 2px dashed var(--primary);
-            border-radius: 18px;
-            padding: 20px;
-            text-align: center;
-            margin-bottom: 15px;
-            cursor: pointer;
-            transition: all 0.3s ease;
-        }
-        .professional-picker:hover {
-            background: linear-gradient(135deg, #253545, #1a1f2a);
-            border-color: #ffaa44;
-            transform: scale(1.01);
-        }
-        .picker-icon {
-            font-size: 38px;
-            color: var(--primary);
-            margin-bottom: 8px;
-        }
-        .picker-title {
-            font-size: 14px;
-            font-weight: 600;
-            color: white;
-            margin-bottom: 4px;
-        }
-        .picker-sub {
-            font-size: 10px;
-            color: #888;
-        }
-        
         .slider-row { display: flex; gap: 8px; }
         .slider-row .slider-group { flex: 1; }
         
@@ -506,11 +533,11 @@
             <p>Content Management System</p>
         </div>
     </div>
-    <button class="refresh-btn" onclick="refreshData()"><i class="fa fa-sync-alt"></i> Refresh Data</button>
+    <button class="refresh-btn" onclick="manualHardRefresh()"><i class="fa fa-sync-alt"></i> Refresh Data</button>
 </div>
 
 <div class="info-note">
-    <i class="fa fa-image"></i> <strong>Click thumbnail or Crop to edit image</strong> | Google Drive images fixed
+    <i class="fa fa-image"></i> <strong>Click thumbnail to edit image</strong> | Google Drive images fixed | Auto-refresh after save/delete
 </div>
 
 <div class="tabs">
@@ -541,10 +568,8 @@
 <div id="editorModal" class="editor-modal">
     <div class="editor-card">
         <h3 style="text-align:center; margin-bottom:12px; font-size:18px;">✂️ Professional Image Editor</h3>
-        <div class="professional-picker" onclick="document.getElementById('editorImageInput').click()">
-            <div class="picker-icon"><i class="fa fa-cloud-upload-alt"></i></div>
-            <div class="picker-title">Choose Image File</div>
-            <div class="picker-sub">Click or drag & drop (JPG, PNG, WEBP)</div>
+        <div class="professional-picker" onclick="document.getElementById('editorImageInput').click()" style="background: #0f131c; border:1px dashed #00bcd4; border-radius:24px; padding:12px; text-align:center; margin-bottom:12px; cursor:pointer;">
+            <div style="display:flex; align-items:center; justify-content:center; gap:8px;"><i class="fa fa-cloud-upload-alt" style="color:#00bcd4; font-size:20px;"></i><span>Choose Image File</span></div>
         </div>
         <input type="file" id="editorImageInput" accept="image/*" style="display:none">
         <div class="canvas-container">
@@ -582,16 +607,24 @@
                 <option value="Slider">🖼️ Slider</option>
             </select>
             <input type="text" id="inp-link" placeholder="Video URL *">
-            <label>📷 Thumbnail Image</label>
-            <div style="display: flex; gap: 8px; margin-bottom: 10px;">
-                <input type="file" id="inp-image-upload" accept="image/*" style="flex:1;" onchange="previewImageFile(this)">
-                <button type="button" class="editor-trigger-btn" onclick="openInlineImageEditor()"><i class="fa fa-crop"></i> Edit</button>
+            <label>📷 Thumbnail Image (Professional Editor)</label>
+            <!-- PROFESSIONAL REDESIGNED PICKER WITH EDIT CAPABILITY BUILT-IN -->
+            <div id="professionalPickerContainer" class="professional-picker-main" onclick="openInlineImageEditorFromModal()">
+                <div class="picker-left">
+                    <div class="picker-icon-big"><i class="fa fa-palette"></i></div>
+                    <div class="picker-text">
+                        <h4>Choose or Edit Image</h4>
+                        <p>Click to upload, crop & adjust</p>
+                    </div>
+                </div>
+                <div class="editor-badge"><i class="fa fa-crop-alt"></i> <span>Edit freely</span></div>
             </div>
+            <input type="file" id="inp-image-upload" accept="image/*" style="display:none;">
             <div id="imagePreviewArea" class="image-preview-area">
                 <img id="previewImg" src="">
                 <small>Cropped image preview</small>
             </div>
-            <small style="color:#888;"><i class="fa fa-google-drive"></i> Use Edit to crop & resize before upload</small>
+            <small style="color:#888;"><i class="fa fa-google-drive"></i> Use professional editor to crop/resize before upload</small>
         </div>
         <div id="form-settings-fields" style="display:none;">
             <input type="text" id="set-appname" placeholder="App Name">
@@ -646,7 +679,6 @@
     let pendingCroppedBlob = null;
     let processingTimeout = null;
     
-    // Editor variables
     let editorImg = new Image();
     let editorImgLoaded = false;
     const editCanvas = document.getElementById('editCanvas');
@@ -663,58 +695,26 @@
         if (show) {
             overlay.style.display = 'flex';
         } else {
-            // Small delay to ensure UI doesn't flicker
             if (processingTimeout) clearTimeout(processingTimeout);
-            processingTimeout = setTimeout(() => {
-                overlay.style.display = 'none';
-            }, 300);
+            processingTimeout = setTimeout(() => { overlay.style.display = 'none'; }, 200);
         }
     }
     
-    function setLoader(percent) {
-        document.getElementById('loader').style.width = percent + '%';
-    }
-    
+    function setLoader(percent) { document.getElementById('loader').style.width = percent + '%'; }
     function showToast(message, isError = false) {
         const toast = document.createElement('div');
         toast.className = 'toast' + (isError ? ' error' : '');
         toast.textContent = message;
         document.body.appendChild(toast);
-        setTimeout(() => toast.remove(), 2500);
-    }
-    
-    function previewImageFile(input) {
-        const previewArea = document.getElementById('imagePreviewArea');
-        const previewImg = document.getElementById('previewImg');
-        if (input.files && input.files[0]) {
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                previewImg.src = e.target.result;
-                previewArea.style.display = 'block';
-            };
-            reader.readAsDataURL(input.files[0]);
-        } else {
-            previewArea.style.display = 'none';
-        }
+        setTimeout(() => toast.remove(), 2600);
     }
     
     function loadLogo() {
         const logoContainer = document.getElementById('logoIcon');
-        if (logoContainer) {
-            const img = new Image();
-            img.onload = function() {
-                logoContainer.innerHTML = `<img src="${LOGO_URL}" alt="Logo">`;
-            };
-            img.onerror = function() {
-                logoContainer.innerHTML = '<i class="fa fa-film"></i>';
-            };
-            img.src = LOGO_URL;
-        }
-    }
-    
-    function refreshData() {
-        if (isLoading) return;
-        fetchAllData();
+        const img = new Image();
+        img.onload = () => logoContainer.innerHTML = `<img src="${LOGO_URL}" alt="Logo">`;
+        img.onerror = () => logoContainer.innerHTML = '<i class="fa fa-film"></i>';
+        img.src = LOGO_URL;
     }
     
     async function fetchAllData() {
@@ -722,16 +722,10 @@
         isLoading = true;
         setLoader(20);
         showProcessing(true);
-        
         try {
-            const [mainResponse, settingsResponse] = await Promise.all([
-                fetch(MAIN_CSV_URL),
-                fetch(SETTINGS_CSV_URL)
-            ]);
-            
+            const [mainResponse, settingsResponse] = await Promise.all([fetch(MAIN_CSV_URL), fetch(SETTINGS_CSV_URL)]);
             const mainText = await mainResponse.text();
             const mainParsed = Papa.parse(mainText, { header: true, skipEmptyLines: true });
-            
             mainData = [];
             mainParsed.data.forEach(row => {
                 if (row.Name || row.name || row.URL || row.url) {
@@ -745,88 +739,46 @@
                     mainData.push({ name, category, url, thumbnail: finalThumb, fileId });
                 }
             });
-            
             const settingsText = await settingsResponse.text();
             const settingsParsed = Papa.parse(settingsText, { header: true, skipEmptyLines: true });
-            
             settingsData = [];
             if (settingsParsed.data.length > 0) {
                 const s = settingsParsed.data[0];
-                settingsData.push({
-                    name: s.Name || s.name || "",
-                    url: s.URL || s.url || s.baseUrl || "",
-                    version: s.Version || s.version || "1.0",
-                    updateUrl: s.UpdateUrl || s.updateUrl || "",
-                    ratingUrl: s.RatingUrl || s.ratingUrl || "",
-                    privacyUrl: s.PrivacyUrl || s.privacyUrl || "",
-                    shareUrl: s.ShareUrl || s.shareUrl || ""
-                });
+                settingsData.push({ name: s.Name || s.name || "", url: s.URL || s.url || s.baseUrl || "", version: s.Version || s.version || "1.0", updateUrl: s.UpdateUrl || s.updateUrl || "", ratingUrl: s.RatingUrl || s.ratingUrl || "", privacyUrl: s.PrivacyUrl || s.privacyUrl || "", shareUrl: s.ShareUrl || s.shareUrl || "" });
             }
-            
             renderCurrentTable();
             showToast(`✓ Loaded ${mainData.length} items`);
             setLoader(100);
-            showProcessing(false);
-            
         } catch (error) {
-            console.error("Fetch error:", error);
             showToast('✗ Error: ' + error.message, true);
-            mainData = [];
-            settingsData = [];
             renderCurrentTable();
-            showProcessing(false);
-        } finally {
-            isLoading = false;
-        }
+        } finally { isLoading = false; showProcessing(false); }
     }
     
     async function callAPI(action, data = null) {
-        try {
-            const url = `${API_BASE}?api=${action}`;
-            await fetch(url, { method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'application/json' }, body: data ? JSON.stringify(data) : null });
-            return { success: true };
-        } catch (error) {
-            return { success: false, error: error.message };
-        }
+        try { await fetch(`${API_BASE}?api=${action}`, { method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'application/json' }, body: data ? JSON.stringify(data) : null }); return { success: true }; }
+        catch (error) { return { success: false, error: error.message }; }
     }
     
     async function performSave() {
         const saveBtn = document.getElementById('saveMasterBtn');
         saveBtn.disabled = true;
         saveBtn.innerText = "⏳ Saving...";
-        setLoader(30);
         showProcessing(true);
-        
         try {
             let imageData = null;
-            let payload = {
-                sheet: currentTab === 'main' ? "Sheet1" : "settings",
-                isEdit: editContext.isEdit,
-                rowIdx: editContext.rowIndex,
-                existingFileId: editContext.oldFileId || "",
-                existingThumb: editContext.oldThumbUrl || ""
-            };
-            
+            let payload = { sheet: currentTab === 'main' ? "Sheet1" : "settings", isEdit: editContext.isEdit, rowIdx: editContext.rowIndex, existingFileId: editContext.oldFileId || "", existingThumb: editContext.oldThumbUrl || "" };
             if (currentTab === 'main') {
                 const title = document.getElementById('inp-title').value.trim();
                 const category = document.getElementById('inp-category-select').value;
                 const link = document.getElementById('inp-link').value.trim();
-                
                 if (!title) throw new Error("Name required");
                 if (!link) throw new Error("URL required");
-                
-                payload.title = title;
-                payload.category = category;
-                payload.link = link;
-                
+                payload.title = title; payload.category = category; payload.link = link;
                 if (pendingCroppedBlob) {
                     imageData = await new Promise((resolve) => {
                         const reader = new FileReader();
-                        reader.onload = (e) => resolve({
-                            data: e.target.result.split(',')[1],
-                            mimeType: 'image/jpeg',
-                            name: `img_${Date.now()}.jpg`
-                        });
+                        reader.onload = (e) => resolve({ data: e.target.result.split(',')[1], mimeType: 'image/jpeg', name: `img_${Date.now()}.jpg` });
                         reader.readAsDataURL(pendingCroppedBlob);
                     });
                     pendingCroppedBlob = null;
@@ -836,11 +788,7 @@
                         const file = fileInput.files[0];
                         imageData = await new Promise((resolve) => {
                             const reader = new FileReader();
-                            reader.onload = (e) => resolve({
-                                data: e.target.result.split(',')[1],
-                                mimeType: file.type,
-                                name: file.name
-                            });
+                            reader.onload = (e) => resolve({ data: e.target.result.split(',')[1], mimeType: file.type, name: file.name });
                             reader.readAsDataURL(file);
                         });
                     }
@@ -853,24 +801,15 @@
                 payload.ratingUrl = document.getElementById('set-ratingurl').value.trim();
                 payload.privacyUrl = document.getElementById('set-privacyurl').value.trim();
                 payload.shareUrl = document.getElementById('set-shareurl').value.trim();
-                
                 if (!payload.name) throw new Error("App Name required");
             }
-            
             if (imageData) payload.imageData = imageData;
-            
             await callAPI("save", payload);
             showToast("✓ Save request sent! Refreshing...");
             closeModal();
-            setTimeout(() => fetchAllData(), 1500);
-        } catch (err) {
-            showToast(err.message, true);
-        } finally {
-            saveBtn.disabled = false;
-            saveBtn.innerText = "💾 SAVE";
-            setLoader(100);
-            showProcessing(false);
-        }
+            await fetchAllData();
+        } catch (err) { showToast(err.message, true); }
+        finally { saveBtn.disabled = false; saveBtn.innerText = "💾 SAVE"; showProcessing(false); }
     }
     
     async function deleteRecordItem(sheetName, rowIndex, fileId) {
@@ -879,14 +818,13 @@
         try {
             await callAPI("delete", { rowIndex, fileId, sheetName });
             showToast("✓ Deleted! Refreshing...");
-            setTimeout(() => fetchAllData(), 1500);
-        } catch (error) {
-            showToast("✗ Delete failed", true);
-            showProcessing(false);
-        }
+            await fetchAllData();
+        } catch (error) { showToast("✗ Delete failed", true); showProcessing(false); }
     }
     
-    // ========== IMAGE EDITOR FUNCTIONS ==========
+    function manualHardRefresh() { fetchAllData(); }
+    
+    // IMAGE EDITOR LOGIC
     function updateEditValues() {
         document.getElementById('editWidthVal').innerText = editWidthSlider.value + "px";
         document.getElementById('editHeightVal').innerText = editHeightSlider.value + "px";
@@ -896,7 +834,6 @@
         document.getElementById('editMoveYVal').innerText = editMoveYSlider.value + "px";
         drawEditCanvas();
     }
-    
     function drawEditCanvas() {
         if(!editorImgLoaded) return;
         editCtx.clearRect(0, 0, 500, 500);
@@ -912,275 +849,65 @@
         editCtx.drawImage(editorImg, imgX, imgY, drawW, drawH);
         const startX = ((500 - boxW) / 2) + moveX;
         const startY = ((500 - boxH) / 2) + moveY;
-        editCtx.save();
         editCtx.strokeStyle = "#ffaa44";
         editCtx.lineWidth = 3;
         editCtx.strokeRect(startX, startY, boxW, boxH);
-        editCtx.restore();
     }
-    
     function getCroppedBlob(callback) {
         const boxW = parseFloat(editWidthSlider.value);
         const boxH = parseFloat(editHeightSlider.value);
         const moveX = parseFloat(editMoveXSlider.value);
         const moveY = parseFloat(editMoveYSlider.value);
-        const startX = ((500 - boxW) / 2) + moveX;
-        const startY = ((500 - boxH) / 2) + moveY;
-        const safeX = Math.max(0, Math.min(startX, 500 - boxW));
-        const safeY = Math.max(0, Math.min(startY, 500 - boxH));
+        let startX = ((500 - boxW) / 2) + moveX;
+        let startY = ((500 - boxH) / 2) + moveY;
+        startX = Math.max(0, Math.min(startX, 500 - boxW));
+        startY = Math.max(0, Math.min(startY, 500 - boxH));
         const cropCanvas = document.createElement('canvas');
-        cropCanvas.width = boxW;
-        cropCanvas.height = boxH;
+        cropCanvas.width = boxW; cropCanvas.height = boxH;
         const cropCtx = cropCanvas.getContext('2d');
-        cropCtx.drawImage(editCanvas, safeX, safeY, boxW, boxH, 0, 0, boxW, boxH);
+        cropCtx.drawImage(editCanvas, startX, startY, boxW, boxH, 0, 0, boxW, boxH);
         cropCanvas.toBlob(callback, 'image/jpeg', 0.85);
     }
-    
-    function openInlineImageEditor() {
+    function openInlineImageEditorFromModal() {
         document.getElementById('editorModal').style.display = 'flex';
-        editWidthSlider.value = "300";
-        editHeightSlider.value = "300";
-        editZoomSlider.value = "1";
-        editRoundSlider.value = "0";
-        editMoveXSlider.value = "0";
-        editMoveYSlider.value = "0";
+        editWidthSlider.value = "300"; editHeightSlider.value = "300"; editZoomSlider.value = "1"; editRoundSlider.value = "0"; editMoveXSlider.value = "0"; editMoveYSlider.value = "0";
         updateEditValues();
-        editorImgLoaded = false;
-        drawEditCanvas();
-        
         const fileInput = document.getElementById('inp-image-upload');
         if (fileInput.files.length > 0) {
             const reader = new FileReader();
-            reader.onload = (ev) => {
-                editorImg = new Image();
-                editorImg.onload = () => {
-                    editorImgLoaded = true;
-                    drawEditCanvas();
-                    updateEditValues();
-                };
-                editorImg.src = ev.target.result;
-            };
+            reader.onload = (ev) => { editorImg = new Image(); editorImg.onload = () => { editorImgLoaded = true; drawEditCanvas(); updateEditValues(); }; editorImg.src = ev.target.result; };
             reader.readAsDataURL(fileInput.files[0]);
-        } else {
-            editorImg.src = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='500' height='500' viewBox='0 0 500 500'%3E%3Crect width='500' height='500' fill='%23333'/%3E%3Ctext x='250' y='250' text-anchor='middle' fill='%230a84ff' font-size='20'%3E📸 Select%3C/text%3E%3C/svg%3E";
-            editorImg.onload = () => {
-                editorImgLoaded = true;
-                drawEditCanvas();
-            };
-        }
+        } else { editorImgLoaded = false; drawEditCanvas(); }
     }
+    function openImageEditorWithUrl(imageUrl) { if(!imageUrl || imageUrl.includes('placeholder')) return; document.getElementById('editorModal').style.display = 'flex'; editWidthSlider.value = "300"; editHeightSlider.value = "300"; editZoomSlider.value = "1"; editRoundSlider.value = "0"; editMoveXSlider.value = "0"; editMoveYSlider.value = "0"; updateEditValues(); editorImg = new Image(); editorImg.crossOrigin = "Anonymous"; editorImg.onload = () => { editorImgLoaded = true; drawEditCanvas(); updateEditValues(); }; editorImg.src = imageUrl; }
+    document.getElementById('editorImageInput').addEventListener('change', (e) => { if(e.target.files[0]) { const reader = new FileReader(); reader.onload = (ev) => { editorImg = new Image(); editorImg.onload = () => { editorImgLoaded = true; drawEditCanvas(); updateEditValues(); }; editorImg.src = ev.target.result; }; reader.readAsDataURL(e.target.files[0]); } });
+    document.getElementById('submitEditorBtn').addEventListener('click', () => { if(!editorImgLoaded) { showToast("Select an image first", true); return; } getCroppedBlob((blob) => { if(blob) { pendingCroppedBlob = blob; document.getElementById('editorModal').style.display = 'none'; const previewArea = document.getElementById('imagePreviewArea'); const previewImg = document.getElementById('previewImg'); const reader = new FileReader(); reader.onload = (e) => { previewImg.src = e.target.result; previewArea.style.display = 'block'; }; reader.readAsDataURL(blob); showToast("✅ Cropped ready"); } else { showToast("Cropping failed", true); } }); });
+    document.getElementById('cancelEditorBtn').addEventListener('click', () => { document.getElementById('editorModal').style.display = 'none'; pendingCroppedBlob = null; });
+    [editWidthSlider, editHeightSlider, editZoomSlider, editRoundSlider, editMoveXSlider, editMoveYSlider].forEach(slider => slider.addEventListener('input', updateEditValues));
     
-    function openImageEditorWithUrl(imageUrl) {
-        if (!imageUrl || imageUrl.includes('placeholder')) {
-            showToast("No valid image URL", true);
-            return;
-        }
-        document.getElementById('editorModal').style.display = 'flex';
-        editWidthSlider.value = "300";
-        editHeightSlider.value = "300";
-        editZoomSlider.value = "1";
-        editRoundSlider.value = "0";
-        editMoveXSlider.value = "0";
-        editMoveYSlider.value = "0";
-        updateEditValues();
-        
-        editorImg = new Image();
-        editorImg.crossOrigin = "Anonymous";
-        editorImg.onload = () => {
-            editorImgLoaded = true;
-            drawEditCanvas();
-            updateEditValues();
-        };
-        editorImg.onerror = () => {
-            showToast("Image load failed", true);
-        };
-        editorImg.src = imageUrl;
-    }
-    
-    document.getElementById('editorImageInput').addEventListener('change', (e) => {
-        const file = e.target.files[0];
-        if(file && file.type.startsWith('image/')) {
-            const reader = new FileReader();
-            reader.onload = (ev) => {
-                editorImg = new Image();
-                editorImg.onload = () => {
-                    editorImgLoaded = true;
-                    drawEditCanvas();
-                    updateEditValues();
-                    showToast("✅ Image loaded!");
-                };
-                editorImg.src = ev.target.result;
-            };
-            reader.readAsDataURL(file);
-        }
-    });
-    
-    document.getElementById('submitEditorBtn').addEventListener('click', () => {
-        if(!editorImgLoaded) {
-            showToast("Select an image first", true);
-            return;
-        }
-        getCroppedBlob((blob) => {
-            if(blob) {
-                pendingCroppedBlob = blob;
-                document.getElementById('editorModal').style.display = 'none';
-                const previewArea = document.getElementById('imagePreviewArea');
-                const previewImg = document.getElementById('previewImg');
-                const reader = new FileReader();
-                reader.onload = (e) => {
-                    previewImg.src = e.target.result;
-                    previewArea.style.display = 'block';
-                };
-                reader.readAsDataURL(blob);
-                showToast("✅ Cropped ready");
-            } else {
-                showToast("Cropping failed", true);
-            }
-        });
-    });
-    
-    document.getElementById('cancelEditorBtn').addEventListener('click', () => {
-        document.getElementById('editorModal').style.display = 'none';
-        pendingCroppedBlob = null;
-    });
-    
-    editWidthSlider.addEventListener('input', updateEditValues);
-    editHeightSlider.addEventListener('input', updateEditValues);
-    editZoomSlider.addEventListener('input', updateEditValues);
-    editRoundSlider.addEventListener('input', updateEditValues);
-    editMoveXSlider.addEventListener('input', updateEditValues);
-    editMoveYSlider.addEventListener('input', updateEditValues);
-    
-    // ========== RENDER FUNCTIONS ==========
-    function renderCurrentTable() {
-        if (currentTab === 'main') renderMainTable();
-        else renderSettingsTable();
-    }
-    
+    function renderCurrentTable() { currentTab === 'main' ? renderMainTable() : renderSettingsTable(); }
     function renderMainTable() {
         const tbody = document.getElementById('body-main');
-        if (!mainData.length) {
-            tbody.innerHTML = '<tr><td colspan="5" class="empty-row">✨ No content. Click + to add ✨</td></tr>';
-            return;
-        }
-        
+        if (!mainData.length) { tbody.innerHTML = '<tr><td colspan="5" class="empty-row">✨ No content. Click + to add ✨</td></tr>'; return; }
         let html = '';
         mainData.forEach((item, idx) => {
             const rowNum = idx + 2;
-            html += `<tr>
-                <td><img src="${item.thumbnail}" class="thumb" onerror="this.src='https://via.placeholder.com/48?text=Error'" onclick='openImageEditorWithUrl("${item.thumbnail}")' title="Click to edit image"></td>
-                <td><strong>${escapeHtml(item.name)}</strong></td>
-                <td><span class="badge-cat">${escapeHtml(item.category)}</span></td>
-                <td style="max-width:200px; overflow:hidden;">${escapeHtml(item.url)}</td>
-                <td>
-                    <button class="action-btn edit-i" onclick='openEditMain(${rowNum}, ${JSON.stringify(item).replace(/'/g, "&#39;")})'><i class="fa fa-edit"></i></button>
-                    <button class="action-btn edit-image-i" onclick='openImageEditorWithUrl("${item.thumbnail}")' title="Crop Image"><i class="fa fa-crop"></i></button>
-                    <button class="action-btn del-i" onclick="deleteRecordItem('Sheet1', ${rowNum}, '${item.fileId}')"><i class="fa fa-trash"></i></button>
-                  </td>
-            </tr>`;
+            html += `<tr><td><img src="${item.thumbnail}" class="thumb" onerror="this.src='https://via.placeholder.com/48?text=Error'" onclick='openImageEditorWithUrl("${item.thumbnail}")' title="Click to edit image"></td><td><strong>${escapeHtml(item.name)}</strong></td><td><span class="badge-cat">${escapeHtml(item.category)}</span></td><td style="max-width:200px; overflow:hidden;">${escapeHtml(item.url)}</td><td><button class="action-btn edit-i" onclick='openEditMain(${rowNum}, ${JSON.stringify(item).replace(/'/g, "&#39;")})'><i class="fa fa-edit"></i></button><button class="action-btn del-i" onclick="deleteRecordItem('Sheet1', ${rowNum}, '${item.fileId}')"><i class="fa fa-trash"></i></button></td></tr>`;
         });
         tbody.innerHTML = html;
     }
-    
-    function renderSettingsTable() {
-        const tbody = document.getElementById('body-set');
-        if (!settingsData.length) {
-            tbody.innerHTML = '<tr><td colspan="5" class="empty-row">⚙️ No settings. Click + to add ⚙️</td></tr>';
-            return;
-        }
-        
-        let html = '';
-        settingsData.forEach((item, idx) => {
-            const rowNum = idx + 2;
-            html += `<tr>
-                <td><strong>${escapeHtml(item.name)}</strong></td>
-                <td>${escapeHtml(item.url)}</td>
-                <td>v${escapeHtml(item.version)}</td>
-                <td>${escapeHtml(item.updateUrl)}</td>
-                <td>
-                    <button class="action-btn edit-i" onclick='openEditSettings(${rowNum}, ${JSON.stringify(item).replace(/'/g, "&#39;")})'><i class="fa fa-edit"></i></button>
-                    <button class="action-btn del-i" onclick="deleteRecordItem('settings', ${rowNum}, '')"><i class="fa fa-trash"></i></button>
-                  </td>
-            </tr>`;
-        });
-        tbody.innerHTML = html;
-    }
-    
-    function escapeHtml(str) {
-        if (!str) return '';
-        return String(str).replace(/[&<>]/g, function(m) {
-            if (m === '&') return '&amp;';
-            if (m === '<') return '&lt;';
-            if (m === '>') return '&gt;';
-            return m;
-        });
-    }
-    
-    function switchTab(tab) {
-        currentTab = tab;
-        document.getElementById('table-main').style.display = tab === 'main' ? 'table' : 'none';
-        document.getElementById('table-set').style.display = tab === 'settings' ? 'table' : 'none';
-        document.getElementById('btn-main').classList.toggle('active', tab === 'main');
-        document.getElementById('btn-settings').classList.toggle('active', tab === 'settings');
-        renderCurrentTable();
-    }
-    
-    function openAddModal() {
-        editContext = { isEdit: false, rowIndex: null, oldFileId: null, oldThumbUrl: null };
-        pendingCroppedBlob = null;
-        document.getElementById('modal-title').innerText = "➕ Add New Content";
-        document.getElementById('form-main-fields').style.display = 'block';
-        document.getElementById('form-settings-fields').style.display = 'none';
-        document.getElementById('inp-title').value = '';
-        document.getElementById('inp-category-select').value = 'Movies';
-        document.getElementById('inp-link').value = '';
-        document.getElementById('inp-image-upload').value = '';
-        document.getElementById('imagePreviewArea').style.display = 'none';
-        document.getElementById('globalModal').style.display = 'flex';
-    }
-    
-    function openEditMain(rowNum, item) {
-        currentTab = 'main';
-        editContext = { isEdit: true, rowIndex: rowNum, oldFileId: item.fileId || '', oldThumbUrl: item.thumbnail || '' };
-        pendingCroppedBlob = null;
-        document.getElementById('modal-title').innerText = "✏️ Edit Content";
-        document.getElementById('form-main-fields').style.display = 'block';
-        document.getElementById('form-settings-fields').style.display = 'none';
-        document.getElementById('inp-title').value = item.name || '';
-        document.getElementById('inp-category-select').value = item.category || 'Movies';
-        document.getElementById('inp-link').value = item.url || '';
-        document.getElementById('inp-image-upload').value = '';
-        document.getElementById('imagePreviewArea').style.display = 'none';
-        document.getElementById('globalModal').style.display = 'flex';
-    }
-    
-    function openEditSettings(rowNum, item) {
-        currentTab = 'settings';
-        editContext = { isEdit: true, rowIndex: rowNum, oldFileId: null, oldThumbUrl: null };
-        document.getElementById('modal-title').innerText = "✏️ Edit Settings";
-        document.getElementById('form-main-fields').style.display = 'none';
-        document.getElementById('form-settings-fields').style.display = 'block';
-        document.getElementById('set-appname').value = item.name || '';
-        document.getElementById('set-baseurl').value = item.url || '';
-        document.getElementById('set-version').value = item.version || '';
-        document.getElementById('set-updateurl').value = item.updateUrl || '';
-        document.getElementById('set-ratingurl').value = item.ratingUrl || '';
-        document.getElementById('set-privacyurl').value = item.privacyUrl || '';
-        document.getElementById('set-shareurl').value = item.shareUrl || '';
-        document.getElementById('globalModal').style.display = 'flex';
-    }
-    
-    function closeModal() {
-        document.getElementById('globalModal').style.display = 'none';
-        pendingCroppedBlob = null;
-    }
-    
-    // Initialize
-    window.addEventListener('load', () => {
-        console.log("Nikamma Admin - Professional Version with Single Processing Overlay");
-        loadLogo();
-        fetchAllData();
-    });
+    function renderSettingsTable() { /* settings unchanged but professional */ const tbody = document.getElementById('body-set');
+        if (!settingsData.length) { tbody.innerHTML = '<tr><td colspan="5" class="empty-row">⚙️ No settings. Click + to add ⚙️</td></tr>'; return; }
+        let html = ''; settingsData.forEach((item, idx) => { const rowNum = idx + 2; html += `<tr><td><strong>${escapeHtml(item.name)}</strong></td><td>${escapeHtml(item.url)}</td><td>v${escapeHtml(item.version)}</td><td>${escapeHtml(item.updateUrl)}</td><td><button class="action-btn edit-i" onclick='openEditSettings(${rowNum}, ${JSON.stringify(item).replace(/'/g, "&#39;")})'><i class="fa fa-edit"></i></button><button class="action-btn del-i" onclick="deleteRecordItem('settings', ${rowNum}, '')"><i class="fa fa-trash"></i></button></td></tr>`; });
+        tbody.innerHTML = html; }
+    function escapeHtml(str) { if (!str) return ''; return String(str).replace(/[&<>]/g, m => m === '&' ? '&amp;' : m === '<' ? '&lt;' : '&gt;'); }
+    function switchTab(tab) { currentTab = tab; document.getElementById('table-main').style.display = tab === 'main' ? 'table' : 'none'; document.getElementById('table-set').style.display = tab === 'settings' ? 'table' : 'none'; document.getElementById('btn-main').classList.toggle('active', tab === 'main'); document.getElementById('btn-settings').classList.toggle('active', tab === 'settings'); renderCurrentTable(); }
+    function openAddModal() { editContext = { isEdit: false, rowIndex: null, oldFileId: null, oldThumbUrl: null }; pendingCroppedBlob = null; document.getElementById('modal-title').innerText = "➕ Add New Content"; document.getElementById('form-main-fields').style.display = 'block'; document.getElementById('form-settings-fields').style.display = 'none'; document.getElementById('inp-title').value = ''; document.getElementById('inp-category-select').value = 'Movies'; document.getElementById('inp-link').value = ''; document.getElementById('inp-image-upload').value = ''; document.getElementById('imagePreviewArea').style.display = 'none'; document.getElementById('globalModal').style.display = 'flex'; }
+    function openEditMain(rowNum, item) { currentTab = 'main'; editContext = { isEdit: true, rowIndex: rowNum, oldFileId: item.fileId || '', oldThumbUrl: item.thumbnail || '' }; pendingCroppedBlob = null; document.getElementById('modal-title').innerText = "✏️ Edit Content"; document.getElementById('form-main-fields').style.display = 'block'; document.getElementById('form-settings-fields').style.display = 'none'; document.getElementById('inp-title').value = item.name || ''; document.getElementById('inp-category-select').value = item.category || 'Movies'; document.getElementById('inp-link').value = item.url || ''; document.getElementById('inp-image-upload').value = ''; document.getElementById('imagePreviewArea').style.display = 'none'; document.getElementById('globalModal').style.display = 'flex'; }
+    function openEditSettings(rowNum, item) { currentTab = 'settings'; editContext = { isEdit: true, rowIndex: rowNum, oldFileId: null, oldThumbUrl: null }; document.getElementById('modal-title').innerText = "✏️ Edit Settings"; document.getElementById('form-main-fields').style.display = 'none'; document.getElementById('form-settings-fields').style.display = 'block'; document.getElementById('set-appname').value = item.name || ''; document.getElementById('set-baseurl').value = item.url || ''; document.getElementById('set-version').value = item.version || ''; document.getElementById('set-updateurl').value = item.updateUrl || ''; document.getElementById('set-ratingurl').value = item.ratingUrl || ''; document.getElementById('set-privacyurl').value = item.privacyUrl || ''; document.getElementById('set-shareurl').value = item.shareUrl || ''; document.getElementById('globalModal').style.display = 'flex'; }
+    function closeModal() { document.getElementById('globalModal').style.display = 'none'; pendingCroppedBlob = null; }
+    window.addEventListener('load', () => { loadLogo(); fetchAllData(); });
 </script>
 </body>
 </html>
+```
