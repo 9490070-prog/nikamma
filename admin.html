@@ -563,7 +563,7 @@
     let html = "";
     for (let cat of categories) {
       const videos = allVideos.filter(v => v.Category === cat);
-      html += `<div class="category-card"><div class="category-header"><span class="category-title">${escapeHtml(cat)}</span><span class="category-badge">${videos.length} video${videos.length !== 1 ? 's' : ''}</span></div><div class="horizontal-scroll">`;
+      html += `<div class="category-card"><div class="category-header"><span class="category-title">${escapeHtml(cat)}</span><span class="category-badge">${videos.length} Item${videos.length !== 1 ? 's' : ''}</span></div><div class="horizontal-scroll">`;
       if (videos.length === 0) {
         html += `<div class="empty-cat-msg">📭 No videos yet.</div>`;
       } else {
@@ -611,11 +611,13 @@
       if (result.status === "DELETED") { 
         showToast("Deleted!"); 
         await loadData(); 
+        return true;
       } else { 
         showToast("Delete failed", "error"); 
+        return false;
       }
-    } catch(e) { showToast("Error", "error"); }
-    showProgress(false);
+    } catch(e) { showToast("Error", "error"); return false; }
+    finally { showProgress(false); }
   }
 
   function openAddModal() { 
@@ -646,6 +648,59 @@
     document.getElementById("globalModal").style.display = "flex"; 
   }
 
+  // UPDATE Function - DELETE old + ADD new (thumbnail optional)
+  async function updateVideo(rowNumber, name, category, url, newThumbnailBase64) {
+    showProgress(true, 30, "Updating record...");
+    try {
+      // Step 1: Delete old record
+      const deleteRes = await fetch(API_URL, { method: "POST", body: JSON.stringify({ action: "DELETE", rowNumber }) });
+      const deleteResult = await deleteRes.json();
+      if (deleteResult.status !== "DELETED") {
+        showToast("Failed to delete old record", "error");
+        return false;
+      }
+      
+      updateProgress(60, "Adding updated record...");
+      
+      // Step 2: Prepare payload for new record
+      let addPayload = { name, category, url };
+      
+      // 🔥 IMPORTANT: Only include thumbnail if user uploaded a NEW one
+      if (newThumbnailBase64) {
+        addPayload.thumbnail = newThumbnailBase64;
+        console.log("New thumbnail provided, updating...");
+      } else {
+        console.log("No new thumbnail, keeping old one");
+        // If no new thumbnail, we don't send thumbnail field
+        // This way the old thumbnail remains (since we're adding new record without thumbnail)
+        // But wait - we need to preserve old thumbnail!
+        // Actually, when adding without thumbnail, the API might not set any thumbnail.
+        // Better approach: Send the old thumbnail explicitly
+        if (existingThumbBackup) {
+          addPayload.thumbnail = existingThumbBackup;
+          console.log("Keeping existing thumbnail");
+        }
+      }
+      
+      const addRes = await fetch(API_URL, { method: "POST", body: JSON.stringify(addPayload) });
+      const addResult = await addRes.json();
+      
+      if (addResult.status === "OK") {
+        showToast("Video updated successfully!");
+        await loadData();
+        return true;
+      } else {
+        showToast("Failed to add updated record", "error");
+        return false;
+      }
+    } catch(e) {
+      showToast("Update error: " + e.message, "error");
+      return false;
+    } finally {
+      showProgress(false);
+    }
+  }
+
   async function submitVideo() {
     const name = document.getElementById("videoName").value.trim();
     const category = document.getElementById("videoCategorySelect").value;
@@ -665,74 +720,44 @@
       else { const rd = new FileReader(); rd.onload = () => resolve(rd.result); rd.readAsDataURL(f); } 
     });
     
-    let thumbBase64 = null;
-    if (file) thumbBase64 = await getBase64(file);
-    else if (isEditMode && existingThumbBackup && !file) thumbBase64 = existingThumbBackup;
+    let newThumbnailBase64 = null;
+    if (file) {
+      newThumbnailBase64 = await getBase64(file);
+    }
     
-    // EDIT MODE - UPDATE existing data
+    // EDIT MODE - UPDATE (DELETE + ADD)
     if (isEditMode && currentEditRow) {
-      if (!thumbBase64) { 
-        showProgress(false); 
-        showToast("Thumbnail required", "error"); 
-        return; 
-      }
-      
-      updateProgress(50, "Updating video...");
-      
-      // METHOD 1: Direct UPDATE payload
-      let payload = { 
-        action: "EDIT", 
-        rowNumber: currentEditRow, 
-        name: name, 
-        category: category, 
-        url: url, 
-        thumbnail: thumbBase64 
-      };
-      
-      try {
-        console.log("EDIT payload:", payload);
-        const res = await fetch(API_URL, { method: "POST", body: JSON.stringify(payload) });
-        const result = await res.json();
-        console.log("EDIT response:", result);
-        updateProgress(95, "Finalizing...");
-        
-        if (result.status === "UPDATED" || result.status === "OK") { 
-          showToast("Video updated successfully!"); 
-          await loadData(); 
-        } else { 
-          showToast("Update failed: " + JSON.stringify(result), "error"); 
-        }
-      } catch(e) { 
-        console.error(e);
-        showToast("Update error: " + e.message, "error"); 
-      }
+      // ✅ Thumbnail is OPTIONAL in edit mode
+      // If user didn't upload new image, newThumbnailBase64 will be null
+      // We'll preserve old thumbnail automatically
+      await updateVideo(currentEditRow, name, category, url, newThumbnailBase64);
     } 
-    // ADD MODE - Create new entry
+    // ADD MODE - Create new entry (thumbnail REQUIRED)
     else {
-      if (!thumbBase64) { 
+      if (!newThumbnailBase64) { 
         showProgress(false); 
-        showToast("Thumbnail required for new video", "error"); 
+        showToast("❌ Thumbnail is required for new video!", "error"); 
         return; 
       }
       
       updateProgress(50, "Adding new video...");
-      let payload = { name, category, url, thumbnail: thumbBase64 };
+      let payload = { name, category, url, thumbnail: newThumbnailBase64 };
       
       try {
         const res = await fetch(API_URL, { method: "POST", body: JSON.stringify(payload) });
         const result = await res.json();
         if (result.status === "OK") { 
-          showToast("Video added successfully!"); 
+          showToast("✅ Video added successfully!"); 
           await loadData(); 
         } else { 
-          showToast("Add failed: " + JSON.stringify(result), "error"); 
+          showToast("Add failed", "error"); 
         }
       } catch(e) { 
         showToast("Add error: " + e.message, "error"); 
+      } finally {
+        showProgress(false);
       }
     }
-    
-    showProgress(false);
   }
 
   // ========== CROPPER ==========
