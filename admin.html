@@ -346,6 +346,7 @@
     @media (max-width: 550px) {
       .toast-msg { left: 16px; right: 16px; text-align: center; }
     }
+    /* IMPROVED CROP MODAL STYLES */
     .crop-modal-container {
       display: none;
       position: fixed;
@@ -377,18 +378,46 @@
       display: flex;
       justify-content: center;
       min-height: 200px;
-      max-height: 40vh;
-      overflow: hidden;
+      max-height: 45vh;
+      overflow: auto;
+      position: relative;
     }
-    .canvas-relative { position: relative; display: inline-block; }
-    #cropCanvas { display: block; border-radius: 16px; background: #1a1f30; max-width: 100%; height: auto; }
+    .canvas-relative { 
+      position: relative; 
+      display: inline-block;
+      cursor: move;
+    }
+    #cropCanvas { 
+      display: block; 
+      border-radius: 16px; 
+      background: #1a1f30; 
+      max-width: 100%; 
+      height: auto;
+      user-select: none;
+    }
     #cropSelectionBox {
       position: absolute;
       border: 3px solid #ffaa44;
-      background: rgba(255, 170, 68, 0.2);
-      pointer-events: none;
+      background: rgba(255, 170, 68, 0.25);
+      cursor: move;
       box-sizing: border-box;
+      z-index: 10;
     }
+    /* Resize handles */
+    .resize-handle {
+      position: absolute;
+      width: 12px;
+      height: 12px;
+      background: #ffaa44;
+      border: 2px solid white;
+      border-radius: 50%;
+      z-index: 20;
+      pointer-events: auto;
+    }
+    .resize-handle.nw { top: -6px; left: -6px; cursor: nw-resize; }
+    .resize-handle.ne { top: -6px; right: -6px; cursor: ne-resize; }
+    .resize-handle.sw { bottom: -6px; left: -6px; cursor: sw-resize; }
+    .resize-handle.se { bottom: -6px; right: -6px; cursor: se-resize; }
     .scroll-controls-area { flex: 1; overflow-y: auto; margin-top: 16px; padding-right: 5px; max-height: 38vh; }
     .control-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 14px; }
     @media (max-width: 580px) { .control-grid { grid-template-columns: 1fr; gap: 10px; } }
@@ -444,15 +473,15 @@
   </div>
 </div>
 
-<!-- CROP MODAL -->
+<!-- IMPROVED CROP MODAL WITH DRAG & RESIZE -->
 <div id="cropToolModal" class="crop-modal-container">
   <div class="crop-inner">
     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
-      <h4 style="color:#00aaff;">✂️ Image Editor (Crop & Resize)</h4>
+      <h4 style="color:#00aaff;">✂️ Image Editor (Drag & Resize to Select Area)</h4>
       <button id="closeCropModalBtn" style="background:#ff5555; border:none; padding:5px 16px; border-radius:40px;">✖️</button>
     </div>
-    <div class="crop-canvas-area">
-      <div class="canvas-relative">
+    <div class="crop-canvas-area" id="cropCanvasArea">
+      <div class="canvas-relative" id="canvasRelative">
         <canvas id="cropCanvas" width="450" height="280"></canvas>
         <div id="cropSelectionBox"></div>
       </div>
@@ -461,13 +490,14 @@
       <div class="control-grid">
         <div class="ctrl-group"><label>⬅️ X Position</label><input type="range" id="cropXSlider" min="0" max="100" step="1"><span id="xPosVal" style="font-size:11px;">0px</span></div>
         <div class="ctrl-group"><label>⬆️ Y Position</label><input type="range" id="cropYSlider" min="0" max="100" step="1"><span id="yPosVal" style="font-size:11px;">0px</span></div>
-        <div class="ctrl-group"><label>📏 Crop Width</label><input type="range" id="cropWidthSlider" min="30" max="800" step="5"><span id="widthVal">240px</span></div>
-        <div class="ctrl-group"><label>📐 Crop Height</label><input type="range" id="cropHeightSlider" min="30" max="800" step="5"><span id="heightVal">180px</span></div>
+        <div class="ctrl-group"><label>📏 Width</label><input type="range" id="cropWidthSlider" min="30" max="800" step="5"><span id="widthVal">240px</span></div>
+        <div class="ctrl-group"><label>📐 Height</label><input type="range" id="cropHeightSlider" min="30" max="800" step="5"><span id="heightVal">180px</span></div>
         <div class="ctrl-group"><label>🔍 Zoom</label><input type="range" id="zoomScaleSlider" min="10" max="250" step="5"><span id="zoomPercent">40%</span></div>
       </div>
+      <p style="font-size:11px; color:#aaa; text-align:center;">💡 Tip: Drag the yellow box to move, drag corners to resize</p>
     </div>
     <div class="crop-buttons">
-      <button id="applyCropSaveBtn" style="background:#2ecc71;">💾 Save Cropped</button>
+      <button id="applyCropSaveBtn" style="background:#2ecc71;">💾 Save Cropped Image</button>
       <button id="cancelCropToolBtn" style="background:#777;">Cancel</button>
     </div>
   </div>
@@ -481,6 +511,15 @@
   let currentEditRow = null;
   let isEditMode = false;
   let existingThumbBackup = null;
+
+  // Crop editor variables
+  let cropImg = new Image();
+  let naturalW = 1, naturalH = 1;
+  let zoomVal = 0.45, cropW = 240, cropH = 180, cropX = 0, cropY = 0;
+  let isDragging = false;
+  let dragStartX = 0, dragStartY = 0;
+  let activeHandle = null;
+  let canvasEl, ctx, boxEl, canvasRelative;
 
   function showProgress(show, percent = 0, msg = "Processing...") {
     const overlay = document.getElementById("progressOverlay");
@@ -648,43 +687,24 @@
     document.getElementById("globalModal").style.display = "flex"; 
   }
 
-  // UPDATE Function - DELETE old + ADD new (thumbnail optional)
   async function updateVideo(rowNumber, name, category, url, newThumbnailBase64) {
     showProgress(true, 30, "Updating record...");
     try {
-      // Step 1: Delete old record
       const deleteRes = await fetch(API_URL, { method: "POST", body: JSON.stringify({ action: "DELETE", rowNumber }) });
       const deleteResult = await deleteRes.json();
       if (deleteResult.status !== "DELETED") {
         showToast("Failed to delete old record", "error");
         return false;
       }
-      
       updateProgress(60, "Adding updated record...");
-      
-      // Step 2: Prepare payload for new record
       let addPayload = { name, category, url };
-      
-      // 🔥 IMPORTANT: Only include thumbnail if user uploaded a NEW one
       if (newThumbnailBase64) {
         addPayload.thumbnail = newThumbnailBase64;
-        console.log("New thumbnail provided, updating...");
-      } else {
-        console.log("No new thumbnail, keeping old one");
-        // If no new thumbnail, we don't send thumbnail field
-        // This way the old thumbnail remains (since we're adding new record without thumbnail)
-        // But wait - we need to preserve old thumbnail!
-        // Actually, when adding without thumbnail, the API might not set any thumbnail.
-        // Better approach: Send the old thumbnail explicitly
-        if (existingThumbBackup) {
-          addPayload.thumbnail = existingThumbBackup;
-          console.log("Keeping existing thumbnail");
-        }
+      } else if (existingThumbBackup) {
+        addPayload.thumbnail = existingThumbBackup;
       }
-      
       const addRes = await fetch(API_URL, { method: "POST", body: JSON.stringify(addPayload) });
       const addResult = await addRes.json();
-      
       if (addResult.status === "OK") {
         showToast("Video updated successfully!");
         await loadData();
@@ -725,24 +745,16 @@
       newThumbnailBase64 = await getBase64(file);
     }
     
-    // EDIT MODE - UPDATE (DELETE + ADD)
     if (isEditMode && currentEditRow) {
-      // ✅ Thumbnail is OPTIONAL in edit mode
-      // If user didn't upload new image, newThumbnailBase64 will be null
-      // We'll preserve old thumbnail automatically
       await updateVideo(currentEditRow, name, category, url, newThumbnailBase64);
-    } 
-    // ADD MODE - Create new entry (thumbnail REQUIRED)
-    else {
+    } else {
       if (!newThumbnailBase64) { 
         showProgress(false); 
         showToast("❌ Thumbnail is required for new video!", "error"); 
         return; 
       }
-      
       updateProgress(50, "Adding new video...");
       let payload = { name, category, url, thumbnail: newThumbnailBase64 };
-      
       try {
         const res = await fetch(API_URL, { method: "POST", body: JSON.stringify(payload) });
         const result = await res.json();
@@ -760,10 +772,111 @@
     }
   }
 
-  // ========== CROPPER ==========
-  let cropImg = new Image();
-  let naturalW = 1, naturalH = 1;
-  let zoomVal = 0.5, cropW = 240, cropH = 180, cropX = 0, cropY = 0;
+  // ========== IMPROVED CROPPER WITH DRAG & RESIZE ==========
+  function initCropperEvents() {
+    canvasRelative = document.getElementById("canvasRelative");
+    boxEl = document.getElementById("cropSelectionBox");
+    
+    if (!canvasRelative || !boxEl) return;
+    
+    // Remove existing listeners to avoid duplicates
+    const newBox = boxEl.cloneNode(true);
+    boxEl.parentNode.replaceChild(newBox, boxEl);
+    boxEl = newBox;
+    boxEl.id = "cropSelectionBox";
+    
+    // Mouse down on box - drag
+    boxEl.addEventListener("mousedown", (e) => {
+      if (e.target === boxEl || e.target.classList.contains("cropSelectionBox")) {
+        e.preventDefault();
+        e.stopPropagation();
+        isDragging = true;
+        dragStartX = e.clientX;
+        dragStartY = e.clientY;
+        document.body.style.userSelect = "none";
+      }
+    });
+    
+    // Resize handles
+    const handles = ["nw", "ne", "sw", "se"];
+    handles.forEach(handle => {
+      const handleDiv = document.createElement("div");
+      handleDiv.className = `resize-handle ${handle}`;
+      boxEl.appendChild(handleDiv);
+      handleDiv.addEventListener("mousedown", (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        activeHandle = handle;
+        dragStartX = e.clientX;
+        dragStartY = e.clientY;
+        document.body.style.userSelect = "none";
+      });
+    });
+    
+    window.addEventListener("mousemove", (e) => {
+      if (!cropImg.complete) return;
+      
+      if (isDragging) {
+        e.preventDefault();
+        let deltaX = (e.clientX - dragStartX) / zoomVal;
+        let deltaY = (e.clientY - dragStartY) / zoomVal;
+        let newX = Math.max(0, Math.min(naturalW - cropW, cropX + deltaX));
+        let newY = Math.max(0, Math.min(naturalH - cropH, cropY + deltaY));
+        if (newX !== cropX || newY !== cropY) {
+          cropX = newX;
+          cropY = newY;
+          updateSlidersAndCanvas();
+        }
+        dragStartX = e.clientX;
+        dragStartY = e.clientY;
+      } else if (activeHandle) {
+        e.preventDefault();
+        let deltaX = (e.clientX - dragStartX) / zoomVal;
+        let deltaY = (e.clientY - dragStartY) / zoomVal;
+        let newW = cropW, newH = cropH, newX = cropX, newY = cropY;
+        
+        if (activeHandle.includes("e")) newW = Math.min(naturalW - cropX, Math.max(30, cropW + deltaX));
+        if (activeHandle.includes("w")) {
+          let possibleW = Math.max(30, cropW - deltaX);
+          newX = Math.min(cropX + cropW - 30, Math.max(0, cropX + deltaX));
+          newW = cropW + (cropX - newX);
+        }
+        if (activeHandle.includes("s")) newH = Math.min(naturalH - cropY, Math.max(30, cropH + deltaY));
+        if (activeHandle.includes("n")) {
+          let possibleH = Math.max(30, cropH - deltaY);
+          newY = Math.min(cropY + cropH - 30, Math.max(0, cropY + deltaY));
+          newH = cropH + (cropY - newY);
+        }
+        
+        newW = Math.min(naturalW - newX, Math.max(30, newW));
+        newH = Math.min(naturalH - newY, Math.max(30, newH));
+        
+        if (newW !== cropW || newH !== cropH || newX !== cropX || newY !== cropY) {
+          cropW = newW;
+          cropH = newH;
+          cropX = newX;
+          cropY = newY;
+          updateSlidersAndCanvas();
+        }
+        dragStartX = e.clientX;
+        dragStartY = e.clientY;
+      }
+    });
+    
+    window.addEventListener("mouseup", () => {
+      isDragging = false;
+      activeHandle = null;
+      document.body.style.userSelect = "";
+    });
+  }
+  
+  function updateSlidersAndCanvas() {
+    document.getElementById("cropXSlider").value = cropX;
+    document.getElementById("cropYSlider").value = cropY;
+    document.getElementById("cropWidthSlider").value = cropW;
+    document.getElementById("cropHeightSlider").value = cropH;
+    drawCropCanvas();
+  }
 
   function openCropper(file) {
     return new Promise((resolve) => {
@@ -771,14 +884,25 @@
       reader.onload = (e) => {
         cropImg = new Image();
         cropImg.onload = () => {
-          naturalW = cropImg.width; naturalH = cropImg.height;
-          zoomVal = 0.45; cropW = Math.min(380, naturalW); cropH = Math.min(260, naturalH);
-          cropX = 0; cropY = 0;
+          naturalW = cropImg.width; 
+          naturalH = cropImg.height;
+          zoomVal = 0.45;
+          cropW = Math.min(300, naturalW);
+          cropH = Math.min(220, naturalH);
+          cropX = Math.max(0, (naturalW - cropW) / 2);
+          cropY = Math.max(0, (naturalH - cropH) / 2);
+          
           document.getElementById("zoomScaleSlider").value = zoomVal * 100;
           document.getElementById("cropWidthSlider").value = cropW;
           document.getElementById("cropHeightSlider").value = cropH;
+          document.getElementById("cropXSlider").value = cropX;
+          document.getElementById("cropYSlider").value = cropY;
           document.getElementById("cropToolModal").style.display = "flex";
-          drawCropCanvas();
+          
+          setTimeout(() => {
+            drawCropCanvas();
+            initCropperEvents();
+          }, 100);
         };
         cropImg.src = e.target.result;
       };
@@ -791,19 +915,28 @@
     const canvas = document.getElementById("cropCanvas");
     const ctx = canvas.getContext("2d");
     let dispW = naturalW * zoomVal, dispH = naturalH * zoomVal;
-    canvas.width = dispW; canvas.height = dispH;
+    canvas.width = dispW; 
+    canvas.height = dispH;
     ctx.clearRect(0, 0, dispW, dispH);
     ctx.drawImage(cropImg, 0, 0, dispW, dispH);
-    const box = document.getElementById("cropSelectionBox");
-    box.style.left = (cropX * zoomVal) + "px";
-    box.style.top = (cropY * zoomVal) + "px";
-    box.style.width = Math.max(2, cropW * zoomVal) + "px";
-    box.style.height = Math.max(2, cropH * zoomVal) + "px";
+    
+    if (boxEl) {
+      let leftPx = cropX * zoomVal;
+      let topPx = cropY * zoomVal;
+      let wPx = cropW * zoomVal;
+      let hPx = cropH * zoomVal;
+      boxEl.style.left = leftPx + "px";
+      boxEl.style.top = topPx + "px";
+      boxEl.style.width = Math.max(2, wPx) + "px";
+      boxEl.style.height = Math.max(2, hPx) + "px";
+    }
+    
     document.getElementById("xPosVal").innerText = Math.round(cropX) + "px";
     document.getElementById("yPosVal").innerText = Math.round(cropY) + "px";
     document.getElementById("widthVal").innerText = Math.round(cropW) + "px";
     document.getElementById("heightVal").innerText = Math.round(cropH) + "px";
     document.getElementById("zoomPercent").innerText = Math.round(zoomVal * 100) + "%";
+    
     let maxX = Math.max(0, naturalW - cropW);
     let maxY = Math.max(0, naturalH - cropH);
     document.getElementById("cropXSlider").max = maxX;
@@ -819,21 +952,25 @@
     let finalY = Math.min(cropY, naturalH - cropH);
     let finalW = Math.min(cropW, naturalW - finalX);
     let finalH = Math.min(cropH, naturalH - finalY);
-    if (finalW <= 0 || finalH <= 0) { showToast("Invalid crop", "error"); return; }
+    if (finalW <= 0 || finalH <= 0) { showToast("Invalid crop area", "error"); return; }
+    
     const tmpCanvas = document.createElement("canvas");
-    tmpCanvas.width = finalW; tmpCanvas.height = finalH;
+    tmpCanvas.width = finalW;
+    tmpCanvas.height = finalH;
     const tctx = tmpCanvas.getContext("2d");
     tctx.drawImage(cropImg, finalX, finalY, finalW, finalH, 0, 0, finalW, finalH);
+    
     tmpCanvas.toBlob(blob => {
-      const croppedFile = new File([blob], "cropped.jpg", { type: "image/jpeg" });
+      const croppedFile = new File([blob], "cropped_image.jpg", { type: "image/jpeg" });
       const dt = new DataTransfer();
       dt.items.add(croppedFile);
       document.getElementById("thumbFile").files = dt.files;
-      showToast("Crop applied!", "success");
+      showToast("✅ Crop applied! Image ready", "success");
       document.getElementById("cropToolModal").style.display = "none";
     }, "image/jpeg", 0.9);
   }
 
+  // Slider events
   ["cropXSlider","cropYSlider","cropWidthSlider","cropHeightSlider","zoomScaleSlider"].forEach(id => {
     const el = document.getElementById(id);
     if(el) el.addEventListener("input", (e) => {
