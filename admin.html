@@ -1,242 +1,128 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Nikamma 4K | Pro Admin</title>
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;600;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <style>
-        :root { --primary: #00d2ff; --bg: #080a0c; --card: #12151a; --border: #21262d; --text: #e0e6ed; }
-        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Outfit', sans-serif; }
-        body { background: var(--bg); color: var(--text); display: flex; min-height: 100vh; overflow-x: hidden; }
+<meta charset="UTF-8">
+<title>Admin Panel PRO</title>
 
-        /* Sidebar Toggle */
-        .sidebar { width: 260px; background: #0d1117; border-right: 1px solid var(--border); padding: 25px; transition: 0.3s; position: fixed; height: 100vh; z-index: 1001; }
-        .sidebar.closed { left: -260px; }
-        .main { flex: 1; padding: 25px; margin-left: 260px; transition: 0.3s; width: 100%; }
-        .main.full { margin-left: 0; }
+<style>
+body {font-family: Arial; background:#0d0d0d; color:#fff;}
+.container {max-width:900px;margin:auto;}
+input,button {padding:10px;margin:5px;width:100%;}
+table {width:100%;margin-top:20px;border-collapse:collapse;}
+td,th {border:1px solid #333;padding:8px;}
+img {width:70px;}
+#loader {
+  display:none;
+  position:fixed;
+  top:0;left:0;
+  width:100%;height:100%;
+  background:rgba(0,0,0,0.8);
+  justify-content:center;
+  align-items:center;
+  color:#fff;
+  font-size:20px;
+}
+</style>
 
-        @media (max-width: 768px) { .sidebar { left: -260px; } .sidebar.open { left: 0; } .main { margin-left: 0; } }
-
-        .brand { font-size: 24px; font-weight: 800; color: var(--primary); margin-bottom: 40px; display: flex; justify-content: space-between; }
-        .nav-item { padding: 12px; border-radius: 10px; cursor: pointer; color: #8b949e; display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
-        .nav-item.active { background: rgba(0, 210, 255, 0.1); color: var(--primary); }
-
-        /* Header */
-        .top-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; }
-        .btn-circle { width: 45px; height: 45px; border-radius: 12px; border: 1px solid var(--border); background: var(--card); color: white; cursor: pointer; }
-
-        /* Grid */
-        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 20px; }
-        .card { background: var(--card); border: 1px solid var(--border); border-radius: 15px; overflow: hidden; }
-        .card-img { height: 140px; background-size: cover; background-position: center; background-color: #1a1e24; }
-        .card-info { padding: 15px; }
-
-        /* Modal */
-        .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 2000; align-items: center; justify-content: center; padding: 20px; }
-        .modal-content { background: #161b22; width: 100%; max-width: 450px; padding: 30px; border-radius: 20px; border: 1px solid var(--border); }
-        input, select { width: 100%; padding: 12px; margin: 10px 0; background: #0d1117; border: 1px solid var(--border); color: white; border-radius: 10px; outline: none; }
-        .btn-save { width: 100%; padding: 15px; background: var(--primary); color: black; border: none; border-radius: 10px; font-weight: 800; cursor: pointer; margin-top: 10px; }
-
-        #loader { display: none; position: fixed; top: 20px; left: 50%; transform: translateX(-50%); background: var(--primary); color: black; padding: 10px 30px; border-radius: 50px; font-weight: 700; z-index: 3000; }
-    </style>
 </head>
 <body>
 
-<div id="loader">Wait, Processing...</div>
+<div id="loader">Uploading... ⏳</div>
 
-<div class="sidebar" id="sidebar">
-    <div class="brand">NIKAMMA <span>4K</span> <i class="fa fa-times" onclick="toggleMenu()" style="font-size: 16px; cursor:pointer;"></i></div>
-    <div class="nav-item active"><i class="fa fa-th-large"></i> Dashboard</div>
-    <div class="nav-item" onclick="openModal('settingsModal')"><i class="fa fa-key"></i> API Config</div>
-</div>
+<div class="container">
+<h2>Admin Panel PRO</h2>
 
-<div class="main" id="main">
-    <div class="top-bar">
-        <button class="btn-circle" onclick="toggleMenu()"><i class="fa fa-bars"></i></button>
-        <button class="btn-circle" onclick="fetchData()"><i class="fa fa-sync-alt"></i></button>
-    </div>
-    <div class="grid" id="main-grid"></div>
-</div>
+<input id="name" placeholder="Name">
+<input id="category" placeholder="Category">
+<input id="url" placeholder="URL">
+<input type="file" id="thumb">
 
-<button style="position:fixed; bottom:30px; right:30px; width:65px; height:65px; border-radius:20px; background:var(--primary); border:none; font-size:28px; cursor:pointer; box-shadow: 0 10px 20px rgba(0,210,255,0.3);" onclick="openAddModal()">+</button>
+<button onclick="addData()">Add Data</button>
 
-<div class="modal" id="formModal">
-    <div class="modal-content">
-        <h3 id="modalTitle">Add Content</h3>
-        <input type="text" id="inp-name" placeholder="Movie Name">
-        <select id="inp-cat">
-            <option value="Movies">Movies</option>
-            <option value="Sports">Sports</option>
-            <option value="Series">Series</option>
-        </select>
-        <input type="text" id="inp-url" placeholder="Stream URL (.m3u8)">
-        
-        <div style="border: 1px dashed #444; padding: 15px; text-align: center; border-radius: 10px; margin: 10px 0;">
-            <input type="file" id="fileInp" accept="image/*" style="display:none" onchange="updateFileLabel(this)">
-            <label for="fileInp" style="cursor:pointer; color:var(--primary)">
-                <i class="fa fa-image"></i> <span id="fileLabel">Choose Thumbnail</span>
-            </label>
-        </div>
-
-        <input type="text" id="inp-thumb" placeholder="Thumbnail URL (or auto-upload)">
-        <button class="btn-save" id="saveBtn" onclick="handleFinalSave()">SAVE CONTENT</button>
-        <button onclick="closeModal('formModal')" style="width:100%; background:none; border:none; color:#555; margin-top:15px; cursor:pointer;">Cancel</button>
-    </div>
-</div>
-
-<div class="modal" id="settingsModal">
-    <div class="modal-content">
-        <h3>Connect API</h3>
-        <input type="text" id="api-url-inp" placeholder="Paste Apps Script URL here">
-        <button class="btn-save" onclick="saveSettings()">CONNECT SYSTEM</button>
-    </div>
+<table>
+<thead>
+<tr>
+<th>Name</th>
+<th>Category</th>
+<th>URL</th>
+<th>Thumbnail</th>
+</tr>
+</thead>
+<tbody id="tbody"></tbody>
+</table>
 </div>
 
 <script>
-    let API_URL = localStorage.getItem('nikamma_api') || '';
-    let editContext = { active: false, row: null, uid: null };
+const API = "https://script.google.com/macros/s/AKfycbwm5huDUld4_MMX_0jdu1JcMVAnnRCHyDPHJSH5Tqoe6rowI6whX5N7FVAh_YZg8xqgXg/exec";
 
-    function toggleMenu() {
-        document.getElementById('sidebar').classList.toggle('open');
-        document.getElementById('sidebar').classList.toggle('closed');
-        document.getElementById('main').classList.toggle('full');
-    }
+function showLoader() {
+  document.getElementById("loader").style.display = "flex";
+}
 
-    function openModal(id) { document.getElementById(id).style.display = 'flex'; }
-    function closeModal(id) { document.getElementById(id).style.display = 'none'; }
-    function updateFileLabel(input) { if(input.files[0]) document.getElementById('fileLabel').innerText = input.files[0].name; }
+function hideLoader() {
+  document.getElementById("loader").style.display = "none";
+}
 
-    function saveSettings() {
-        let url = document.getElementById('api-url-inp').value;
-        if(url.includes('exec')) {
-            localStorage.setItem('nikamma_api', url);
-            API_URL = url;
-            closeModal('settingsModal');
-            fetchData();
-        }
-    }
+function addData() {
+  let name = document.getElementById("name").value;
+  let category = document.getElementById("category").value;
+  let url = document.getElementById("url").value;
+  let file = document.getElementById("thumb").files[0];
 
-    // --- STEP 1: UPLOAD (If file exists) ---
-    async function uploadImage() {
-        const file = document.getElementById('fileInp').files[0];
-        if(!file) return document.getElementById('inp-thumb').value;
+  if (!name || !file) {
+    alert("Name aur Image zaroori hai!");
+    return;
+  }
 
-        return new Promise((resolve, reject) => {
-            const reader = new FileReader();
-            reader.onload = async (e) => {
-                const base64 = e.target.result.split(',')[1];
-                try {
-                    const res = await fetch(`${API_URL}?action=uploadFile&filename=${encodeURIComponent(file.name)}&mimeType=${file.type}&data=${encodeURIComponent(base64)}`);
-                    const result = await res.json();
-                    resolve(result.url);
-                } catch(err) { reject(err); }
-            };
-            reader.readAsDataURL(file);
-        });
-    }
+  let reader = new FileReader();
 
-    // --- STEP 2: SAVE ALL DATA ---
-    async function handleFinalSave() {
-        if(!API_URL) return alert("Connect API first!");
-        const loader = document.getElementById('loader');
-        const saveBtn = document.getElementById('saveBtn');
-        
-        loader.style.display = 'block';
-        saveBtn.disabled = true;
-        saveBtn.innerText = "Processing...";
+  showLoader();
 
-        try {
-            // Pehle image upload karo (agar hai)
-            const finalThumbUrl = await uploadImage();
-            
-            // Phir sheet data save karo
-            const params = new URLSearchParams({
-                action: 'saveData',
-                action_type: editContext.active ? 'update' : 'add',
-                rowIndex: editContext.row,
-                Name: document.getElementById('inp-name').value,
-                Category: document.getElementById('inp-cat').value,
-                URL: document.getElementById('inp-url').value,
-                Thumbnail: finalThumbUrl,
-                Unique_Id: editContext.active ? editContext.uid : 'ID_'+Date.now()
-            });
+  reader.onload = function() {
+    fetch(API, {
+      method: "POST",
+      body: JSON.stringify({
+        name: name,
+        category: category,
+        url: url,
+        thumbnail: reader.result
+      })
+    })
+    .then(res => res.json())
+    .then(res => {
+      hideLoader();
+      loadData();
+      document.getElementById("thumb").value = "";
+    })
+    .catch(err => {
+      hideLoader();
+      alert("Error!");
+    });
+  };
 
-            await fetch(API_URL + '?' + params.toString());
-            closeModal('formModal');
-            fetchData();
-        } catch(err) {
-            alert("Error during process!");
-        } finally {
-            loader.style.display = 'none';
-            saveBtn.disabled = false;
-            saveBtn.innerText = "SAVE CONTENT";
-        }
-    }
+  reader.readAsDataURL(file);
+}
 
-    async function fetchData() {
-        if(!API_URL) return openModal('settingsModal');
-        document.getElementById('loader').style.display = 'block';
-        try {
-            const res = await fetch(`${API_URL}?action=getData&t=${Date.now()}`);
-            const data = await res.json();
-            renderGrid(data);
-        } catch(e) { console.error(e); }
-        document.getElementById('loader').style.display = 'none';
-    }
+function loadData() {
+  fetch(API)
+  .then(res => res.json())
+  .then(data => {
+    let html = "";
+    data.reverse().forEach(d => {
+      html += `
+      <tr>
+        <td>${d.Name}</td>
+        <td>${d.Category}</td>
+        <td>${d.URL}</td>
+        <td><img src="${d.Thumbnail}"></td>
+      </tr>`;
+    });
+    document.getElementById("tbody").innerHTML = html;
+  });
+}
 
-    function renderGrid(data) {
-        let html = '';
-        data.forEach((item, idx) => {
-            html += `
-            <div class="card">
-                <div class="card-img" style="background-image: url('${item.Thumbnail}')"></div>
-                <div class="card-info">
-                    <small style="color:var(--primary)">${item.Category}</small>
-                    <div style="font-weight:600; margin:5px 0;">${item.Name}</div>
-                    <div style="display:flex; gap:10px; margin-top:10px;">
-                        <button onclick='openEdit(${idx+2}, ${JSON.stringify(item)})' style="background:none; border:none; color:white; cursor:pointer;"><i class="fa fa-edit"></i></button>
-                        <button onclick="deleteItem(${idx+2})" style="background:none; border:none; color:#ff4d4d; cursor:pointer;"><i class="fa fa-trash"></i></button>
-                    </div>
-                </div>
-            </div>`;
-        });
-        document.getElementById('main-grid').innerHTML = html || '<p style="text-align:center; width:100%;">No data found.</p>';
-    }
-
-    function openAddModal() {
-        editContext = { active: false };
-        ['inp-name', 'inp-url', 'inp-thumb', 'fileInp'].forEach(id => {
-            if(id === 'fileInp') document.getElementById(id).value = '';
-            else document.getElementById(id).value = '';
-        });
-        document.getElementById('fileLabel').innerText = "Choose Thumbnail";
-        document.getElementById('modalTitle').innerText = "Add New Content";
-        openModal('formModal');
-    }
-
-    function openEdit(row, item) {
-        editContext = { active: true, row: row, uid: item.Unique_Id };
-        document.getElementById('inp-name').value = item.Name;
-        document.getElementById('inp-cat').value = item.Category;
-        document.getElementById('inp-url').value = item.URL;
-        document.getElementById('inp-thumb').value = item.Thumbnail;
-        document.getElementById('modalTitle').innerText = "Edit Content";
-        openModal('formModal');
-    }
-
-    async function deleteItem(row) {
-        if(!confirm("Delete this?")) return;
-        document.getElementById('loader').style.display = 'block';
-        await fetch(`${API_URL}?action=deleteData&rowIndex=${row}`);
-        fetchData();
-    }
-
-    window.onload = () => {
-        if(API_URL) fetchData();
-        else openModal('settingsModal');
-    };
+loadData();
 </script>
+
 </body>
 </html>
