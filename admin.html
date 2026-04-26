@@ -1,1167 +1,224 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>Nikamma 4k Pro Admin - FIXED (Fresh Load)</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nikamma 4K | Admin Pro</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;500;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        
-        :root {
-            --primary: #00bcd4;
-            --bg-dark: #0a0c10;
-            --card-bg: #12161c;
-            --border: #2a313c;
-            --text-primary: #f0f3f8;
-            --danger: #ff5c5c;
-            --success: #4caf50;
+        :root { --primary: #00d2ff; --bg-dark: #080a0c; --card-bg: #111418; --sidebar: #0d1117; --text-main: #e0e6ed; --border: #21262d; }
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Outfit', sans-serif; }
+        body { background: var(--bg-dark); color: var(--text-main); display: flex; min-height: 100vh; overflow-x: hidden; }
+
+        /* Sidebar Toggle Logic */
+        .sidebar { width: 260px; background: var(--sidebar); border-right: 1px solid var(--border); padding: 25px; transition: 0.3s; position: fixed; height: 100vh; z-index: 1001; }
+        .sidebar.closed { left: -260px; }
+        .main { flex: 1; padding: 30px; margin-left: 260px; transition: 0.3s; width: 100%; }
+        .main.full { margin-left: 0; }
+
+        @media (max-width: 768px) {
+            .sidebar { left: -260px; }
+            .sidebar.open { left: 0; }
+            .main { margin-left: 0; }
         }
 
-        body {
-            background: var(--bg-dark);
-            color: var(--text-primary);
-            font-family: 'Inter', sans-serif;
-            padding-bottom: 90px;
-        }
+        .brand { font-size: 22px; font-weight: 700; margin-bottom: 40px; color: var(--primary); display: flex; justify-content: space-between; align-items: center; }
+        .nav-link { padding: 12px 15px; border-radius: 10px; cursor: pointer; transition: 0.3s; margin-bottom: 5px; display: flex; align-items: center; gap: 12px; color: #8b949e; }
+        .nav-link:hover, .nav-link.active { background: rgba(0, 210, 255, 0.1); color: var(--primary); }
 
-        #processing-overlay {
-            position: fixed;
-            inset: 0;
-            background: rgba(10,12,16,0.96);
-            display: none;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            z-index: 10000;
-        }
-        
-        .spinner {
-            width: 52px;
-            height: 52px;
-            border: 5px solid #2a313c;
-            border-top-color: var(--primary);
-            border-radius: 50%;
-            animation: spin 0.9s linear infinite;
-        }
-        
-        @keyframes spin { to { transform: rotate(360deg); } }
+        /* Header Components */
+        .top-nav { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; }
+        .toggle-btn { background: var(--card-bg); border: 1px solid var(--border); color: #fff; padding: 8px 12px; border-radius: 8px; cursor: pointer; }
 
-        .loader-bar {
-            position: fixed;
-            top: 0;
-            left: 0;
-            height: 3px;
-            background: var(--primary);
-            z-index: 10001;
-            transition: width 0.25s;
-            width: 0%;
-        }
+        /* Grid UI */
+        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 20px; }
+        .item-card { background: var(--card-bg); border-radius: 18px; border: 1px solid var(--border); overflow: hidden; }
+        .card-preview { height: 140px; background-size: cover; background-position: center; border-bottom: 1px solid var(--border); }
+        .card-body { padding: 15px; }
+        .btn-icon { width: 35px; height: 35px; border-radius: 8px; border: none; cursor: pointer; background: #21262d; color: #fff; }
 
-        .header {
-            background: var(--card-bg);
-            padding: 14px 20px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            border-bottom: 1px solid var(--border);
-            flex-wrap: wrap;
-            gap: 10px;
-        }
-        
-        .logo-area {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-        }
-        
-        .logo-icon {
-            width: 42px;
-            height: 42px;
-            border-radius: 12px;
-            background: linear-gradient(135deg, #00bcd4, #0097a7);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            overflow: hidden;
-            flex-shrink: 0;
-        }
-        .logo-icon img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-        }
-        .logo-icon i {
-            font-size: 22px;
-            color: white;
-        }
-        
-        .logo-text h1 { font-size: 1.3rem; font-weight: 800; margin: 0; }
-        .logo-text span { color: var(--primary); }
-        .logo-text p { font-size: 10px; color: #888; margin: 0; }
-        
-        .refresh-btn {
-            background: rgba(0,188,212,0.12);
-            border: 1px solid var(--primary);
-            color: var(--primary);
-            padding: 7px 14px;
-            border-radius: 40px;
-            cursor: pointer;
-            font-size: 13px;
-            transition: all 0.2s;
-        }
-        .refresh-btn:hover { background: rgba(0,188,212,0.25); }
+        /* Modal UI */
+        .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.85); z-index: 2000; align-items: center; justify-content: center; padding: 20px; }
+        .modal-content { background: #161b22; width: 100%; max-width: 450px; padding: 25px; border-radius: 20px; border: 1px solid var(--border); }
+        input, select { width: 100%; padding: 12px; margin: 8px 0; background: #0d1117; border: 1px solid var(--border); color: #fff; border-radius: 8px; }
+        .btn-main { background: var(--primary); color: #000; border: none; padding: 14px; border-radius: 8px; font-weight: 700; width: 100%; cursor: pointer; margin-top: 10px; }
 
-        .tabs {
-            display: flex;
-            gap: 8px;
-            padding: 14px 20px 0;
-            border-bottom: 1px solid var(--border);
-        }
-        
-        .tab-btn {
-            padding: 8px 20px;
-            background: transparent;
-            border: none;
-            color: #a0aab8;
-            font-weight: 600;
-            border-radius: 30px;
-            cursor: pointer;
-            font-size: 13px;
-            transition: all 0.2s;
-        }
-        
-        .tab-btn.active {
-            background: var(--primary);
-            color: #000;
-        }
-
-        .content-area { padding: 20px; }
-        
-        .table-card {
-            background: var(--card-bg);
-            border-radius: 20px;
-            border: 1px solid var(--border);
-            overflow-x: auto;
-        }
-        
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            min-width: 650px;
-        }
-        
-        th, td {
-            padding: 12px 10px;
-            text-align: left;
-            border-bottom: 1px solid var(--border);
-            font-size: 13px;
-        }
-        
-        th {
-            background: rgba(0,188,212,0.05);
-            color: var(--primary);
-            font-size: 12px;
-        }
-        
-        .thumb {
-            width: 48px;
-            height: 48px;
-            border-radius: 10px;
-            object-fit: cover;
-            cursor: pointer;
-            background: #1a1f2a;
-            display: block;
-            transition: transform 0.2s;
-        }
-        .thumb:hover { transform: scale(1.05); }
-        
-        .action-btn {
-            background: none;
-            border: none;
-            font-size: 0.9rem;
-            margin: 0 2px;
-            cursor: pointer;
-            padding: 4px 6px;
-            border-radius: 6px;
-            transition: all 0.2s;
-        }
-        
-        .action-btn:hover { background: rgba(255,255,255,0.1); }
-        .edit-i { color: var(--primary); }
-        .del-i { color: var(--danger); }
-
-        .modal {
-            display: none;
-            position: fixed;
-            inset: 0;
-            background: rgba(0,0,0,0.85);
-            z-index: 2000;
-            align-items: center;
-            justify-content: center;
-        }
-        
-        .modal-content {
-            background: #1a1f2a;
-            width: 92%;
-            max-width: 520px;
-            padding: 24px;
-            border-radius: 28px;
-            border: 1px solid var(--border);
-            max-height: 90vh;
-            overflow-y: auto;
-        }
-        
-        input, select {
-            width: 100%;
-            padding: 10px 12px;
-            margin: 6px 0 14px;
-            background: #0f131c;
-            border: 1px solid var(--border);
-            color: #fff;
-            border-radius: 16px;
-            font-family: inherit;
-            font-size: 13px;
-        }
-        
-        label {
-            font-size: 12px;
-            color: #aaa;
-            margin-top: 6px;
-            display: block;
-        }
-        
-        .btn-save {
-            width: 100%;
-            padding: 12px;
-            background: var(--primary);
-            border: none;
-            border-radius: 40px;
-            font-weight: 800;
-            cursor: pointer;
-            margin-top: 12px;
-            font-size: 14px;
-            transition: all 0.2s;
-        }
-        .btn-save:active { transform: scale(0.98); }
-        
-        .fab {
-            position: fixed;
-            bottom: 24px;
-            right: 24px;
-            width: 56px;
-            height: 56px;
-            background: var(--primary);
-            border-radius: 28px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: #000;
-            cursor: pointer;
-            font-size: 24px;
-            z-index: 999;
-            box-shadow: 0 4px 12px rgba(0,188,212,0.3);
-            transition: transform 0.2s;
-        }
-        .fab:active { transform: scale(0.95); }
-        
-        .badge-cat {
-            background: #1e2a36;
-            padding: 3px 10px;
-            border-radius: 30px;
-            font-size: 11px;
-            display: inline-block;
-        }
-        
-        .toast {
-            position: fixed;
-            bottom: 80px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: #2ecc71;
-            color: white;
-            padding: 10px 20px;
-            border-radius: 50px;
-            font-weight: 600;
-            font-size: 13px;
-            z-index: 11000;
-            animation: slideUp 0.3s ease;
-        }
-        
-        .toast.error { background: #e04444; }
-        
-        @keyframes slideUp {
-            from { opacity: 0; transform: translateX(-50%) translateY(20px); }
-            to { opacity: 1; transform: translateX(-50%) translateY(0); }
-        }
-        
-        .info-note {
-            background: rgba(0,188,212,0.08);
-            padding: 8px 15px;
-            border-radius: 10px;
-            font-size: 11px;
-            margin: 12px 20px 0 20px;
-            color: var(--primary);
-        }
-        
-        .image-preview-area {
-            margin: 8px 0;
-            padding: 10px;
-            background: #0f131c;
-            border-radius: 14px;
-            text-align: center;
-            display: none;
-        }
-        .image-preview-area img {
-            max-width: 100%;
-            max-height: 100px;
-            border-radius: 10px;
-            border: 1px solid var(--border);
-        }
-        
-        .empty-row {
-            text-align: center;
-            padding: 30px;
-            color: #666;
-            font-size: 13px;
-        }
-        
-        small {
-            color: #888;
-            font-size: 10px;
-        }
-        
-        /* PROFESSIONAL IMAGE PICKER + EDITOR BUTTON COMBO */
-        .image-upload-group {
-            display: flex;
-            gap: 10px;
-            align-items: center;
-            margin: 6px 0 14px;
-        }
-        
-        .professional-picker {
-            flex: 3;
-            background: linear-gradient(135deg, #0f131c, #0a0d14);
-            border: 1.5px solid rgba(0,188,212,0.4);
-            border-radius: 18px;
-            padding: 10px 15px;
-            cursor: pointer;
-            transition: all 0.2s ease;
-            display: flex;
-            align-items: center;
-            gap: 12px;
-        }
-        
-        .professional-picker:hover {
-            border-color: var(--primary);
-            background: #121824;
-            transform: translateY(-1px);
-        }
-        
-        .picker-icon {
-            width: 36px;
-            height: 36px;
-            background: rgba(0,188,212,0.15);
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: var(--primary);
-            font-size: 16px;
-        }
-        
-        .picker-text {
-            flex: 1;
-        }
-        
-        .picker-text .title {
-            font-size: 12px;
-            font-weight: 600;
-            margin-bottom: 2px;
-        }
-        
-        .picker-text .sub {
-            font-size: 9px;
-            color: #8a94a4;
-        }
-        
-        .editor-trigger-btn {
-            flex: 1;
-            background: linear-gradient(135deg, #ffaa44, #ff8844);
-            border: none;
-            color: #000;
-            padding: 10px 12px;
-            border-radius: 18px;
-            font-weight: bold;
-            cursor: pointer;
-            font-size: 12px;
-            transition: all 0.2s;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 6px;
-        }
-        
-        .editor-trigger-btn:hover {
-            transform: scale(0.98);
-            opacity: 0.9;
-        }
-        
-        /* EDITOR MODAL */
-        .editor-modal {
-            display: none;
-            position: fixed;
-            inset: 0;
-            background: #000000ee;
-            z-index: 20000;
-            align-items: center;
-            justify-content: center;
-            padding: 15px;
-            overflow-y: auto;
-        }
-        .editor-card {
-            background: #1a1f2a;
-            border-radius: 30px;
-            max-width: 600px;
-            width: 100%;
-            margin: auto;
-            padding: 18px;
-            border: 1px solid var(--border);
-            box-shadow: 0 20px 35px rgba(0,0,0,0.5);
-        }
-        .canvas-container {
-            background: #2c2c2c;
-            border-radius: 20px;
-            padding: 8px;
-            margin-bottom: 15px;
-            display: flex;
-            justify-content: center;
-        }
-        canvas {
-            background: #333;
-            border-radius: 12px;
-            display: block;
-            width: 100%;
-            height: auto;
-            cursor: grab;
-        }
-        canvas:active { cursor: grabbing; }
-        .slider-group {
-            margin-bottom: 12px;
-            background: #2a2a2a;
-            padding: 10px;
-            border-radius: 40px;
-        }
-        .slider-group label {
-            color: #ddd;
-            display: block;
-            margin-bottom: 6px;
-            font-size: 11px;
-            text-align: center;
-        }
-        input[type="range"] {
-            width: 100%;
-            height: 4px;
-            -webkit-appearance: none;
-            background: #4a4a4a;
-            border-radius: 4px;
-            margin: 0;
-        }
-        input[type="range"]::-webkit-slider-thumb {
-            -webkit-appearance: none;
-            width: 18px;
-            height: 18px;
-            background: #0a84ff;
-            border-radius: 50%;
-            cursor: pointer;
-        }
-        .value-badge {
-            display: inline-block;
-            background: #0a84ff;
-            padding: 2px 8px;
-            border-radius: 20px;
-            font-size: 10px;
-            margin-right: 6px;
-        }
-        .editor-actions {
-            display: flex;
-            gap: 10px;
-            margin-top: 15px;
-        }
-        .editor-actions button {
-            flex: 1;
-            padding: 12px;
-            border-radius: 50px;
-            font-weight: bold;
-            border: none;
-            cursor: pointer;
-            font-size: 13px;
-        }
-        .btn-submit-editor { background: #0f7b3a; color: white; }
-        .btn-cancel-editor { background: #3a3a3a; color: white; }
-        
-        .slider-row { display: flex; gap: 8px; }
-        .slider-row .slider-group { flex: 1; }
+        #loader { display: none; position: fixed; top: 20px; left: 50%; transform: translateX(-50%); background: var(--primary); color: #000; padding: 10px 25px; border-radius: 50px; font-weight: 700; z-index: 3000; box-shadow: 0 5px 15px rgba(0,0,0,0.5); }
     </style>
 </head>
 <body>
 
-<div id="processing-overlay">
-    <div class="spinner"></div>
-    <p>Processing...</p>
-</div>
-<div class="loader-bar" id="loader"></div>
+<div id="loader">Syncing...</div>
 
-<div class="header">
-    <div class="logo-area">
-        <div class="logo-icon" id="logoIcon">
-            <i class="fa fa-film"></i>
-        </div>
-        <div class="logo-text">
-            <h1><span>Nikamma 4k</span> Pro Admin</h1>
-            <p>Content Management System</p>
+<div class="sidebar" id="mySidebar">
+    <div class="brand">NIKAMMA <span>4K</span> <i class="fa fa-times" onclick="toggleSidebar()" style="cursor:pointer; font-size: 18px; color:#555;"></i></div>
+    <div class="nav-link active" onclick="location.reload()"><i class="fa fa-home"></i> Dashboard</div>
+    <div class="nav-link" onclick="openModal('settingsModal')"><i class="fa fa-cog"></i> API Settings</div>
+</div>
+
+<div class="main" id="mainContent">
+    <div class="top-nav">
+        <button class="toggle-btn" onclick="toggleSidebar()"><i class="fa fa-bars"></i></button>
+        <div style="display:flex; gap:10px;">
+            <button class="toggle-btn" onclick="fetchData()"><i class="fa fa-sync"></i> Refresh</button>
         </div>
     </div>
-    <button class="refresh-btn" onclick="fetchAllData()"><i class="fa fa-sync-alt"></i> Refresh Data</button>
+
+    <div class="grid" id="main-grid"></div>
 </div>
 
+<button style="position:fixed; bottom:30px; right:30px; width:60px; height:60px; border-radius:50%; background:var(--primary); border:none; font-size:24px; cursor:pointer; box-shadow: 0 5px 20px rgba(0,210,255,0.4);" onclick="openAddModal()">+</button>
 
-
-<div class="tabs">
-    <button class="tab-btn active" id="btn-main" onclick="switchTab('main')">📦 Content (Movies/Sports/TV)</button>
-    <button class="tab-btn" id="btn-settings" onclick="switchTab('settings')">⚙️ App Settings</button>
-</div>
-
-<div class="content-area">
-    <div class="table-card">
-        <table id="table-main">
-            <thead><tr><th>THUMB</th><th>NAME</th><th>CATEGORY</th><th>URL</th><th>ACTION</th></tr></thead>
-            <tbody id="body-main">
-                <tr><td colspan="5" class="empty-row">Loading data...<br><i class="fa fa-spinner fa-spin"></i></td></tr>
-            </tbody>
-        </table>
-        <table id="table-set" style="display:none">
-            <thead><tr><th>APP NAME</th><th>BASE URL</th><th>VERSION</th><th>UPDATE URL</th><th>ACTION</th></tr></thead>
-            <tbody id="body-set">
-                <tr><td colspan="5" class="empty-row">Loading settings...<br><i class="fa fa-spinner fa-spin"></i></td></tr>
-            </tbody>
-        </table>
-    </div>
-</div>
-
-<div class="fab" onclick="openAddModal()"><i class="fa fa-plus"></i></div>
-
-<!-- IMAGE EDITOR MODAL -->
-<div id="editorModal" class="editor-modal">
-    <div class="editor-card">
-        <h3 style="text-align:center; margin-bottom:12px; font-size:18px;">✂️ Professional Image Editor</h3>
-        <div class="professional-picker" onclick="document.getElementById('editorImageInput').click()" style="background:#0f131c; border:1px dashed var(--primary); border-radius:24px; padding:12px; text-align:center; margin-bottom:12px; cursor:pointer;">
-            <div style="display:flex; align-items:center; justify-content:center; gap:8px;"><i class="fa fa-cloud-upload-alt" style="color:var(--primary); font-size:20px;"></i><span>Choose Image File</span></div>
-        </div>
-        <input type="file" id="editorImageInput" accept="image/*" style="display:none">
-        <div class="canvas-container">
-            <canvas id="editCanvas" width="500" height="500"></canvas>
-        </div>
-        <div class="slider-row">
-            <div class="slider-group"><label>Width <span id="editWidthVal" class="value-badge">300px</span></label><input type="range" id="editWidthSlider" min="100" max="480" step="5" value="300"></div>
-            <div class="slider-group"><label>Height <span id="editHeightVal" class="value-badge">300px</span></label><input type="range" id="editHeightSlider" min="100" max="480" step="5" value="300"></div>
-        </div>
-        <div class="slider-row">
-            <div class="slider-group"><label>Zoom <span id="editZoomVal" class="value-badge">100%</span></label><input type="range" id="editZoomSlider" min="0.5" max="3.5" step="0.01" value="1"></div>
-            <div class="slider-group"><label>Round <span id="editRoundVal" class="value-badge">0%</span></label><input type="range" id="editRoundSlider" min="0" max="100" step="1" value="0"></div>
-        </div>
-        <div class="slider-row">
-            <div class="slider-group"><label>Move X <span id="editMoveXVal" class="value-badge">0px</span></label><input type="range" id="editMoveXSlider" min="-200" max="200" step="5" value="0"></div>
-            <div class="slider-group"><label>Move Y <span id="editMoveYVal" class="value-badge">0px</span></label><input type="range" id="editMoveYSlider" min="-200" max="200" step="5" value="0"></div>
-        </div>
-        <div class="editor-actions">
-            <button class="btn-submit-editor" id="submitEditorBtn">✅ Apply & Use</button>
-            <button class="btn-cancel-editor" id="cancelEditorBtn">❌ Cancel</button>
-        </div>
-    </div>
-</div>
-
-<!-- MAIN MODAL -->
-<div class="modal" id="globalModal">
+<div class="modal" id="formModal">
     <div class="modal-content">
-        <h3 id="modal-title" style="font-size:18px;">Add/Edit Entry</h3>
-        <div id="form-main-fields">
-            <input type="text" id="inp-title" placeholder="Name *">
-            <select id="inp-category-select">
-                <option value="Movies">🎬 Movies</option>
-                <option value="Sports">⚽ Sports</option>
-                <option value="TV Shows">📺 TV Shows</option>
-                <option value="Slider">🖼️ Slider</option>
-            </select>
-            <input type="text" id="inp-link" placeholder="Video URL *">
-            <label>📷 Thumbnail Image</label>
-            <div class="image-upload-group">
-                <div class="professional-picker" onclick="triggerFilePicker()">
-                    <div class="picker-icon"><i class="fa fa-folder-open"></i></div>
-                    <div class="picker-text">
-                        <div class="title">Choose Image</div>
-                        <div class="sub">JPG, PNG, WEBP</div>
-                    </div>
-                    <i class="fa fa-chevron-right" style="color:#666; font-size:12px;"></i>
-                </div>
-                <button type="button" class="editor-trigger-btn" id="openEditorBtn" onclick="openImageEditorFromModal()">
-                    <i class="fa fa-crop-alt"></i> Edit Image
-                </button>
-            </div>
-            <input type="file" id="inp-image-upload" accept="image/*" style="display:none;" onchange="onFileSelected(this)">
-            <div id="imagePreviewArea" class="image-preview-area">
-                <img id="previewImg" src="">
-                <small>Image preview (cropped/selected)</small>
-            </div>
-            <small style="color:#888;"><i class="fa fa-edit"></i> Select image first, then click "Edit Image" for crop & resize</small>
+        <h3 id="modal-title">Content Manager</h3>
+        <input type="text" id="inp-name" placeholder="Title">
+        <select id="inp-cat">
+            <option value="Movies">🎬 Movies</option>
+            <option value="Sports">⚽ Sports</option>
+            <option value="Slider">🖼️ Slider</option>
+        </select>
+        <input type="text" id="inp-url" placeholder="M3U8 / MP4 URL">
+        
+        <div style="background: #0d1117; border: 1px dashed var(--border); padding: 15px; border-radius: 10px; text-align: center; margin: 10px 0;">
+            <input type="file" id="fileInp" hidden accept="image/*" onchange="uploadImage(this)">
+            <button type="button" onclick="document.getElementById('fileInp').click()" style="background:none; border:none; color:var(--primary); cursor:pointer;"><i class="fa fa-upload"></i> Upload Image (Android 14+)</button>
+            <p id="fileStatus" style="font-size: 10px; color: #555; margin-top:5px;">Select thumbnail</p>
         </div>
-        <div id="form-settings-fields" style="display:none;">
-            <input type="text" id="set-appname" placeholder="App Name">
-            <input type="text" id="set-baseurl" placeholder="Base URL">
-            <input type="text" id="set-version" placeholder="Version">
-            <input type="text" id="set-updateurl" placeholder="Update URL">
-            <input type="text" id="set-ratingurl" placeholder="Rating URL">
-            <input type="text" id="set-privacyurl" placeholder="Privacy URL">
-            <input type="text" id="set-shareurl" placeholder="Share URL">
-        </div>
-        <button class="btn-save" id="saveMasterBtn" onclick="performSave()">💾 SAVE</button>
-        <button onclick="closeModal()" style="width:100%; margin-top:8px; background:none; border:none; color:#888; cursor:pointer; font-size:13px;">Cancel</button>
+        
+        <input type="text" id="inp-thumb" placeholder="Thumbnail URL">
+        <button class="btn-main" onclick="saveItem()">SAVE CONTENT</button>
+        <button onclick="closeModal('formModal')" style="width:100%; background:none; border:none; color:#555; margin-top:10px; cursor:pointer;">Cancel</button>
+    </div>
+</div>
+
+<div class="modal" id="settingsModal">
+    <div class="modal-content">
+        <h3>System Config</h3>
+        <input type="text" id="api-url-inp" placeholder="Paste Apps Script URL">
+        <button class="btn-main" onclick="saveSettings()">CONNECT</button>
     </div>
 </div>
 
 <script>
-    // ========== GOOGLE DRIVE CONVERTER ==========
-    function convertToWorkingThumbnailUrl(url) {
-        if (!url) return null;
-        if (url.includes('drive.google.com/thumbnail?id=')) return url;
-        let fileId = null;
-        const match1 = url.match(/\/d\/([^\/]+)/);
-        if (match1) fileId = match1[1];
-        if (!fileId) { const match2 = url.match(/[?&]id=([^&]+)/); if (match2) fileId = match2[1]; }
-        if (!fileId) { const match3 = url.match(/open\?id=([^&]+)/); if (match3) fileId = match3[1]; }
-        if (!fileId) { const match4 = url.match(/thumbnail\?id=([^&]+)/); if (match4) fileId = match4[1]; }
-        if (fileId) return `https://drive.google.com/thumbnail?id=${fileId}&sz=w500`;
-        if (url.startsWith('http') && (url.includes('.jpg') || url.includes('.png') || url.includes('.jpeg') || url.includes('.webp'))) return url;
-        return null;
+    let API_URL = localStorage.getItem('nikamma_api') || '';
+    let editContext = { active: false, row: null };
+
+    // Sidebar Toggle
+    function toggleSidebar() {
+        const sb = document.getElementById('mySidebar');
+        const mc = document.getElementById('mainContent');
+        sb.classList.toggle('open');
+        sb.classList.toggle('closed');
+        mc.classList.toggle('full');
     }
-    
-    function extractFileIdFromUrl(url) {
-        if (!url) return '';
-        const match = url.match(/thumbnail\?id=([^&]+)/);
-        if (match) return match[1];
-        const match2 = url.match(/\/d\/([^\/]+)/);
-        if (match2) return match2[1];
-        return '';
+
+    function openModal(id) { document.getElementById(id).style.display = 'flex'; }
+    function closeModal(id) { document.getElementById(id).style.display = 'none'; }
+
+    function saveSettings() {
+        let url = document.getElementById('api-url-inp').value;
+        if(url.includes('exec')) {
+            localStorage.setItem('nikamma_api', url);
+            API_URL = url;
+            closeModal('settingsModal');
+            fetchData();
+        }
     }
-    
-    // ========== CONFIGURATION ==========
-    const MAIN_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQD2lHL-u6zHPZKdYIVD4eXp98XipkVP4jKfxLDoNje9DeZ1726o0zFZf-gAR2kZj0ls7VhceXbbKih/pub?gid=0&single=true&output=csv";
-    const SETTINGS_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQD2lHL-u6zHPZKdYIVD4eXp98XipkVP4jKfxLDoNje9DeZ1726o0zFZf-gAR2kZj0ls7VhceXbbKih/pub?gid=1123743396&single=true&output=csv";
-    const LOGO_URL = "https://drive.google.com/thumbnail?id=1DXQpAofda-bZPS20Q-bqo6neUDznYqW9&sz=w200";
-    const API_BASE = "https://script.google.com/macros/s/AKfycbzzd_-TO2Bq9zzvOAK5tbEasE-fYrUj-OrkmQNSCZn8z-nhK53hD-bwSQg-aGLcDuulhA/exec";
-    
-    let currentTab = 'main';
-    let mainData = [];
-    let settingsData = [];
-    let editContext = { isEdit: false, rowIndex: null, oldFileId: null, oldThumbUrl: null };
-    let isLoading = false;
-    let pendingCroppedBlob = null;
-    
-    // Editor variables
-    let editorImg = new Image();
-    let editorImgLoaded = false;
-    const editCanvas = document.getElementById('editCanvas');
-    const editCtx = editCanvas.getContext('2d');
-    const editWidthSlider = document.getElementById('editWidthSlider');
-    const editHeightSlider = document.getElementById('editHeightSlider');
-    const editZoomSlider = document.getElementById('editZoomSlider');
-    const editRoundSlider = document.getElementById('editRoundSlider');
-    const editMoveXSlider = document.getElementById('editMoveXSlider');
-    const editMoveYSlider = document.getElementById('editMoveYSlider');
-    
-    function showProcessing(show) {
-        const overlay = document.getElementById('processing-overlay');
-        if (show) overlay.style.display = 'flex';
-        else overlay.style.display = 'none';
-    }
-    
-    function setLoader(percent) { document.getElementById('loader').style.width = percent + '%'; }
-    
-    function showToast(message, isError = false) {
-        const toast = document.createElement('div');
-        toast.className = 'toast' + (isError ? ' error' : '');
-        toast.textContent = message;
-        document.body.appendChild(toast);
-        setTimeout(() => toast.remove(), 2500);
-    }
-    
-    function loadLogo() {
-        const logoContainer = document.getElementById('logoIcon');
-        const img = new Image();
-        img.onload = () => logoContainer.innerHTML = `<img src="${LOGO_URL}" alt="Logo">`;
-        img.onerror = () => logoContainer.innerHTML = '<i class="fa fa-film"></i>';
-        img.src = LOGO_URL;
-    }
-    
-    // MAIN FETCH FUNCTION - NO CACHE
-    async function fetchAllData() {
-        if (isLoading) return;
-        isLoading = true;
-        setLoader(20);
-        showProcessing(true);
+
+    async function uploadImage(input) {
+        if(!input.files[0]) return;
+        document.getElementById('loader').style.display = 'block';
+        document.getElementById('fileStatus').innerText = "Uploading...";
         
-        try {
-            // Force no-cache
-            const mainResponse = await fetch(MAIN_CSV_URL, { cache: "no-store", headers: { "Cache-Control": "no-cache" } });
-            const mainText = await mainResponse.text();
-            const mainParsed = Papa.parse(mainText, { header: true, skipEmptyLines: true });
-            
-            mainData = [];
-            if (mainParsed.data && mainParsed.data.length > 0) {
-                mainParsed.data.forEach(row => {
-                    const name = row.Name || row.name || "";
-                    const category = row.Category || row.category || "Movies";
-                    const url = row.URL || row.url || "";
-                    let rawThumb = row.Thumbnail || row.thumbnail || "";
-                    const workingThumb = convertToWorkingThumbnailUrl(rawThumb);
-                    const finalThumb = workingThumb || 'https://via.placeholder.com/48/12161c?text=No+Img';
-                    const fileId = extractFileIdFromUrl(rawThumb) || extractFileIdFromUrl(workingThumb) || "";
-                    if (name || url) {
-                        mainData.push({ name, category, url, thumbnail: finalThumb, fileId });
-                    }
-                });
-            }
-            
-            const settingsResponse = await fetch(SETTINGS_CSV_URL, { cache: "no-store", headers: { "Cache-Control": "no-cache" } });
-            const settingsText = await settingsResponse.text();
-            const settingsParsed = Papa.parse(settingsText, { header: true, skipEmptyLines: true });
-            
-            settingsData = [];
-            if (settingsParsed.data && settingsParsed.data.length > 0) {
-                const s = settingsParsed.data[0];
-                settingsData.push({
-                    name: s.Name || s.name || "",
-                    url: s.URL || s.url || s.baseUrl || "",
-                    version: s.Version || s.version || "1.0",
-                    updateUrl: s.UpdateUrl || s.updateUrl || "",
-                    ratingUrl: s.RatingUrl || s.ratingUrl || "",
-                    privacyUrl: s.PrivacyUrl || s.privacyUrl || "",
-                    shareUrl: s.ShareUrl || s.shareUrl || ""
-                });
-            }
-            
-            renderCurrentTable();
-            showToast(`✓ Loaded ${mainData.length} items`);
-            setLoader(100);
-            
-        } catch (error) {
-            console.error("Fetch error:", error);
-            showToast('✗ Error loading data: ' + error.message, true);
-            renderCurrentTable();
-        } finally {
-            isLoading = false;
-            showProcessing(false);
-        }
-    }
-    
-    async function callAPI(action, data = null) {
-        try {
-            const url = `${API_BASE}?api=${action}&t=${Date.now()}`;
-            await fetch(url, { method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'application/json' }, body: data ? JSON.stringify(data) : null });
-            return { success: true };
-        } catch (error) {
-            return { success: false, error: error.message };
-        }
-    }
-    
-    async function performSave() {
-        const saveBtn = document.getElementById('saveMasterBtn');
-        saveBtn.disabled = true;
-        saveBtn.innerText = "⏳ Saving...";
-        showProcessing(true);
-        
-        try {
-            let imageData = null;
-            let payload = {
-                sheet: currentTab === 'main' ? "Sheet1" : "settings",
-                isEdit: editContext.isEdit,
-                rowIdx: editContext.rowIndex,
-                existingFileId: editContext.oldFileId || "",
-                existingThumb: editContext.oldThumbUrl || ""
-            };
-            
-            if (currentTab === 'main') {
-                const title = document.getElementById('inp-title').value.trim();
-                const category = document.getElementById('inp-category-select').value;
-                const link = document.getElementById('inp-link').value.trim();
-                
-                if (!title) throw new Error("Name required");
-                if (!link) throw new Error("URL required");
-                
-                payload.title = title;
-                payload.category = category;
-                payload.link = link;
-                
-                if (pendingCroppedBlob) {
-                    imageData = await new Promise((resolve) => {
-                        const reader = new FileReader();
-                        reader.onload = (e) => resolve({
-                            data: e.target.result.split(',')[1],
-                            mimeType: 'image/jpeg',
-                            name: `img_${Date.now()}.jpg`
-                        });
-                        reader.readAsDataURL(pendingCroppedBlob);
-                    });
-                    pendingCroppedBlob = null;
-                } else {
-                    const fileInput = document.getElementById('inp-image-upload');
-                    if (fileInput.files.length > 0) {
-                        const file = fileInput.files[0];
-                        imageData = await new Promise((resolve) => {
-                            const reader = new FileReader();
-                            reader.onload = (e) => resolve({
-                                data: e.target.result.split(',')[1],
-                                mimeType: file.type,
-                                name: file.name
-                            });
-                            reader.readAsDataURL(file);
-                        });
-                    }
-                }
-            } else {
-                payload.name = document.getElementById('set-appname').value.trim();
-                payload.url = document.getElementById('set-baseurl').value.trim();
-                payload.version = document.getElementById('set-version').value.trim();
-                payload.updateUrl = document.getElementById('set-updateurl').value.trim();
-                payload.ratingUrl = document.getElementById('set-ratingurl').value.trim();
-                payload.privacyUrl = document.getElementById('set-privacyurl').value.trim();
-                payload.shareUrl = document.getElementById('set-shareurl').value.trim();
-                
-                if (!payload.name) throw new Error("App Name required");
-            }
-            
-            if (imageData) payload.imageData = imageData;
-            
-            await callAPI("save", payload);
-            showToast("✓ Saved! Refreshing list...");
-            closeModal();
-            // IMPORTANT: Fresh load after save
-            await fetchAllData();
-            
-        } catch (err) {
-            showToast(err.message, true);
-        } finally {
-            saveBtn.disabled = false;
-            saveBtn.innerText = "💾 SAVE";
-            showProcessing(false);
-        }
-    }
-    
-    async function deleteRecordItem(sheetName, rowIndex, fileId) {
-        if (!confirm("⚠️ Delete this item permanently?")) return;
-        showProcessing(true);
-        try {
-            await callAPI("delete", { rowIndex, fileId, sheetName });
-            showToast("✓ Deleted! Refreshing...");
-            // IMPORTANT: Fresh load after delete
-            await fetchAllData();
-        } catch (error) {
-            showToast("✗ Delete failed", true);
-            showProcessing(false);
-        }
-    }
-    
-    // ========== FILE PICKER & EDITOR ==========
-    function triggerFilePicker() {
-        document.getElementById('inp-image-upload').click();
-    }
-    
-    function onFileSelected(input) {
-        if (input.files && input.files[0]) {
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                const previewImg = document.getElementById('previewImg');
-                previewImg.src = e.target.result;
-                document.getElementById('imagePreviewArea').style.display = 'block';
-                showToast("Image selected. Click 'Edit Image' to crop/resize.");
-            };
-            reader.readAsDataURL(input.files[0]);
-        }
-    }
-    
-    function resetEditorToDefault() {
-        editZoomSlider.value = "1";
-        editMoveXSlider.value = "0";
-        editMoveYSlider.value = "0";
-        editRoundSlider.value = "0";
-        editWidthSlider.value = "300";
-        editHeightSlider.value = "300";
-        updateEditValues();
-    }
-    
-    function openImageEditorFromModal() {
-        const fileInput = document.getElementById('inp-image-upload');
-        if (!fileInput.files || fileInput.files.length === 0) {
-            showToast("Please choose an image first", true);
-            return;
-        }
-        const file = fileInput.files[0];
+        const file = input.files[0];
         const reader = new FileReader();
-        reader.onload = (ev) => {
-            editorImg = new Image();
-            editorImg.onload = () => {
-                editorImgLoaded = true;
-                resetEditorToDefault();
-                document.getElementById('editorModal').style.display = 'flex';
-                drawEditCanvas();
-            };
-            editorImg.src = ev.target.result;
+        reader.onload = async (e) => {
+            const base64 = e.target.result.split(',')[1];
+            try {
+                const res = await fetch(`${API_URL}?action=uploadFile&filename=${encodeURIComponent(file.name)}&mimeType=${file.type}&data=${encodeURIComponent(base64)}`);
+                const result = await res.json();
+                if(result.success) {
+                    document.getElementById('inp-thumb').value = result.url;
+                    document.getElementById('fileStatus').innerText = "Upload Success!";
+                }
+            } catch(err) { alert("Upload Failed!"); }
+            document.getElementById('loader').style.display = 'none';
         };
         reader.readAsDataURL(file);
     }
-    
-    function updateEditValues() {
-        document.getElementById('editWidthVal').innerText = editWidthSlider.value + "px";
-        document.getElementById('editHeightVal').innerText = editHeightSlider.value + "px";
-        document.getElementById('editZoomVal').innerText = Math.round(editZoomSlider.value * 100) + "%";
-        document.getElementById('editRoundVal').innerText = editRoundSlider.value + "%";
-        document.getElementById('editMoveXVal').innerText = editMoveXSlider.value + "px";
-        document.getElementById('editMoveYVal').innerText = editMoveYSlider.value + "px";
-        drawEditCanvas();
+
+    async function fetchData() {
+        if(!API_URL) return openModal('settingsModal');
+        document.getElementById('loader').style.display = 'block';
+        try {
+            const res = await fetch(`${API_URL}?action=getData&t=${Date.now()}`);
+            const data = await res.json();
+            renderGrid(data);
+        } catch(e) { console.log(e); }
+        document.getElementById('loader').style.display = 'none';
     }
-    
-    function drawEditCanvas() {
-        if(!editorImgLoaded) return;
-        editCtx.clearRect(0, 0, 500, 500);
-        const zoom = parseFloat(editZoomSlider.value);
-        const boxW = parseFloat(editWidthSlider.value);
-        const boxH = parseFloat(editHeightSlider.value);
-        const moveX = parseFloat(editMoveXSlider.value);
-        const moveY = parseFloat(editMoveYSlider.value);
-        const drawW = editorImg.width * zoom;
-        const drawH = editorImg.height * zoom;
-        const imgX = (500 - drawW) / 2;
-        const imgY = (500 - drawH) / 2;
-        editCtx.drawImage(editorImg, imgX, imgY, drawW, drawH);
-        const startX = ((500 - boxW) / 2) + moveX;
-        const startY = ((500 - boxH) / 2) + moveY;
-        editCtx.strokeStyle = "#ffaa44";
-        editCtx.lineWidth = 3;
-        editCtx.strokeRect(startX, startY, boxW, boxH);
-    }
-    
-    function getCroppedBlob(callback) {
-        const boxW = parseFloat(editWidthSlider.value);
-        const boxH = parseFloat(editHeightSlider.value);
-        const moveX = parseFloat(editMoveXSlider.value);
-        const moveY = parseFloat(editMoveYSlider.value);
-        let startX = ((500 - boxW) / 2) + moveX;
-        let startY = ((500 - boxH) / 2) + moveY;
-        startX = Math.max(0, Math.min(startX, 500 - boxW));
-        startY = Math.max(0, Math.min(startY, 500 - boxH));
-        const cropCanvas = document.createElement('canvas');
-        cropCanvas.width = boxW;
-        cropCanvas.height = boxH;
-        const cropCtx = cropCanvas.getContext('2d');
-        cropCtx.drawImage(editCanvas, startX, startY, boxW, boxH, 0, 0, boxW, boxH);
-        cropCanvas.toBlob(callback, 'image/jpeg', 0.85);
-    }
-    
-    function openImageEditorWithUrl(imageUrl) {
-        if(!imageUrl || imageUrl.includes('placeholder')) {
-            showToast("No valid image to edit", true);
-            return;
-        }
-        resetEditorToDefault();
-        document.getElementById('editorModal').style.display = 'flex';
-        editorImg = new Image();
-        editorImg.crossOrigin = "Anonymous";
-        editorImg.onload = () => {
-            editorImgLoaded = true;
-            drawEditCanvas();
-            updateEditValues();
-        };
-        editorImg.onerror = () => { showToast("Cannot load image for editing", true); };
-        editorImg.src = imageUrl;
-    }
-    
-    document.getElementById('editorImageInput').addEventListener('change', (e) => {
-        if(e.target.files[0]) {
-            const reader = new FileReader();
-            reader.onload = (ev) => {
-                editorImg = new Image();
-                editorImg.onload = () => {
-                    editorImgLoaded = true;
-                    resetEditorToDefault();
-                    drawEditCanvas();
-                    updateEditValues();
-                };
-                editorImg.src = ev.target.result;
-            };
-            reader.readAsDataURL(e.target.files[0]);
-        }
-    });
-    
-    document.getElementById('submitEditorBtn').addEventListener('click', () => {
-        if(!editorImgLoaded) { showToast("No image loaded in editor", true); return; }
-        getCroppedBlob((blob) => {
-            if(blob) {
-                pendingCroppedBlob = blob;
-                document.getElementById('editorModal').style.display = 'none';
-                const previewArea = document.getElementById('imagePreviewArea');
-                const previewImg = document.getElementById('previewImg');
-                const reader = new FileReader();
-                reader.onload = (e) => {
-                    previewImg.src = e.target.result;
-                    previewArea.style.display = 'block';
-                    const dataTransfer = new DataTransfer();
-                    const newFile = new File([blob], "edited_image.jpg", { type: "image/jpeg" });
-                    dataTransfer.items.add(newFile);
-                    document.getElementById('inp-image-upload').files = dataTransfer.files;
-                    showToast("✅ Cropped image ready for upload");
-                };
-                reader.readAsDataURL(blob);
-            } else { showToast("Cropping failed", true); }
-        });
-    });
-    
-    document.getElementById('cancelEditorBtn').addEventListener('click', () => {
-        document.getElementById('editorModal').style.display = 'none';
-    });
-    
-    [editWidthSlider, editHeightSlider, editZoomSlider, editRoundSlider, editMoveXSlider, editMoveYSlider].forEach(slider => slider.addEventListener('input', updateEditValues));
-    
-    // ========== RENDER FUNCTIONS ==========
-    function renderCurrentTable() {
-        if (currentTab === 'main') renderMainTable();
-        else renderSettingsTable();
-    }
-    
-    function renderMainTable() {
-        const tbody = document.getElementById('body-main');
-        if (!mainData.length) {
-            tbody.innerHTML = '<tr><td colspan="5" class="empty-row">✨ No content. Click + to add ✨</td></tr>';
-            return;
-        }
-        
+
+    function renderGrid(data) {
         let html = '';
-        mainData.forEach((item, idx) => {
-            const rowNum = idx + 2;
-            html += `<tr>
-                <td><img src="${item.thumbnail}" class="thumb" onerror="this.src='https://via.placeholder.com/48?text=Error'" onclick='openImageEditorWithUrl("${item.thumbnail}")' title="Click to edit image"></td>
-                <td><strong>${escapeHtml(item.name)}</strong></td>
-                <td><span class="badge-cat">${escapeHtml(item.category)}</span></td>
-                <td style="max-width:200px; overflow:hidden;">${escapeHtml(item.url)}</td>
-                <td>
-                    <button class="action-btn edit-i" onclick='openEditMain(${rowNum}, ${JSON.stringify(item).replace(/'/g, "&#39;")})'><i class="fa fa-edit"></i></button>
-                    <button class="action-btn del-i" onclick="deleteRecordItem('Sheet1', ${rowNum}, '${item.fileId}')"><i class="fa fa-trash"></i></button>
-                </td>
-            </tr>`;
+        data.forEach((item, idx) => {
+            html += `
+            <div class="item-card">
+                <div class="card-preview" style="background-image: url('${item.Thumbnail || ''}')"></div>
+                <div class="card-body">
+                    <span style="font-size:10px; color:var(--primary)">${item.Category}</span>
+                    <div style="font-weight:500; margin:5px 0;">${item.Name}</div>
+                    <div style="display:flex; gap:10px;">
+                        <button class="btn-icon" onclick="openEdit(${idx+2}, ${JSON.stringify(item).replace(/"/g, '&quot;')})"><i class="fa fa-edit"></i></button>
+                        <button class="btn-icon" onclick="deleteItem(${idx+2})" style="color:red;"><i class="fa fa-trash"></i></button>
+                    </div>
+                </div>
+            </div>`;
         });
-        tbody.innerHTML = html;
+        document.getElementById('main-grid').innerHTML = html;
     }
-    
-    function renderSettingsTable() {
-        const tbody = document.getElementById('body-set');
-        if (!settingsData.length) {
-            tbody.innerHTML = '<tr><td colspan="5" class="empty-row">⚙️ No settings. Click + to add ⚙️</td></tr>';
-            return;
-        }
-        
-        let html = '';
-        settingsData.forEach((item, idx) => {
-            const rowNum = idx + 2;
-            html += `<tr>
-                <td><strong>${escapeHtml(item.name)}</strong></td>
-                <td>${escapeHtml(item.url)}</td>
-                <td>v${escapeHtml(item.version)}</td>
-                <td>${escapeHtml(item.updateUrl)}</td>
-                <td>
-                    <button class="action-btn edit-i" onclick='openEditSettings(${rowNum}, ${JSON.stringify(item).replace(/'/g, "&#39;")})'><i class="fa fa-edit"></i></button>
-                    <button class="action-btn del-i" onclick="deleteRecordItem('settings', ${rowNum}, '')"><i class="fa fa-trash"></i></button>
-                </td>
-            </tr>`;
+
+    async function saveItem() {
+        document.getElementById('loader').style.display = 'block';
+        const params = new URLSearchParams({
+            action: 'saveData',
+            action_type: editContext.active ? 'update' : 'add',
+            rowIndex: editContext.row,
+            Name: document.getElementById('inp-name').value,
+            Category: document.getElementById('inp-cat').value,
+            URL: document.getElementById('inp-url').value,
+            Thumbnail: document.getElementById('inp-thumb').value,
+            Unique_Id: editContext.active ? editContext.uid : 'ID_'+Date.now()
         });
-        tbody.innerHTML = html;
+        await fetch(API_URL + '?' + params.toString());
+        closeModal('formModal');
+        fetchData();
     }
-    
-    function escapeHtml(str) {
-        if (!str) return '';
-        return String(str).replace(/[&<>]/g, function(m) {
-            if (m === '&') return '&amp;';
-            if (m === '<') return '&lt;';
-            if (m === '>') return '&gt;';
-            return m;
-        });
-    }
-    
-    function switchTab(tab) {
-        currentTab = tab;
-        document.getElementById('table-main').style.display = tab === 'main' ? 'table' : 'none';
-        document.getElementById('table-set').style.display = tab === 'settings' ? 'table' : 'none';
-        document.getElementById('btn-main').classList.toggle('active', tab === 'main');
-        document.getElementById('btn-settings').classList.toggle('active', tab === 'settings');
-        renderCurrentTable();
-    }
-    
+
     function openAddModal() {
-        editContext = { isEdit: false, rowIndex: null, oldFileId: null, oldThumbUrl: null };
-        pendingCroppedBlob = null;
-        document.getElementById('modal-title').innerText = "➕ Add New Content";
-        document.getElementById('form-main-fields').style.display = 'block';
-        document.getElementById('form-settings-fields').style.display = 'none';
-        document.getElementById('inp-title').value = '';
-        document.getElementById('inp-category-select').value = 'Movies';
-        document.getElementById('inp-link').value = '';
-        document.getElementById('inp-image-upload').value = '';
-        document.getElementById('imagePreviewArea').style.display = 'none';
-        document.getElementById('globalModal').style.display = 'flex';
+        editContext = { active: false };
+        ['inp-name', 'inp-url', 'inp-thumb'].forEach(id => document.getElementById(id).value = '');
+        openModal('formModal');
     }
-    
-    function openEditMain(rowNum, item) {
-        currentTab = 'main';
-        editContext = { isEdit: true, rowIndex: rowNum, oldFileId: item.fileId || '', oldThumbUrl: item.thumbnail || '' };
-        pendingCroppedBlob = null;
-        document.getElementById('modal-title').innerText = "✏️ Edit Content";
-        document.getElementById('form-main-fields').style.display = 'block';
-        document.getElementById('form-settings-fields').style.display = 'none';
-        document.getElementById('inp-title').value = item.name || '';
-        document.getElementById('inp-category-select').value = item.category || 'Movies';
-        document.getElementById('inp-link').value = item.url || '';
-        document.getElementById('inp-image-upload').value = '';
-        document.getElementById('imagePreviewArea').style.display = 'none';
-        document.getElementById('globalModal').style.display = 'flex';
+
+    function openEdit(row, item) {
+        editContext = { active: true, row: row, uid: item.Unique_Id };
+        document.getElementById('inp-name').value = item.Name;
+        document.getElementById('inp-cat').value = item.Category;
+        document.getElementById('inp-url').value = item.URL;
+        document.getElementById('inp-thumb').value = item.Thumbnail;
+        openModal('formModal');
     }
-    
-    function openEditSettings(rowNum, item) {
-        currentTab = 'settings';
-        editContext = { isEdit: true, rowIndex: rowNum, oldFileId: null, oldThumbUrl: null };
-        document.getElementById('modal-title').innerText = "✏️ Edit Settings";
-        document.getElementById('form-main-fields').style.display = 'none';
-        document.getElementById('form-settings-fields').style.display = 'block';
-        document.getElementById('set-appname').value = item.name || '';
-        document.getElementById('set-baseurl').value = item.url || '';
-        document.getElementById('set-version').value = item.version || '';
-        document.getElementById('set-updateurl').value = item.updateUrl || '';
-        document.getElementById('set-ratingurl').value = item.ratingUrl || '';
-        document.getElementById('set-privacyurl').value = item.privacyUrl || '';
-        document.getElementById('set-shareurl').value = item.shareUrl || '';
-        document.getElementById('globalModal').style.display = 'flex';
+
+    async function deleteItem(row) {
+        if(!confirm("Delete?")) return;
+        document.getElementById('loader').style.display = 'block';
+        await fetch(`${API_URL}?action=deleteData&rowIndex=${row}`);
+        fetchData();
     }
-    
-    function closeModal() {
-        document.getElementById('globalModal').style.display = 'none';
-        pendingCroppedBlob = null;
-    }
-    
-    // Initialize
-    window.addEventListener('load', () => {
-        console.log("Nikamma Admin - Professional Version - FIXED");
-        loadLogo();
-        fetchAllData();
-    });
+
+    window.onload = () => { if(API_URL) fetchData(); else openModal('settingsModal'); };
 </script>
 </body>
 </html>
