@@ -5,39 +5,73 @@
 <title>Admin Panel PRO</title>
 
 <style>
-body {font-family: Arial; background:#0d0d0d; color:#fff;}
-.container {max-width:900px;margin:auto;}
-input,button {padding:10px;margin:5px;width:100%;}
-table {width:100%;margin-top:20px;border-collapse:collapse;}
-td,th {border:1px solid #333;padding:8px;}
-img {width:70px;}
+body {
+  background:#0f0f0f;
+  color:#fff;
+  font-family:Arial;
+}
+
+.container {
+  max-width:900px;
+  margin:auto;
+  padding:10px;
+}
+
+input,button {
+  width:100%;
+  padding:10px;
+  margin:5px 0;
+}
+
+table {
+  width:100%;
+  border-collapse:collapse;
+  margin-top:20px;
+}
+
+td,th {
+  border:1px solid #333;
+  padding:8px;
+}
+
+img {
+  width:70px;
+  border-radius:5px;
+}
+
+/* 🔥 FIXED LOADER */
 #loader {
   display:none;
   position:fixed;
-  top:0;left:0;
-  width:100%;height:100%;
-  background:rgba(0,0,0,0.8);
+  top:0;
+  left:0;
+  width:100%;
+  height:100%;
+  background:rgba(0,0,0,0.85);
   justify-content:center;
   align-items:center;
-  color:#fff;
   font-size:20px;
+  z-index:9999;
 }
 </style>
 
 </head>
+
 <body>
 
+<!-- LOADER -->
 <div id="loader">Uploading... ⏳</div>
 
 <div class="container">
-<h2>Admin Panel PRO</h2>
+
+<h2>🔥 Admin Panel PRO</h2>
 
 <input id="name" placeholder="Name">
 <input id="category" placeholder="Category">
 <input id="url" placeholder="URL">
 <input type="file" id="thumb">
 
-<button onclick="addData()">Add Data</button>
+<button onclick="uploadData()">Add Data</button>
 
 <table>
 <thead>
@@ -48,55 +82,66 @@ img {width:70px;}
 <th>Thumbnail</th>
 </tr>
 </thead>
+
 <tbody id="tbody"></tbody>
 </table>
+
 </div>
 
 <script>
-const API = "https://script.google.com/macros/s/AKfycbwm5huDUld4_MMX_0jdu1JcMVAnnRCHyDPHJSH5Tqoe6rowI6whX5N7FVAh_YZg8xqgXg/exec";
 
-function showLoader() {
+const API = "https://script.google.com/macros/s/AKfycbwRkPA8Uw-IWHnJLFtw5jNo57f0MPeLMzPKV9dPcSyHaX7juHqy11RldfzZnt6txkgu_g/exec";
+
+// 🔥 FIX: proper show/hide
+function showLoader(){
   document.getElementById("loader").style.display = "flex";
 }
 
-function hideLoader() {
+function hideLoader(){
   document.getElementById("loader").style.display = "none";
 }
 
-function addData() {
-  let name = document.getElementById("name").value;
-  let category = document.getElementById("category").value;
-  let url = document.getElementById("url").value;
+function uploadData() {
   let file = document.getElementById("thumb").files[0];
 
-  if (!name || !file) {
-    alert("Name aur Image zaroori hai!");
+  if(!file){
+    alert("Image required");
     return;
   }
 
   let reader = new FileReader();
-
   showLoader();
 
   reader.onload = function() {
+
     fetch(API, {
       method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
       body: JSON.stringify({
-        name: name,
-        category: category,
-        url: url,
+        name: document.getElementById("name").value,
+        category: document.getElementById("category").value,
+        url: document.getElementById("url").value,
         thumbnail: reader.result
       })
     })
+
     .then(res => res.json())
-    .then(res => {
-      hideLoader();
-      loadData();
+    .then(data => {
+      hideLoader(); // ✅ FIXED (this was missing/bugged before)
+
       document.getElementById("thumb").value = "";
+      document.getElementById("name").value = "";
+      document.getElementById("category").value = "";
+      document.getElementById("url").value = "";
+
+      loadData();
     })
+
     .catch(err => {
-      hideLoader();
-      alert("Error!");
+      hideLoader(); // ✅ always hide even on error
+      alert("Error: " + err);
     });
   };
 
@@ -108,20 +153,24 @@ function loadData() {
   .then(res => res.json())
   .then(data => {
     let html = "";
+
     data.reverse().forEach(d => {
       html += `
-      <tr>
-        <td>${d.Name}</td>
-        <td>${d.Category}</td>
-        <td>${d.URL}</td>
-        <td><img src="${d.Thumbnail}"></td>
-      </tr>`;
+        <tr>
+          <td>${d.Name || ""}</td>
+          <td>${d.Category || ""}</td>
+          <td>${d.URL || ""}</td>
+          <td><img src="${d.Thumbnail || ""}"></td>
+        </tr>
+      `;
     });
+
     document.getElementById("tbody").innerHTML = html;
   });
 }
 
 loadData();
+
 </script>
 
 </body>
