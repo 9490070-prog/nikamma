@@ -1,695 +1,954 @@
+Here is an HTML document that creates a fully responsive admin dashboard with a working progress bar and horizontal category views.
+```html
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-<meta charset="UTF-8">
-<title>Admin Panel - Pro Image Editor</title>
-<style>
-* { box-sizing: border-box; }
-body { font-family: 'Segoe UI', Arial, sans-serif; background: #0a0a0a; color: white; padding: 20px; margin: 0; }
-.container { max-width: 1300px; margin: auto; }
-.header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; }
-h2 { color: #00aaff; margin: 0; }
-.add-btn { background: #00aaff; border: none; width: 50px; height: 50px; border-radius: 50%; font-size: 30px; cursor: pointer; }
-.add-btn:hover { background: #0088cc; }
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>Premium Admin Suite | Category Video Hub</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
 
-.modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); backdrop-filter: blur(5px); justify-content: center; align-items: center; z-index: 1000; }
-.modal-content { background: #1e1e1e; padding: 30px; border-radius: 15px; width: 90%; max-width: 500px; }
-.modal-content h3 { margin: 0 0 20px 0; color: #00aaff; }
-.modal-content input, .modal-content select { width: 100%; padding: 12px; margin: 10px 0; background: #2a2a2a; border: 1px solid #444; color: white; border-radius: 5px; }
-.modal-buttons { display: flex; gap: 10px; margin-top: 20px; }
-.modal-buttons button { flex: 1; padding: 12px; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; }
-.btn-add { background: #00aaff; color: white; }
-.btn-save { background: #ffaa00; color: black; }
-.btn-cancel { background: #ff4444; color: white; }
+    body {
+      background: #0b0f17;
+      font-family: 'Inter', 'Segoe UI', system-ui, -apple-system, BlinkMacSystemFont, 'Roboto', sans-serif;
+      color: #f0f3fa;
+      padding: 20px 16px 40px 16px;
+    }
 
-.image-input-wrapper {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  background: #2a2a2a;
-  border: 1px solid #444;
-  border-radius: 5px;
-  padding: 5px 10px;
-  margin: 10px 0;
-}
-.image-edit-icon {
-  background: #33cc99;
-  border: none;
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  cursor: pointer;
-  font-size: 20px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: white;
-}
-.image-edit-icon:hover { background: #28a87a; }
-.image-input-wrapper input[type="file"] { flex: 1; background: transparent; border: none; margin: 0; cursor: pointer; }
+    /* fully responsive container */
+    .dashboard-container {
+      max-width: 1600px;
+      margin: 0 auto;
+      width: 100%;
+    }
 
-.progress-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); justify-content: center; align-items: center; z-index: 2000; }
-.progress-card { background: #1a1a1a; padding: 35px; border-radius: 20px; text-align: center; }
-.progress-bar { width: 300px; height: 30px; background: #333; border-radius: 20px; overflow: hidden; margin: 20px 0; }
-.progress-fill { width: 0%; height: 100%; background: #00aaff; transition: width 0.3s; line-height: 30px; }
+    /* admin header - responsive */
+    .admin-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 15px;
+      margin-bottom: 30px;
+      background: rgba(18, 25, 45, 0.85);
+      backdrop-filter: blur(10px);
+      padding: 14px 20px;
+      border-radius: 40px;
+      border: 1px solid rgba(0, 170, 255, 0.3);
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+    }
 
-.toast { position: fixed; bottom: 30px; right: 30px; padding: 12px 25px; border-radius: 8px; display: none; z-index: 1001; }
-.toast.success { background: #00aa33; }
-.toast.error { background: #ff4444; }
+    .logo-area h2 {
+      font-size: clamp(1.3rem, 5vw, 1.8rem);
+      font-weight: 700;
+      background: linear-gradient(135deg, #00aaff, #2ad4ff);
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+    }
 
-.table-wrapper { overflow-x: auto; margin-top: 20px; }
-table { width: 100%; border-collapse: collapse; }
-th, td { border: 1px solid #333; padding: 12px; text-align: left; vertical-align: middle; }
-th { background: #1a1a1a; color: #00aaff; }
-td { background: #121212; }
-table img { width: 55px; height: 55px; object-fit: cover; border-radius: 8px; }
-.edit-btn { background: #ffaa00; color: black; padding: 6px 14px; border: none; border-radius: 5px; cursor: pointer; margin: 2px; font-weight: bold; }
-.delete-btn { background: #ff4444; color: white; padding: 6px 14px; border: none; border-radius: 5px; cursor: pointer; margin: 2px; font-weight: bold; }
+    .logo-area p {
+      font-size: 0.7rem;
+      color: #8e9bbe;
+    }
 
-/* ========== IMAGE EDITOR - FIXED IMAGE, SCROLLABLE CONTROLS ========== */
-.image-editor-modal {
-  display: none;
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: rgba(0,0,0,0.96);
-  backdrop-filter: blur(8px);
-  justify-content: center;
-  align-items: center;
-  z-index: 3000;
-}
-.image-editor-content {
-  background: #141a24;
-  border-radius: 10px;
-  padding: 5px 5px;
-  width: 95vw;
-  max-width: 1100px;
-  height: 95vh;
-  display: flex;
-  flex-direction: column;
-  border: 1px solid #2a4a6a;
-  box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-}
+    .add-global-btn {
+      background: linear-gradient(95deg, #00aaff, #0080cc);
+      border: none;
+      width: 52px;
+      height: 52px;
+      border-radius: 30px;
+      font-size: 32px;
+      font-weight: bold;
+      color: white;
+      cursor: pointer;
+      transition: 0.2s;
+      box-shadow: 0 4px 12px rgba(0, 170, 255, 0.4);
+      flex-shrink: 0;
+    }
 
-.image-editor-content h3 { 
-  color: #00aaff; 
-  margin: 0 0 5px 0; 
-  font-size: 18px; 
-  text-align: center;
-  padding-bottom: 10px;
-  border-bottom: 1px solid #2a4a6a;
-  flex-shrink: 0;
-}
+    .add-global-btn:hover {
+      transform: scale(1.02);
+      background: #2ab4ff;
+    }
 
-/* Canvas Area - Fixed, NO SCROLL */
-.canvas-area {
-  background: #0a0e14;
-  border-radius: 5px;
-  margin-bottom: 5px;
-  border: 1px solid #2a4a6a;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  overflow: hidden;
-  min-height: 250px;
-  max-height: 48vh;
-  flex-shrink: 0;
-  padding: 5px;
-}
-.canvas-wrapper {
-  position: relative;
-  display: inline-block;
-}
-#editorCanvas {
-  display: block;
-  background: #1a1e2a;
-  border-radius: 4px;
-}
-.crop-box {
-  position: absolute;
-  border: 3px solid #ff4466;
-  background: rgba(255, 68, 102, 0.2);
-  box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.6);
-  box-sizing: border-box;
-  pointer-events: none;
-}
-.crop-box::before {
-  content: attr(data-size);
-  position: absolute;
-  top: -26px;
-  left: 0;
-  background: #ff4466;
-  color: white;
-  padding: 2px 8px;
-  border-radius: 20px;
-  font-size: 11px;
-  font-weight: bold;
-  white-space: nowrap;
-}
+    /* category section */
+    .categories-section {
+      margin-bottom: 48px;
+    }
 
-/* Controls Container - SCROLLABLE */
-.controls-scroll-area {
-  flex: 1;
-  overflow-y: auto;
-  overflow-x: hidden;
-  margin-bottom: 10px;
-  padding-right: 5px;
-}
-.controls-scroll-area::-webkit-scrollbar {
-  width: 6px;
-}
-.controls-scroll-area::-webkit-scrollbar-track {
-  background: #1a1e2a;
-  border-radius: 10px;
-}
-.controls-scroll-area::-webkit-scrollbar-thumb {
-  background: #00aaff;
-  border-radius: 10px;
-}
+    .category-card {
+      background: #101624;
+      border-radius: 28px;
+      padding: 18px 0 20px 0;
+      margin-bottom: 42px;
+      border: 1px solid #20273f;
+      transition: 0.2s;
+      box-shadow: 0 12px 28px -8px rgba(0, 0, 0, 0.5);
+    }
 
-/* Sliders Grid */
-.slider-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 12px;
-  margin-bottom: 15px;
-}
-.slider-card {
-  background: #0f131c;
-  padding: 12px 15px;
-  border-radius: 12px;
-  border: 1px solid #2a3a4a;
-}
-.slider-card label {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  color: #88ccff;
-  font-weight: bold;
-  font-size: 13px;
-  margin-bottom: 10px;
-}
-.slider-card input {
-  width: 100%;
-  cursor: pointer;
-  accent-color: #00aaff;
-  height: 5px;
-  border-radius: 5px;
-}
-.slider-card span {
-  display: block;
-  background: #080c12;
-  padding: 6px 10px;
-  border-radius: 8px;
-  text-align: center;
-  font-size: 12px;
-  margin-top: 10px;
-  color: #ccc;
-}
-.value-highlight {
-  color: #ffaa44;
-  font-weight: bold;
-  font-size: 14px;
-}
+    .category-header {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 12px;
+      padding: 0 20px 14px 20px;
+      border-bottom: 2px solid rgba(0, 170, 255, 0.5);
+      margin-bottom: 18px;
+    }
 
-/* Editor Buttons */
-.editor-buttons {
-  display: flex;
-  gap: 15px;
-  justify-content: center;
-  padding-top: 12px;
-  border-top: 1px solid #2a4a6a;
-  flex-shrink: 0;
-}
-.editor-buttons button {
-  padding: 10px 28px;
-  border: none;
-  border-radius: 40px;
-  font-weight: bold;
-  cursor: pointer;
-  font-size: 14px;
-  transition: transform 0.1s;
-}
-.editor-buttons button:hover {
-  transform: scale(1.02);
-}
-.btn-save-crop { background: #00aa55; color: white; }
-.btn-cancel-editor { background: #ff4444; color: white; }
+    .category-title {
+      font-size: clamp(1.3rem, 5vw, 1.8rem);
+      font-weight: 700;
+      background: linear-gradient(130deg, #ffffff, #9acdff);
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+    }
 
-/* Responsive */
-@media (max-width: 650px) {
-  .slider-grid {
-    grid-template-columns: 1fr;
-    gap: 10px;
-  }
-  .image-editor-content {
-    padding: 15px;
-    width: 95vw;
-  }
-  .editor-buttons button {
-    padding: 8px 20px;
-  }
-}
-</style>
+    .category-badge {
+      background: #1e2a3e;
+      padding: 6px 14px;
+      border-radius: 60px;
+      font-size: 0.75rem;
+      font-weight: 500;
+      color: #bbd9ff;
+    }
+
+    /* HORIZONTAL SCROLL (smooth, responsive) */
+    .horizontal-scroll {
+      display: flex;
+      overflow-x: auto;
+      gap: 18px;
+      padding: 10px 20px 20px 20px;
+      scrollbar-width: thin;
+      scrollbar-color: #00aaff #1f2a3f;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    .horizontal-scroll::-webkit-scrollbar {
+      height: 5px;
+    }
+
+    .horizontal-scroll::-webkit-scrollbar-track {
+      background: #1a2235;
+      border-radius: 12px;
+    }
+
+    .horizontal-scroll::-webkit-scrollbar-thumb {
+      background: #00aaff;
+      border-radius: 12px;
+    }
+
+    /* video card - fully responsive grid inside scroll */
+    .video-card {
+      min-width: 250px;
+      width: 250px;
+      background: #0c1120;
+      border-radius: 22px;
+      overflow: hidden;
+      transition: transform 0.2s, box-shadow 0.2s;
+      border: 1px solid #242d44;
+      flex-shrink: 0;
+      cursor: pointer;
+    }
+
+    @media (max-width: 580px) {
+      .video-card {
+        min-width: 210px;
+        width: 210px;
+      }
+    }
+
+    .video-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 20px 30px -12px #00aaff40;
+      border-color: #00aaff80;
+    }
+
+    .thumb-wrapper {
+      width: 100%;
+      height: 140px;
+      background: #05080f;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+    }
+
+    .thumb-wrapper img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      transition: 0.3s;
+    }
+
+    .video-info {
+      padding: 12px 12px 14px;
+    }
+
+    .video-name {
+      font-weight: 700;
+      font-size: 0.95rem;
+      margin-bottom: 6px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .video-url {
+      font-size: 0.65rem;
+      color: #7f8aa8;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      margin-bottom: 10px;
+    }
+
+    .video-actions {
+      display: flex;
+      gap: 8px;
+      margin-top: 5px;
+    }
+
+    .small-edit,
+    .small-delete {
+      font-size: 0.7rem;
+      padding: 5px 12px;
+      border-radius: 30px;
+      border: none;
+      font-weight: 600;
+      cursor: pointer;
+      transition: 0.1s;
+    }
+
+    .small-edit {
+      background: #ffaa33;
+      color: #101010;
+    }
+
+    .small-delete {
+      background: #e34d4d;
+      color: white;
+    }
+
+    .empty-cat-msg {
+      color: #5f6c8f;
+      font-style: italic;
+      padding: 24px 20px;
+      background: #0c1120;
+      border-radius: 40px;
+      text-align: center;
+      margin: 0 20px;
+      font-size: 0.85rem;
+    }
+
+    /* MODAL */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.94);
+      backdrop-filter: blur(12px);
+      justify-content: center;
+      align-items: center;
+      z-index: 2000;
+      padding: 16px;
+    }
+
+    .modal-panel {
+      background: #141c2c;
+      max-width: 520px;
+      width: 100%;
+      border-radius: 36px;
+      padding: 24px 22px 32px;
+      border: 1px solid #2c3f60;
+      box-shadow: 0 25px 45px rgba(0, 0, 0, 0.6);
+    }
+
+    .modal-panel h3 {
+      font-size: 1.7rem;
+      margin-bottom: 20px;
+      color: #2fd0ff;
+    }
+
+    .modal-panel input,
+    .modal-panel select {
+      width: 100%;
+      padding: 14px 18px;
+      margin: 12px 0;
+      background: #0e1625;
+      border: 1px solid #2d3a55;
+      border-radius: 50px;
+      color: white;
+      font-size: 0.95rem;
+      outline: none;
+    }
+
+    .img-edit-row {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      background: #0e1625;
+      padding: 6px 15px;
+      border-radius: 50px;
+      margin: 15px 0;
+    }
+
+    .icon-edit-btn {
+      background: #2ecc9e;
+      border: none;
+      border-radius: 40px;
+      width: 44px;
+      height: 44px;
+      font-size: 20px;
+      cursor: pointer;
+    }
+
+    .modal-buttons {
+      display: flex;
+      gap: 14px;
+      margin-top: 25px;
+      flex-wrap: wrap;
+    }
+
+    .modal-buttons button {
+      flex: 1;
+      padding: 12px;
+      border-radius: 50px;
+      font-weight: bold;
+      border: none;
+      cursor: pointer;
+    }
+
+    .btn-save-item {
+      background: #00aaff;
+      color: white;
+    }
+
+    .btn-cancel-modal {
+      background: #ff4d4d;
+      color: white;
+    }
+
+    /* PROGRESS BAR OVERLAY */
+    .progress-overlay {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.9);
+      backdrop-filter: blur(8px);
+      justify-content: center;
+      align-items: center;
+      z-index: 3000;
+      flex-direction: column;
+    }
+
+    .progress-card {
+      background: #0f172a;
+      padding: 30px 35px;
+      border-radius: 48px;
+      text-align: center;
+      min-width: 280px;
+      border: 1px solid #00aaff55;
+      box-shadow: 0 20px 35px rgba(0, 0, 0, 0.5);
+    }
+
+    .progress-bar-container {
+      width: 100%;
+      height: 28px;
+      background: #1e2a3a;
+      border-radius: 40px;
+      overflow: hidden;
+      margin: 20px 0;
+    }
+
+    .progress-fill {
+      width: 0%;
+      height: 100%;
+      background: linear-gradient(90deg, #00aaff, #2ad4ff);
+      transition: width 0.25s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-size: 13px;
+      font-weight: bold;
+    }
+
+    #progressStatusText {
+      color: #bbd4ff;
+      font-weight: 500;
+    }
+
+    /* TOAST */
+    .toast-msg {
+      position: fixed;
+      bottom: 25px;
+      right: 20px;
+      left: auto;
+      background: #1f2a44;
+      padding: 12px 24px;
+      border-radius: 60px;
+      backdrop-filter: blur(12px);
+      border-left: 5px solid #00ffaa;
+      z-index: 3500;
+      display: none;
+      font-weight: 500;
+      font-size: 0.9rem;
+      box-shadow: 0 8px 20px black;
+    }
+
+    @media (max-width: 550px) {
+      .toast-msg {
+        left: 16px;
+        right: 16px;
+        text-align: center;
+      }
+      .modal-panel {
+        padding: 20px 18px;
+      }
+    }
+
+    /* image cropper modal (scrollable controls) */
+    .crop-modal-container {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.97);
+      backdrop-filter: blur(12px);
+      z-index: 4000;
+      justify-content: center;
+      align-items: center;
+      padding: 12px;
+    }
+
+    .crop-inner {
+      background: #0f1725;
+      width: 95%;
+      max-width: 1000px;
+      border-radius: 32px;
+      padding: 18px;
+      display: flex;
+      flex-direction: column;
+      max-height: 92vh;
+    }
+
+    .crop-canvas-area {
+      background: #03060c;
+      border-radius: 24px;
+      padding: 12px;
+      display: flex;
+      justify-content: center;
+      min-height: 220px;
+      max-height: 42vh;
+      overflow: hidden;
+    }
+
+    .canvas-relative {
+      position: relative;
+      display: inline-block;
+    }
+
+    #cropCanvas {
+      display: block;
+      border-radius: 16px;
+      background: #1e263a;
+      max-width: 100%;
+      height: auto;
+    }
+
+    #cropSelectionBox {
+      position: absolute;
+      border: 3px solid #ffaa44;
+      background: rgba(255, 170, 68, 0.2);
+      pointer-events: none;
+      box-sizing: border-box;
+    }
+
+    .scroll-controls-area {
+      flex: 1;
+      overflow-y: auto;
+      margin-top: 16px;
+      padding-right: 6px;
+      max-height: 38vh;
+    }
+
+    .control-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+      margin-bottom: 14px;
+    }
+
+    @media (max-width: 580px) {
+      .control-grid {
+        grid-template-columns: 1fr;
+        gap: 12px;
+      }
+    }
+
+    .ctrl-group label {
+      font-size: 12px;
+      font-weight: 500;
+      color: #9bb5ff;
+    }
+
+    .ctrl-group input {
+      width: 100%;
+      margin: 6px 0;
+    }
+
+    .crop-buttons {
+      display: flex;
+      gap: 16px;
+      justify-content: center;
+      margin-top: 18px;
+    }
+
+    .crop-buttons button {
+      padding: 10px 28px;
+      border-radius: 40px;
+      border: none;
+      font-weight: bold;
+      cursor: pointer;
+    }
+  </style>
 </head>
 <body>
 
-<div class="container">
-  <div class="header">
-    <h2>📁 Admin Dashboard</h2>
-    <button class="add-btn" onclick="openAddModal()">+</button>
+<div class="dashboard-container">
+  <div class="admin-header">
+    <div class="logo-area">
+      <h2>🎬 ADMIN DASHBOARD</h2>
+      <p>Category Manager • Video Hub</p>
+    </div>
+    <button class="add-global-btn" id="openAddGlobalBtn" title="Add video">+</button>
   </div>
-  <div class="table-wrapper">
-    <table id="dataTable">
-      <thead><tr><th>Name</th><th>Category</th><th>URL</th><th>Thumbnail</th><th>Actions</th></tr></thead>
-      <tbody id="tableBody"><tr><td colspan="5" style="text-align:center;">Loading...</tr</tbody>
-    </table>
-  </div>
+
+  <div id="categoriesContainer" class="categories-section"></div>
 </div>
 
-<div id="dataModal" class="modal">
-  <div class="modal-content">
-    <h3 id="modalTitle">➕ Add Data</h3>
-    <input type="text" id="modalName" placeholder="Name">
-    <select id="modalCategory">
-      <option value="">-- Category --</option>
+<!-- MODAL FOR ADD/EDIT -->
+<div id="globalModal" class="modal-overlay">
+  <div class="modal-panel">
+    <h3 id="modalTitle">➕ Add Video</h3>
+    <input type="text" id="videoName" placeholder="Video title *">
+    <select id="videoCategorySelect">
+      <option value="">-- Select Category --</option>
       <option value="Live">Live</option><option value="Movies">Movies</option>
       <option value="Drama">Drama</option><option value="Slider">Slider</option>
       <option value="Sports">Sports</option><option value="Tv Show">Tv Show</option>
     </select>
-    <input type="text" id="modalUrl" placeholder="URL">
-    <div class="image-input-wrapper">
-      <button type="button" class="image-edit-icon" id="openImageEditorBtn">🎨</button>
-      <input type="file" id="modalThumb" accept="image/*">
+    <input type="text" id="videoUrl" placeholder="Video URL or embed link *">
+    <div class="img-edit-row">
+      <button type="button" id="openMiniImageBtn" class="icon-edit-btn">🎨 Crop</button>
+      <input type="file" id="thumbFile" accept="image/*" style="background:transparent; border:none;">
     </div>
     <div class="modal-buttons">
-      <button id="modalActionBtn" class="btn-add" onclick="submitData()">Add</button>
-      <button class="btn-cancel" onclick="closeModal()">Cancel</button>
+      <button id="modalSubmitBtn" class="btn-save-item">Save</button>
+      <button id="closeModalBtn" class="btn-cancel-modal">Cancel</button>
     </div>
   </div>
 </div>
 
-<!-- IMAGE EDITOR - FIXED IMAGE, SCROLLABLE CONTROLS -->
-<div id="imageEditorModal" class="image-editor-modal">
-  <div class="image-editor-content">
-    <h4>✂️Resize (Width + Height)</h4>
-    
-    <!-- Canvas - Fixed, NO SCROLL -->
-    <div class="canvas-area" id="canvasContainer">
-      <div class="canvas-wrapper" id="canvasWrapper">
-        <canvas id="editorCanvas"></canvas>
-        <div id="cropBox" class="crop-box" data-size="250x250"></div>
-      </div>
-    </div>
-    
-    <!-- Controls Area - SCROLLABLE (Sirf controls scroll honge) -->
-    <div class="controls-scroll-area">
-      
-      <!-- Move Controls (Position) -->
-      <div style="margin-bottom: 12px;"><label style="color:#88ccff; font-size:13px;">📍 MOVE BOX (Position)</label></div>
-      <div class="slider-grid">
-        <div class="slider-card">
-          <label>⬅️ LEFT → RIGHT ➡️</label>
-          <input type="range" id="leftSlider" min="0" max="100" value="50" step="1">
-          <span>X Position: <span id="leftValue" class="value-highlight">0</span> px</span>
-        </div>
-        <div class="slider-card">
-          <label>⬆️ TOP → BOTTOM ⬇️</label>
-          <input type="range" id="topSlider" min="0" max="100" value="50" step="1">
-          <span>Y Position: <span id="topValue" class="value-highlight">0</span> px</span>
-        </div>
-      </div>
-      
-      <!-- Resize Controls (Width & Height - 2 alag sliders) -->
-      <div style="margin-bottom: 12px; margin-top: 8px;"><label style="color:#88ccff; font-size:13px;">📐 RESIZE BOX (Width + Height)</label></div>
-      <div class="slider-grid">
-        <div class="slider-card">
-          <label>↔️ WIDTH (Left-Right)</label>
-          <input type="range" id="widthSlider" min="10" max="800" value="250" step="5">
-          <span>Width: <span id="widthValue" class="value-highlight">250</span> px</span>
-        </div>
-        <div class="slider-card">
-          <label>↕️ HEIGHT (Top-Bottom)</label>
-          <input type="range" id="heightSlider" min="10" max="800" value="250" step="5">
-          <span>Height: <span id="heightValue" class="value-highlight">250</span> px</span>
-        </div>
-      </div>
-      
-      <!-- Zoom Control -->
-      <div style="margin-bottom: 12px; margin-top: 8px;"><label style="color:#88ccff; font-size:13px;">🔍 IMAGE ZOOM</label></div>
-      <div class="slider-grid">
-        <div class="slider-card">
-          <label>🔎 ZOOM IN / OUT</label>
-          <input type="range" id="zoomSlider" min="10" max="200" value="20" step="5">
-          <span>Zoom: <span id="zoomValue" class="value-highlight">20</span>%</span>
-        </div>
-        <div class="slider-card">
-          <label>📦 Current Box Size</label>
-          <span id="currentBoxSize" style="background:#ff4466; font-size:14px;">250 x 250 px</span>
-        </div>
-      </div>
-      
-    </div>
-    
-    <!-- Buttons -->
-    <div class="editor-buttons">
-      <button class="btn-save-crop" id="saveCropBtn">💾 Save Cropped Image</button>
-      <button class="btn-cancel-editor" id="closeEditorBtn">❌ Cancel</button>
-    </div>
-  </div>
-</div>
-
+<!-- PROGRESS OVERLAY (working) -->
 <div id="progressOverlay" class="progress-overlay">
-  <div class="progress-card"><div class="progress-bar"><div class="progress-fill" id="progressFill">0%</div></div><div id="progressStatus">Processing...</div></div>
+  <div class="progress-card">
+    <h4 style="color:#00aaff;">⏳ Processing</h4>
+    <div class="progress-bar-container">
+      <div class="progress-fill" id="progressFillBar">0%</div>
+    </div>
+    <div id="progressStatusText">Please wait...</div>
+  </div>
 </div>
-<div id="toast" class="toast"></div>
+
+<!-- CROPPER MODAL (scrollable controls) -->
+<div id="cropToolModal" class="crop-modal-container">
+  <div class="crop-inner">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+      <h4 style="color:#00aaff;">✂️ Image Editor (Crop & Resize)</h4>
+      <button id="closeCropModalBtn" style="background:#ff5555; border:none; padding:6px 18px; border-radius:40px; cursor:pointer;">✖️</button>
+    </div>
+    <div class="crop-canvas-area">
+      <div class="canvas-relative">
+        <canvas id="cropCanvas" width="450" height="280"></canvas>
+        <div id="cropSelectionBox"></div>
+      </div>
+    </div>
+    <div class="scroll-controls-area">
+      <div class="control-grid">
+        <div class="ctrl-group"><label>↔️ X Position</label><input type="range" id="cropXSlider" min="0" max="100" step="1"><span id="xPosVal" style="font-size:12px;">0px</span></div>
+        <div class="ctrl-group"><label>↕️ Y Position</label><input type="range" id="cropYSlider" min="0" max="100" step="1"><span id="yPosVal" style="font-size:12px;">0px</span></div>
+        <div class="ctrl-group"><label>📏 Crop Width</label><input type="range" id="cropWidthSlider" min="30" max="800" step="5"><span id="widthVal">240px</span></div>
+        <div class="ctrl-group"><label>📐 Crop Height</label><input type="range" id="cropHeightSlider" min="30" max="800" step="5"><span id="heightVal">180px</span></div>
+        <div class="ctrl-group"><label>🔍 Zoom (Image Scale)</label><input type="range" id="zoomScaleSlider" min="10" max="250" step="5"><span id="zoomPercent">40%</span></div>
+      </div>
+    </div>
+    <div class="crop-buttons">
+      <button id="applyCropSaveBtn" style="background:#2ecc71;">💾 Save Cropped Image</button>
+      <button id="cancelCropToolBtn" style="background:#777;">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<div id="toastMessage" class="toast-msg"></div>
 
 <script>
-const API = "https://script.google.com/macros/s/AKfycbylg5tN7DQQwioDrhWtHHEzPh1oqpzqkvBxY_dzwPBCoToAwXwperoy0IWblfWiPFtU2A/exec";
+  // API & Global data
+  const API_URL = "https://script.google.com/macros/s/AKfycbylg5tN7DQQwioDrhWtHHEzPh1oqpzqkvBxY_dzwPBCoToAwXwperoy0IWblfWiPFtU2A/exec";
+  let allVideos = [];
+  let currentEditRow = null;
+  let isEditMode = false;
+  let existingThumbBackup = null;
 
-let currentEditRow = null;
-let isEditMode = false;
-
-// Editor variables
-let currentImageObj = null;
-let cropBox = null;
-let canvas = null, ctx = null;
-let originalImageWidth = 1, originalImageHeight = 1;
-let currentZoom = 0.2;
-let boxWidth = 250;
-let boxHeight = 250;
-let tempImageBase64 = null;
-
-function showToast(msg, type) {
-  let toast = document.getElementById("toast");
-  toast.className = "toast " + type;
-  toast.innerText = msg;
-  toast.style.display = "block";
-  setTimeout(() => { toast.style.display = "none"; }, 3000);
-}
-
-function showProgress(show, percent, status) {
-  let overlay = document.getElementById("progressOverlay");
-  if (show) {
-    document.getElementById("progressFill").style.width = percent + "%";
-    document.getElementById("progressFill").innerText = percent + "%";
-    document.getElementById("progressStatus").innerText = status;
-    overlay.style.display = "flex";
-  } else {
-    overlay.style.display = "none";
+  // Progress helpers
+  function showProgress(show, percent = 0, statusMsg = "Processing...") {
+    const overlay = document.getElementById("progressOverlay");
+    if (show) {
+      overlay.style.display = "flex";
+      const fillBar = document.getElementById("progressFillBar");
+      fillBar.style.width = percent + "%";
+      fillBar.innerText = Math.floor(percent) + "%";
+      document.getElementById("progressStatusText").innerText = statusMsg;
+    } else {
+      overlay.style.display = "none";
+    }
   }
-}
 
-function openAddModal() {
-  isEditMode = false;
-  currentEditRow = null;
-  document.getElementById("modalTitle").innerHTML = "➕ Add New Data";
-  document.getElementById("modalActionBtn").innerHTML = "Add";
-  document.getElementById("modalActionBtn").className = "btn-add";
-  document.getElementById("modalName").value = "";
-  document.getElementById("modalCategory").value = "";
-  document.getElementById("modalUrl").value = "";
-  document.getElementById("modalThumb").value = "";
-  document.getElementById("dataModal").style.display = "flex";
-}
-
-function openEditModal(rowNum, name, category, url) {
-  isEditMode = true;
-  currentEditRow = rowNum;
-  document.getElementById("modalTitle").innerHTML = "✏️ Edit Data";
-  document.getElementById("modalActionBtn").innerHTML = "Update";
-  document.getElementById("modalActionBtn").className = "btn-save";
-  document.getElementById("modalName").value = name;
-  document.getElementById("modalCategory").value = category;
-  document.getElementById("modalUrl").value = url;
-  document.getElementById("modalThumb").value = "";
-  document.getElementById("dataModal").style.display = "flex";
-}
-
-function closeModal() { document.getElementById("dataModal").style.display = "none"; }
-
-document.getElementById("openImageEditorBtn").addEventListener("click", function() {
-  let fileInput = document.getElementById("modalThumb");
-  if (!fileInput.files || fileInput.files.length === 0) {
-    showToast("Pehle image select karo!", "error");
-    return;
+  function updateProgress(percent, msg) {
+    const fillBar = document.getElementById("progressFillBar");
+    fillBar.style.width = percent + "%";
+    fillBar.innerText = Math.floor(percent) + "%";
+    document.getElementById("progressStatusText").innerText = msg;
   }
-  let file = fileInput.files[0];
-  if (!file.type.match('image.*')) { showToast("Image file chahiye", "error"); return; }
-  let reader = new FileReader();
-  reader.onload = function(e) { tempImageBase64 = e.target.result; openEditor(tempImageBase64); };
-  reader.readAsDataURL(file);
-});
 
-function openEditor(imageDataUrl) {
-  const modal = document.getElementById("imageEditorModal");
-  modal.style.display = "flex";
-  canvas = document.getElementById("editorCanvas");
-  ctx = canvas.getContext("2d");
-  cropBox = document.getElementById("cropBox");
-  
-  currentImageObj = new Image();
-  currentImageObj.onload = function() {
-    originalImageWidth = currentImageObj.width;
-    originalImageHeight = currentImageObj.height;
-    currentZoom = 0.2;
-    boxWidth = 250;
-    boxHeight = 250;
-    
-    document.getElementById("zoomSlider").value = 20;
-    document.getElementById("widthSlider").value = 250;
-    document.getElementById("heightSlider").value = 250;
-    document.getElementById("zoomValue").innerText = "20";
-    
-    updateCanvas();
-  };
-  currentImageObj.src = imageDataUrl;
-  currentImageObj.onerror = function() {
-    showToast("Image load nahi ho rahi!", "error");
-  };
-}
-
-function updateCanvas() {
-  if (!currentImageObj || !currentImageObj.complete) return;
-  
-  let drawWidth = originalImageWidth * currentZoom;
-  let drawHeight = originalImageHeight * currentZoom;
-  
-  canvas.width = drawWidth;
-  canvas.height = drawHeight;
-  ctx.clearRect(0, 0, drawWidth, drawHeight);
-  ctx.drawImage(currentImageObj, 0, 0, drawWidth, drawHeight);
-  
-  let boxDisplayWidth = boxWidth * currentZoom;
-  let boxDisplayHeight = boxHeight * currentZoom;
-  let maxLeft = drawWidth - boxDisplayWidth;
-  let maxTop = drawHeight - boxDisplayHeight;
-  
-  let currentLeft = parseFloat(cropBox.style.left);
-  let currentTop = parseFloat(cropBox.style.top);
-  
-  if (isNaN(currentLeft)) currentLeft = maxLeft / 2;
-  if (isNaN(currentTop)) currentTop = maxTop / 2;
-  
-  if (maxLeft < 0) maxLeft = 0;
-  if (maxTop < 0) maxTop = 0;
-  
-  currentLeft = Math.min(maxLeft, Math.max(0, currentLeft));
-  currentTop = Math.min(maxTop, Math.max(0, currentTop));
-  
-  cropBox.style.width = Math.max(0, boxDisplayWidth) + "px";
-  cropBox.style.height = Math.max(0, boxDisplayHeight) + "px";
-  cropBox.style.left = currentLeft + "px";
-  cropBox.style.top = currentTop + "px";
-  cropBox.setAttribute("data-size", Math.round(boxWidth) + "x" + Math.round(boxHeight));
-  
-  let leftSlider = document.getElementById("leftSlider");
-  let topSlider = document.getElementById("topSlider");
-  
-  leftSlider.max = Math.max(0, maxLeft);
-  topSlider.max = Math.max(0, maxTop);
-  leftSlider.value = currentLeft;
-  topSlider.value = currentTop;
-  
-  document.getElementById("leftValue").innerText = Math.round(currentLeft);
-  document.getElementById("topValue").innerText = Math.round(currentTop);
-  document.getElementById("widthValue").innerText = Math.round(boxWidth);
-  document.getElementById("heightValue").innerText = Math.round(boxHeight);
-  document.getElementById("zoomValue").innerText = Math.round(currentZoom * 100);
-  document.getElementById("currentBoxSize").innerHTML = Math.round(boxWidth) + " x " + Math.round(boxHeight) + " px";
-}
-
-// Position Sliders
-document.getElementById("leftSlider").addEventListener("input", function(e) {
-  let val = parseFloat(e.target.value);
-  let maxLeft = parseFloat(this.max);
-  val = Math.min(maxLeft, Math.max(0, val));
-  cropBox.style.left = val + "px";
-  document.getElementById("leftValue").innerText = Math.round(val);
-});
-
-document.getElementById("topSlider").addEventListener("input", function(e) {
-  let val = parseFloat(e.target.value);
-  let maxTop = parseFloat(this.max);
-  val = Math.min(maxTop, Math.max(0, val));
-  cropBox.style.top = val + "px";
-  document.getElementById("topValue").innerText = Math.round(val);
-});
-
-// Size Sliders (Width & Height separately)
-document.getElementById("widthSlider").addEventListener("input", function(e) {
-  boxWidth = parseFloat(e.target.value);
-  updateCanvas();
-});
-
-document.getElementById("heightSlider").addEventListener("input", function(e) {
-  boxHeight = parseFloat(e.target.value);
-  updateCanvas();
-});
-
-// Zoom Slider
-document.getElementById("zoomSlider").addEventListener("input", function(e) {
-  currentZoom = parseFloat(e.target.value) / 100;
-  updateCanvas();
-});
-
-function saveCroppedImage() {
-  if (!currentImageObj || !currentImageObj.complete) { showToast("Image ready nahi hai", "error"); return; }
-  
-  let boxLeft = parseFloat(cropBox.style.left);
-  let boxTop = parseFloat(cropBox.style.top);
-  
-  if (isNaN(boxLeft) || isNaN(boxTop)) { showToast("Box position sahi nahi hai", "error"); return; }
-  
-  let cropX = boxLeft / currentZoom;
-  let cropY = boxTop / currentZoom;
-  let cropW = boxWidth;
-  let cropH = boxHeight;
-  
-  if (cropX < 0) cropX = 0;
-  if (cropY < 0) cropY = 0;
-  let finalWidth = Math.min(cropW, originalImageWidth - cropX);
-  let finalHeight = Math.min(cropH, originalImageHeight - cropY);
-  
-  if (finalWidth <= 0 || finalHeight <= 0) {
-    showToast("Crop size invalid! Box ko image ke andar rakho.", "error");
-    return;
+  function showToast(text, type = "success") {
+    const toast = document.getElementById("toastMessage");
+    toast.style.display = "block";
+    toast.innerText = text;
+    toast.style.background = type === "error" ? "#d13a3a" : "#1f6e43";
+    setTimeout(() => { toast.style.display = "none"; }, 2800);
   }
-  
-  const tempCanvas = document.createElement("canvas");
-  tempCanvas.width = finalWidth;
-  tempCanvas.height = finalHeight;
-  const tempCtx = tempCanvas.getContext("2d");
-  
-  tempCtx.drawImage(currentImageObj, cropX, cropY, finalWidth, finalHeight, 0, 0, finalWidth, finalHeight);
-  const croppedBase64 = tempCanvas.toDataURL("image/jpeg", 0.9);
-  
-  fetch(croppedBase64)
-    .then(res => res.blob())
-    .then(blob => {
-      let file = new File([blob], "cropped_image.jpg", { type: "image/jpeg" });
-      let dataTransfer = new DataTransfer();
-      dataTransfer.items.add(file);
-      document.getElementById("modalThumb").files = dataTransfer.files;
-      showToast(`✅ Image crop ho gayi! Size: ${Math.round(finalWidth)}x${Math.round(finalHeight)}`, "success");
-      closeImageEditor();
+
+  async function loadData() {
+    try {
+      showProgress(true, 10, "Fetching data...");
+      const res = await fetch(API_URL);
+      const data = await res.json();
+      if (Array.isArray(data)) {
+        allVideos = data.map(item => ({
+          rowNumber: item.rowNumber,
+          Name: item.Name || "",
+          Category: item.Category || "",
+          URL: item.URL || "#",
+          Thumbnail: item.Thumbnail || null
+        }));
+      } else { allVideos = []; }
+      updateProgress(100, "Rendering...");
+      setTimeout(() => showProgress(false), 300);
+      renderCategories();
+    } catch (e) {
+      showProgress(false);
+      showToast("Failed to load data", "error");
+      console.error(e);
+      allVideos = [];
+      renderCategories();
+    }
+  }
+
+  function getUniqueCategories() {
+    let cats = new Set();
+    allVideos.forEach(v => { if (v.Category) cats.add(v.Category); });
+    let order = ["Sports", "Tv Show", "Live", "Movies", "Drama", "Slider"];
+    return Array.from(cats).sort((a, b) => {
+      let ia = order.indexOf(a), ib = order.indexOf(b);
+      if (ia !== -1 && ib !== -1) return ia - ib;
+      if (ia !== -1) return -1;
+      if (ib !== -1) return 1;
+      return a.localeCompare(b);
     });
-}
-
-function closeImageEditor() {
-  document.getElementById("imageEditorModal").style.display = "none";
-}
-
-document.getElementById("saveCropBtn").addEventListener("click", saveCroppedImage);
-document.getElementById("closeEditorBtn").addEventListener("click", closeImageEditor);
-
-async function submitData() {
-  let name = document.getElementById("modalName").value.trim();
-  let category = document.getElementById("modalCategory").value;
-  let url = document.getElementById("modalUrl").value.trim();
-  let file = document.getElementById("modalThumb").files[0];
-  
-  if (!name || !category || !url) { showToast("Sab fields bharo", "error"); return; }
-  if (!isEditMode && !file) { showToast("Image select karo", "error"); return; }
-  closeModal();
-  
-  showProgress(true, 0, "Processing...");
-  
-  if (isEditMode) {
-    let processEdit = async (imageBase64) => {
-      let payload = { action: "EDIT", rowNumber: currentEditRow, name, category, url };
-      if (imageBase64) payload.thumbnail = imageBase64;
-      showProgress(true, 60, "Saving...");
-      let res = await fetch(API, { method: "POST", body: JSON.stringify(payload) });
-      let result = await res.json();
-      showProgress(false, 0, "");
-      if (result.status === "UPDATED") { showToast("Updated!", "success"); loadData(); }
-      else showToast("Update failed", "error");
-    };
-    if (file) {
-      let reader = new FileReader();
-      reader.onload = (e) => processEdit(e.target.result);
-      reader.readAsDataURL(file);
-    } else processEdit(null);
-  } else {
-    let reader = new FileReader();
-    reader.onload = async () => {
-      let payload = { name, category, url, thumbnail: reader.result };
-      showProgress(true, 70, "Uploading...");
-      let res = await fetch(API, { method: "POST", body: JSON.stringify(payload) });
-      let result = await res.json();
-      showProgress(false, 0, "");
-      if (result.status === "OK") { showToast("Added!", "success"); loadData(); }
-      else showToast("Add failed", "error");
-    };
-    reader.readAsDataURL(file);
   }
-}
 
-async function deleteData(rowNumber, name) {
-  if (!confirm(`Delete "${name}"?`)) return;
-  showProgress(true, 50, "Deleting...");
-  let res = await fetch(API, { method: "POST", body: JSON.stringify({ action: "DELETE", rowNumber }) });
-  let result = await res.json();
-  showProgress(false, 0, "");
-  if (result.status === "DELETED") { showToast("Deleted!", "success"); loadData(); }
-  else showToast("Delete failed", "error");
-}
+  function escapeHtml(str) { if (!str) return ''; return str.replace(/[&<>]/g, function(m) { if (m === '&') return '&amp;'; if (m === '<') return '&lt;'; if (m === '>') return '&gt;'; return m; }); }
 
-async function loadData() {
-  try {
-    let res = await fetch(API);
-    let data = await res.json();
+  function renderCategories() {
+    const container = document.getElementById("categoriesContainer");
+    const categories = getUniqueCategories();
+    if (categories.length === 0) {
+      container.innerHTML = `<div style="background:#101624; border-radius:38px; padding:40px; text-align:center;">✨ No categories yet. Click + to add video ✨</div>`;
+      return;
+    }
     let html = "";
-    if (!data || data.length === 0) { 
-      document.getElementById("tableBody").innerHTML = '<tr><td colspan="5" style="text-align:center;">No data found</tr'; 
-      return; 
+    for (let cat of categories) {
+      const videos = allVideos.filter(v => v.Category === cat);
+      html += `<div class="category-card">
+        <div class="category-header">
+          <span class="category-title">${escapeHtml(cat)}</span>
+          <span class="category-badge">${videos.length} video${videos.length !== 1 ? 's' : ''}</span>
+        </div>
+        <div class="horizontal-scroll">`;
+      if (videos.length === 0) {
+        html += `<div class="empty-cat-msg">📭 No videos in this category. Add some!</div>`;
+      } else {
+        for (let v of videos) {
+          const thumb = v.Thumbnail && v.Thumbnail.trim() ? v.Thumbnail : "https://placehold.co/300x180/1a2340/white?text=No+Image";
+          html += `<div class="video-card" data-video='${JSON.stringify(v)}'>
+            <div class="thumb-wrapper"><img src="${thumb}" loading="lazy" onerror="this.src='https://placehold.co/300x180/2a3555/white?text=error'"></div>
+            <div class="video-info">
+              <div class="video-name">${escapeHtml(v.Name)}</div>
+              <div class="video-url">${v.URL.length > 45 ? v.URL.substring(0, 42) + '...' : v.URL}</div>
+              <div class="video-actions">
+                <button class="small-edit" data-row="${v.rowNumber}" data-name="${escapeHtml(v.Name)}" data-cat="${escapeHtml(v.Category)}" data-url="${escapeHtml(v.URL)}" data-thumb="${v.Thumbnail || ''}">✏️ Edit</button>
+                <button class="small-delete" data-row="${v.rowNumber}" data-name="${escapeHtml(v.Name)}">🗑️ Del</button>
+              </div>
+            </div>
+          </div>`;
+        }
+      }
+      html += `</div></div>`;
     }
-    for (let item of data) {
-      let name = (item.Name || "").replace(/'/g, "\\'");
-      let category = (item.Category || "").replace(/'/g, "\\'");
-      let url = item.URL || "#";
-      let thumb = item.Thumbnail ? `<img src="${item.Thumbnail}" onerror="this.src='https://via.placeholder.com/55'">` : "No image";
-      html += `<tr>
-        <td>${name}</td>
-        <td>${category}</td>
-        <td><a href="${url}" target="_blank" style="color:#00aaff;">🔗 Link</a></td>
-        <td>${thumb}</td>
-        <td>
-          <button class="edit-btn" onclick='openEditModal(${item.rowNumber}, "${name}", "${category}", "${url.replace(/'/g, "\\'")}")'>✏️ Edit</button>
-          <button class="delete-btn" onclick='deleteData(${item.rowNumber}, "${name}")'>🗑️ Delete</button>
-         </td>
-       </tr>`;
-    }
-    document.getElementById("tableBody").innerHTML = html;
-  } catch(e) { 
-    console.error(e);
-    document.getElementById("tableBody").innerHTML = '<tr><td colspan="5" style="text-align:center;">Error loading data</tr';
+    container.innerHTML = html;
+    attachCardEvents();
   }
-}
-loadData();
+
+  function attachCardEvents() {
+    document.querySelectorAll(".small-edit").forEach(btn => {
+      btn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        const row = parseInt(btn.dataset.row);
+        const name = btn.dataset.name;
+        const cat = btn.dataset.cat;
+        const url = btn.dataset.url;
+        const thumb = btn.dataset.thumb;
+        openEditModal(row, name, cat, url, thumb);
+      });
+    });
+    document.querySelectorAll(".small-delete").forEach(btn => {
+      btn.addEventListener("click", async (e) => {
+        e.stopPropagation();
+        const row = parseInt(btn.dataset.row);
+        const name = btn.dataset.name;
+        if (confirm(`Delete "${name}" ?`)) await deleteVideo(row);
+      });
+    });
+    document.querySelectorAll(".video-card").forEach(card => {
+      card.addEventListener("click", (e) => {
+        if (e.target.classList.contains("small-edit") || e.target.classList.contains("small-delete")) return;
+        try {
+          const vid = JSON.parse(card.getAttribute("data-video"));
+          if (vid.URL) window.open(vid.URL, "_blank");
+        } catch (er) { }
+      });
+    });
+  }
+
+  async function deleteVideo(rowNumber) {
+    showProgress(true, 30, "Deleting...");
+    try {
+      const res = await fetch(API_URL, { method: "POST", body: JSON.stringify({ action: "DELETE", rowNumber }) });
+      const result = await res.json();
+      if (result.status === "DELETED") { showToast("Deleted!"); await loadData(); }
+      else { showToast("Delete failed", "error"); }
+      showProgress(false);
+    } catch (e) { showProgress(false); showToast("Error deleting", "error"); }
+  }
+
+  function openAddModal() {
+    isEditMode = false;
+    currentEditRow = null;
+    document.getElementById("modalTitle").innerText = "➕ Add New Video";
+    document.getElementById("videoName").value = "";
+    document.getElementById("videoCategorySelect").value = "";
+    document.getElementById("videoUrl").value = "";
+    document.getElementById("thumbFile").value = "";
+    document.getElementById("globalModal").style.display = "flex";
+  }
+
+  function openEditModal(row, name, cat, url, thumb) {
+    isEditMode = true;
+    currentEditRow = row;
+    existingThumbBackup = thumb;
+    document.getElementById("modalTitle").innerText = "✏️ Edit Video";
+    document.getElementById("videoName").value = name;
+    document.getElementById("videoCategorySelect").value = cat;
+    document.getElementById("videoUrl").value = url;
+    document.getElementById("thumbFile").value = "";
+    document.getElementById("globalModal").style.display = "flex";
+  }
+
+  // Submit with progress
+  async function submitVideo() {
+    const name = document.getElementById("videoName").value.trim();
+    const category = document.getElementById("videoCategorySelect").value;
+    const url = document.getElementById("videoUrl").value.trim();
+    const file = document.getElementById("thumbFile").files[0];
+    if (!name || !category || !url) { showToast("Fill all fields", "error"); return; }
+    document.getElementById("globalModal").style.display = "none";
+    showProgress(true, 20, "Preparing...");
+    const getBase64 = (f) => new Promise(resolve => {
+      if (!f) resolve(null);
+      else { const rd = new FileReader(); rd.onload = () => resolve(rd.result); rd.readAsDataURL(f); }
+    });
+    let thumbBase64 = null;
+    if (file) thumbBase64 = await getBase64(file);
+    else if (isEditMode && existingThumbBackup && !file) thumbBase64 = existingThumbBackup;
+    if (!thumbBase64 && !isEditMode) { showProgress(false); showToast("Thumbnail required", "error"); return; }
+    updateProgress(50, "Uploading to server...");
+    if (isEditMode && currentEditRow) {
+      let payload = { action: "EDIT", rowNumber: currentEditRow, name, category, url };
+      if (thumbBase64) payload.thumbnail = thumbBase64;
+      try {
+        const res = await fetch(API_URL, { method: "POST", body: JSON.stringify(payload) });
+        const result = await res.json();
+        updateProgress(95, "Finalizing...");
+        if (result.status === "UPDATED") { showToast("Video updated!"); await loadData(); }
+        else showToast("Update failed", "error");
+      } catch (e) { showToast("Update error", "error"); }
+    } else {
+      if (!thumbBase64) { showProgress(false); showToast("Image needed", "error"); return; }
+      let payload = { name, category, url, thumbnail: thumbBase64 };
+      try {
+        const res = await fetch(API_URL, { method: "POST", body: JSON.stringify(payload) });
+        const result = await res.json();
+        updateProgress(95, "Done");
+        if (result.status === "OK") { showToast("Video added!"); await loadData(); }
+        else showToast("Add failed", "error");
+      } catch (e) { showToast("Add error", "error"); }
+    }
+    showProgress(false);
+  }
+
+  // CROPPER LOGIC (advanced)
+  let cropImageObj = new Image();
+  let cropImageLoadedFlag = false;
+  let cropNaturalW = 1, cropNaturalH = 1;
+  let cropZoom = 0.5, cropW = 240, cropH = 180, cropX = 0, cropY = 0;
+  let cropResolveFn = null;
+
+  function openCropper(file) {
+    return new Promise((resolve) => {
+      cropResolveFn = resolve;
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        cropImageObj = new Image();
+        cropImageObj.onload = () => {
+          cropNaturalW = cropImageObj.width;
+          cropNaturalH = cropImageObj.height;
+          cropZoom = 0.45;
+          cropW = Math.min(400, cropNaturalW);
+          cropH = Math.min(280, cropNaturalH);
+          cropX = 0; cropY = 0;
+          document.getElementById("zoomScaleSlider").value = cropZoom * 100;
+          document.getElementById("cropWidthSlider").value = cropW;
+          document.getElementById("cropHeightSlider").value = cropH;
+          document.getElementById("cropToolModal").style.display = "flex";
+          drawCropCanvas();
+        };
+        cropImageObj.src = e.target.result;
+      };
+      reader.readAsDataURL(file);
+    });
+  }
+
+  function drawCropCanvas() {
+    if (!cropImageObj.complete) return;
+    const canvas = document.getElementById("cropCanvas");
+    const ctx = canvas.getContext("2d");
+    let dispW = cropNaturalW * cropZoom;
+    let dispH = cropNaturalH * cropZoom;
+    canvas.width = dispW;
+    canvas.height = dispH;
+    ctx.clearRect(0, 0, dispW, dispH);
+    ctx.drawImage(cropImageObj, 0, 0, dispW, dispH);
+    const box = document.getElementById("cropSelectionBox");
+    let leftPx = cropX * cropZoom;
+    let topPx = cropY * cropZoom;
+    let wPx = cropW * cropZoom;
+    let hPx = cropH * cropZoom;
+    box.style.left = leftPx + "px";
+    box.style.top = topPx + "px";
+    box.style.width = Math.max(2, wPx) + "px";
+    box.style.height = Math.max(2, hPx) + "px";
+    document.getElementById("xPosVal").innerText = Math.round(cropX) + "px";
+    document.getElementById("yPosVal").innerText = Math.round(cropY) + "px";
+    document.getElementById("widthVal").innerText = Math.round(cropW) + "px";
+    document.getElementById("heightVal").innerText = Math.round(cropH) + "px";
+    document.getElementById("zoomPercent").innerText = Math.round(cropZoom * 100) + "%";
+    let maxX = Math.max(0, cropNaturalW - cropW);
+    let maxY = Math.max(0, cropNaturalH - cropH);
+    document.getElementById("cropXSlider").max = maxX;
+    document.getElementById("cropYSlider").max = maxY;
+    document.getElementById("cropXSlider").value = Math.min(maxX, cropX);
+    document.getElementById("cropYSlider").value = Math.min(maxY, cropY);
+    document.getElementById("cropWidthSlider").max = cropNaturalW;
+    document.getElementById("cropHeightSlider").max = cropNaturalH;
+  }
+
+  function applyCropAndClose() {
+    let finalX = Math.min(cropX, cropNaturalW - cropW);
+    let finalY = Math.min(cropY, cropNaturalH - cropH);
+    let finalW = Math.min(cropW, cropNaturalW - finalX);
+    let finalH = Math.min(cropH, cropNaturalH - finalY);
+    if (finalW <= 0 || finalH <= 0) { showToast("Invalid crop", "error"); return; }
+    const tempCanvas = document.createElement("canvas");
+    tempCanvas.width = finalW;
+    tempCanvas.height = finalH;
+    const tctx = tempCanvas.getContext("2d");
+    tctx.drawImage(cropImageObj, finalX, finalY, finalW, finalH, 0, 0, finalW, finalH);
+    tempCanvas.toBlob(blob => {
+      const croppedFile = new File([blob], "cropped.jpg", { type: "image/jpeg" });
+      const dt = new DataTransfer();
+      dt.items.add(croppedFile);
+      document.getElementById("thumbFile").files = dt.files;
+      showToast("Crop applied!", "success");
+      document.getElementById("cropToolModal").style.display = "none";
+      if (cropResolveFn) cropResolveFn(croppedFile);
+    }, "image/jpeg", 0.9);
+  }
+
+  // Input listeners for crop
+  ["cropXSlider", "cropYSlider", "cropWidthSlider", "cropHeightSlider", "zoomScaleSlider"].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.addEventListener("input", (e) => {
+      if (id === "cropXSlider") cropX = parseFloat(e.target.value);
+      if (id === "cropYSlider") cropY = parseFloat(e.target.value);
+      if (id === "cropWidthSlider") cropW = parseFloat(e.target.value);
+      if (id === "cropHeightSlider") cropH = parseFloat(e.target.value);
+      if (id === "zoomScaleSlider") cropZoom = parseFloat(e.target.value) / 100;
+      drawCropCanvas();
+    });
+  });
+
+  document.getElementById("openMiniImageBtn")?.addEventListener("click", () => {
+    const inp = document.getElementById("thumbFile");
+    if (inp.files && inp.files[0]) openCropper(inp.files[0]);
+    else showToast("Select an image first", "error");
+  });
+  document.getElementById("applyCropSaveBtn")?.addEventListener("click", applyCropAndClose);
+  document.getElementById("cancelCropToolBtn")?.addEventListener("click", () => document.getElementById("cropToolModal").style.display = "none");
+  document.getElementById("closeCropModalBtn")?.addEventListener("click", () => document.getElementById("cropToolModal").style.display = "none");
+  document.getElementById("openAddGlobalBtn").onclick = () => openAddModal();
+  document.getElementById("closeModalBtn").onclick = () => document.getElementById("globalModal").style.display = "none";
+  document.getElementById("modalSubmitBtn").onclick = () => submitVideo();
+
+  loadData();
 </script>
 </body>
 </html>
+```
