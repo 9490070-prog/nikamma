@@ -2,176 +2,694 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<title>Admin Panel PRO</title>
-
+<title>Admin Panel - Pro Image Editor</title>
 <style>
-body {
-  background:#0f0f0f;
-  color:#fff;
-  font-family:Arial;
+* { box-sizing: border-box; }
+body { font-family: 'Segoe UI', Arial, sans-serif; background: #0a0a0a; color: white; padding: 20px; margin: 0; }
+.container { max-width: 1300px; margin: auto; }
+.header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; }
+h2 { color: #00aaff; margin: 0; }
+.add-btn { background: #00aaff; border: none; width: 50px; height: 50px; border-radius: 50%; font-size: 30px; cursor: pointer; }
+.add-btn:hover { background: #0088cc; }
+
+.modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); backdrop-filter: blur(5px); justify-content: center; align-items: center; z-index: 1000; }
+.modal-content { background: #1e1e1e; padding: 30px; border-radius: 15px; width: 90%; max-width: 500px; }
+.modal-content h3 { margin: 0 0 20px 0; color: #00aaff; }
+.modal-content input, .modal-content select { width: 100%; padding: 12px; margin: 10px 0; background: #2a2a2a; border: 1px solid #444; color: white; border-radius: 5px; }
+.modal-buttons { display: flex; gap: 10px; margin-top: 20px; }
+.modal-buttons button { flex: 1; padding: 12px; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; }
+.btn-add { background: #00aaff; color: white; }
+.btn-save { background: #ffaa00; color: black; }
+.btn-cancel { background: #ff4444; color: white; }
+
+.image-input-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: #2a2a2a;
+  border: 1px solid #444;
+  border-radius: 5px;
+  padding: 5px 10px;
+  margin: 10px 0;
+}
+.image-edit-icon {
+  background: #33cc99;
+  border: none;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  cursor: pointer;
+  font-size: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+}
+.image-edit-icon:hover { background: #28a87a; }
+.image-input-wrapper input[type="file"] { flex: 1; background: transparent; border: none; margin: 0; cursor: pointer; }
+
+.progress-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); justify-content: center; align-items: center; z-index: 2000; }
+.progress-card { background: #1a1a1a; padding: 35px; border-radius: 20px; text-align: center; }
+.progress-bar { width: 300px; height: 30px; background: #333; border-radius: 20px; overflow: hidden; margin: 20px 0; }
+.progress-fill { width: 0%; height: 100%; background: #00aaff; transition: width 0.3s; line-height: 30px; }
+
+.toast { position: fixed; bottom: 30px; right: 30px; padding: 12px 25px; border-radius: 8px; display: none; z-index: 1001; }
+.toast.success { background: #00aa33; }
+.toast.error { background: #ff4444; }
+
+.table-wrapper { overflow-x: auto; margin-top: 20px; }
+table { width: 100%; border-collapse: collapse; }
+th, td { border: 1px solid #333; padding: 12px; text-align: left; vertical-align: middle; }
+th { background: #1a1a1a; color: #00aaff; }
+td { background: #121212; }
+table img { width: 55px; height: 55px; object-fit: cover; border-radius: 8px; }
+.edit-btn { background: #ffaa00; color: black; padding: 6px 14px; border: none; border-radius: 5px; cursor: pointer; margin: 2px; font-weight: bold; }
+.delete-btn { background: #ff4444; color: white; padding: 6px 14px; border: none; border-radius: 5px; cursor: pointer; margin: 2px; font-weight: bold; }
+
+/* ========== IMAGE EDITOR - FIXED IMAGE, SCROLLABLE CONTROLS ========== */
+.image-editor-modal {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0,0,0,0.96);
+  backdrop-filter: blur(8px);
+  justify-content: center;
+  align-items: center;
+  z-index: 3000;
+}
+.image-editor-content {
+  background: #141a24;
+  border-radius: 10px;
+  padding: 5px 5px;
+  width: 95vw;
+  max-width: 1100px;
+  height: 95vh;
+  display: flex;
+  flex-direction: column;
+  border: 1px solid #2a4a6a;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.5);
 }
 
-.container {
-  max-width:900px;
-  margin:auto;
-  padding:10px;
+.image-editor-content h3 { 
+  color: #00aaff; 
+  margin: 0 0 5px 0; 
+  font-size: 18px; 
+  text-align: center;
+  padding-bottom: 10px;
+  border-bottom: 1px solid #2a4a6a;
+  flex-shrink: 0;
 }
 
-input,button {
-  width:100%;
-  padding:10px;
-  margin:5px 0;
+/* Canvas Area - Fixed, NO SCROLL */
+.canvas-area {
+  background: #0a0e14;
+  border-radius: 5px;
+  margin-bottom: 5px;
+  border: 1px solid #2a4a6a;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  overflow: hidden;
+  min-height: 250px;
+  max-height: 48vh;
+  flex-shrink: 0;
+  padding: 5px;
+}
+.canvas-wrapper {
+  position: relative;
+  display: inline-block;
+}
+#editorCanvas {
+  display: block;
+  background: #1a1e2a;
+  border-radius: 4px;
+}
+.crop-box {
+  position: absolute;
+  border: 3px solid #ff4466;
+  background: rgba(255, 68, 102, 0.2);
+  box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.6);
+  box-sizing: border-box;
+  pointer-events: none;
+}
+.crop-box::before {
+  content: attr(data-size);
+  position: absolute;
+  top: -26px;
+  left: 0;
+  background: #ff4466;
+  color: white;
+  padding: 2px 8px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: bold;
+  white-space: nowrap;
 }
 
-table {
-  width:100%;
-  border-collapse:collapse;
-  margin-top:20px;
+/* Controls Container - SCROLLABLE */
+.controls-scroll-area {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  margin-bottom: 10px;
+  padding-right: 5px;
+}
+.controls-scroll-area::-webkit-scrollbar {
+  width: 6px;
+}
+.controls-scroll-area::-webkit-scrollbar-track {
+  background: #1a1e2a;
+  border-radius: 10px;
+}
+.controls-scroll-area::-webkit-scrollbar-thumb {
+  background: #00aaff;
+  border-radius: 10px;
 }
 
-td,th {
-  border:1px solid #333;
-  padding:8px;
+/* Sliders Grid */
+.slider-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-bottom: 15px;
+}
+.slider-card {
+  background: #0f131c;
+  padding: 12px 15px;
+  border-radius: 12px;
+  border: 1px solid #2a3a4a;
+}
+.slider-card label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #88ccff;
+  font-weight: bold;
+  font-size: 13px;
+  margin-bottom: 10px;
+}
+.slider-card input {
+  width: 100%;
+  cursor: pointer;
+  accent-color: #00aaff;
+  height: 5px;
+  border-radius: 5px;
+}
+.slider-card span {
+  display: block;
+  background: #080c12;
+  padding: 6px 10px;
+  border-radius: 8px;
+  text-align: center;
+  font-size: 12px;
+  margin-top: 10px;
+  color: #ccc;
+}
+.value-highlight {
+  color: #ffaa44;
+  font-weight: bold;
+  font-size: 14px;
 }
 
-img {
-  width:70px;
-  border-radius:5px;
+/* Editor Buttons */
+.editor-buttons {
+  display: flex;
+  gap: 15px;
+  justify-content: center;
+  padding-top: 12px;
+  border-top: 1px solid #2a4a6a;
+  flex-shrink: 0;
 }
+.editor-buttons button {
+  padding: 10px 28px;
+  border: none;
+  border-radius: 40px;
+  font-weight: bold;
+  cursor: pointer;
+  font-size: 14px;
+  transition: transform 0.1s;
+}
+.editor-buttons button:hover {
+  transform: scale(1.02);
+}
+.btn-save-crop { background: #00aa55; color: white; }
+.btn-cancel-editor { background: #ff4444; color: white; }
 
-/* 🔥 FIXED LOADER */
-#loader {
-  display:none;
-  position:fixed;
-  top:0;
-  left:0;
-  width:100%;
-  height:100%;
-  background:rgba(0,0,0,0.85);
-  justify-content:center;
-  align-items:center;
-  font-size:20px;
-  z-index:9999;
+/* Responsive */
+@media (max-width: 650px) {
+  .slider-grid {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+  .image-editor-content {
+    padding: 15px;
+    width: 95vw;
+  }
+  .editor-buttons button {
+    padding: 8px 20px;
+  }
 }
 </style>
-
 </head>
-
 <body>
 
-<!-- LOADER -->
-<div id="loader">Uploading... ⏳</div>
-
 <div class="container">
-
-<h2>🔥 Admin Panel PRO</h2>
-
-<input id="name" placeholder="Name">
-<input id="category" placeholder="Category">
-<input id="url" placeholder="URL">
-<input type="file" id="thumb">
-
-<button onclick="uploadData()">Add Data</button>
-
-<table>
-<thead>
-<tr>
-<th>Name</th>
-<th>Category</th>
-<th>URL</th>
-<th>Thumbnail</th>
-</tr>
-</thead>
-
-<tbody id="tbody"></tbody>
-</table>
-
+  <div class="header">
+    <h2>📁 Admin Dashboard</h2>
+    <button class="add-btn" onclick="openAddModal()">+</button>
+  </div>
+  <div class="table-wrapper">
+    <table id="dataTable">
+      <thead><tr><th>Name</th><th>Category</th><th>URL</th><th>Thumbnail</th><th>Actions</th></tr></thead>
+      <tbody id="tableBody"><tr><td colspan="5" style="text-align:center;">Loading...</tr</tbody>
+    </table>
+  </div>
 </div>
 
+<div id="dataModal" class="modal">
+  <div class="modal-content">
+    <h3 id="modalTitle">➕ Add Data</h3>
+    <input type="text" id="modalName" placeholder="Name">
+    <select id="modalCategory">
+      <option value="">-- Category --</option>
+      <option value="Live">Live</option><option value="Movies">Movies</option>
+      <option value="Drama">Drama</option><option value="Slider">Slider</option>
+      <option value="Sports">Sports</option><option value="Tv Show">Tv Show</option>
+    </select>
+    <input type="text" id="modalUrl" placeholder="URL">
+    <div class="image-input-wrapper">
+      <button type="button" class="image-edit-icon" id="openImageEditorBtn">🎨</button>
+      <input type="file" id="modalThumb" accept="image/*">
+    </div>
+    <div class="modal-buttons">
+      <button id="modalActionBtn" class="btn-add" onclick="submitData()">Add</button>
+      <button class="btn-cancel" onclick="closeModal()">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- IMAGE EDITOR - FIXED IMAGE, SCROLLABLE CONTROLS -->
+<div id="imageEditorModal" class="image-editor-modal">
+  <div class="image-editor-content">
+    <h4>✂️Resize (Width + Height)</h4>
+    
+    <!-- Canvas - Fixed, NO SCROLL -->
+    <div class="canvas-area" id="canvasContainer">
+      <div class="canvas-wrapper" id="canvasWrapper">
+        <canvas id="editorCanvas"></canvas>
+        <div id="cropBox" class="crop-box" data-size="250x250"></div>
+      </div>
+    </div>
+    
+    <!-- Controls Area - SCROLLABLE (Sirf controls scroll honge) -->
+    <div class="controls-scroll-area">
+      
+      <!-- Move Controls (Position) -->
+      <div style="margin-bottom: 12px;"><label style="color:#88ccff; font-size:13px;">📍 MOVE BOX (Position)</label></div>
+      <div class="slider-grid">
+        <div class="slider-card">
+          <label>⬅️ LEFT → RIGHT ➡️</label>
+          <input type="range" id="leftSlider" min="0" max="100" value="50" step="1">
+          <span>X Position: <span id="leftValue" class="value-highlight">0</span> px</span>
+        </div>
+        <div class="slider-card">
+          <label>⬆️ TOP → BOTTOM ⬇️</label>
+          <input type="range" id="topSlider" min="0" max="100" value="50" step="1">
+          <span>Y Position: <span id="topValue" class="value-highlight">0</span> px</span>
+        </div>
+      </div>
+      
+      <!-- Resize Controls (Width & Height - 2 alag sliders) -->
+      <div style="margin-bottom: 12px; margin-top: 8px;"><label style="color:#88ccff; font-size:13px;">📐 RESIZE BOX (Width + Height)</label></div>
+      <div class="slider-grid">
+        <div class="slider-card">
+          <label>↔️ WIDTH (Left-Right)</label>
+          <input type="range" id="widthSlider" min="10" max="800" value="250" step="5">
+          <span>Width: <span id="widthValue" class="value-highlight">250</span> px</span>
+        </div>
+        <div class="slider-card">
+          <label>↕️ HEIGHT (Top-Bottom)</label>
+          <input type="range" id="heightSlider" min="10" max="800" value="250" step="5">
+          <span>Height: <span id="heightValue" class="value-highlight">250</span> px</span>
+        </div>
+      </div>
+      
+      <!-- Zoom Control -->
+      <div style="margin-bottom: 12px; margin-top: 8px;"><label style="color:#88ccff; font-size:13px;">🔍 IMAGE ZOOM</label></div>
+      <div class="slider-grid">
+        <div class="slider-card">
+          <label>🔎 ZOOM IN / OUT</label>
+          <input type="range" id="zoomSlider" min="10" max="200" value="20" step="5">
+          <span>Zoom: <span id="zoomValue" class="value-highlight">20</span>%</span>
+        </div>
+        <div class="slider-card">
+          <label>📦 Current Box Size</label>
+          <span id="currentBoxSize" style="background:#ff4466; font-size:14px;">250 x 250 px</span>
+        </div>
+      </div>
+      
+    </div>
+    
+    <!-- Buttons -->
+    <div class="editor-buttons">
+      <button class="btn-save-crop" id="saveCropBtn">💾 Save Cropped Image</button>
+      <button class="btn-cancel-editor" id="closeEditorBtn">❌ Cancel</button>
+    </div>
+  </div>
+</div>
+
+<div id="progressOverlay" class="progress-overlay">
+  <div class="progress-card"><div class="progress-bar"><div class="progress-fill" id="progressFill">0%</div></div><div id="progressStatus">Processing...</div></div>
+</div>
+<div id="toast" class="toast"></div>
+
 <script>
+const API = "https://script.google.com/macros/s/AKfycbylg5tN7DQQwioDrhWtHHEzPh1oqpzqkvBxY_dzwPBCoToAwXwperoy0IWblfWiPFtU2A/exec";
 
-const API = "https://script.google.com/macros/s/AKfycbwRkPA8Uw-IWHnJLFtw5jNo57f0MPeLMzPKV9dPcSyHaX7juHqy11RldfzZnt6txkgu_g/exec";
+let currentEditRow = null;
+let isEditMode = false;
 
-// 🔥 FIX: proper show/hide
-function showLoader(){
-  document.getElementById("loader").style.display = "flex";
+// Editor variables
+let currentImageObj = null;
+let cropBox = null;
+let canvas = null, ctx = null;
+let originalImageWidth = 1, originalImageHeight = 1;
+let currentZoom = 0.2;
+let boxWidth = 250;
+let boxHeight = 250;
+let tempImageBase64 = null;
+
+function showToast(msg, type) {
+  let toast = document.getElementById("toast");
+  toast.className = "toast " + type;
+  toast.innerText = msg;
+  toast.style.display = "block";
+  setTimeout(() => { toast.style.display = "none"; }, 3000);
 }
 
-function hideLoader(){
-  document.getElementById("loader").style.display = "none";
+function showProgress(show, percent, status) {
+  let overlay = document.getElementById("progressOverlay");
+  if (show) {
+    document.getElementById("progressFill").style.width = percent + "%";
+    document.getElementById("progressFill").innerText = percent + "%";
+    document.getElementById("progressStatus").innerText = status;
+    overlay.style.display = "flex";
+  } else {
+    overlay.style.display = "none";
+  }
 }
 
-function uploadData() {
-  let file = document.getElementById("thumb").files[0];
+function openAddModal() {
+  isEditMode = false;
+  currentEditRow = null;
+  document.getElementById("modalTitle").innerHTML = "➕ Add New Data";
+  document.getElementById("modalActionBtn").innerHTML = "Add";
+  document.getElementById("modalActionBtn").className = "btn-add";
+  document.getElementById("modalName").value = "";
+  document.getElementById("modalCategory").value = "";
+  document.getElementById("modalUrl").value = "";
+  document.getElementById("modalThumb").value = "";
+  document.getElementById("dataModal").style.display = "flex";
+}
 
-  if(!file){
-    alert("Image required");
+function openEditModal(rowNum, name, category, url) {
+  isEditMode = true;
+  currentEditRow = rowNum;
+  document.getElementById("modalTitle").innerHTML = "✏️ Edit Data";
+  document.getElementById("modalActionBtn").innerHTML = "Update";
+  document.getElementById("modalActionBtn").className = "btn-save";
+  document.getElementById("modalName").value = name;
+  document.getElementById("modalCategory").value = category;
+  document.getElementById("modalUrl").value = url;
+  document.getElementById("modalThumb").value = "";
+  document.getElementById("dataModal").style.display = "flex";
+}
+
+function closeModal() { document.getElementById("dataModal").style.display = "none"; }
+
+document.getElementById("openImageEditorBtn").addEventListener("click", function() {
+  let fileInput = document.getElementById("modalThumb");
+  if (!fileInput.files || fileInput.files.length === 0) {
+    showToast("Pehle image select karo!", "error");
     return;
   }
-
+  let file = fileInput.files[0];
+  if (!file.type.match('image.*')) { showToast("Image file chahiye", "error"); return; }
   let reader = new FileReader();
-  showLoader();
-
-  reader.onload = function() {
-
-    fetch(API, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({
-        name: document.getElementById("name").value,
-        category: document.getElementById("category").value,
-        url: document.getElementById("url").value,
-        thumbnail: reader.result
-      })
-    })
-
-    .then(res => res.json())
-    .then(data => {
-      hideLoader(); // ✅ FIXED (this was missing/bugged before)
-
-      document.getElementById("thumb").value = "";
-      document.getElementById("name").value = "";
-      document.getElementById("category").value = "";
-      document.getElementById("url").value = "";
-
-      loadData();
-    })
-
-    .catch(err => {
-      hideLoader(); // ✅ always hide even on error
-      alert("Error: " + err);
-    });
-  };
-
+  reader.onload = function(e) { tempImageBase64 = e.target.result; openEditor(tempImageBase64); };
   reader.readAsDataURL(file);
+});
+
+function openEditor(imageDataUrl) {
+  const modal = document.getElementById("imageEditorModal");
+  modal.style.display = "flex";
+  canvas = document.getElementById("editorCanvas");
+  ctx = canvas.getContext("2d");
+  cropBox = document.getElementById("cropBox");
+  
+  currentImageObj = new Image();
+  currentImageObj.onload = function() {
+    originalImageWidth = currentImageObj.width;
+    originalImageHeight = currentImageObj.height;
+    currentZoom = 0.2;
+    boxWidth = 250;
+    boxHeight = 250;
+    
+    document.getElementById("zoomSlider").value = 20;
+    document.getElementById("widthSlider").value = 250;
+    document.getElementById("heightSlider").value = 250;
+    document.getElementById("zoomValue").innerText = "20";
+    
+    updateCanvas();
+  };
+  currentImageObj.src = imageDataUrl;
+  currentImageObj.onerror = function() {
+    showToast("Image load nahi ho rahi!", "error");
+  };
 }
 
-function loadData() {
-  fetch(API)
-  .then(res => res.json())
-  .then(data => {
-    let html = "";
+function updateCanvas() {
+  if (!currentImageObj || !currentImageObj.complete) return;
+  
+  let drawWidth = originalImageWidth * currentZoom;
+  let drawHeight = originalImageHeight * currentZoom;
+  
+  canvas.width = drawWidth;
+  canvas.height = drawHeight;
+  ctx.clearRect(0, 0, drawWidth, drawHeight);
+  ctx.drawImage(currentImageObj, 0, 0, drawWidth, drawHeight);
+  
+  let boxDisplayWidth = boxWidth * currentZoom;
+  let boxDisplayHeight = boxHeight * currentZoom;
+  let maxLeft = drawWidth - boxDisplayWidth;
+  let maxTop = drawHeight - boxDisplayHeight;
+  
+  let currentLeft = parseFloat(cropBox.style.left);
+  let currentTop = parseFloat(cropBox.style.top);
+  
+  if (isNaN(currentLeft)) currentLeft = maxLeft / 2;
+  if (isNaN(currentTop)) currentTop = maxTop / 2;
+  
+  if (maxLeft < 0) maxLeft = 0;
+  if (maxTop < 0) maxTop = 0;
+  
+  currentLeft = Math.min(maxLeft, Math.max(0, currentLeft));
+  currentTop = Math.min(maxTop, Math.max(0, currentTop));
+  
+  cropBox.style.width = Math.max(0, boxDisplayWidth) + "px";
+  cropBox.style.height = Math.max(0, boxDisplayHeight) + "px";
+  cropBox.style.left = currentLeft + "px";
+  cropBox.style.top = currentTop + "px";
+  cropBox.setAttribute("data-size", Math.round(boxWidth) + "x" + Math.round(boxHeight));
+  
+  let leftSlider = document.getElementById("leftSlider");
+  let topSlider = document.getElementById("topSlider");
+  
+  leftSlider.max = Math.max(0, maxLeft);
+  topSlider.max = Math.max(0, maxTop);
+  leftSlider.value = currentLeft;
+  topSlider.value = currentTop;
+  
+  document.getElementById("leftValue").innerText = Math.round(currentLeft);
+  document.getElementById("topValue").innerText = Math.round(currentTop);
+  document.getElementById("widthValue").innerText = Math.round(boxWidth);
+  document.getElementById("heightValue").innerText = Math.round(boxHeight);
+  document.getElementById("zoomValue").innerText = Math.round(currentZoom * 100);
+  document.getElementById("currentBoxSize").innerHTML = Math.round(boxWidth) + " x " + Math.round(boxHeight) + " px";
+}
 
-    data.reverse().forEach(d => {
-      html += `
-        <tr>
-          <td>${d.Name || ""}</td>
-          <td>${d.Category || ""}</td>
-          <td>${d.URL || ""}</td>
-          <td><img src="${d.Thumbnail || ""}"></td>
-        </tr>
-      `;
+// Position Sliders
+document.getElementById("leftSlider").addEventListener("input", function(e) {
+  let val = parseFloat(e.target.value);
+  let maxLeft = parseFloat(this.max);
+  val = Math.min(maxLeft, Math.max(0, val));
+  cropBox.style.left = val + "px";
+  document.getElementById("leftValue").innerText = Math.round(val);
+});
+
+document.getElementById("topSlider").addEventListener("input", function(e) {
+  let val = parseFloat(e.target.value);
+  let maxTop = parseFloat(this.max);
+  val = Math.min(maxTop, Math.max(0, val));
+  cropBox.style.top = val + "px";
+  document.getElementById("topValue").innerText = Math.round(val);
+});
+
+// Size Sliders (Width & Height separately)
+document.getElementById("widthSlider").addEventListener("input", function(e) {
+  boxWidth = parseFloat(e.target.value);
+  updateCanvas();
+});
+
+document.getElementById("heightSlider").addEventListener("input", function(e) {
+  boxHeight = parseFloat(e.target.value);
+  updateCanvas();
+});
+
+// Zoom Slider
+document.getElementById("zoomSlider").addEventListener("input", function(e) {
+  currentZoom = parseFloat(e.target.value) / 100;
+  updateCanvas();
+});
+
+function saveCroppedImage() {
+  if (!currentImageObj || !currentImageObj.complete) { showToast("Image ready nahi hai", "error"); return; }
+  
+  let boxLeft = parseFloat(cropBox.style.left);
+  let boxTop = parseFloat(cropBox.style.top);
+  
+  if (isNaN(boxLeft) || isNaN(boxTop)) { showToast("Box position sahi nahi hai", "error"); return; }
+  
+  let cropX = boxLeft / currentZoom;
+  let cropY = boxTop / currentZoom;
+  let cropW = boxWidth;
+  let cropH = boxHeight;
+  
+  if (cropX < 0) cropX = 0;
+  if (cropY < 0) cropY = 0;
+  let finalWidth = Math.min(cropW, originalImageWidth - cropX);
+  let finalHeight = Math.min(cropH, originalImageHeight - cropY);
+  
+  if (finalWidth <= 0 || finalHeight <= 0) {
+    showToast("Crop size invalid! Box ko image ke andar rakho.", "error");
+    return;
+  }
+  
+  const tempCanvas = document.createElement("canvas");
+  tempCanvas.width = finalWidth;
+  tempCanvas.height = finalHeight;
+  const tempCtx = tempCanvas.getContext("2d");
+  
+  tempCtx.drawImage(currentImageObj, cropX, cropY, finalWidth, finalHeight, 0, 0, finalWidth, finalHeight);
+  const croppedBase64 = tempCanvas.toDataURL("image/jpeg", 0.9);
+  
+  fetch(croppedBase64)
+    .then(res => res.blob())
+    .then(blob => {
+      let file = new File([blob], "cropped_image.jpg", { type: "image/jpeg" });
+      let dataTransfer = new DataTransfer();
+      dataTransfer.items.add(file);
+      document.getElementById("modalThumb").files = dataTransfer.files;
+      showToast(`✅ Image crop ho gayi! Size: ${Math.round(finalWidth)}x${Math.round(finalHeight)}`, "success");
+      closeImageEditor();
     });
-
-    document.getElementById("tbody").innerHTML = html;
-  });
 }
 
+function closeImageEditor() {
+  document.getElementById("imageEditorModal").style.display = "none";
+}
+
+document.getElementById("saveCropBtn").addEventListener("click", saveCroppedImage);
+document.getElementById("closeEditorBtn").addEventListener("click", closeImageEditor);
+
+async function submitData() {
+  let name = document.getElementById("modalName").value.trim();
+  let category = document.getElementById("modalCategory").value;
+  let url = document.getElementById("modalUrl").value.trim();
+  let file = document.getElementById("modalThumb").files[0];
+  
+  if (!name || !category || !url) { showToast("Sab fields bharo", "error"); return; }
+  if (!isEditMode && !file) { showToast("Image select karo", "error"); return; }
+  closeModal();
+  
+  showProgress(true, 0, "Processing...");
+  
+  if (isEditMode) {
+    let processEdit = async (imageBase64) => {
+      let payload = { action: "EDIT", rowNumber: currentEditRow, name, category, url };
+      if (imageBase64) payload.thumbnail = imageBase64;
+      showProgress(true, 60, "Saving...");
+      let res = await fetch(API, { method: "POST", body: JSON.stringify(payload) });
+      let result = await res.json();
+      showProgress(false, 0, "");
+      if (result.status === "UPDATED") { showToast("Updated!", "success"); loadData(); }
+      else showToast("Update failed", "error");
+    };
+    if (file) {
+      let reader = new FileReader();
+      reader.onload = (e) => processEdit(e.target.result);
+      reader.readAsDataURL(file);
+    } else processEdit(null);
+  } else {
+    let reader = new FileReader();
+    reader.onload = async () => {
+      let payload = { name, category, url, thumbnail: reader.result };
+      showProgress(true, 70, "Uploading...");
+      let res = await fetch(API, { method: "POST", body: JSON.stringify(payload) });
+      let result = await res.json();
+      showProgress(false, 0, "");
+      if (result.status === "OK") { showToast("Added!", "success"); loadData(); }
+      else showToast("Add failed", "error");
+    };
+    reader.readAsDataURL(file);
+  }
+}
+
+async function deleteData(rowNumber, name) {
+  if (!confirm(`Delete "${name}"?`)) return;
+  showProgress(true, 50, "Deleting...");
+  let res = await fetch(API, { method: "POST", body: JSON.stringify({ action: "DELETE", rowNumber }) });
+  let result = await res.json();
+  showProgress(false, 0, "");
+  if (result.status === "DELETED") { showToast("Deleted!", "success"); loadData(); }
+  else showToast("Delete failed", "error");
+}
+
+async function loadData() {
+  try {
+    let res = await fetch(API);
+    let data = await res.json();
+    let html = "";
+    if (!data || data.length === 0) { 
+      document.getElementById("tableBody").innerHTML = '<tr><td colspan="5" style="text-align:center;">No data found</tr'; 
+      return; 
+    }
+    for (let item of data) {
+      let name = (item.Name || "").replace(/'/g, "\\'");
+      let category = (item.Category || "").replace(/'/g, "\\'");
+      let url = item.URL || "#";
+      let thumb = item.Thumbnail ? `<img src="${item.Thumbnail}" onerror="this.src='https://via.placeholder.com/55'">` : "No image";
+      html += `<tr>
+        <td>${name}</td>
+        <td>${category}</td>
+        <td><a href="${url}" target="_blank" style="color:#00aaff;">🔗 Link</a></td>
+        <td>${thumb}</td>
+        <td>
+          <button class="edit-btn" onclick='openEditModal(${item.rowNumber}, "${name}", "${category}", "${url.replace(/'/g, "\\'")}")'>✏️ Edit</button>
+          <button class="delete-btn" onclick='deleteData(${item.rowNumber}, "${name}")'>🗑️ Delete</button>
+         </td>
+       </tr>`;
+    }
+    document.getElementById("tableBody").innerHTML = html;
+  } catch(e) { 
+    console.error(e);
+    document.getElementById("tableBody").innerHTML = '<tr><td colspan="5" style="text-align:center;">Error loading data</tr';
+  }
+}
 loadData();
-
 </script>
-
 </body>
 </html>
