@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>PRO IPTV Player</title>
+<title>PRO IPTV Player+</title>
 
 <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
 <script src="https://cdn.jsdelivr.net/npm/mpegts.js@latest"></script>
@@ -12,28 +12,67 @@ body {
   margin:0;
   background:#000;
   font-family:Arial;
+  overflow:hidden;
 }
+
 video {
   width:100%;
   height:100vh;
+  background:#000;
 }
+
+/* PANEL */
 #panel {
   position:absolute;
   top:10px;
   left:10px;
   color:#0f0;
   background:rgba(0,0,0,0.7);
-  padding:10px;
+  padding:12px;
   font-size:12px;
-  border-radius:8px;
+  border-radius:10px;
+  min-width:220px;
+}
+
+/* CONTROLS */
+#controls {
+  position:absolute;
+  bottom:20px;
+  left:50%;
+  transform:translateX(-50%);
+  display:flex;
+  gap:10px;
+}
+
+button {
+  background:#111;
+  color:#0f0;
+  border:1px solid #0f0;
+  padding:8px 12px;
+  border-radius:6px;
+  cursor:pointer;
+}
+
+button:hover {
+  background:#0f0;
+  color:#000;
 }
 </style>
 </head>
 
 <body>
 
-<div id="panel">Initializing...</div>
+<div id="panel">
+  Status: Initializing...
+</div>
+
 <video id="video" controls autoplay muted></video>
+
+<div id="controls">
+  <button onclick="reloadStream()">Reload</button>
+  <button onclick="toggleMute()">Mute/Unmute</button>
+  <button onclick="goFullscreen()">Fullscreen</button>
+</div>
 
 <script>
 const video = document.getElementById('video');
@@ -42,23 +81,37 @@ const panel = document.getElementById('panel');
 const url = "http://starhub.pro:80/live/Suborna5535/Suborna6654/702561.ts";
 
 let retries = 0;
+let maxRetries = 6;
 let player = null;
+let hls = null;
 
+// LOG FUNCTION
 function log(msg){
   console.log(msg);
-  panel.innerHTML = msg;
+  panel.innerHTML = "Status: " + msg + "<br>Retries: " + retries;
 }
 
-// HLS START
+// CLEANUP
+function destroyPlayers(){
+  if(player){
+    player.destroy();
+    player = null;
+  }
+  if(hls){
+    hls.destroy();
+    hls = null;
+  }
+}
+
+// HLS
 function startHLS(){
+  destroyPlayers();
   log("⚡ Trying HLS...");
-  
-  const hls = new Hls({
-    maxBufferLength: 4,
+
+  hls = new Hls({
+    maxBufferLength: 5,
     liveSyncDurationCount: 1,
-    liveMaxLatencyDurationCount: 2,
     lowLatencyMode: true,
-    backBufferLength: 0
   });
 
   hls.loadSource(url);
@@ -69,14 +122,15 @@ function startHLS(){
     video.play();
   });
 
-  hls.on(Hls.Events.ERROR, () => {
-    log("❌ HLS Failed → Switching...");
-    startMPEGTS();
+  hls.on(Hls.Events.ERROR, (event, data) => {
+    log("❌ HLS Error: " + data.type);
+    fallback();
   });
 }
 
-// MPEGTS START
+// MPEGTS
 function startMPEGTS(){
+  destroyPlayers();
   log("⚡ Trying MPEGTS...");
 
   if (mpegts.getFeatureList().mseLivePlayback) {
@@ -94,28 +148,37 @@ function startMPEGTS(){
 
     log("✅ Playing (MPEGTS)");
 
-    // monitor freeze
-    setInterval(() => {
-      if(video.readyState < 2){
-        log("⚠️ Buffering / Reconnecting...");
-        retry();
-      }
-    }, 5000);
+    monitorFreeze();
 
   } else {
-    log("❌ Not Supported");
+    log("❌ MPEGTS Not Supported");
+  }
+}
+
+// FREEZE MONITOR
+function monitorFreeze(){
+  setInterval(() => {
+    if(video.readyState < 2){
+      log("⚠️ Buffering detected...");
+      retry();
+    }
+  }, 4000);
+}
+
+// FALLBACK SWITCH
+function fallback(){
+  if(player){
+    retry();
+  } else {
+    startMPEGTS();
   }
 }
 
 // RETRY SYSTEM
 function retry(){
-  if(retries < 5){
+  if(retries < maxRetries){
     retries++;
-    log("🔁 Retry " + retries);
-    
-    if(player){
-      player.destroy();
-    }
+    log("🔁 Retrying... (" + retries + ")");
 
     setTimeout(() => {
       startHLS();
@@ -126,12 +189,30 @@ function retry(){
   }
 }
 
-// START PLAYER
+// CONTROLS
+function reloadStream(){
+  retries = 0;
+  log("🔄 Reloading...");
+  startHLS();
+}
+
+function toggleMute(){
+  video.muted = !video.muted;
+}
+
+function goFullscreen(){
+  if(video.requestFullscreen){
+    video.requestFullscreen();
+  }
+}
+
+// AUTO START
 if(Hls.isSupported()){
   startHLS();
 } else {
   startMPEGTS();
 }
+
 </script>
 
 </body>
