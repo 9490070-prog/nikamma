@@ -26,7 +26,6 @@
       background: linear-gradient(125deg, #00ccff, #4d9eff);
       -webkit-background-clip: text; background-clip: text; color: transparent;
     }
-    .logo-area p { font-size: 0.6rem; color: #8e9bbe; }
     .add-global-btn {
       background: linear-gradient(95deg, #0a9eff, #006bb3); border: none;
       width: 40px; height: 40px; border-radius: 40px; font-size: 22px;
@@ -124,7 +123,6 @@
       background: #0a1020; border: 1px solid #2c3e62; border-radius: 60px;
       color: white; font-size: 0.9rem; outline: none;
     }
-    /* Current thumbnail preview */
     .current-thumb-row {
       display: none; align-items: center; gap: 10px;
       background: #0d1a10; border: 1px solid #1e4a2a;
@@ -136,7 +134,6 @@
     }
     .current-thumb-row .ctr-text { font-size: 0.72rem; color: #66cc88; line-height: 1.5; }
     .current-thumb-row .ctr-text strong { display: block; color: #99ffcc; }
-    /* Thumb label */
     .thumb-label-row {
       display: flex; align-items: center; gap: 8px;
       font-size: 0.75rem; color: #8ea8d0; padding: 4px 2px 6px;
@@ -156,6 +153,22 @@
     .icon-edit-btn {
       background: #28a87a; border: none; border-radius: 40px;
       width: 42px; height: 42px; font-size: 18px; cursor: pointer; flex-shrink: 0;
+    }
+    .replace-cb-wrap {
+      display: none;
+      align-items: center; gap: 6px;
+      background: rgba(255,100,100,0.13); border: 1px solid rgba(255,100,100,0.35);
+      border-radius: 40px; padding: 0 10px 0 8px; cursor: pointer; flex-shrink: 0;
+      height: 42px;
+    }
+    .replace-cb-wrap input[type="checkbox"] {
+      width: 15px; height: 15px; accent-color: #ff6666;
+      cursor: pointer; flex-shrink: 0;
+      padding: 0; margin: 0; border: none; background: transparent;
+    }
+    .replace-cb-wrap label {
+      font-size: 0.63rem; color: #ffaaaa; font-weight: 600;
+      cursor: pointer; white-space: nowrap; line-height: 1;
     }
     .modal-buttons {
       display: flex; gap: 12px; margin-top: 22px; flex-wrap: wrap;
@@ -229,7 +242,6 @@
   <div class="admin-header">
     <div class="logo-area">
       <h2>🎬 ADMIN DASHBOARD</h2>
-    
     </div>
     <button class="add-global-btn" id="openAddGlobalBtn" title="Add new video">+</button>
   </div>
@@ -252,12 +264,10 @@
     </select>
     <input type="text" id="videoUrl" placeholder="Video URL *">
 
-    <!-- Thumbnail label + badge -->
     <div class="thumb-label-row">
       🖼️ Thumbnail &nbsp;<span id="thumbBadge" class="badge-req">Required</span>
     </div>
 
-    <!-- Current image preview (edit mode only) -->
     <div class="current-thumb-row" id="currentThumbRow">
       <img id="currentThumbImg" src="" alt="current thumb">
       <div class="ctr-text">
@@ -266,8 +276,11 @@
       </div>
     </div>
 
-    <!-- File input + crop -->
     <div class="img-edit-row">
+      <div class="replace-cb-wrap" id="replaceCbWrap">
+        <input type="checkbox" id="replaceOldCb">
+        <label for="replaceOldCb">🔄 Replace</label>
+      </div>
       <button type="button" id="openMiniImageBtn" class="icon-edit-btn">✂️</button>
       <input type="file" id="thumbFile" accept="image/*" style="flex:1; background:transparent; border:none; padding:8px 0; color:#aac4ff;">
     </div>
@@ -322,12 +335,13 @@
 <div id="toastMessage" class="toast-msg"></div>
 
 <script>
-  // ✅ Apna API URL yahan rakho
-  const API_URL = "https://script.google.com/macros/s/AKfycbyaZUpz_hXLMQuOPMUPxHrbqcwg6lvGpc4OYPnxEwHHJEyJxznQwY7S4bTFEsaXxQOUrQ/exec";
+  const API_URL = "https://script.google.com/macros/s/AKfycbyQ08jZpjHgRrFbgWH7KQtELVgbXdgrKzhzicLqWqI-92VrSdTKsbWjziJrqfCNYC1GNQ/exec";
 
-  let allVideos = [];
-  let currentEditRow = null;
-  let isEditMode = false;
+  let allVideos        = [];
+  let currentEditRow   = null;
+  let currentEditThumb = "";   // ✅ Purani thumbnail URL
+  let currentEditFile  = "";   // ✅ Purana Drive fileId
+  let isEditMode       = false;
 
   // ─── Progress ────────────────────────────────────────────────────────────────
   function showProgress(show, percent = 0, msg = "Processing...") {
@@ -344,7 +358,7 @@
     const t = document.getElementById("toastMessage");
     t.innerText = text;
     t.style.borderLeftColor = type === "error" ? "#ff4444" : "#00ffaa";
-    t.style.background = type === "error" ? "#2a1010" : "#1a2a1a";
+    t.style.background      = type === "error" ? "#2a1010" : "#1a2a1a";
     t.style.display = "block";
     setTimeout(() => { t.style.display = "none"; }, 3000);
   }
@@ -353,14 +367,15 @@
   async function loadData() {
     try {
       showProgress(true, 15, "Fetching data...");
-      const res = await fetch(API_URL);
+      const res  = await fetch(API_URL);
       const data = await res.json();
-      allVideos = Array.isArray(data) ? data.map(item => ({
+      allVideos  = Array.isArray(data) ? data.map(item => ({
         rowNumber: item.rowNumber,
-        Name: item.Name || "",
-        Category: item.Category || "",
-        URL: item.URL || "#",
-        Thumbnail: item.Thumbnail || ""
+        Name:      item.Name      || "",
+        Category:  item.Category  || "",
+        URL:       item.URL       || "#",
+        Thumbnail: item.Thumbnail || "",
+        FileId:    item.FileId    || ""   // ✅ Drive fileId bhi store karo
       })) : [];
       updateProgress(100, "Rendering...");
       setTimeout(() => showProgress(false), 300);
@@ -376,7 +391,7 @@
   // ─── Render ──────────────────────────────────────────────────────────────────
   function getCategories() {
     const order = ["Sports", "Tv Show", "Live", "Movies", "Drama", "Slider"];
-    const cats = [...new Set(allVideos.map(v => v.Category).filter(Boolean))];
+    const cats  = [...new Set(allVideos.map(v => v.Category).filter(Boolean))];
     return cats.sort((a, b) => {
       const ia = order.indexOf(a), ib = order.indexOf(b);
       if (ia !== -1 && ib !== -1) return ia - ib;
@@ -392,7 +407,7 @@
   }
 
   function renderCategories() {
-    const container = document.getElementById("categoriesContainer");
+    const container  = document.getElementById("categoriesContainer");
     const categories = getCategories();
     if (!categories.length) {
       container.innerHTML = `<div style="background:#0f1624;border-radius:38px;padding:34px;text-align:center;">✨ No categories. Click + to add ✨</div>`;
@@ -407,7 +422,6 @@
           <span class="category-badge">${videos.length} Item${videos.length !== 1 ? 's' : ''}</span>
         </div>
         <div class="horizontal-scroll">`;
-
       if (!videos.length) {
         html += `<div class="empty-cat-msg">📭 No videos yet.</div>`;
       } else {
@@ -426,7 +440,8 @@
                   data-name="${esc(v.Name)}"
                   data-cat="${esc(v.Category)}"
                   data-url="${esc(v.URL)}"
-                  data-thumb="${esc(v.Thumbnail)}">✏️ Edit</button>
+                  data-thumb="${esc(v.Thumbnail)}"
+                  data-fileid="${esc(v.FileId)}">✏️ Edit</button>
                 <button class="small-delete"
                   data-row="${v.rowNumber}"
                   data-name="${esc(v.Name)}">🗑️ Delete</button>
@@ -450,7 +465,8 @@
           btn.dataset.name,
           btn.dataset.cat,
           btn.dataset.url,
-          btn.dataset.thumb
+          btn.dataset.thumb,
+          btn.dataset.fileid  // ✅ fileId bhi pass karo
         );
       });
     });
@@ -473,10 +489,8 @@
   async function deleteVideo(rowNumber) {
     showProgress(true, 30, "Deleting...");
     try {
-      const res = await fetch(API_URL, {
-        method: "POST",
-        body: JSON.stringify({ action: "DELETE", rowNumber })
-      });
+      // Normal delete → image bhi Drive se delete hogi (keepImage nahi bheja)
+      const res    = await fetch(API_URL, { method: "POST", body: JSON.stringify({ action: "DELETE", rowNumber }) });
       const result = await res.json();
       if (result.status === "DELETED") {
         showToast("🗑️ Deleted!");
@@ -493,35 +507,40 @@
 
   // ─── Modal Open ───────────────────────────────────────────────────────────────
   function openAddModal() {
-    isEditMode = false;
-    currentEditRow = null;
+    isEditMode       = false;
+    currentEditRow   = null;
+    currentEditThumb = "";
+    currentEditFile  = "";
 
-    document.getElementById("modalTitle").innerHTML = "➕ Add New Video";
-    document.getElementById("modalSubmitBtn").innerHTML = "Add";
+    document.getElementById("modalTitle").innerHTML        = "➕ Add New Video";
+    document.getElementById("modalSubmitBtn").innerHTML    = "Add";
     document.getElementById("modalSubmitBtn").style.background = "#00aaff";
-    document.getElementById("videoName").value = "";
-    document.getElementById("videoCategorySelect").value = "";
-    document.getElementById("videoUrl").value = "";
-    document.getElementById("thumbFile").value = "";
+    document.getElementById("videoName").value             = "";
+    document.getElementById("videoCategorySelect").value   = "";
+    document.getElementById("videoUrl").value              = "";
+    document.getElementById("thumbFile").value             = "";
     document.getElementById("currentThumbRow").style.display = "none";
-    document.getElementById("thumbBadge").textContent = "Required";
-    document.getElementById("thumbBadge").className = "badge-req";
-    document.getElementById("globalModal").style.display = "flex";
+    document.getElementById("thumbBadge").textContent      = "Required";
+    document.getElementById("thumbBadge").className        = "badge-req";
+    document.getElementById("replaceCbWrap").style.display = "none";
+    document.getElementById("replaceOldCb").checked        = false;
+    document.getElementById("globalModal").style.display   = "flex";
   }
 
-  function openEditModal(row, name, cat, url, thumb) {
-    isEditMode = true;
-    currentEditRow = row;
+  function openEditModal(row, name, cat, url, thumb, fileId) {
+    isEditMode       = true;
+    currentEditRow   = row;
+    currentEditThumb = thumb  || ""; // ✅ Purani image URL
+    currentEditFile  = fileId || ""; // ✅ Purana Drive fileId
 
-    document.getElementById("modalTitle").innerHTML = "✏️ Edit Video";
-    document.getElementById("modalSubmitBtn").innerHTML = "Update";
+    document.getElementById("modalTitle").innerHTML        = "✏️ Edit Video";
+    document.getElementById("modalSubmitBtn").innerHTML    = "Update";
     document.getElementById("modalSubmitBtn").style.background = "#ffaa33";
-    document.getElementById("videoName").value = name;
-    document.getElementById("videoCategorySelect").value = cat;
-    document.getElementById("videoUrl").value = url;
-    document.getElementById("thumbFile").value = "";
+    document.getElementById("videoName").value             = name;
+    document.getElementById("videoCategorySelect").value   = cat;
+    document.getElementById("videoUrl").value              = url;
+    document.getElementById("thumbFile").value             = "";
 
-    // Show current thumb preview
     const previewRow = document.getElementById("currentThumbRow");
     if (thumb && thumb.trim()) {
       document.getElementById("currentThumbImg").src = thumb;
@@ -530,19 +549,20 @@
       previewRow.style.display = "none";
     }
 
-    // Mark thumbnail as optional
-    document.getElementById("thumbBadge").textContent = "Optional";
-    document.getElementById("thumbBadge").className = "badge-opt";
-
-    document.getElementById("globalModal").style.display = "flex";
+    document.getElementById("thumbBadge").textContent      = "Optional";
+    document.getElementById("thumbBadge").className        = "badge-opt";
+    document.getElementById("replaceCbWrap").style.display = "flex";
+    document.getElementById("replaceOldCb").checked        = false;
+    document.getElementById("globalModal").style.display   = "flex";
   }
 
   // ─── Submit ───────────────────────────────────────────────────────────────────
   async function submitVideo() {
-    const name     = document.getElementById("videoName").value.trim();
-    const category = document.getElementById("videoCategorySelect").value;
-    const url      = document.getElementById("videoUrl").value.trim();
-    const file     = document.getElementById("thumbFile").files[0];
+    const name        = document.getElementById("videoName").value.trim();
+    const category    = document.getElementById("videoCategorySelect").value;
+    const url         = document.getElementById("videoUrl").value.trim();
+    const file        = document.getElementById("thumbFile").files[0];
+    const replaceMode = document.getElementById("replaceOldCb").checked;
 
     if (!name || !category || !url) {
       showToast("❌ Name, Category aur URL bharo", "error");
@@ -552,7 +572,6 @@
     document.getElementById("globalModal").style.display = "none";
     showProgress(true, 10, "Preparing...");
 
-    // Convert file to base64 if selected
     let base64Thumb = null;
     if (file) {
       base64Thumb = await new Promise(resolve => {
@@ -564,25 +583,77 @@
 
     // ════ EDIT MODE ════
     if (isEditMode && currentEditRow !== null) {
+
+      // ✅ Replace checkbox CHECK → purani row DELETE (image safe) + nai row ADD
+      if (replaceMode) {
+
+        // Step 1: DELETE — keepImage:true bhejo taake Drive se image DELETE NA HO
+        updateProgress(25, "Purani entry delete ho rahi hai...");
+        try {
+          const delRes = await fetch(API_URL, {
+            method: "POST",
+            body: JSON.stringify({
+              action:    "DELETE",
+              rowNumber: currentEditRow,
+              keepImage: true          // ✅ YEH KEY FLAG HAI — image Drive se delete nahi hogi
+            })
+          });
+          const delResult = await delRes.json();
+          if (delResult.status !== "DELETED") {
+            showToast("Delete failed: " + (delResult.message || ""), "error");
+            showProgress(false);
+            return;
+          }
+        } catch (e) {
+          showToast("Delete error: " + e.message, "error");
+          showProgress(false);
+          return;
+        }
+
+        // Step 2: ADD nai row
+        // ✅ Nai image select ki → nai base64 upload
+        // ✅ Nai image nahi → purani image ka URL aur fileId bhejo (Drive file wahi rahegi)
+        updateProgress(65, "Nai entry add ho rahi hai...");
+        try {
+          let payload;
+          if (base64Thumb) {
+            // Nai image → normal add with base64
+            payload = { name, category, url, thumbnail: base64Thumb };
+          } else {
+            // ✅ Nai image nahi → purani image URL + fileId directly bhejo
+            // Apps Script isko existingThumbUrl aur existingFileId se handle karega
+            payload = {
+              name,
+              category,
+              url,
+              existingThumbUrl: currentEditThumb,  // purana thumbnail URL
+              existingFileId:   currentEditFile     // purana Drive fileId
+            };
+          }
+
+          const res    = await fetch(API_URL, { method: "POST", body: JSON.stringify(payload) });
+          const result = await res.json();
+          if (result.status === "OK") {
+            showToast("✅ Entry replace ho gayi! Image bilkul safe hai ✅");
+            await loadData();
+          } else {
+            showToast("Add failed: " + (result.message || ""), "error");
+          }
+        } catch (e) {
+          showToast("Error: " + e.message, "error");
+        } finally {
+          showProgress(false);
+        }
+        return;
+      }
+
+      // ── Normal edit (checkbox unchecked) ──
       updateProgress(30, "Updating record...");
       try {
-        // ✅ action: "EDIT" — Apps Script sirf row update karega, DELETE nahi karega
-        // ✅ thumbnail: sirf base64 bhejna agar nai image select ki ho
-        //    → Agar null bheja to Apps Script purani image waise hi rakhega
-        const payload = {
-          action:   "EDIT",
-          rowNumber: currentEditRow,
-          name,
-          category,
-          url
-        };
-        if (base64Thumb) {
-          payload.thumbnail = base64Thumb; // nai image
-        }
-        // Agar base64Thumb null hai — payload mein thumbnail field hi nahi hogi
-        // Apps Script ka EDIT handler: thumbnail nahi aayi to kuch nahi karega image ke liye
+        const payload = { action: "EDIT", rowNumber: currentEditRow, name, category, url };
+        if (base64Thumb) payload.thumbnail = base64Thumb;
 
-        const res = await fetch(API_URL, { method: "POST", body: JSON.stringify(payload) });
+        const res    = await fetch(API_URL, { method: "POST", body: JSON.stringify(payload) });
         const result = await res.json();
 
         if (result.status === "UPDATED") {
@@ -609,8 +680,8 @@
     updateProgress(50, "Adding video...");
     try {
       const payload = { name, category, url, thumbnail: base64Thumb };
-      const res = await fetch(API_URL, { method: "POST", body: JSON.stringify(payload) });
-      const result = await res.json();
+      const res     = await fetch(API_URL, { method: "POST", body: JSON.stringify(payload) });
+      const result  = await res.json();
       if (result.status === "OK") {
         showToast("✅ Video added!");
         await loadData();
@@ -638,8 +709,8 @@
         zoomVal = 0.45;
         cropW = Math.min(380, naturalW); cropH = Math.min(260, naturalH);
         cropX = 0; cropY = 0;
-        document.getElementById("zoomScaleSlider").value = zoomVal * 100;
-        document.getElementById("cropWidthSlider").value = cropW;
+        document.getElementById("zoomScaleSlider").value  = zoomVal * 100;
+        document.getElementById("cropWidthSlider").value  = cropW;
         document.getElementById("cropHeightSlider").value = cropH;
         document.getElementById("cropToolModal").style.display = "flex";
         drawCropCanvas();
@@ -652,7 +723,7 @@
   function drawCropCanvas() {
     if (!cropImg.complete) return;
     const canvas = document.getElementById("cropCanvas");
-    const ctx = canvas.getContext("2d");
+    const ctx    = canvas.getContext("2d");
     const dw = naturalW * zoomVal, dh = naturalH * zoomVal;
     canvas.width = dw; canvas.height = dh;
     ctx.clearRect(0, 0, dw, dh);
@@ -662,17 +733,17 @@
     box.style.top    = (cropY * zoomVal) + "px";
     box.style.width  = Math.max(2, cropW * zoomVal) + "px";
     box.style.height = Math.max(2, cropH * zoomVal) + "px";
-    document.getElementById("xPosVal").innerText    = Math.round(cropX) + "px";
-    document.getElementById("yPosVal").innerText    = Math.round(cropY) + "px";
-    document.getElementById("widthVal").innerText   = Math.round(cropW) + "px";
-    document.getElementById("heightVal").innerText  = Math.round(cropH) + "px";
+    document.getElementById("xPosVal").innerText     = Math.round(cropX) + "px";
+    document.getElementById("yPosVal").innerText     = Math.round(cropY) + "px";
+    document.getElementById("widthVal").innerText    = Math.round(cropW) + "px";
+    document.getElementById("heightVal").innerText   = Math.round(cropH) + "px";
     document.getElementById("zoomPercent").innerText = Math.round(zoomVal * 100) + "%";
     const maxX = Math.max(0, naturalW - cropW), maxY = Math.max(0, naturalH - cropH);
-    document.getElementById("cropXSlider").max = maxX;
-    document.getElementById("cropYSlider").max = maxY;
+    document.getElementById("cropXSlider").max   = maxX;
+    document.getElementById("cropYSlider").max   = maxY;
     document.getElementById("cropXSlider").value = Math.min(maxX, cropX);
     document.getElementById("cropYSlider").value = Math.min(maxY, cropY);
-    document.getElementById("cropWidthSlider").max = naturalW;
+    document.getElementById("cropWidthSlider").max  = naturalW;
     document.getElementById("cropHeightSlider").max = naturalH;
   }
 
@@ -686,7 +757,7 @@
     tmp.width = fw; tmp.height = fh;
     tmp.getContext("2d").drawImage(cropImg, fx, fy, fw, fh, 0, 0, fw, fh);
     tmp.toBlob(blob => {
-      const f = new File([blob], "cropped.jpg", { type: "image/jpeg" });
+      const f  = new File([blob], "cropped.jpg", { type: "image/jpeg" });
       const dt = new DataTransfer(); dt.items.add(f);
       document.getElementById("thumbFile").files = dt.files;
       showToast("✅ Crop applied!");
@@ -697,10 +768,10 @@
   ["cropXSlider","cropYSlider","cropWidthSlider","cropHeightSlider","zoomScaleSlider"].forEach(id => {
     document.getElementById(id)?.addEventListener("input", e => {
       const v = parseFloat(e.target.value);
-      if (id === "cropXSlider")      cropX = v;
-      if (id === "cropYSlider")      cropY = v;
-      if (id === "cropWidthSlider")  cropW = v;
-      if (id === "cropHeightSlider") cropH = v;
+      if (id === "cropXSlider")      cropX   = v;
+      if (id === "cropYSlider")      cropY   = v;
+      if (id === "cropWidthSlider")  cropW   = v;
+      if (id === "cropHeightSlider") cropH   = v;
       if (id === "zoomScaleSlider")  zoomVal = v / 100;
       drawCropCanvas();
     });
@@ -715,9 +786,9 @@
   document.getElementById("applyCropSaveBtn").addEventListener("click", applyCrop);
   document.getElementById("cancelCropToolBtn").addEventListener("click", () => document.getElementById("cropToolModal").style.display = "none");
   document.getElementById("closeCropModalBtn").addEventListener("click", () => document.getElementById("cropToolModal").style.display = "none");
-  document.getElementById("openAddGlobalBtn").onclick = openAddModal;
-  document.getElementById("closeModalBtn").onclick = () => document.getElementById("globalModal").style.display = "none";
-  document.getElementById("modalSubmitBtn").onclick = submitVideo;
+  document.getElementById("openAddGlobalBtn").onclick  = openAddModal;
+  document.getElementById("closeModalBtn").onclick     = () => document.getElementById("globalModal").style.display = "none";
+  document.getElementById("modalSubmitBtn").onclick    = submitVideo;
 
   loadData();
 </script>
