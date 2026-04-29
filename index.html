@@ -89,6 +89,7 @@
             opacity: 1;
             pointer-events: auto;
         }
+        /* TOP BAR: close LEFT + live RIGHT */
         .top-bar { 
             display: flex; 
             justify-content: space-between; 
@@ -139,150 +140,6 @@
             color: #ddd;
         }
         @keyframes spin { to { transform: rotate(360deg); } }
-        
-        /* ===== WEB PLAYER - FULL SCREEN OVERLAY IN-APP BROWSER ===== */
-        /* iframe is hidden (dummy), actual content opens in overlay */
-        #webPlayerBox { display: none; } /* kept for logic compatibility, always hidden visually */
-
-        /* Full-screen overlay browser */
-        #inAppBrowser {
-            display: none;
-            position: fixed;
-            inset: 0;
-            z-index: 5000;
-            background: #000;
-            flex-direction: column;
-        }
-        #inAppBrowser.active {
-            display: flex;
-        }
-        /* Top bar */
-        .iab-topbar {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            background: #111;
-            padding: 10px 14px;
-            border-bottom: 1px solid #222;
-            gap: 10px;
-            min-height: 52px;
-            box-sizing: border-box;
-        }
-        .iab-close-btn {
-            background: rgba(255,255,255,0.08);
-            border: none;
-            color: white;
-            width: 38px;
-            height: 38px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            flex-shrink: 0;
-            transition: 0.2s;
-        }
-        .iab-close-btn:active { background: rgba(244,67,54,0.5); transform: scale(0.93); }
-        .iab-title {
-            flex: 1;
-            font-size: 13px;
-            font-weight: 700;
-            color: var(--main-color);
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            text-align: center;
-        }
-        .iab-live-tag {
-            background: #ff3b30;
-            color: white;
-            padding: 3px 10px;
-            border-radius: 20px;
-            font-size: 10px;
-            font-weight: bold;
-            letter-spacing: 1px;
-            flex-shrink: 0;
-        }
-        /* The iframe inside overlay */
-        .iab-frame-wrap {
-            flex: 1;
-            position: relative;
-            background: #000;
-            overflow: hidden;
-        }
-        .iab-frame-wrap iframe {
-            width: 100%;
-            height: 100%;
-            border: none;
-            display: block;
-        }
-        /* Loading overlay inside iframe wrap */
-        .iab-loader {
-            position: absolute;
-            inset: 0;
-            background: #000;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            gap: 16px;
-            z-index: 10;
-            transition: opacity 0.4s ease;
-        }
-        .iab-loader .iab-spinner {
-            width: 52px;
-            height: 52px;
-            border: 3px solid rgba(0,188,212,0.2);
-            border-top-color: var(--main-color);
-            border-radius: 50%;
-            animation: spin 0.8s linear infinite;
-        }
-        .iab-loader .iab-load-text {
-            color: var(--main-color);
-            font-size: 12px;
-            font-weight: 600;
-            letter-spacing: 1.5px;
-            text-transform: uppercase;
-        }
-        .iab-loader .iab-load-hint {
-            color: #555;
-            font-size: 11px;
-            text-align: center;
-            max-width: 260px;
-            line-height: 1.6;
-        }
-        /* Error state inside overlay */
-        .iab-error {
-            position: absolute;
-            inset: 0;
-            background: #000;
-            display: none;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            gap: 14px;
-            z-index: 11;
-            padding: 30px;
-            text-align: center;
-        }
-        .iab-error i { font-size: 52px; color: #555; }
-        .iab-error h3 { color: #ccc; font-size: 16px; margin: 0; }
-        .iab-error p { color: #666; font-size: 12px; margin: 0; line-height: 1.6; }
-        .iab-error .iab-open-btn {
-            background: var(--main-color);
-            border: none;
-            color: white;
-            padding: 12px 28px;
-            border-radius: 30px;
-            font-weight: 700;
-            font-size: 14px;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            margin-top: 6px;
-        }
-        .iab-error .iab-open-btn:active { transform: scale(0.96); }
         
         /* Gesture indicator overlay (volume/brightness) */
         .gesture-indicator {
@@ -338,7 +195,7 @@
         .empty-state h3 { font-size: 18px; margin-bottom: 10px; color: #888; }
         .empty-state p { font-size: 13px; color: #555; }
         
-        /* SIDENAV */
+        /* SIDENAV - width 60% */
         .sidenav { 
             height: 100%; 
             width: 60%;
@@ -362,7 +219,8 @@
         #menu-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 2004; opacity: 0; transition: opacity 0.4s ease; }
         #menu-overlay.visible { display: block; opacity: 1; }
         
-        /* PTR CONTAINER */
+        /* ===== FIX: PTR CONTAINER - Proper circle loader display ===== */
+        /* ===== PTR CONTAINER ===== */
         .ptr-container {
             position: fixed;
             top: 0; left: 0; right: 0;
@@ -376,8 +234,18 @@
             justify-content: center;
             gap: 12px;
         }
-        .ptr-container span { color: white; font-weight: 700; font-size: 13px; letter-spacing: 1px; text-transform: uppercase; }
-        .ptr-container i { color: white; font-size: 20px; }
+        .ptr-container span {
+            color: white;
+            font-weight: 700;
+            font-size: 13px;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+        .ptr-container i {
+            color: white;
+            font-size: 20px;
+        }
+        /* ===== THE CIRCLE LOADER ===== */
         @keyframes ptrSpin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
         .ptr-spinner {
             display: inline-block !important;
@@ -394,6 +262,7 @@
         .header-content { display: flex; width: 100%; max-width: var(--max-width); margin: 0 auto; align-items: center; justify-content: space-between; }
         .header-left, .header-right { display: flex; align-items: center; gap: 12px; font-size: 18px; cursor: pointer; }
         
+        /* FIXED: Search container - full width with flex */
         #search-container { 
             display: none; 
             flex: 1; 
@@ -418,6 +287,8 @@
             box-sizing: border-box;
             width: 100%;
         }
+        
+        /* FIXED: Search close button - perfectly centered with input */
         .search-close {
             display: flex;
             align-items: center;
@@ -431,8 +302,14 @@
             flex-shrink: 0;
             line-height: 1;
         }
-        .search-close i { font-size: 18px; color: var(--main-color); }
-        .search-close:active { background: rgba(0,188,212,0.3); transform: scale(0.95); }
+        .search-close i {
+            font-size: 18px;
+            color: var(--main-color);
+        }
+        .search-close:active {
+            background: rgba(0,188,212,0.3);
+            transform: scale(0.95);
+        }
         
         #videoBox { display: none; width: 100%; background: #000; position: sticky; top: 60px; z-index: 1001; }
         .slider { width: 100%; height: 200px; overflow: hidden; position: relative; background: #000; margin-bottom: 5px; }
@@ -466,13 +343,8 @@
         .internet-checker.offline i { color: #ff6b6b; }
         .internet-checker.offline .icon-wrapper { background: rgba(255,107,107,0.1); }
         
+        /* fullscreen fix for fit modes */
         .exo-container:fullscreen video, .exo-container:-webkit-full-screen video {
-            width: 100%;
-            height: 100%;
-        }
-        /* Web player fullscreen */
-        .web-player-container:fullscreen iframe,
-        .web-player-container:-webkit-full-screen iframe {
             width: 100%;
             height: 100%;
         }
@@ -503,6 +375,7 @@
   <a href="#" onclick="filterData('Sports', null, true)"><i class="fa fa-volleyball"></i> Live Sports</a>
   <a href="#" onclick="filterData('Movies', null, true)"><i class="fa fa-film"></i> Movies HD</a>
   <a href="#" onclick="filterData('TV Shows', null, true)"><i class="fa fa-tv"></i> TV Shows</a>
+  <a href="#" onclick="filterData('Drama', null, true)"><i class="fa fa-theater-masks"></i> Entertainment</a>
   <a href="#" id="rating-link" target="_blank"><i class="fa fa-star"></i> Rate Us</a>
   <a href="#" id="privacy-link" target="_blank"><i class="fa fa-user-shield"></i> Privacy Policy</a>
   <a href="#" id="share-link" onclick="shareApp(event)"><i class="fa fa-share-alt"></i> Share App</a>
@@ -511,16 +384,19 @@
 
 <header><div class="header-content"><div class="header-left" id="header-main"><div class="menu-icon-btn" onclick="openNav()"><i class="fa fa-bars"></i></div><div class="app-name">Nikamma 4k</div></div><div id="search-container"><input type="text" id="searchBar" placeholder="Search movies, shows, sports..." onkeyup="search()"><div class="search-close" onclick="toggleSearch(false)"><i class="fas fa-times"></i></div></div><div class="header-right" id="header-icons"><div onclick="toggleSearch(true)"><i class="fa fa-search"></i></div></div></div></header>
 
-<!-- ===== EXO VIDEO PLAYER (for .m3u8, .ts, direct stream URLs) ===== -->
+<!-- ADVANCED VIDEO PLAYER - FIXED FULLSCREEN CONTROLS + REMOVED BOTTOM CLOSE ICON -->
 <div id="videoBox">
+    <!-- NORMAL VIDEO PLAYER -->
     <div class="exo-container" id="advancedPlayerContainer">
         <div class="exo-loader" id="exoLoader"><div class="spinner"></div></div>
         <video id="advancedVideo" class="fit-fill" muted autoplay playsinline></video>
         <div class="exo-overlay" id="exoOverlay">
+            <!-- TOP BAR: CLOSE LEFT, LIVE RIGHT -->
             <div class="top-bar">
                 <button class="icon-btn" id="exoTopCloseBtn" title="Close"><span class="material-icons-round">close</span></button>
                 <div class="live-tag">LIVE</div>
             </div>
+            <!-- BOTTOM MENU: PLAY, MUTE, FIT MODE, ASPECT, FULLSCREEN (NO CLOSE BUTTON HERE) -->
             <div class="menu-bar">
                 <button class="icon-btn" id="exoPlayBtn"><span class="material-icons-round">pause</span></button>
                 <button class="icon-btn" id="exoMuteBtn"><span class="material-icons-round">volume_off</span></button>
@@ -531,52 +407,28 @@
             </div>
         </div>
     </div>
+    <!-- IFRAME PLAYER (for webpage/embed URLs) -->
+    <div id="iframePlayerBox" style="display:none; position:relative; width:100%; aspect-ratio:16/9; background:#000;">
+        <iframe id="iframePlayer"
+            src="about:blank"
+            style="width:100%;height:100%;border:none;display:block;"
+            allowfullscreen
+            allow="autoplay; fullscreen; encrypted-media; picture-in-picture"
+            scrolling="no">
+        </iframe>
+        <div style="position:absolute;top:8px;left:8px;z-index:10;">
+            <button onclick="stopVideo()" style="background:rgba(0,0,0,0.7);border:none;color:white;width:36px;height:36px;border-radius:50%;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;"><i class="fa fa-times"></i></button>
+        </div>
+        <div style="position:absolute;top:8px;right:8px;z-index:10;">
+            <button onclick="iframeFullscreen()" style="background:rgba(0,0,0,0.7);border:none;color:white;width:36px;height:36px;border-radius:50%;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;"><i class="fa fa-expand"></i></button>
+        </div>
+        <div style="position:absolute;bottom:8px;center:0;width:100%;text-align:center;z-index:10;pointer-events:none;">
+            <span style="background:rgba(255,0,0,0.8);color:white;padding:3px 10px;border-radius:20px;font-size:10px;font-weight:bold;letter-spacing:1px;">LIVE</span>
+        </div>
+    </div>
     <div style="padding:10px; display:flex; justify-content:space-between; background:#121212; align-items:center;">
         <span id="videoTitle" style="font-size:13px; color:var(--main-color); font-weight:bold;"></span>
         <button onclick="stopVideo()" style="background:#f44336; border:none; color:white; padding:5px 10px; border-radius:4px; font-size:11px; margin-right:5px;">CLOSE</button>
-    </div>
-</div>
-
-<!-- dummy box kept for JS compatibility, always hidden -->
-<div id="webPlayerBox" style="display:none!important;"></div>
-
-<!-- ===== IN-APP BROWSER OVERLAY (Full Screen, bypasses X-Frame-Options) ===== -->
-<div id="inAppBrowser">
-    <!-- Top bar -->
-    <div class="iab-topbar">
-        <button class="iab-close-btn" onclick="stopWebPlayer()">
-            <span class="material-icons-round" style="font-size:22px;">close</span>
-        </button>
-        <span class="iab-title" id="iabTitle">Loading...</span>
-        <span class="iab-live-tag">LIVE</span>
-    </div>
-    <!-- Frame area -->
-    <div class="iab-frame-wrap">
-        <!-- Loader -->
-        <div class="iab-loader" id="iabLoader">
-            <div class="iab-spinner"></div>
-            <span class="iab-load-text">Opening Player...</span>
-            <span class="iab-load-hint">Please wait while the channel loads</span>
-        </div>
-        <!-- Error state (shown if embedding blocked) -->
-        <div class="iab-error" id="iabError">
-            <i class="fa fa-shield-halved"></i>
-            <h3>Embedding Blocked</h3>
-            <p>This channel does not allow embedding.<br>Open it in your browser to watch.</p>
-            <button class="iab-open-btn" id="iabOpenExtBtn">
-                <i class="fa fa-external-link-alt"></i> Open in Browser
-            </button>
-        </div>
-        <!-- The iframe -->
-        <iframe
-            id="webPlayerIframe"
-            src="about:blank"
-            allowfullscreen
-            allow="autoplay; fullscreen; picture-in-picture; encrypted-media; gyroscope; accelerometer"
-            scrolling="yes"
-            frameborder="0"
-            sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-presentation allow-top-navigation"
-        ></iframe>
     </div>
 </div>
 
@@ -588,10 +440,10 @@
 
 <div class="bottom-nav">
     <div class="nav-btn active" data-cat="All" onclick="filterData('All', this)"><i class="fa fa-house"></i>HOME</div>
-    <div class="nav-btn" data-cat="Sports" onclick="filterData('Sports', this)"><i class="fa fa-tv"></i>LIVE</div>
-    <div class="nav-btn" data-cat="Movies" onclick="filterData('Movies', this)"><i class="fa fa-clapperboard"></i>MOVIES</div>
-    <div class="nav-btn" data-cat="TV Shows" onclick="filterData('TV Shows', this)"><i class="fa fa-list-alt"></i>SHOWS</div>
-</div>
+        <div class="nav-btn" data-cat="Live" onclick="filterData('Live', this)"><i class="fa fa-broadcast-tower"></i>Live</div>
+    <div class="nav-btn" data-cat="Sports" onclick="filterData('Sports', this)"><i class="fa fa-tv"></i>Sports</div>
+
+<div class="nav-btn" data-cat="Movies" onclick="filterData('Movies', this)"><i class="fa fa-list-alt"></i>Movies</div> 
 
 <div id="update-overlay"><div class="update-box"><h2 style="color: var(--main-color); font-weight:800;">Update Available!</h2><p>Please update to the latest version.</p><button id="update-btn" style="background:var(--main-color); border:none; padding:12px 25px; border-radius:25px; font-weight:bold; cursor:pointer;">UPDATE NOW</button></div></div>
 <div id="data-save-badge" class="data-save-badge"><i class="fa fa-database"></i> Using cached data</div>
@@ -608,244 +460,8 @@
     const STORAGE_KEY_DATA = 'nikamma_cached_data';
     const STORAGE_KEY_HASH = 'nikamma_data_hash';
     const SPLASH_SEEN_KEY = 'nikamma_splash_seen';
-
-    // ===================================================================
-    // ===== DUAL PLAYER LOGIC: Detect URL type and show right player =====
-    // ===================================================================
     
-    /**
-     * isWebPageUrl() - Returns TRUE if the URL is a web page (should use iframe/web player)
-     * Returns FALSE if it's a video stream (should use exo player)
-     * 
-     * Web page detection rules:
-     * - URL contains known web player domains/patterns
-     * - URL is a .php, .html, .htm page
-     * - URL contains query params like ?player=, ?live=, ?channel=
-     * - URL does NOT end with .m3u8, .ts, .mp4, .mkv etc.
-     */
-    function isWebPageUrl(url) {
-        if (!url || url === '#') return false;
-        
-        try {
-            const u = url.toLowerCase();
-            
-            // ---- Direct video stream extensions -> EXO PLAYER ----
-            const streamExts = ['.m3u8', '.ts', '.mp4', '.mkv', '.avi', '.webm', '.flv', '.mov', '.wmv', '.ogv'];
-            for (let ext of streamExts) {
-                if (u.includes(ext)) return false;
-            }
-            
-            // ---- Known streaming API patterns -> EXO PLAYER ----
-            const streamPatterns = ['rtmp://', 'rtsp://', '/live/', '/hls/', '/dash/', '/stream', 'playlist.', 'chunklist', 'index.php?ts='];
-            for (let pat of streamPatterns) {
-                if (u.includes(pat)) return false;
-            }
-            
-            // ---- Web page patterns -> WEB PLAYER (iframe) ----
-            // PHP pages with player params (like executeandship.com/premiumcr.php?player=mobile&live=ptvpk)
-            if (u.includes('.php')) return true;
-            if (u.includes('.html') || u.includes('.htm')) return true;
-            
-            // URL has web player query params
-            if (u.includes('player=') || u.includes('?live=') || u.includes('?channel=') || u.includes('?watch=')) return true;
-            
-            // If URL ends with known domain TLDs and no file extension -> treat as web page
-            const hasNoMediaExt = !streamExts.some(e => u.includes(e));
-            const looksLikeWebPage = /^https?:\/\//i.test(url) && hasNoMediaExt;
-            
-            // Check if it has a path that looks like a web page route (not a stream path)
-            if (looksLikeWebPage) {
-                // If URL has query string with common web params -> web player
-                if (url.includes('?')) {
-                    const params = url.split('?')[1].toLowerCase();
-                    if (params.includes('live') || params.includes('player') || params.includes('channel') || params.includes('watch') || params.includes('embed')) {
-                        return true;
-                    }
-                }
-            }
-            
-            // Default: if it looks like a plain URL without stream extension -> treat as web page
-            if (looksLikeWebPage && !u.includes('/hls') && !u.includes('/live')) {
-                return true;
-            }
-            
-            return false;
-        } catch(e) {
-            return false;
-        }
-    }
-
-    // ===== IN-APP BROWSER: Full-screen overlay player (bypasses X-Frame-Options) =====
-    let iabCurrentUrl = '';
-    let iabLoadTimer = null;
-    let iabErrorTimer = null;
-
-    window.playWebPlayer = function(url, title) {
-        iabCurrentUrl = url;
-
-        const iab = document.getElementById('inAppBrowser');
-        const iframe = document.getElementById('webPlayerIframe');
-        const loader = document.getElementById('iabLoader');
-        const errorDiv = document.getElementById('iabError');
-        const titleEl = document.getElementById('iabTitle');
-        const openExtBtn = document.getElementById('iabOpenExtBtn');
-
-        // Stop exo player
-        document.getElementById('videoBox').style.display = 'none';
-        stopExoPlayer();
-
-        // Reset state
-        loader.style.opacity = '1';
-        loader.style.display = 'flex';
-        errorDiv.style.display = 'none';
-        titleEl.innerText = title || 'Live Channel';
-        iframe.src = 'about:blank';
-
-        // Show overlay
-        iab.classList.add('active');
-
-        // Open ext button
-        openExtBtn.onclick = () => window.open(url, '_blank');
-
-        // Hide slider
-        document.getElementById('mainSlider').style.display = 'none';
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-
-        // Set iframe src after short delay
-        if (iabLoadTimer) clearTimeout(iabLoadTimer);
-        if (iabErrorTimer) clearTimeout(iabErrorTimer);
-
-        iabLoadTimer = setTimeout(() => {
-            iframe.src = url;
-
-            // iframe load success
-            iframe.onload = function() {
-                if (iabErrorTimer) clearTimeout(iabErrorTimer);
-                // Fade out loader
-                loader.style.opacity = '0';
-                setTimeout(() => { loader.style.display = 'none'; }, 400);
-
-                // Try to detect if iframe content is actually blocked
-                // (some browsers block cross-origin check, so we use error timer as fallback)
-                try {
-                    // If we can access contentDocument it loaded (same-origin only)
-                    const doc = iframe.contentDocument || iframe.contentWindow.document;
-                    if (!doc || doc.body.innerHTML === '') {
-                        showIabError();
-                    }
-                } catch(e) {
-                    // Cross-origin: cannot check. Assume it loaded OK (loader already hidden).
-                    // If page was blocked, browser shows nothing and onload still fires.
-                    // We show a subtle "open in browser" hint after 3s
-                    iabErrorTimer = setTimeout(() => {
-                        // Still show loader? then something went wrong
-                        if (loader.style.display !== 'none') showIabError();
-                    }, 3000);
-                }
-            };
-
-            iframe.onerror = function() {
-                showIabError();
-            };
-
-            // Fallback error: if loader still visible after 8s
-            iabErrorTimer = setTimeout(() => {
-                if (loader.style.opacity !== '0' && loader.style.display !== 'none') {
-                    showIabError();
-                }
-            }, 8000);
-
-        }, 100);
-    };
-
-    function showIabError() {
-        const loader = document.getElementById('iabLoader');
-        const errorDiv = document.getElementById('iabError');
-        loader.style.display = 'none';
-        errorDiv.style.display = 'flex';
-    }
-
-    window.stopWebPlayer = function() {
-        const iab = document.getElementById('inAppBrowser');
-        const iframe = document.getElementById('webPlayerIframe');
-
-        if (iabLoadTimer) clearTimeout(iabLoadTimer);
-        if (iabErrorTimer) clearTimeout(iabErrorTimer);
-
-        iframe.src = 'about:blank';
-        iab.classList.remove('active');
-        iabCurrentUrl = '';
-
-        document.querySelectorAll('.card').forEach(c => c.classList.remove('playing'));
-
-        // Show slider if on home
-        const sliders = rawData.filter(d => (d.Category || d.category || "").toLowerCase() === 'slider');
-        if (currentCategory === 'All' && sliders.length > 0) {
-            document.getElementById('mainSlider').style.display = 'block';
-        }
-    };
-
-    // Web fullscreen no longer needed (full-screen overlay handles it)
-    function toggleWebFullscreen() {}
-    function updateWebFullscreenIcon() {}
-
-    // ===== UNIFIED play() FUNCTION: Auto-detects URL type =====
-    // Old play() is replaced with this smart version
-    window.play = function(url, title, cardElement) {
-        if (!url || url === '#') return;
-        
-        // Mark card as playing
-        document.querySelectorAll('.card').forEach(c => c.classList.remove('playing'));
-        if (cardElement) cardElement.classList.add('playing');
-        
-        if (isWebPageUrl(url)) {
-            // ---- WEB PAGE URL: Use iframe player ----
-            console.log('[DualPlayer] Web URL detected, using iframe player:', url);
-            playWebPlayer(url, title);
-        } else {
-            // ---- STREAM URL: Use exo player ----
-            console.log('[DualPlayer] Stream URL detected, using exo player:', url);
-            
-            // Hide web player if showing
-            stopWebPlayer();
-            
-            document.getElementById('videoBox').style.display = 'block';
-            document.getElementById('mainSlider').style.display = 'none';
-            document.getElementById('videoTitle').innerText = title;
-            window.scrollTo({ top: 0, behavior: 'smooth' });
-            loadIntoAdvancedPlayer(url, title, cardElement, true);
-        }
-    };
-
-    // ===== UNIFIED stopVideo(): Stops whichever player is active =====
-    window.stopVideo = function() {
-        stopExoPlayer();
-        // Close in-app browser overlay if open
-        const iab = document.getElementById('inAppBrowser');
-        if (iab && iab.classList.contains('active')) stopWebPlayer();
-        currentSourceUrl = null;
-        document.getElementById('videoBox').style.display = 'none';
-        document.querySelectorAll('.card').forEach(c => c.classList.remove('playing'));
-        const sliders = rawData.filter(d => (d.Category || d.category || "").toLowerCase() === 'slider');
-        if (currentCategory === 'All' && sliders.length > 0) document.getElementById('mainSlider').style.display = 'block';
-        if (controlsTimeout) clearTimeout(controlsTimeout);
-        hideControls();
-        setVideoBrightness(1.0);
-    };
-
-    // Internal: only stop exo player (without affecting web player state)
-    function stopExoPlayer() {
-        destroyAdvancedPlayer();
-        document.getElementById('videoBox').style.display = 'none';
-        if (controlsTimeout) clearTimeout(controlsTimeout);
-        hideControls();
-    }
-
-    // ===================================================================
-    // END DUAL PLAYER LOGIC
-    // ===================================================================
-
-    // ========== GESTURE CONTROLS ==========
+    // ========== FIXED GESTURE CONTROLS (tap to show controls, swipe for vol/bright) ==========
     let isFullscreen = false;
     let gestureActive = false;
     let gestureStartY = 0, gestureStartX = 0;
@@ -877,15 +493,20 @@
         if (!isFullscreen) return;
         let target = e.target;
         if(target.closest && (target.closest('.icon-btn') || target.closest('.menu-bar') || target.closest('.top-bar'))) return;
+        
         const touch = e.touches[0];
         activeTouchId = touch.identifier;
         gestureStartX = touch.clientX;
         gestureStartY = touch.clientY;
         gesturePrevented = false;
+        
         const screenWidth = window.innerWidth;
         gestureSide = gestureStartX < screenWidth / 2 ? 'left' : 'right';
-        if (gestureSide === 'right') gestureStartValue = advVideo.volume;
-        else gestureStartValue = currentBrightness;
+        if (gestureSide === 'right') {
+            gestureStartValue = advVideo.volume;
+        } else {
+            gestureStartValue = currentBrightness;
+        }
         gestureActive = true;
     }
     
@@ -893,15 +514,20 @@
         if (!gestureActive || !isFullscreen) return;
         let touch = null;
         for (let i = 0; i < e.touches.length; i++) {
-            if (e.touches[i].identifier === activeTouchId) { touch = e.touches[i]; break; }
+            if (e.touches[i].identifier === activeTouchId) {
+                touch = e.touches[i];
+                break;
+            }
         }
         if (!touch) return;
+        
         const deltaY = gestureStartY - touch.clientY;
         const deltaX = Math.abs(touch.clientX - gestureStartX);
         if (!gesturePrevented && Math.abs(deltaY) > 12 && Math.abs(deltaY) > deltaX * 1.2) {
             gesturePrevented = true;
             e.preventDefault();
         }
+        
         if (gesturePrevented) {
             e.preventDefault();
             let newValue = gestureStartValue + (deltaY / 200) * (gestureSide === 'right' ? 1.0 : 1.8);
@@ -922,6 +548,9 @@
     }
     
     function handleTouchEnd(e) {
+        if (gestureActive && gesturePrevented) {
+            // swipe consumed, no click will happen
+        }
         gestureActive = false;
         gestureSide = null;
         gesturePrevented = false;
@@ -939,7 +568,7 @@
         container.addEventListener('touchend', handleTouchEnd);
     }
     
-    // ========== ADVANCED EXO PLAYER ==========
+    // ========== ADVANCED PLAYER WITH IMPROVED BUFFERING RECOVERY ==========
     let currentMpegtsPlayer = null;
     let currentHlsPlayer = null;
     let currentSourceUrl = null;
@@ -1016,24 +645,34 @@
     }
     
     function clearBufferingTimeout() {
-        if (bufferingTimeout) { clearTimeout(bufferingTimeout); bufferingTimeout = null; }
+        if (bufferingTimeout) {
+            clearTimeout(bufferingTimeout);
+            bufferingTimeout = null;
+        }
     }
     
     function attemptResume() {
         if (!currentSourceUrl) return;
+        console.log("Attempting to resume playback after buffering stall");
         if (advVideo.readyState >= 2) {
             advVideo.play().catch(e => console.warn("Resume play failed", e));
         } else {
             const currentTime = advVideo.currentTime;
             const wasPlaying = !advVideo.paused;
             const url = currentSourceUrl;
-            if (currentMpegtsPlayer) { try { currentMpegtsPlayer.unload(); currentMpegtsPlayer.destroy(); } catch(e) {} currentMpegtsPlayer = null; }
-            if (currentHlsPlayer) { try { currentHlsPlayer.destroy(); } catch(e) {} currentHlsPlayer = null; }
+            if (currentMpegtsPlayer) {
+                try { currentMpegtsPlayer.unload(); currentMpegtsPlayer.destroy(); } catch(e) {}
+                currentMpegtsPlayer = null;
+            }
+            if (currentHlsPlayer) {
+                try { currentHlsPlayer.destroy(); } catch(e) {}
+                currentHlsPlayer = null;
+            }
             advVideo.pause();
             advVideo.removeAttribute('src');
             advVideo.load();
-            loadIntoAdvancedPlayer(url, document.getElementById('videoTitle').innerText, null, wasPlaying);
             const isLive = url.includes('.m3u8') || url.includes('.ts') || url.includes('live');
+            loadIntoAdvancedPlayer(url, document.getElementById('videoTitle').innerText, null, wasPlaying);
             if (!isLive && currentTime > 0 && currentTime < advVideo.duration) {
                 advVideo.addEventListener('loadedmetadata', function seekHandler() {
                     advVideo.currentTime = currentTime;
@@ -1047,17 +686,42 @@
         if (!currentSourceUrl) return;
         clearBufferingTimeout();
         bufferingTimeout = setTimeout(() => {
-            if (advVideo.readyState < 2 || advVideo.networkState === 2 || advVideo.buffered.length === 0) attemptResume();
+            if (advVideo.readyState < 2 || advVideo.networkState === 2 || advVideo.buffered.length === 0) {
+                console.log("Video stuck in buffering, attempting resume");
+                attemptResume();
+            }
         }, 4000);
     }
-    function handlePlaying() { clearBufferingTimeout(); reloadAttempts = 0; }
-    function handleStalled() { if (!currentSourceUrl) return; attemptResume(); }
-    function handleError(e) { if (currentSourceUrl && reloadAttempts < MAX_RELOAD_ATTEMPTS) { reloadAttempts++; attemptResume(); } }
+    
+    function handlePlaying() {
+        clearBufferingTimeout();
+        reloadAttempts = 0;
+    }
+    
+    function handleStalled() {
+        if (!currentSourceUrl) return;
+        console.log("Stalled event, attempting resume");
+        attemptResume();
+    }
+    
+    function handleError(e) {
+        console.error("Video error:", e);
+        if (currentSourceUrl && reloadAttempts < MAX_RELOAD_ATTEMPTS) {
+            reloadAttempts++;
+            attemptResume();
+        }
+    }
     
     function destroyAdvancedPlayer() {
         clearBufferingTimeout();
-        if (currentMpegtsPlayer) { try { currentMpegtsPlayer.unload(); currentMpegtsPlayer.destroy(); } catch(e) {} currentMpegtsPlayer = null; }
-        if (currentHlsPlayer) { try { currentHlsPlayer.destroy(); } catch(e) {} currentHlsPlayer = null; }
+        if (currentMpegtsPlayer) {
+            try { currentMpegtsPlayer.unload(); currentMpegtsPlayer.destroy(); } catch(e) {}
+            currentMpegtsPlayer = null;
+        }
+        if (currentHlsPlayer) {
+            try { currentHlsPlayer.destroy(); } catch(e) {}
+            currentHlsPlayer = null;
+        }
         advVideo.pause();
         advVideo.removeAttribute('src');
         advVideo.load();
@@ -1085,20 +749,32 @@
         
         if (isTs && typeof mpegts !== 'undefined') {
             try {
-                currentMpegtsPlayer = mpegts.createPlayer({ type: 'mse', isLive: true, url: url, enableStashBuffer: false });
+                currentMpegtsPlayer = mpegts.createPlayer({
+                    type: 'mse', isLive: true, url: url,
+                    enableStashBuffer: false
+                });
                 currentMpegtsPlayer.attachMediaElement(advVideo);
                 currentMpegtsPlayer.load();
                 if (autoPlay) currentMpegtsPlayer.play().catch(e => console.warn);
             } catch(e) { fallbackNative(url, autoPlay); }
-        } else if (isM3u8 && window.Hls && Hls.isSupported()) {
+        } 
+        else if (isM3u8 && window.Hls && Hls.isSupported()) {
             try {
                 currentHlsPlayer = new Hls({ lowLatencyMode: true });
                 currentHlsPlayer.loadSource(url);
                 currentHlsPlayer.attachMedia(advVideo);
-                currentHlsPlayer.on(Hls.Events.MANIFEST_PARSED, () => { if (autoPlay) advVideo.play().catch(e=>console.warn); });
-                currentHlsPlayer.on(Hls.Events.ERROR, (evt, data) => { if (data.fatal) attemptResume(); });
+                currentHlsPlayer.on(Hls.Events.MANIFEST_PARSED, () => {
+                    if (autoPlay) advVideo.play().catch(e=>console.warn);
+                });
+                currentHlsPlayer.on(Hls.Events.ERROR, (evt, data) => {
+                    if (data.fatal) {
+                        console.error("HLS fatal error, attempting resume");
+                        attemptResume();
+                    }
+                });
             } catch(e) { fallbackNative(url, autoPlay); }
-        } else {
+        }
+        else {
             fallbackNative(url, autoPlay);
         }
         
@@ -1113,16 +789,16 @@
         setTimeout(() => { if(advVideo.readyState > 0) exoLoader.style.display = 'none'; }, 1500);
     }
     
-    // ========== FULLSCREEN ==========
+    // ========== FULLSCREEN TOGGLE ==========
     function toggleFullscreen() {
         const container = document.getElementById('advancedPlayerContainer');
         const isCurrentlyFull = !!(document.fullscreenElement || document.webkitFullscreenElement);
         if (!isCurrentlyFull) {
-            const req = container.requestFullscreen || container.webkitRequestFullscreen;
-            if (req) req.call(container).catch(err => console.warn(err));
+            const requestMethod = container.requestFullscreen || container.webkitRequestFullscreen;
+            if (requestMethod) requestMethod.call(container).catch(err => console.warn(err));
         } else {
-            const exit = document.exitFullscreen || document.webkitExitFullscreen;
-            if (exit) exit.call(document).catch(err => console.warn(err));
+            const exitMethod = document.exitFullscreen || document.webkitExitFullscreen;
+            if (exitMethod) exitMethod.call(document).catch(err => console.warn(err));
         }
     }
     
@@ -1130,8 +806,11 @@
         const isFs = !!(document.fullscreenElement || document.webkitFullscreenElement);
         isFullscreen = isFs;
         exoFullBtn.innerHTML = `<span class="material-icons-round">${isFs ? 'fullscreen_exit' : 'fullscreen'}</span>`;
-        if (!isFs) setVideoFitMode();
-        else setTimeout(() => { if (exoOverlay && !advVideo.paused) showControls(); }, 100);
+        if (!isFs) {
+            setVideoFitMode();
+        } else {
+            setTimeout(() => { if (exoOverlay && !advVideo.paused) showControls(); }, 100);
+        }
     }
     
     document.addEventListener('fullscreenchange', updateFullscreenIcon);
@@ -1140,12 +819,21 @@
     function attachPlayerControls() {
         const exoTopCloseBtn = document.getElementById('exoTopCloseBtn');
         if (exoTopCloseBtn) {
-            exoTopCloseBtn.onclick = (e) => { e.stopPropagation(); stopVideo(); };
+            exoTopCloseBtn.onclick = (e) => {
+                e.stopPropagation();
+                stopVideo();
+            };
         }
+        
         exoPlayBtn.onclick = (e) => {
             e.stopPropagation();
-            if (advVideo.paused) { advVideo.play(); exoPlayBtn.innerHTML = '<span class="material-icons-round">pause</span>'; }
-            else { advVideo.pause(); exoPlayBtn.innerHTML = '<span class="material-icons-round">play_arrow</span>'; }
+            if (advVideo.paused) {
+                advVideo.play();
+                exoPlayBtn.innerHTML = '<span class="material-icons-round">pause</span>';
+            } else {
+                advVideo.pause();
+                exoPlayBtn.innerHTML = '<span class="material-icons-round">play_arrow</span>';
+            }
             showControls();
         };
         exoMuteBtn.onclick = (e) => {
@@ -1176,7 +864,75 @@
         updateFullscreenIcon();
     }
     
-    // ========== SIDE MENU SWIPE ==========
+    // ========== URL TYPE DETECTOR ==========
+    function isWebpageUrl(url) {
+        if (!url || url === '#') return false;
+        // Direct stream extensions → video player
+        if (/\.(m3u8|ts|mp4|mkv|avi|flv|webm|mpd)(\?|$)/i.test(url)) return false;
+        // Known stream patterns → video player
+        if (/\/(stream|live|hls|dash|playlist|channel)\//i.test(url)) return false;
+        if (/\.(m3u8|ts|mp4)/.test(url)) return false;
+        // If it looks like a webpage (has .php, .html, .asp, or is a domain homepage) → iframe
+        if (/\.(php|html|htm|asp|aspx|jsp)([\?#]|$)/i.test(url)) return true;
+        // Known embed/player domains → iframe
+        if (/executeandship\.com|dailymotion\.com|streamtp\.com|embedstream|player\.|embed\./i.test(url)) return true;
+        // URL has query params and no stream extension → likely a webpage player
+        if (url.includes('?') && !/\.(m3u8|ts|mp4|mpd)/i.test(url)) return true;
+        return false;
+    }
+
+    window.iframeFullscreen = function() {
+        var ifr = document.getElementById('iframePlayer');
+        var box = document.getElementById('iframePlayerBox');
+        var req = box.requestFullscreen || box.webkitRequestFullscreen;
+        if (req) req.call(box);
+    };
+
+    window.play = function(url, title, cardElement) {
+        if(!url || url === '#') return;
+        document.querySelectorAll('.card').forEach(c => c.classList.remove('playing'));
+        if(cardElement) cardElement.classList.add('playing');
+        document.getElementById('videoBox').style.display = 'block';
+        document.getElementById('mainSlider').style.display = 'none';
+        document.getElementById('videoTitle').innerText = title;
+        window.scrollTo({top: 0, behavior: 'smooth'});
+
+        if (isWebpageUrl(url)) {
+            // ---- IFRAME MODE ----
+            destroyAdvancedPlayer();
+            currentSourceUrl = url;
+            document.getElementById('advancedPlayerContainer').style.display = 'none';
+            var iframeBox = document.getElementById('iframePlayerBox');
+            var iframe = document.getElementById('iframePlayer');
+            iframeBox.style.display = 'block';
+            iframe.src = url;
+        } else {
+            // ---- VIDEO PLAYER MODE ----
+            document.getElementById('iframePlayerBox').style.display = 'none';
+            document.getElementById('iframePlayer').src = 'about:blank';
+            document.getElementById('advancedPlayerContainer').style.display = '';
+            loadIntoAdvancedPlayer(url, title, cardElement, true);
+        }
+    };
+    
+    window.stopVideo = function() {
+        destroyAdvancedPlayer();
+        currentSourceUrl = null;
+        // Stop iframe too
+        var iframe = document.getElementById('iframePlayer');
+        if (iframe) iframe.src = 'about:blank';
+        document.getElementById('iframePlayerBox').style.display = 'none';
+        document.getElementById('advancedPlayerContainer').style.display = '';
+        document.getElementById('videoBox').style.display = 'none';
+        document.querySelectorAll('.card').forEach(c => c.classList.remove('playing'));
+        const sliders = rawData.filter(d => (d.Category || d.category || "").toLowerCase() === 'slider');
+        if(currentCategory === 'All' && sliders.length > 0) document.getElementById('mainSlider').style.display = 'block';
+        if (controlsTimeout) clearTimeout(controlsTimeout);
+        hideControls();
+        setVideoBrightness(1.0);
+    };
+    
+    // ========== SIDE MENU SWIPE (LEFT HALF OF SCREEN) ==========
     let menuSwipeStartX = 0, menuSwipeStartY = 0, menuSwipeActive = false, isNavOpen = false;
     document.addEventListener('touchstart', function(e) {
         const touchX = e.touches[0].clientX;
@@ -1187,16 +943,23 @@
             menuSwipeActive = true;
         }
     }, { passive: true });
+    
     document.addEventListener('touchmove', function(e) {
         if (!menuSwipeActive) return;
         const diffX = e.touches[0].clientX - menuSwipeStartX;
         const diffY = Math.abs(e.touches[0].clientY - menuSwipeStartY);
-        if (diffX > 30 && diffY < 30) { e.preventDefault(); openNav(); menuSwipeActive = false; }
-        else if (diffX < -30 || diffY > 30) menuSwipeActive = false;
+        if (diffX > 30 && diffY < 30) {
+            e.preventDefault();
+            openNav();
+            menuSwipeActive = false;
+        } else if (diffX < -30 || diffY > 30) {
+            menuSwipeActive = false;
+        }
     }, { passive: false });
+    
     document.addEventListener('touchend', function() { menuSwipeActive = false; });
     
-    // ========== INTERNET CHECK ==========
+    // ========== INTERNET CHECK & DATA ==========
     async function checkInternetBeforeStart() {
         const checker = document.getElementById('internetChecker');
         const icon = document.getElementById('internetIcon');
@@ -1217,8 +980,10 @@
             const timeoutId = setTimeout(() => controller.abort(), 2000);
             const response = await fetch('https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css', { method: 'HEAD', signal: controller.signal, cache: 'no-store' });
             clearTimeout(timeoutId);
-            if (response.ok || response.status === 304) { checker.style.display = 'none'; return true; }
-            else {
+            if (response.ok || response.status === 304) {
+                checker.style.display = 'none';
+                return true;
+            } else {
                 checker.classList.add('offline');
                 icon.className = 'fa fa-credit-card';
                 title.innerText = 'انٹرنیٹ پیکیج ختم';
@@ -1264,8 +1029,8 @@
                     let newRawData = results.data.filter(item => item && (item.name || item.Name || item.URL || item.url)).map(item => { let cat = (item.Category || item.category || "").trim(); if(cat.toLowerCase() === "tv shows" || cat.toLowerCase() === "tvshow") item.Category = "TV Shows"; return item; });
                     Papa.parse('https://docs.google.com/spreadsheets/d/e/2PACX-1vQD2lHL-u6zHPZKdYIVD4eXp98XipkVP4jKfxLDoNje9DeZ1726o0zFZf-gAR2kZj0ls7VhceXbbKih/pub?gid=1123743396&single=true&output=csv', { download: true, header: true, skipEmptyLines: true, complete: function(settingsResults) {
                         let newSettings = settingsResults.data[0] || {};
-                        if(!isDataSame(newRawData, rawData) && newRawData.length) { rawData = newRawData; settingsData = newSettings; applySettings(); saveDataToCache(rawData, settingsData); updateUIAfterDataLoad(); resolve(true); }
-                        else if(rawData.length === 0 && newRawData.length) { rawData = newRawData; settingsData = newSettings; applySettings(); saveDataToCache(rawData, settingsData); updateUIAfterDataLoad(); resolve(true); }
+                        if(!isDataSame(newRawData, rawData) && newRawData.length) { rawData = newRawData; settingsData = newSettings; applySettings(); saveDataToCache(rawData, settingsData); updateUIAfterDataLoad(); resolve(true); } 
+                        else if(rawData.length === 0 && newRawData.length) { rawData = newRawData; settingsData = newSettings; applySettings(); saveDataToCache(rawData, settingsData); updateUIAfterDataLoad(); resolve(true); } 
                         else { saveDataToCache(rawData, settingsData); resolve(false); }
                     } });
                 }, error: () => resolve(false)
@@ -1274,15 +1039,17 @@
     }
     function updateSlider() { const sliders = rawData.filter(d => (d.Category || d.category || "").toLowerCase() === 'slider'); const track = document.getElementById('sliderTrack'); if(sliders.length && track) { track.innerHTML = sliders.map(s => `<div class="slide-item"><img src="${s.Thumbnail || s.thumbnail || s.URL || s.url || MASTER_LOGO}" loading="lazy" onerror="handleImageError(this)" onload="handleImageLoad(this)" class="img-loading"></div>`).join(''); const videoBoxDisplay = document.getElementById('videoBox').style.display; document.getElementById('mainSlider').style.display = (currentCategory === 'All' && videoBoxDisplay !== 'block') ? 'block' : 'none'; } else document.getElementById('mainSlider').style.display = 'none'; }
 
+    // ========== FIX 1: DATA LIST REVERSE ORDER ==========
     window.filterData = function(cat, btn, shouldClose = true) { 
         currentCategory = cat; 
         if(shouldClose) closeNav(); 
-        const sliderDiv = document.getElementById('mainSlider'), videoBox = document.getElementById('videoBox'), iab = document.getElementById('inAppBrowser'); 
+        const sliderDiv = document.getElementById('mainSlider'), videoBox = document.getElementById('videoBox'); 
         const sliders = rawData.filter(d => (d.Category || d.category || "").toLowerCase() === 'slider'); 
-        sliderDiv.style.display = (cat === 'All' && videoBox.style.display !== 'block' && !(iab && iab.classList.contains('active')) && sliders.length) ? 'block' : 'none'; 
+        sliderDiv.style.display = (cat === 'All' && videoBox.style.display !== 'block' && sliders.length) ? 'block' : 'none'; 
         document.querySelectorAll('.nav-btn').forEach(b => { if(b.getAttribute('data-cat') === cat) b.classList.add('active'); else b.classList.remove('active'); }); 
         document.getElementById('sectionName').innerText = cat === 'All' ? 'ALL CONTENT' : (cat === 'TV Shows' ? 'TV SHOWS' : cat.toUpperCase()); 
         let filtered = (cat === 'All') ? rawData.filter(d => (d.Category || d.category || "").toLowerCase() !== 'slider') : rawData.filter(d => (d.Category || d.category || "").trim().toLowerCase() === cat.toLowerCase()); 
+        // ===== REVERSE ORDER: Newest content shown first =====
         filtered = filtered.slice().reverse();
         const grid = document.getElementById('mainGrid'); 
         if(!filtered.length) { 
@@ -1296,7 +1063,7 @@
         }).join(''); 
     };
 
-    function escapeHtml(str) { if(!str) return ''; return String(str).replace(/[&<>'"]/g, function(m) { if(m === '&') return '&amp;'; if(m === '<') return '&lt;'; if(m === '>') return '&gt;'; if(m === '"') return '&quot;'; if(m === "'") return '&#39;'; return m; }); }
+    function escapeHtml(str) { if(!str) return ''; return String(str).replace(/[&<>]/g, function(m) { if(m === '&') return '&amp;'; if(m === '<') return '&lt;'; if(m === '>') return '&gt;'; return m; }); }
     function handleImageError(img) { if(img && img.src !== MASTER_LOGO) { img.src = MASTER_LOGO; img.classList.add('img-loading'); img.onerror = null; } }
     function handleImageLoad(img) { if(img) { img.classList.remove('img-loading'); img.classList.add('img-loaded'); } }
     function shareApp(e) { if(e) e.preventDefault(); const shareURL = settingsData.shareUrl || window.location.href; if(navigator.share) navigator.share({ title: 'Nikamma 4k', url: shareURL }); else window.open(shareURL, '_blank'); }
@@ -1304,10 +1071,12 @@
     function closeNav() { const sideNav = document.getElementById("mySidenav"), overlay = document.getElementById("menu-overlay"); sideNav.classList.remove("open"); overlay.classList.remove("visible"); isNavOpen = false; setTimeout(() => { if(!isNavOpen) overlay.style.display = "none"; }, 400); }
     function toggleSearch(show) { document.getElementById('header-main').style.display = show ? 'none' : 'flex'; document.getElementById('header-icons').style.display = show ? 'none' : 'flex'; document.getElementById('search-container').style.display = show ? 'flex' : 'none'; if(show) document.getElementById('searchBar').focus(); }
     
+    // ========== FIX 1 (Search): REVERSE ORDER IN SEARCH RESULTS TOO ==========
     window.search = function() { 
         let term = document.getElementById('searchBar').value.toLowerCase().trim(); 
         const grid = document.getElementById('mainGrid'); 
         if(term === '') { filterData(currentCategory, null, false); return; } 
+        // ===== REVERSE ORDER: Newest results shown first =====
         const filtered = rawData.filter(d => (d.name || d.Name || "").toLowerCase().includes(term) && (d.Category || d.category || "").toLowerCase() !== 'slider').slice().reverse(); 
         if(!filtered.length) { grid.innerHTML = `<div style="grid-column:1/-1" class="empty-state"><i class="fa fa-search"></i><h3>No results for "${term}"</h3></div>`; return; } 
         grid.innerHTML = filtered.map(item => `<div class="card" onclick="play('${escapeHtml(item.URL || item.url || "#")}', '${escapeHtml(item.name || item.Name)}', this)"><img src="${item.Thumbnail || item.thumbnail || MASTER_LOGO}" loading="lazy" onerror="handleImageError(this)" onload="handleImageLoad(this)" class="img-loading"><div class="card-title">${item.name || item.Name}</div></div>`).join(''); 
@@ -1317,6 +1086,7 @@
     
     let ptrStartY = 0, ptrActive = false, ptrHeight = 0, isTouching = false, touchStartY = 0, touchStartX = 0;
 
+    // ========== FIX 2: PTR LOADER - Properly show circle spinner ==========
     function updatePTR(status, pullDistance = 0) {
         var pc = document.getElementById('ptr-container');
         var pt = document.getElementById('ptr-text');
@@ -1326,18 +1096,30 @@
             var ty = -70 + show;
             pc.style.transition = 'none';
             pc.style.transform = 'translateY(' + ty + 'px)';
-            if (pullDistance > 50) { pt.innerText = 'Release to refresh'; pi.className = 'fa fa-rotate'; pi.style.cssText = ''; }
-            else { pt.innerText = 'Pull to refresh'; pi.className = 'fa fa-arrow-down'; pi.style.cssText = ''; }
+            if (pullDistance > 50) {
+                pt.innerText = 'Release to refresh';
+                pi.className = 'fa fa-rotate';
+                pi.style.cssText = '';
+            } else {
+                pt.innerText = 'Pull to refresh';
+                pi.className = 'fa fa-arrow-down';
+                pi.style.cssText = '';
+            }
         } else if (status === 'release') {
             pc.style.transition = 'transform 0.3s ease';
             pc.style.transform = 'translateY(0px)';
             pt.innerText = 'Refreshing...';
+            // Replace icon element with spinner div
             pi.className = 'ptr-spinner';
             pi.style.cssText = 'display:inline-block;width:26px;height:26px;border:3px solid rgba(255,255,255,0.3);border-top:3px solid #fff;border-radius:50%;animation:ptrSpin 0.7s linear infinite;box-sizing:border-box;flex-shrink:0;';
         } else if (status === 'complete') {
             pc.style.transition = 'transform 0.3s ease';
             pc.style.transform = 'translateY(-70px)';
-            setTimeout(function() { pt.innerText = 'Pull to refresh'; pi.className = 'fa fa-arrow-down'; pi.style.cssText = ''; }, 400);
+            setTimeout(function() {
+                pt.innerText = 'Pull to refresh';
+                pi.className = 'fa fa-arrow-down';
+                pi.style.cssText = '';
+            }, 400);
         }
     }
 
