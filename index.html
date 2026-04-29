@@ -220,51 +220,44 @@
         #menu-overlay.visible { display: block; opacity: 1; }
         
         /* ===== FIX: PTR CONTAINER - Proper circle loader display ===== */
-        .ptr-container { 
-            position: fixed; 
-            top: 0; 
-            left: 0; 
-            right: 0; 
-            z-index: 999; 
-            height: 0; 
-            overflow: hidden; 
-            transition: height 0.3s cubic-bezier(0.2, 0.9, 0.4, 1.1); 
-            background: linear-gradient(135deg, #00bcd4 0%, #0097a7 100%); 
-            display: flex; 
-            align-items: center; 
-            justify-content: center; 
-            box-shadow: 0 4px 15px rgba(0,0,0,0.2); 
+        /* ===== PTR CONTAINER ===== */
+        .ptr-container {
+            position: fixed;
+            top: 0; left: 0; right: 0;
+            z-index: 9998;
+            height: 70px;
+            transform: translateY(-70px);
+            transition: transform 0.3s ease;
+            background: #00bcd4;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
         }
-        .ptr-content { 
-            display: flex; 
-            align-items: center; 
-            justify-content: center; 
-            gap: 12px; 
-            color: white; 
-            font-weight: 600; 
-            font-size: 14px; 
-            text-transform: uppercase; 
+        .ptr-container span {
+            color: white;
+            font-weight: 700;
+            font-size: 13px;
             letter-spacing: 1px;
-            width: 100%;
-            padding: 0 20px;
-            box-sizing: border-box;
+            text-transform: uppercase;
         }
-        .ptr-content i { font-size: 22px; }
-
-        /* ===== FIX: PTR Loader Circle - Properly centered spinning circle ===== */
-        .ptr-loader { 
-            width: 26px; 
-            height: 26px; 
-            border: 3px solid rgba(255,255,255,0.3); 
-            border-top: 3px solid white; 
-            border-right: 3px solid white; 
-            border-radius: 50%; 
-            animation: ptrSpin 0.7s linear infinite; 
-            display: inline-flex;
-            flex-shrink: 0;
-            box-sizing: border-box;
+        .ptr-container i {
+            color: white;
+            font-size: 20px;
         }
+        /* ===== THE CIRCLE LOADER ===== */
         @keyframes ptrSpin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        .ptr-spinner {
+            display: inline-block !important;
+            width: 26px !important;
+            height: 26px !important;
+            border: 3px solid rgba(255,255,255,0.35) !important;
+            border-top: 3px solid #ffffff !important;
+            border-radius: 50% !important;
+            animation: ptrSpin 0.7s linear infinite !important;
+            box-sizing: border-box !important;
+            flex-shrink: 0 !important;
+        }
         
         .header-content { display: flex; width: 100%; max-width: var(--max-width); margin: 0 auto; align-items: center; justify-content: space-between; }
         .header-left, .header-right { display: flex; align-items: center; gap: 12px; font-size: 18px; cursor: pointer; }
@@ -373,7 +366,7 @@
     <div class="splash-loader"><i class="fa fa-circle-notch fa-spin"></i> Loading...</div>
 </div>
 
-<div id="ptr-container" class="ptr-container"><div class="ptr-content"><div id="ptr-icon"><i class="fa fa-arrow-down"></i></div><span id="ptr-text">Pull to refresh</span></div></div>
+<div id="ptr-container" class="ptr-container"><i id="ptr-icon" class="fa fa-arrow-down"></i><span id="ptr-text">Pull to refresh</span></div>
 <div id="menu-overlay" onclick="closeNav()"></div>
 
 <div id="mySidenav" class="sidenav">
@@ -1028,32 +1021,40 @@
     let ptrStartY = 0, ptrActive = false, ptrHeight = 0, isTouching = false, touchStartY = 0, touchStartX = 0;
 
     // ========== FIX 2: PTR LOADER - Properly show circle spinner ==========
-    function updatePTR(status, pullDistance = 0) { 
-        const ptrContainer = document.getElementById('ptr-container'), 
-              ptrText = document.getElementById('ptr-text'), 
-              ptrIcon = document.getElementById('ptr-icon'); 
-        if(status === 'pull') { 
-            const height = Math.min(pullDistance, 70); 
-            ptrContainer.style.height = height + 'px'; 
-            if(pullDistance > 50) { 
-                ptrText.innerText = 'Release to refresh'; 
-                ptrIcon.innerHTML = '<i class="fa fa-rotate" style="font-size:20px; display:inline-flex; align-items:center;"></i>'; 
-            } else { 
-                ptrText.innerText = 'Pull to refresh'; 
-                ptrIcon.innerHTML = '<i class="fa fa-arrow-down" style="font-size:20px; display:inline-flex; align-items:center;"></i>'; 
-            } 
-        } else if(status === 'release') { 
-            ptrContainer.style.height = '70px'; 
-            ptrText.innerText = 'Refreshing...'; 
-            // ===== FIX: Proper spinning circle loader =====
-            ptrIcon.innerHTML = '<div class="ptr-loader"></div>'; 
-        } else if(status === 'complete') { 
-            ptrContainer.style.height = '0px'; 
-            setTimeout(() => { 
-                ptrText.innerText = 'Pull to refresh'; 
-                ptrIcon.innerHTML = '<i class="fa fa-arrow-down" style="font-size:20px; display:inline-flex; align-items:center;"></i>'; 
-            }, 200); 
-        } 
+    function updatePTR(status, pullDistance = 0) {
+        var pc = document.getElementById('ptr-container');
+        var pt = document.getElementById('ptr-text');
+        var pi = document.getElementById('ptr-icon');
+        if (status === 'pull') {
+            var show = Math.min(pullDistance, 70);
+            var ty = -70 + show;
+            pc.style.transition = 'none';
+            pc.style.transform = 'translateY(' + ty + 'px)';
+            if (pullDistance > 50) {
+                pt.innerText = 'Release to refresh';
+                pi.className = 'fa fa-rotate';
+                pi.style.cssText = '';
+            } else {
+                pt.innerText = 'Pull to refresh';
+                pi.className = 'fa fa-arrow-down';
+                pi.style.cssText = '';
+            }
+        } else if (status === 'release') {
+            pc.style.transition = 'transform 0.3s ease';
+            pc.style.transform = 'translateY(0px)';
+            pt.innerText = 'Refreshing...';
+            // Replace icon element with spinner div
+            pi.className = 'ptr-spinner';
+            pi.style.cssText = 'display:inline-block;width:26px;height:26px;border:3px solid rgba(255,255,255,0.3);border-top:3px solid #fff;border-radius:50%;animation:ptrSpin 0.7s linear infinite;box-sizing:border-box;flex-shrink:0;';
+        } else if (status === 'complete') {
+            pc.style.transition = 'transform 0.3s ease';
+            pc.style.transform = 'translateY(-70px)';
+            setTimeout(function() {
+                pt.innerText = 'Pull to refresh';
+                pi.className = 'fa fa-arrow-down';
+                pi.style.cssText = '';
+            }, 400);
+        }
     }
 
     document.addEventListener('touchstart', function(e) { const scrollTop = window.pageYOffset || document.documentElement.scrollTop; if(scrollTop === 0 && !isRefreshing) { touchStartY = e.touches[0].pageY; touchStartX = e.touches[0].pageX; isTouching = true; ptrActive = false; ptrHeight = 0; } }, {passive: true});
