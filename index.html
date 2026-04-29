@@ -6,7 +6,7 @@
     <meta name="msapplication-navbutton-color" content="#121212">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Nikamma 4k v3.8 | Ultimate HD</title>
+    <title>Nikamma 4k v3.9 | Ultimate HD</title>
     
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;800&display=swap" rel="stylesheet">
     <link href="https://vjs.zencdn.net/8.10.0/video-js.css" rel="stylesheet" />
@@ -195,7 +195,7 @@
         .empty-state h3 { font-size: 18px; margin-bottom: 10px; color: #888; }
         .empty-state p { font-size: 13px; color: #555; }
         
-        /* SIDENAV - width 60% (changed from 80%) */
+        /* SIDENAV - width 60% */
         .sidenav { 
             height: 100%; 
             width: 60%;
@@ -219,10 +219,51 @@
         #menu-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 2004; opacity: 0; transition: opacity 0.4s ease; }
         #menu-overlay.visible { display: block; opacity: 1; }
         
-        .ptr-container { position: fixed; top: 0; left: 0; right: 0; z-index: 999; height: 0; overflow: hidden; transition: height 0.3s cubic-bezier(0.2, 0.9, 0.4, 1.1); background: linear-gradient(135deg, #00bcd4 0%, #0097a7 100%); display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 15px rgba(0,0,0,0.2); }
-        .ptr-content { display: flex; align-items: center; justify-content: center; gap: 12px; color: white; font-weight: 600; font-size: 14px; text-transform: uppercase; letter-spacing: 1px; }
+        /* ===== FIX: PTR CONTAINER - Proper circle loader display ===== */
+        .ptr-container { 
+            position: fixed; 
+            top: 0; 
+            left: 0; 
+            right: 0; 
+            z-index: 999; 
+            height: 0; 
+            overflow: hidden; 
+            transition: height 0.3s cubic-bezier(0.2, 0.9, 0.4, 1.1); 
+            background: linear-gradient(135deg, #00bcd4 0%, #0097a7 100%); 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2); 
+        }
+        .ptr-content { 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            gap: 12px; 
+            color: white; 
+            font-weight: 600; 
+            font-size: 14px; 
+            text-transform: uppercase; 
+            letter-spacing: 1px;
+            width: 100%;
+            padding: 0 20px;
+            box-sizing: border-box;
+        }
         .ptr-content i { font-size: 22px; }
-        .ptr-loader { width: 24px; height: 24px; border: 3px solid rgba(255,255,255,0.4); border-top: 3px solid white; border-right: 3px solid white; border-radius: 50%; animation: ptrSpin 0.6s linear infinite; display: inline-block; }
+
+        /* ===== FIX: PTR Loader Circle - Properly centered spinning circle ===== */
+        .ptr-loader { 
+            width: 26px; 
+            height: 26px; 
+            border: 3px solid rgba(255,255,255,0.3); 
+            border-top: 3px solid white; 
+            border-right: 3px solid white; 
+            border-radius: 50%; 
+            animation: ptrSpin 0.7s linear infinite; 
+            display: inline-flex;
+            flex-shrink: 0;
+            box-sizing: border-box;
+        }
         @keyframes ptrSpin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
         
         .header-content { display: flex; width: 100%; max-width: var(--max-width); margin: 0 auto; align-items: center; justify-content: space-between; }
@@ -387,8 +428,7 @@
     <div class="nav-btn active" data-cat="All" onclick="filterData('All', this)"><i class="fa fa-house"></i>HOME</div>
     <div class="nav-btn" data-cat="Sports" onclick="filterData('Sports', this)"><i class="fa fa-tv"></i>LIVE</div>
     <div class="nav-btn" data-cat="Movies" onclick="filterData('Movies', this)"><i class="fa fa-clapperboard"></i>MOVIES</div>
-    <div class="nav-btn" data-cat="TV Shows" onclick
-        ="filterData('TV Shows', this)"><i class="fa fa-list-alt"></i>SHOWS</div>
+    <div class="nav-btn" data-cat="TV Shows" onclick="filterData('TV Shows', this)"><i class="fa fa-list-alt"></i>SHOWS</div>
 </div>
 
 <div id="update-overlay"><div class="update-box"><h2 style="color: var(--main-color); font-weight:800;">Update Available!</h2><p>Please update to the latest version.</p><button id="update-btn" style="background:var(--main-color); border:none; padding:12px 25px; border-radius:25px; font-weight:bold; cursor:pointer;">UPDATE NOW</button></div></div>
@@ -413,7 +453,7 @@
     let gestureStartY = 0, gestureStartX = 0;
     let gestureStartValue = 0;
     let gestureSide = null;
-    let gesturePrevented = false;  // true if we identified vertical swipe and prevented default
+    let gesturePrevented = false;
     let activeTouchId = null;
     const gestureIndicator = document.getElementById('gestureIndicator');
     const gestureIcon = document.getElementById('gestureIcon');
@@ -437,7 +477,6 @@
     
     function handleTouchStart(e) {
         if (!isFullscreen) return;
-        // ignore if touch started on interactive buttons (they handle their own)
         let target = e.target;
         if(target.closest && (target.closest('.icon-btn') || target.closest('.menu-bar') || target.closest('.top-bar'))) return;
         
@@ -455,12 +494,10 @@
             gestureStartValue = currentBrightness;
         }
         gestureActive = true;
-        // DO NOT preventDefault here; allow tap to generate click event
     }
     
     function handleTouchMove(e) {
         if (!gestureActive || !isFullscreen) return;
-        // find the touch with same identifier
         let touch = null;
         for (let i = 0; i < e.touches.length; i++) {
             if (e.touches[i].identifier === activeTouchId) {
@@ -472,10 +509,9 @@
         
         const deltaY = gestureStartY - touch.clientY;
         const deltaX = Math.abs(touch.clientX - gestureStartX);
-        // Detect vertical swipe: deltaY > 10px and more vertical than horizontal
         if (!gesturePrevented && Math.abs(deltaY) > 12 && Math.abs(deltaY) > deltaX * 1.2) {
             gesturePrevented = true;
-            e.preventDefault();   // block page scroll and also prevent click from firing
+            e.preventDefault();
         }
         
         if (gesturePrevented) {
@@ -926,7 +962,7 @@
     function showCachedDataBadge() { const badge = document.getElementById('data-save-badge'); badge.classList.add('show'); setTimeout(() => badge.classList.remove('show'), 2000); }
     function showNoUpdateBadge() { const badge = document.getElementById('no-update-badge'); badge.classList.add('show'); setTimeout(() => badge.classList.remove('show'), 2000); }
     function updateUIAfterDataLoad() { updateSlider(); filterData(currentCategory, null, false); const splash = document.getElementById('splash-screen'); if(splash && splash.style.display !== 'none') { splash.style.opacity = '0'; setTimeout(() => splash.style.display = 'none', 500); } }
-    function applySettings() { if(settingsData.ratingUrl) document.getElementById('rating-link').href = settingsData.ratingUrl; if(settingsData.privacyUrl) document.getElementById('privacy-link').href = settingsData.privacyUrl; if(settingsData.version && parseFloat(settingsData.version) > 3.8) { document.getElementById('update-overlay').style.display = 'flex'; document.getElementById('update-btn').onclick = () => window.location.href = settingsData.updateUrl; } }
+    function applySettings() { if(settingsData.ratingUrl) document.getElementById('rating-link').href = settingsData.ratingUrl; if(settingsData.privacyUrl) document.getElementById('privacy-link').href = settingsData.privacyUrl; if(settingsData.version && parseFloat(settingsData.version) > 3.9) { document.getElementById('update-overlay').style.display = 'flex'; document.getElementById('update-btn').onclick = () => window.location.href = settingsData.updateUrl; } }
     async function fetchFreshData() {
         return new Promise((resolve) => {
             Papa.parse('https://docs.google.com/spreadsheets/d/e/2PACX-1vQJM1FvOsBuKL_Al7PpwYerGDVFhs5tLF4PaVs3_TOLX-TFLW-iF3B6qLLLeuuBmjfZFGe3CFxJA-TR/pub?output=csv', {
@@ -943,7 +979,31 @@
         });
     }
     function updateSlider() { const sliders = rawData.filter(d => (d.Category || d.category || "").toLowerCase() === 'slider'); const track = document.getElementById('sliderTrack'); if(sliders.length && track) { track.innerHTML = sliders.map(s => `<div class="slide-item"><img src="${s.Thumbnail || s.thumbnail || s.URL || s.url || MASTER_LOGO}" loading="lazy" onerror="handleImageError(this)" onload="handleImageLoad(this)" class="img-loading"></div>`).join(''); const videoBoxDisplay = document.getElementById('videoBox').style.display; document.getElementById('mainSlider').style.display = (currentCategory === 'All' && videoBoxDisplay !== 'block') ? 'block' : 'none'; } else document.getElementById('mainSlider').style.display = 'none'; }
-    window.filterData = function(cat, btn, shouldClose = true) { currentCategory = cat; if(shouldClose) closeNav(); const sliderDiv = document.getElementById('mainSlider'), videoBox = document.getElementById('videoBox'); const sliders = rawData.filter(d => (d.Category || d.category || "").toLowerCase() === 'slider'); sliderDiv.style.display = (cat === 'All' && videoBox.style.display !== 'block' && sliders.length) ? 'block' : 'none'; document.querySelectorAll('.nav-btn').forEach(b => { if(b.getAttribute('data-cat') === cat) b.classList.add('active'); else b.classList.remove('active'); }); document.getElementById('sectionName').innerText = cat === 'All' ? 'ALL CONTENT' : (cat === 'TV Shows' ? 'TV SHOWS' : cat.toUpperCase()); let filtered = (cat === 'All') ? rawData.filter(d => (d.Category || d.category || "").toLowerCase() !== 'slider') : rawData.filter(d => (d.Category || d.category || "").trim().toLowerCase() === cat.toLowerCase()); const grid = document.getElementById('mainGrid'); if(!filtered.length) { let msg = cat === 'All' ? 'No content available' : (cat === 'Movies' ? 'No movies found' : (cat === 'Sports' ? 'No live sports' : 'No TV shows')); grid.innerHTML = `<div style="grid-column:1/-1" class="empty-state"><i class="fa fa-folder-open"></i><h3>${msg}</h3><p>Pull down to refresh</p></div>`; return; } grid.innerHTML = filtered.map(item => { let thumb = item.Thumbnail || item.thumbnail || MASTER_LOGO, itemName = item.name || item.Name || "Untitled", url = item.URL || item.url || "#"; return `<div class="card" data-url="${escapeHtml(url)}" data-title="${escapeHtml(itemName)}" onclick="play('${escapeHtml(url)}', '${escapeHtml(itemName)}', this)"><img src="${thumb}" loading="lazy" onerror="handleImageError(this)" onload="handleImageLoad(this)" class="img-loading"><div class="card-title">${itemName}</div></div>`; }).join(''); };
+
+    // ========== FIX 1: DATA LIST REVERSE ORDER ==========
+    window.filterData = function(cat, btn, shouldClose = true) { 
+        currentCategory = cat; 
+        if(shouldClose) closeNav(); 
+        const sliderDiv = document.getElementById('mainSlider'), videoBox = document.getElementById('videoBox'); 
+        const sliders = rawData.filter(d => (d.Category || d.category || "").toLowerCase() === 'slider'); 
+        sliderDiv.style.display = (cat === 'All' && videoBox.style.display !== 'block' && sliders.length) ? 'block' : 'none'; 
+        document.querySelectorAll('.nav-btn').forEach(b => { if(b.getAttribute('data-cat') === cat) b.classList.add('active'); else b.classList.remove('active'); }); 
+        document.getElementById('sectionName').innerText = cat === 'All' ? 'ALL CONTENT' : (cat === 'TV Shows' ? 'TV SHOWS' : cat.toUpperCase()); 
+        let filtered = (cat === 'All') ? rawData.filter(d => (d.Category || d.category || "").toLowerCase() !== 'slider') : rawData.filter(d => (d.Category || d.category || "").trim().toLowerCase() === cat.toLowerCase()); 
+        // ===== REVERSE ORDER: Newest content shown first =====
+        filtered = filtered.slice().reverse();
+        const grid = document.getElementById('mainGrid'); 
+        if(!filtered.length) { 
+            let msg = cat === 'All' ? 'No content available' : (cat === 'Movies' ? 'No movies found' : (cat === 'Sports' ? 'No live sports' : 'No TV shows')); 
+            grid.innerHTML = `<div style="grid-column:1/-1" class="empty-state"><i class="fa fa-folder-open"></i><h3>${msg}</h3><p>Pull down to refresh</p></div>`; 
+            return; 
+        } 
+        grid.innerHTML = filtered.map(item => { 
+            let thumb = item.Thumbnail || item.thumbnail || MASTER_LOGO, itemName = item.name || item.Name || "Untitled", url = item.URL || item.url || "#"; 
+            return `<div class="card" data-url="${escapeHtml(url)}" data-title="${escapeHtml(itemName)}" onclick="play('${escapeHtml(url)}', '${escapeHtml(itemName)}', this)"><img src="${thumb}" loading="lazy" onerror="handleImageError(this)" onload="handleImageLoad(this)" class="img-loading"><div class="card-title">${itemName}</div></div>`; 
+        }).join(''); 
+    };
+
     function escapeHtml(str) { if(!str) return ''; return String(str).replace(/[&<>]/g, function(m) { if(m === '&') return '&amp;'; if(m === '<') return '&lt;'; if(m === '>') return '&gt;'; return m; }); }
     function handleImageError(img) { if(img && img.src !== MASTER_LOGO) { img.src = MASTER_LOGO; img.classList.add('img-loading'); img.onerror = null; } }
     function handleImageLoad(img) { if(img) { img.classList.remove('img-loading'); img.classList.add('img-loaded'); } }
@@ -951,11 +1011,51 @@
     function openNav() { const sideNav = document.getElementById("mySidenav"), overlay = document.getElementById("menu-overlay"); overlay.style.display = "block"; setTimeout(() => { sideNav.classList.add("open"); overlay.classList.add("visible"); }, 10); isNavOpen = true; }
     function closeNav() { const sideNav = document.getElementById("mySidenav"), overlay = document.getElementById("menu-overlay"); sideNav.classList.remove("open"); overlay.classList.remove("visible"); isNavOpen = false; setTimeout(() => { if(!isNavOpen) overlay.style.display = "none"; }, 400); }
     function toggleSearch(show) { document.getElementById('header-main').style.display = show ? 'none' : 'flex'; document.getElementById('header-icons').style.display = show ? 'none' : 'flex'; document.getElementById('search-container').style.display = show ? 'flex' : 'none'; if(show) document.getElementById('searchBar').focus(); }
-    window.search = function() { let term = document.getElementById('searchBar').value.toLowerCase().trim(); const grid = document.getElementById('mainGrid'); if(term === '') { filterData(currentCategory, null, false); return; } const filtered = rawData.filter(d => (d.name || d.Name || "").toLowerCase().includes(term) && (d.Category || d.category || "").toLowerCase() !== 'slider'); if(!filtered.length) { grid.innerHTML = `<div style="grid-column:1/-1" class="empty-state"><i class="fa fa-search"></i><h3>No results for "${term}"</h3></div>`; return; } grid.innerHTML = filtered.map(item => `<div class="card" onclick="play('${escapeHtml(item.URL || item.url || "#")}', '${escapeHtml(item.name || item.Name)}', this)"><img src="${item.Thumbnail || item.thumbnail || MASTER_LOGO}" loading="lazy" onerror="handleImageError(this)" onload="handleImageLoad(this)" class="img-loading"><div class="card-title">${item.name || item.Name}</div></div>`).join(''); };
+    
+    // ========== FIX 1 (Search): REVERSE ORDER IN SEARCH RESULTS TOO ==========
+    window.search = function() { 
+        let term = document.getElementById('searchBar').value.toLowerCase().trim(); 
+        const grid = document.getElementById('mainGrid'); 
+        if(term === '') { filterData(currentCategory, null, false); return; } 
+        // ===== REVERSE ORDER: Newest results shown first =====
+        const filtered = rawData.filter(d => (d.name || d.Name || "").toLowerCase().includes(term) && (d.Category || d.category || "").toLowerCase() !== 'slider').slice().reverse(); 
+        if(!filtered.length) { grid.innerHTML = `<div style="grid-column:1/-1" class="empty-state"><i class="fa fa-search"></i><h3>No results for "${term}"</h3></div>`; return; } 
+        grid.innerHTML = filtered.map(item => `<div class="card" onclick="play('${escapeHtml(item.URL || item.url || "#")}', '${escapeHtml(item.name || item.Name)}', this)"><img src="${item.Thumbnail || item.thumbnail || MASTER_LOGO}" loading="lazy" onerror="handleImageError(this)" onload="handleImageLoad(this)" class="img-loading"><div class="card-title">${item.name || item.Name}</div></div>`).join(''); 
+    };
+
     window.forceRefreshData = async function() { if(isRefreshing) return; isRefreshing = true; updatePTR('release'); const updated = await fetchFreshData(); updatePTR('complete'); if(updated) showCachedDataBadge(); else showNoUpdateBadge(); setTimeout(() => isRefreshing = false, 500); closeNav(); };
     
     let ptrStartY = 0, ptrActive = false, ptrHeight = 0, isTouching = false, touchStartY = 0, touchStartX = 0;
-    function updatePTR(status, pullDistance = 0) { const ptrContainer = document.getElementById('ptr-container'), ptrText = document.getElementById('ptr-text'), ptrIcon = document.getElementById('ptr-icon'); if(status === 'pull') { const height = Math.min(pullDistance, 70); ptrContainer.style.height = height + 'px'; if(pullDistance > 50) { ptrText.innerText = 'Release to refresh'; ptrIcon.innerHTML = '<i class="fa fa-refresh" style="font-size:20px"></i>'; } else { ptrText.innerText = 'Pull to refresh'; ptrIcon.innerHTML = '<i class="fa fa-arrow-down" style="font-size:20px"></i>'; } } else if(status === 'release') { ptrContainer.style.height = '70px'; ptrText.innerText = 'Refreshing...'; ptrIcon.innerHTML = '<div class="ptr-loader"></div>'; } else if(status === 'complete') { ptrContainer.style.height = '0px'; setTimeout(() => { ptrText.innerText = 'Pull to refresh'; ptrIcon.innerHTML = '<i class="fa fa-arrow-down" style="font-size:20px"></i>'; }, 200); } }
+
+    // ========== FIX 2: PTR LOADER - Properly show circle spinner ==========
+    function updatePTR(status, pullDistance = 0) { 
+        const ptrContainer = document.getElementById('ptr-container'), 
+              ptrText = document.getElementById('ptr-text'), 
+              ptrIcon = document.getElementById('ptr-icon'); 
+        if(status === 'pull') { 
+            const height = Math.min(pullDistance, 70); 
+            ptrContainer.style.height = height + 'px'; 
+            if(pullDistance > 50) { 
+                ptrText.innerText = 'Release to refresh'; 
+                ptrIcon.innerHTML = '<i class="fa fa-rotate" style="font-size:20px; display:inline-flex; align-items:center;"></i>'; 
+            } else { 
+                ptrText.innerText = 'Pull to refresh'; 
+                ptrIcon.innerHTML = '<i class="fa fa-arrow-down" style="font-size:20px; display:inline-flex; align-items:center;"></i>'; 
+            } 
+        } else if(status === 'release') { 
+            ptrContainer.style.height = '70px'; 
+            ptrText.innerText = 'Refreshing...'; 
+            // ===== FIX: Proper spinning circle loader =====
+            ptrIcon.innerHTML = '<div class="ptr-loader"></div>'; 
+        } else if(status === 'complete') { 
+            ptrContainer.style.height = '0px'; 
+            setTimeout(() => { 
+                ptrText.innerText = 'Pull to refresh'; 
+                ptrIcon.innerHTML = '<i class="fa fa-arrow-down" style="font-size:20px; display:inline-flex; align-items:center;"></i>'; 
+            }, 200); 
+        } 
+    }
+
     document.addEventListener('touchstart', function(e) { const scrollTop = window.pageYOffset || document.documentElement.scrollTop; if(scrollTop === 0 && !isRefreshing) { touchStartY = e.touches[0].pageY; touchStartX = e.touches[0].pageX; isTouching = true; ptrActive = false; ptrHeight = 0; } }, {passive: true});
     document.addEventListener('touchmove', function(e) { const scrollTop = window.pageYOffset || document.documentElement.scrollTop; const diffY = e.touches[0].pageY - touchStartY; const diffX = Math.abs(e.touches[0].pageX - touchStartX); if(diffX > 30 && Math.abs(diffY) < 30 && !isNavOpen && touchStartX < 50) openNav(); if(scrollTop === 0 && diffY > 0 && !isRefreshing && diffX < 30 && isTouching) { e.preventDefault(); ptrActive = true; ptrHeight = Math.min(diffY, 70); updatePTR('pull', ptrHeight); } }, {passive: false});
     document.addEventListener('touchend', function(e) { if(ptrActive && ptrHeight > 50 && !isRefreshing) forceRefreshData(); else if(ptrActive) updatePTR('complete'); isTouching = false; ptrActive = false; ptrHeight = 0; });
