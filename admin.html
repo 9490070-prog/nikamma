@@ -4,270 +4,511 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=yes">
   <title>Admin Hub</title>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
   <style>
+    :root {
+      --bg: #07080f;
+      --bg2: #0d1120;
+      --bg3: #131929;
+      --card: #111827;
+      --border: rgba(0,180,255,0.15);
+      --accent: #00b4ff;
+      --accent2: #0066cc;
+      --gold: #ffaa33;
+      --red: #e34d4d;
+      --green: #2ecc71;
+      --text: #e8f0ff;
+      --muted: #6c7aa3;
+      --drawer-w: 280px;
+      --font-head: 'Syne', sans-serif;
+      --font-body: 'DM Sans', sans-serif;
+    }
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
-      background: #0a0e1a;
-      font-family: system-ui, 'Segoe UI', 'Inter', -apple-system, BlinkMacSystemFont, 'Roboto', sans-serif;
-      color: #edf2ff;
-      padding: 16px 12px 40px 12px;
+      background: var(--bg);
+      font-family: var(--font-body);
+      color: var(--text);
+      min-height: 100vh;
+      overflow-x: hidden;
     }
-    .dashboard-container { max-width: 1600px; margin: 0 auto; width: 100%; }
-    .admin-header {
-      display: flex; justify-content: space-between; align-items: center;
-      flex-wrap: wrap; gap: 12px; margin-bottom: 28px;
-      background: rgba(12, 20, 32, 0.9); backdrop-filter: blur(12px);
-      padding: 10px 18px; border-radius: 48px;
-      border: 1px solid rgba(0, 170, 255, 0.35);
-      box-shadow: 0 8px 18px rgba(0, 0, 0, 0.3);
+
+    /* ── DRAWER ── */
+    #drawerOverlay {
+      position: fixed; inset: 0; background: rgba(0,0,0,0.75);
+      backdrop-filter: blur(6px); z-index: 900;
+      opacity: 0; pointer-events: none;
+      transition: opacity 0.3s ease;
     }
-    .logo-area h2 {
-      font-size: clamp(1rem, 5.5vw, 1.6rem); font-weight: 700;
+    #drawerOverlay.open { opacity: 1; pointer-events: all; }
+
+    #sideDrawer {
+      position: fixed; top: 0; left: 0; height: 100%;
+      width: var(--drawer-w); background: var(--bg2);
+      border-right: 1px solid var(--border);
+      z-index: 1000; transform: translateX(-100%);
+      transition: transform 0.35s cubic-bezier(0.4,0,0.2,1);
+      display: flex; flex-direction: column;
+      box-shadow: 8px 0 40px rgba(0,0,0,0.6);
+    }
+    #sideDrawer.open { transform: translateX(0); }
+
+    .drawer-head {
+      padding: 28px 20px 20px;
+      background: linear-gradient(135deg, #0d1a2e 0%, #0a1220 100%);
+      border-bottom: 1px solid var(--border);
+    }
+    .drawer-head h2 {
+      font-family: var(--font-head);
+      font-size: 1.2rem; font-weight: 800;
       background: linear-gradient(125deg, #00ccff, #4d9eff);
       -webkit-background-clip: text; background-clip: text; color: transparent;
     }
+    .drawer-head p { font-size: 0.72rem; color: var(--muted); margin-top: 4px; }
+
+    .drawer-nav { flex: 1; overflow-y: auto; padding: 12px 0; }
+    .drawer-section-label {
+      font-size: 0.62rem; font-weight: 700; color: var(--muted);
+      letter-spacing: 1.5px; text-transform: uppercase;
+      padding: 14px 20px 6px;
+    }
+    .drawer-item {
+      display: flex; align-items: center; gap: 12px;
+      padding: 12px 20px; cursor: pointer;
+      font-size: 0.88rem; font-weight: 500; color: #b0c4e8;
+      border-left: 3px solid transparent;
+      transition: all 0.2s;
+      user-select: none;
+    }
+    .drawer-item:hover, .drawer-item.active {
+      background: rgba(0,180,255,0.08);
+      border-left-color: var(--accent);
+      color: #fff;
+    }
+    .drawer-item .d-icon {
+      width: 32px; height: 32px; border-radius: 8px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 15px; flex-shrink: 0;
+    }
+    .di-blue { background: rgba(0,180,255,0.15); }
+    .di-gold { background: rgba(255,170,51,0.15); }
+    .di-green { background: rgba(46,204,113,0.15); }
+    .di-red { background: rgba(227,77,77,0.15); }
+    .di-purple { background: rgba(150,100,255,0.15); }
+
+    .cat-chip-list { padding: 4px 14px 8px; display: flex; flex-direction: column; gap: 2px; }
+    .cat-chip {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 8px 12px; border-radius: 8px; cursor: pointer;
+      font-size: 0.8rem; color: #aac; transition: background 0.15s;
+    }
+    .cat-chip:hover { background: rgba(255,255,255,0.05); }
+    .cat-chip .cc-left { display: flex; align-items: center; gap: 8px; }
+    .cat-chip .cc-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--accent); flex-shrink: 0; }
+    .cat-chip .cc-count { font-size: 0.65rem; color: var(--muted); background: #1e2a3a; padding: 1px 7px; border-radius: 20px; }
+    .cat-chip .cc-del { background: none; border: none; color: var(--red); font-size: 14px; cursor: pointer; padding: 2px 4px; border-radius: 4px; opacity: 0; transition: opacity 0.15s; }
+    .cat-chip:hover .cc-del { opacity: 1; }
+
+    .add-cat-row {
+      display: flex; gap: 6px; padding: 8px 14px 14px;
+    }
+    .add-cat-row input {
+      flex: 1; background: #0a1020; border: 1px solid #2c3e62;
+      border-radius: 30px; color: white; font-size: 0.8rem;
+      padding: 7px 14px; outline: none; font-family: var(--font-body);
+    }
+    .add-cat-row input:focus { border-color: var(--accent); }
+    .add-cat-row button {
+      background: var(--accent); border: none; border-radius: 30px;
+      color: #000; font-weight: 700; font-size: 0.75rem;
+      padding: 7px 14px; cursor: pointer; transition: 0.2s; white-space: nowrap;
+    }
+    .add-cat-row button:hover { background: #2ad4ff; }
+
+    .drawer-footer {
+      padding: 14px 20px;
+      border-top: 1px solid var(--border);
+      font-size: 0.7rem; color: var(--muted); text-align: center;
+    }
+
+    /* ── MAIN LAYOUT ── */
+    .main-wrap { padding: 14px 12px 60px; max-width: 1600px; margin: 0 auto; }
+
+    /* ── HEADER ── */
+    .admin-header {
+      display: flex; align-items: center; gap: 12px;
+      background: rgba(12,20,32,0.92); backdrop-filter: blur(14px);
+      padding: 10px 16px; border-radius: 50px;
+      border: 1px solid var(--border);
+      box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+      margin-bottom: 24px; position: sticky; top: 8px; z-index: 200;
+    }
+    .hamburger-btn {
+      width: 40px; height: 40px; border-radius: 12px;
+      background: rgba(0,180,255,0.12); border: 1px solid rgba(0,180,255,0.25);
+      color: var(--accent); font-size: 18px; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      transition: 0.2s; flex-shrink: 0;
+    }
+    .hamburger-btn:hover { background: rgba(0,180,255,0.22); }
+    .logo-area { flex: 1; }
+    .logo-area h2 {
+      font-family: var(--font-head);
+      font-size: clamp(0.95rem, 4vw, 1.4rem); font-weight: 800;
+      background: linear-gradient(125deg, #00ccff, #4d9eff);
+      -webkit-background-clip: text; background-clip: text; color: transparent;
+    }
+    .header-actions { display: flex; gap: 8px; }
     .add-global-btn {
-      background: linear-gradient(95deg, #0a9eff, #006bb3); border: none;
-      width: 40px; height: 40px; border-radius: 40px; font-size: 22px;
-      font-weight: bold; color: white; cursor: pointer; transition: 0.2s;
-      box-shadow: 0 4px 10px rgba(0, 170, 255, 0.4); flex-shrink: 0;
+      background: linear-gradient(95deg, var(--accent), var(--accent2));
+      border: none; width: 40px; height: 40px; border-radius: 40px;
+      font-size: 22px; font-weight: bold; color: white; cursor: pointer;
+      transition: 0.2s; box-shadow: 0 4px 14px rgba(0,180,255,0.35);
       display: flex; align-items: center; justify-content: center;
     }
-    .add-global-btn:hover { transform: scale(0.97); background: #2ab4ff; }
+    .add-global-btn:hover { transform: scale(1.06); }
+
+    /* ── CATEGORY CARDS ── */
     .category-card {
-      background: #222b44; border-radius: 9px; padding: 6px 0 8px 0;
-      margin-bottom: 15px; border: 1px solid #222b44; transition: 0.2s;
-      box-shadow: 0 5px 8px -6px rgba(0, 0, 0, 0.6);
+      background: var(--card); border-radius: 12px;
+      padding: 6px 0 10px; margin-bottom: 16px;
+      border: 1px solid rgba(255,255,255,0.05);
+      box-shadow: 0 6px 20px rgba(0,0,0,0.4);
     }
     .category-header {
-      display: flex; align-items: baseline; justify-content: space-between;
-      flex-wrap: wrap; gap: 12px; padding: 0 18px 12px 18px;
-      border-bottom: 2px solid rgba(0, 170, 255, 0.5); margin-bottom: 16px;
+      display: flex; align-items: center; justify-content: space-between;
+      flex-wrap: wrap; gap: 10px; padding: 0 18px 12px;
+      border-bottom: 1px solid rgba(0,180,255,0.2); margin-bottom: 14px;
     }
+    .cat-title-group { display: flex; align-items: center; gap: 10px; }
     .category-title {
-      font-size: clamp(1.1rem, 5vw, 1.6rem); font-weight: 600;
+      font-family: var(--font-head);
+      font-size: clamp(1rem, 4vw, 1.4rem); font-weight: 700;
       background: linear-gradient(130deg, #f0f9ff, #9acdff);
       -webkit-background-clip: text; background-clip: text; color: transparent;
     }
     .category-badge {
-      background: #ffaa33; padding: 4px 11px; border-radius: 15px;
-      font-size: 0.7rem; font-weight: 400; color: #000;
+      background: var(--gold); padding: 3px 10px; border-radius: 30px;
+      font-size: 0.65rem; font-weight: 700; color: #000;
     }
+    .cat-actions { display: flex; gap: 6px; }
+    .cat-action-btn {
+      background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 8px; padding: 5px 10px; font-size: 0.7rem;
+      color: #99b; cursor: pointer; transition: 0.15s;
+    }
+    .cat-action-btn:hover { background: rgba(255,255,255,0.12); color: #fff; }
+    .cat-action-btn.del-cat { color: var(--red); border-color: rgba(227,77,77,0.25); }
+    .cat-action-btn.del-cat:hover { background: rgba(227,77,77,0.15); }
+
     .horizontal-scroll {
-      display: flex; overflow-x: auto; gap: 16px; padding: 8px 18px 20px 18px;
-      scrollbar-width: thin; scrollbar-color: #00aaff #20273f;
+      display: flex; overflow-x: auto; gap: 14px; padding: 6px 18px 18px;
+      scrollbar-width: thin; scrollbar-color: var(--accent) #1e2a3a;
       -webkit-overflow-scrolling: touch;
     }
-    .horizontal-scroll::-webkit-scrollbar { height: 5px; }
-    .horizontal-scroll::-webkit-scrollbar-track { background: #FCFAFA; border-radius: 12px; }
-    .horizontal-scroll::-webkit-scrollbar-thumb { background: #00aaff; border-radius: 12px; }
+    .horizontal-scroll::-webkit-scrollbar { height: 4px; }
+    .horizontal-scroll::-webkit-scrollbar-track { background: #1a2235; border-radius: 12px; }
+    .horizontal-scroll::-webkit-scrollbar-thumb { background: var(--accent); border-radius: 12px; }
+
     .video-card {
-      min-width: 230px; width: 230px; background: #0b1120; border-radius: 10px;
-      overflow: hidden; transition: transform 0.2s, box-shadow 0.2s;
-      border: 1px solid #2a3452; flex-shrink: 0; cursor: pointer;
+      min-width: 220px; width: 220px; background: #0b1120;
+      border-radius: 10px; overflow: hidden;
+      transition: transform 0.2s, box-shadow 0.2s;
+      border: 1px solid #1e2a40; flex-shrink: 0; cursor: pointer;
     }
-    @media (max-width: 550px) {
-      .video-card { min-width: 190px; width: 190px; }
-      .thumb-wrapper { height: 118px; }
-      .video-name { font-size: 0.85rem; }
-      .small-edit, .small-delete { padding: 4px 10px; font-size: 0.65rem; }
-    }
-    @media (max-width: 430px) {
-      .video-card { min-width: 170px; width: 170px; }
-      .thumb-wrapper { height: 105px; }
-    }
+    @media (max-width: 550px) { .video-card { min-width: 180px; width: 180px; } .thumb-wrapper { height: 110px; } }
+    @media (max-width: 420px) { .video-card { min-width: 160px; width: 160px; } .thumb-wrapper { height: 96px; } }
     .video-card:hover {
       transform: translateY(-4px);
-      box-shadow: 0 18px 28px -12px #00aaff30;
-      border-color: #00aaff99;
+      box-shadow: 0 16px 28px -10px rgba(0,180,255,0.2);
+      border-color: rgba(0,180,255,0.5);
     }
     .thumb-wrapper {
-      width: 100%; height: 130px; background: #05080f;
+      width: 100%; height: 125px; background: #05080f;
       display: flex; align-items: center; justify-content: center; overflow: hidden;
     }
     .thumb-wrapper img { width: 100%; height: 100%; object-fit: cover; transition: 0.25s; }
-    .video-info { padding: 10px 10px 12px; }
-    .video-name {
-      font-weight: 700; font-size: 0.9rem; margin-bottom: 5px;
-      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-    }
-    .video-url {
-      font-size: 0.6rem; color: #7a86a6; white-space: nowrap;
-      overflow: hidden; text-overflow: ellipsis; margin-bottom: 8px;
-    }
-    .video-actions { display: flex; gap: 8px; margin-top: 5px; }
+    .video-info { padding: 9px 10px 11px; }
+    .video-name { font-weight: 700; font-size: 0.85rem; margin-bottom: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .video-url { font-size: 0.58rem; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-bottom: 7px; }
+    .video-actions { display: flex; gap: 6px; margin-top: 4px; }
     .small-edit, .small-delete {
-      font-size: 0.68rem; padding: 5px 11px; border-radius: 30px;
-      border: none; font-weight: 600; cursor: pointer; transition: 0.1s;
+      font-size: 0.65rem; padding: 4px 10px; border-radius: 30px;
+      border: none; font-weight: 700; cursor: pointer; transition: 0.1s;
     }
-    .small-edit { background: #ffaa33; color: #101010; }
-    .small-delete { background: #e34d4d; color: white; }
+    .small-edit { background: var(--gold); color: #101010; }
+    .small-delete { background: var(--red); color: white; }
     .empty-cat-msg {
-      color: #6c7aa3; font-style: italic; padding: 20px 16px;
+      color: var(--muted); font-style: italic; padding: 16px;
       background: #0c1120; border-radius: 30px; text-align: center;
-      margin: 0 18px; font-size: 0.8rem;
+      margin: 0 4px; font-size: 0.78rem;
     }
+
+    /* ── MODAL ── */
     .modal-overlay {
       display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-      background: rgba(0,0,0,0.94); backdrop-filter: blur(12px);
-      justify-content: center; align-items: center; z-index: 2000; padding: 16px;
+      background: rgba(0,0,0,0.92); backdrop-filter: blur(14px);
+      justify-content: center; align-items: center; z-index: 2000; padding: 14px;
     }
     .modal-panel {
-      background: #0f609091; max-width: 500px; width: 100%; border-radius: 20px;
-      padding: 20px 20px 28px; border: 1px solid #2c4670;
-      box-shadow: 0 30px 45px rgba(0,0,0,0.5);
+      background: linear-gradient(145deg, #0e1928, #0b1420);
+      max-width: 500px; width: 100%; border-radius: 22px;
+      padding: 22px 20px 28px;
+      border: 1px solid rgba(0,180,255,0.25);
+      box-shadow: 0 30px 60px rgba(0,0,0,0.6);
     }
-    .modal-panel h3 { font-size: 1.5rem; margin-bottom: 18px; color: #2fd0ff; }
+    .modal-panel h3 {
+      font-family: var(--font-head);
+      font-size: 1.3rem; margin-bottom: 16px; color: #2fd0ff;
+    }
     .modal-panel input, .modal-panel select {
-      width: 100%; padding: 12px 16px; margin: 10px 0;
-      background: #0a1020; border: 1px solid #2c3e62; border-radius: 60px;
-      color: white; font-size: 0.9rem; outline: none;
+      width: 100%; padding: 11px 16px; margin: 8px 0;
+      background: #0a1020; border: 1px solid #2c3e62; border-radius: 50px;
+      color: white; font-size: 0.88rem; outline: none; font-family: var(--font-body);
+      transition: border-color 0.2s;
     }
+    .modal-panel input:focus, .modal-panel select:focus { border-color: var(--accent); }
     .current-thumb-row {
       display: none; align-items: center; gap: 10px;
       background: #0d1a10; border: 1px solid #1e4a2a;
-      border-radius: 16px; padding: 8px 14px; margin: 10px 0;
+      border-radius: 14px; padding: 8px 14px; margin: 8px 0;
     }
-    .current-thumb-row img {
-      width: 64px; height: 42px; object-fit: cover;
-      border-radius: 8px; border: 1px solid #2a5535; flex-shrink: 0;
-    }
-    .current-thumb-row .ctr-text { font-size: 0.72rem; color: #66cc88; line-height: 1.5; }
+    .current-thumb-row img { width: 60px; height: 40px; object-fit: cover; border-radius: 7px; border: 1px solid #2a5535; flex-shrink: 0; }
+    .current-thumb-row .ctr-text { font-size: 0.7rem; color: #66cc88; line-height: 1.5; }
     .current-thumb-row .ctr-text strong { display: block; color: #99ffcc; }
-    .thumb-label-row {
-      display: flex; align-items: center; gap: 8px;
-      font-size: 0.75rem; color: #8ea8d0; padding: 4px 2px 6px;
-    }
-    .badge-opt {
-      background: #1a3a20; color: #44dd88;
-      border-radius: 20px; padding: 2px 10px; font-size: 0.65rem; font-weight: 600;
-    }
-    .badge-req {
-      background: #3a1a1a; color: #ff6666;
-      border-radius: 20px; padding: 2px 10px; font-size: 0.65rem; font-weight: 600;
-    }
-    .img-edit-row {
-      display: flex; gap: 12px; align-items: center;
-      background: #0a1020; padding: 5px 14px; border-radius: 60px; margin: 4px 0;
-    }
-    .icon-edit-btn {
-      background: #28a87a; border: none; border-radius: 40px;
-      width: 42px; height: 42px; font-size: 18px; cursor: pointer; flex-shrink: 0;
-    }
+    .thumb-label-row { display: flex; align-items: center; gap: 8px; font-size: 0.73rem; color: #8ea8d0; padding: 4px 2px 5px; }
+    .badge-opt { background: #1a3a20; color: #44dd88; border-radius: 20px; padding: 2px 9px; font-size: 0.62rem; font-weight: 700; }
+    .badge-req { background: #3a1a1a; color: #ff6666; border-radius: 20px; padding: 2px 9px; font-size: 0.62rem; font-weight: 700; }
+    .img-edit-row { display: flex; gap: 10px; align-items: center; background: #0a1020; padding: 4px 12px; border-radius: 50px; margin: 4px 0; }
+    .icon-edit-btn { background: #28a87a; border: none; border-radius: 40px; width: 40px; height: 40px; font-size: 16px; cursor: pointer; flex-shrink: 0; }
     .replace-cb-wrap {
-      display: none;
-      align-items: center; gap: 6px;
-      background: rgba(255,100,100,0.13); border: 1px solid rgba(255,100,100,0.35);
-      border-radius: 40px; padding: 0 10px 0 8px; cursor: pointer; flex-shrink: 0;
-      height: 42px;
+      display: none; align-items: center; gap: 6px;
+      background: rgba(255,100,100,0.12); border: 1px solid rgba(255,100,100,0.3);
+      border-radius: 40px; padding: 0 10px 0 8px; cursor: pointer; flex-shrink: 0; height: 40px;
     }
-    .replace-cb-wrap input[type="checkbox"] {
-      width: 15px; height: 15px; accent-color: #ff6666;
-      cursor: pointer; flex-shrink: 0;
-      padding: 0; margin: 0; border: none; background: transparent;
+    .replace-cb-wrap input[type="checkbox"] { width: 14px; height: 14px; accent-color: #ff6666; cursor: pointer; padding: 0; margin: 0; border: none; background: transparent; }
+    .replace-cb-wrap label { font-size: 0.6rem; color: #ffaaaa; font-weight: 700; cursor: pointer; white-space: nowrap; }
+    .modal-buttons { display: flex; gap: 10px; margin-top: 18px; flex-wrap: wrap; }
+    .modal-buttons button { flex: 1; padding: 11px; border-radius: 50px; font-weight: 700; border: none; cursor: pointer; font-family: var(--font-body); font-size: 0.9rem; }
+    .btn-save-item { background: var(--accent); color: white; }
+    .btn-cancel-modal { background: var(--red); color: white; }
+
+    /* ── SETTINGS PANEL ── */
+    #settingsPanel {
+      display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(0,0,0,0.92); backdrop-filter: blur(14px);
+      justify-content: center; align-items: center; z-index: 2000; padding: 14px;
     }
-    .replace-cb-wrap label {
-      font-size: 0.63rem; color: #ffaaaa; font-weight: 600;
-      cursor: pointer; white-space: nowrap; line-height: 1;
+    .settings-box {
+      background: linear-gradient(145deg, #0e1928, #0b1420);
+      max-width: 480px; width: 100%; border-radius: 22px;
+      padding: 22px 20px 28px;
+      border: 1px solid rgba(255,170,51,0.25);
+      box-shadow: 0 30px 60px rgba(0,0,0,0.6);
+      max-height: 90vh; overflow-y: auto;
     }
-    .modal-buttons {
-      display: flex; gap: 12px; margin-top: 22px; flex-wrap: wrap;
+    .settings-box h3 { font-family: var(--font-head); font-size: 1.3rem; color: var(--gold); margin-bottom: 18px; }
+    .settings-row { margin-bottom: 16px; }
+    .settings-row label { display: block; font-size: 0.75rem; color: var(--muted); margin-bottom: 6px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.8px; }
+    .settings-row input, .settings-row select {
+      width: 100%; padding: 10px 16px;
+      background: #0a1020; border: 1px solid #2c3e62; border-radius: 50px;
+      color: white; font-size: 0.85rem; outline: none; font-family: var(--font-body);
     }
-    .modal-buttons button {
-      flex: 1; padding: 11px; border-radius: 50px;
-      font-weight: bold; border: none; cursor: pointer;
+    .settings-row input:focus { border-color: var(--gold); }
+    .settings-save-btn {
+      background: var(--gold); border: none; border-radius: 50px;
+      color: #000; font-weight: 700; padding: 11px 28px;
+      cursor: pointer; font-size: 0.9rem; width: 100%; margin-top: 8px;
     }
-    .btn-save-item { background: #00aaff; color: white; }
-    .btn-cancel-modal { background: #ff4d4d; color: white; }
+    .settings-close-btn {
+      background: #2a3452; border: none; border-radius: 50px;
+      color: #aaa; font-weight: 600; padding: 10px 28px;
+      cursor: pointer; font-size: 0.88rem; width: 100%; margin-top: 8px;
+    }
+    .settings-divider { height: 1px; background: rgba(255,255,255,0.07); margin: 16px 0; }
+
+    /* ── NEW SHEET PANEL ── */
+    #newSheetPanel {
+      display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(0,0,0,0.93); backdrop-filter: blur(14px);
+      justify-content: center; align-items: center; z-index: 2000; padding: 14px;
+    }
+    .sheet-box {
+      background: linear-gradient(145deg, #0c1a10, #091209);
+      max-width: 540px; width: 100%; border-radius: 22px;
+      padding: 22px 20px 28px;
+      border: 1px solid rgba(46,204,113,0.3);
+      box-shadow: 0 30px 60px rgba(0,0,0,0.6);
+      max-height: 90vh; overflow-y: auto;
+    }
+    .sheet-box h3 { font-family: var(--font-head); font-size: 1.3rem; color: var(--green); margin-bottom: 6px; }
+    .sheet-box p { font-size: 0.78rem; color: var(--muted); margin-bottom: 16px; line-height: 1.6; }
+    .code-block {
+      background: #020509; border: 1px solid #1e3a28;
+      border-radius: 12px; padding: 14px;
+      font-family: 'Courier New', monospace; font-size: 0.7rem;
+      color: #7dffa0; line-height: 1.7; overflow-x: auto;
+      white-space: pre; margin: 12px 0;
+      max-height: 280px; overflow-y: auto;
+    }
+    .copy-code-btn {
+      background: var(--green); border: none; border-radius: 30px;
+      color: #000; font-weight: 700; padding: 9px 22px;
+      cursor: pointer; font-size: 0.82rem; width: 100%; margin-bottom: 8px;
+    }
+    .sheet-step {
+      display: flex; gap: 12px; align-items: flex-start;
+      background: rgba(46,204,113,0.06); border: 1px solid rgba(46,204,113,0.15);
+      border-radius: 12px; padding: 12px; margin-bottom: 8px;
+    }
+    .step-num {
+      width: 26px; height: 26px; border-radius: 50%;
+      background: var(--green); color: #000;
+      font-weight: 800; font-size: 0.75rem;
+      display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+    }
+    .step-text { font-size: 0.78rem; color: #aaccbb; line-height: 1.6; }
+    .step-text strong { color: #ccffdd; }
+    .sheet-close-btn {
+      background: #1a2a1a; border: 1px solid rgba(46,204,113,0.2);
+      border-radius: 50px; color: #aaa; font-weight: 600;
+      padding: 10px 28px; cursor: pointer; font-size: 0.88rem;
+      width: 100%; margin-top: 10px;
+    }
+
+    /* ── RENAME CAT MODAL ── */
+    #renameCatModal {
+      display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(0,0,0,0.9); backdrop-filter: blur(10px);
+      justify-content: center; align-items: center; z-index: 3000; padding: 14px;
+    }
+    .rename-box {
+      background: #0e1928; max-width: 360px; width: 100%;
+      border-radius: 20px; padding: 22px 20px;
+      border: 1px solid rgba(0,180,255,0.3);
+    }
+    .rename-box h3 { font-family: var(--font-head); color: var(--accent); margin-bottom: 14px; }
+    .rename-box input {
+      width: 100%; padding: 11px 16px;
+      background: #0a1020; border: 1px solid #2c3e62; border-radius: 50px;
+      color: white; font-size: 0.88rem; outline: none; font-family: var(--font-body);
+    }
+    .rename-box input:focus { border-color: var(--accent); }
+    .rename-btns { display: flex; gap: 10px; margin-top: 14px; }
+    .rename-btns button { flex: 1; padding: 10px; border-radius: 50px; border: none; font-weight: 700; cursor: pointer; font-family: var(--font-body); }
+
+    /* ── PROGRESS ── */
     .progress-overlay {
       display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-      background: rgba(0,0,0,0.92); backdrop-filter: blur(10px);
+      background: rgba(0,0,0,0.9); backdrop-filter: blur(10px);
       justify-content: center; align-items: center; z-index: 3000; flex-direction: column;
     }
     .progress-card {
-      background: #101a28; padding: 14px 18px; border-radius: 18px;
-      text-align: center; min-width: 260px; width: 80%; max-width: 340px;
-      border: 1px solid #00aaff66;
+      background: #101a28; padding: 16px 20px; border-radius: 20px;
+      text-align: center; min-width: 260px; width: 80%; max-width: 320px;
+      border: 1px solid rgba(0,180,255,0.3);
     }
-    .progress-bar-container {
-      width: 100%; height: 26px; background: #1e2a3a;
-      border-radius: 40px; overflow: hidden; margin: 14px 0;
-    }
-    .progress-fill {
-      width: 0%; height: 100%;
-      background: linear-gradient(90deg, #00aaff, #2ad4ff);
-      transition: width 0.25s ease; display: flex; align-items: center;
-      justify-content: center; color: white; font-size: 12px; font-weight: bold;
-    }
-    #progressStatusText { color: #bbd4ff; font-weight: 500; font-size: 0.85rem; }
+    .progress-bar-container { width: 100%; height: 22px; background: #1e2a3a; border-radius: 40px; overflow: hidden; margin: 12px 0; }
+    .progress-fill { width: 0%; height: 100%; background: linear-gradient(90deg, var(--accent), #2ad4ff); transition: width 0.25s ease; display: flex; align-items: center; justify-content: center; color: white; font-size: 11px; font-weight: 700; }
+    #progressStatusText { color: #bbd4ff; font-weight: 500; font-size: 0.82rem; }
+
+    /* ── TOAST ── */
     .toast-msg {
       position: fixed; bottom: 20px; right: 20px; left: auto;
       background: #1f2a44; padding: 10px 20px; border-radius: 50px;
-      backdrop-filter: blur(12px); border-left: 5px solid #00ffaa;
-      z-index: 3500; display: none; font-weight: 500; font-size: 0.85rem;
-      box-shadow: 0 6px 14px black;
+      backdrop-filter: blur(12px); border-left: 5px solid var(--green);
+      z-index: 4500; display: none; font-weight: 500; font-size: 0.82rem;
+      box-shadow: 0 6px 20px black;
     }
     @media (max-width: 550px) { .toast-msg { left: 16px; right: 16px; text-align: center; } }
+
+    /* ── CROP MODAL ── */
     .crop-modal-container {
       display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
       background: rgba(0,0,0,0.98); backdrop-filter: blur(10px);
       z-index: 4000; justify-content: center; align-items: center; padding: 12px;
     }
     .crop-inner {
-      background: #0f1725; width: 96%; max-width: 1000px; border-radius: 32px;
+      background: #0f1725; width: 96%; max-width: 1000px; border-radius: 28px;
       padding: 16px; display: flex; flex-direction: column; max-height: 92vh;
     }
-    .crop-canvas-area {
-      background: #03060c; border-radius: 24px; padding: 10px;
-      display: flex; justify-content: center; min-height: 200px;
-      max-height: 40vh; overflow: hidden;
-    }
+    .crop-canvas-area { background: #03060c; border-radius: 20px; padding: 10px; display: flex; justify-content: center; min-height: 200px; max-height: 40vh; overflow: hidden; }
     .canvas-relative { position: relative; display: inline-block; }
-    #cropCanvas { display: block; border-radius: 16px; background: #1a1f30; max-width: 100%; height: auto; }
-    #cropSelectionBox {
-      position: absolute; border: 3px solid #ffaa44;
-      background: rgba(255,170,68,0.2); pointer-events: none; box-sizing: border-box;
-    }
-    .scroll-controls-area { flex: 1; overflow-y: auto; margin-top: 16px; padding-right: 5px; max-height: 38vh; }
-    .control-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 14px; }
-    @media (max-width: 580px) { .control-grid { grid-template-columns: 1fr; gap: 10px; } }
-    .ctrl-group label { font-size: 12px; font-weight: 500; color: #9bb5ff; }
-    .ctrl-group input { width: 100%; margin: 6px 0; }
-    .crop-buttons { display: flex; gap: 14px; justify-content: center; margin-top: 16px; flex-wrap: wrap; }
-    .crop-buttons button { padding: 8px 22px; border-radius: 40px; border: none; font-weight: bold; cursor: pointer; }
+    #cropCanvas { display: block; border-radius: 14px; background: #1a1f30; max-width: 100%; height: auto; }
+    #cropSelectionBox { position: absolute; border: 3px solid #ffaa44; background: rgba(255,170,68,0.18); pointer-events: none; box-sizing: border-box; }
+    .scroll-controls-area { flex: 1; overflow-y: auto; margin-top: 14px; padding-right: 4px; max-height: 36vh; }
+    .control-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px; }
+    @media (max-width: 580px) { .control-grid { grid-template-columns: 1fr; } }
+    .ctrl-group label { font-size: 11px; font-weight: 600; color: #9bb5ff; }
+    .ctrl-group input { width: 100%; margin: 5px 0; }
+    .crop-buttons { display: flex; gap: 12px; justify-content: center; margin-top: 14px; flex-wrap: wrap; }
+    .crop-buttons button { padding: 8px 20px; border-radius: 40px; border: none; font-weight: 700; cursor: pointer; font-family: var(--font-body); }
   </style>
 </head>
 <body>
-<div class="dashboard-container">
-  <div class="admin-header">
-    <div class="logo-area">
-      <h2>🎬 ADMIN DASHBOARD</h2>
+
+<!-- ── DRAWER OVERLAY ── -->
+<div id="drawerOverlay" onclick="closeDrawer()"></div>
+
+<!-- ── SIDE DRAWER ── -->
+<div id="sideDrawer">
+  <div class="drawer-head">
+    <h2>🎬 Admin Hub</h2>
+    <p>Content Management System</p>
+  </div>
+  <nav class="drawer-nav">
+    <div class="drawer-section-label">Navigation</div>
+    <div class="drawer-item active" onclick="scrollToTop(); closeDrawer()">
+      <div class="d-icon di-blue">🏠</div> Dashboard
     </div>
-    <button class="add-global-btn" id="openAddGlobalBtn" title="Add new video">+</button>
+    <div class="drawer-item" onclick="openAddModal(); closeDrawer()">
+      <div class="d-icon di-green">➕</div> Add New Video
+    </div>
+
+    <div class="drawer-section-label">Categories</div>
+    <div class="cat-chip-list" id="drawerCatList">
+      <!-- filled by JS -->
+    </div>
+    <div class="add-cat-row">
+      <input type="text" id="newCatNameInput" placeholder="New category name...">
+      <button onclick="addCategoryFromDrawer()">+ Add</button>
+    </div>
+
+    <div class="drawer-section-label">Tools</div>
+    <div class="drawer-item" onclick="openSettings(); closeDrawer()">
+      <div class="d-icon di-gold">⚙️</div> Settings
+    </div>
+    <div class="drawer-item" onclick="openNewSheetPanel(); closeDrawer()">
+      <div class="d-icon di-green">📄</div> New Google Sheet
+    </div>
+  </nav>
+  <div class="drawer-footer">Admin Hub v2.0 · © 2024</div>
+</div>
+
+<!-- ── MAIN ── -->
+<div class="main-wrap">
+  <div class="admin-header">
+    <button class="hamburger-btn" onclick="toggleDrawer()">☰</button>
+    <div class="logo-area"><h2>🎬 ADMIN DASHBOARD</h2></div>
+    <div class="header-actions">
+      <button class="add-global-btn" onclick="openAddModal()" title="Add new video">+</button>
+    </div>
   </div>
   <div id="categoriesContainer"></div>
 </div>
 
-<!-- MODAL -->
+<!-- ── ADD/EDIT MODAL ── -->
 <div id="globalModal" class="modal-overlay">
   <div class="modal-panel">
     <h3 id="modalTitle">➕ Add Video</h3>
     <input type="text" id="videoName" placeholder="Video title *">
     <select id="videoCategorySelect">
-      <option value="">-- Category --</option>
-      <option value="Live">Live</option>
-      <option value="Movies">Movies</option>
-      <option value="Drama">Drama</option>
-      <option value="Slider">Slider</option>
-      <option value="Sports">Sports</option>
-      <option value="TV Shows">TV Shows</option>
+      <option value="">-- Select Category --</option>
     </select>
     <input type="text" id="videoUrl" placeholder="Video URL *">
-
     <div class="thumb-label-row">
       🖼️ Thumbnail &nbsp;<span id="thumbBadge" class="badge-req">Required</span>
     </div>
-
     <div class="current-thumb-row" id="currentThumbRow">
       <img id="currentThumbImg" src="" alt="current thumb">
       <div class="ctr-text">
@@ -275,7 +516,6 @@
         Nai image select nahi ki to yeh image waise hi rahegi
       </div>
     </div>
-
     <div class="img-edit-row">
       <div class="replace-cb-wrap" id="replaceCbWrap">
         <input type="checkbox" id="replaceOldCb">
@@ -284,7 +524,6 @@
       <button type="button" id="openMiniImageBtn" class="icon-edit-btn">✂️</button>
       <input type="file" id="thumbFile" accept="image/*" style="flex:1; background:transparent; border:none; padding:8px 0; color:#aac4ff;">
     </div>
-
     <div class="modal-buttons">
       <button id="modalSubmitBtn" class="btn-save-item">Save</button>
       <button id="closeModalBtn" class="btn-cancel-modal">Cancel</button>
@@ -292,10 +531,184 @@
   </div>
 </div>
 
-<!-- PROGRESS -->
+<!-- ── SETTINGS PANEL ── -->
+<div id="settingsPanel">
+  <div class="settings-box">
+    <h3>⚙️ Settings</h3>
+    <div class="settings-row">
+      <label>Google Apps Script API URL</label>
+      <input type="text" id="settingsApiUrl" placeholder="https://script.google.com/macros/s/...">
+    </div>
+    <div class="settings-divider"></div>
+    <div class="settings-row">
+      <label>Dashboard Title</label>
+      <input type="text" id="settingsDashTitle" placeholder="Admin Hub">
+    </div>
+    <button class="settings-save-btn" onclick="saveSettings()">💾 Save Settings</button>
+    <button class="settings-close-btn" onclick="document.getElementById('settingsPanel').style.display='none'">Close</button>
+  </div>
+</div>
+
+<!-- ── NEW SHEET PANEL ── -->
+<div id="newSheetPanel">
+  <div class="sheet-box">
+    <h3>📄 New Google Sheet Setup</h3>
+    <p>Yeh Apps Script code copy karke Google Sheets mein paste karo taake nai sheet + API ready ho jaye.</p>
+
+    <div class="sheet-step">
+      <div class="step-num">1</div>
+      <div class="step-text">Naya <strong>Google Sheet</strong> kholo → Tools → <strong>Apps Script</strong></div>
+    </div>
+    <div class="sheet-step">
+      <div class="step-num">2</div>
+      <div class="step-text">Pura purana code delete karo aur neeche diya hua <strong>code paste karo</strong></div>
+    </div>
+    <div class="sheet-step">
+      <div class="step-num">3</div>
+      <div class="step-text"><strong>Save → Deploy → New Deployment → Web App</strong> → "Anyone" select karo → Copy URL</div>
+    </div>
+    <div class="sheet-step">
+      <div class="step-num">4</div>
+      <div class="step-text">Copy kiya hua URL <strong>Settings → API URL</strong> mein paste karo</div>
+    </div>
+
+    <button class="copy-code-btn" onclick="copyAppsScriptCode()">📋 Apps Script Code Copy Karo</button>
+
+    <div class="code-block" id="appsScriptCodeBlock">// ═══════════════════════════════════════════════
+// ADMIN HUB — Google Apps Script Backend
+// Google Drive + Sheets Integration
+// ═══════════════════════════════════════════════
+
+const SHEET_NAME      = "Videos";
+const DRIVE_FOLDER_ID = "YOUR_DRIVE_FOLDER_ID"; // optional
+
+function doGet(e) {
+  const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_NAME)
+             || SpreadsheetApp.getActiveSpreadsheet().insertSheet(SHEET_NAME);
+  
+  // Auto-create headers if empty
+  if (sheet.getLastRow() === 0) {
+    sheet.appendRow(["Name","Category","URL","Thumbnail","FileId"]);
+    sheet.getRange(1,1,1,5).setFontWeight("bold");
+  }
+
+  const rows = sheet.getDataRange().getValues();
+  const headers = rows[0];
+  const data = [];
+  for (let i = 1; i < rows.length; i++) {
+    const row = rows[i];
+    if (!row[0] && !row[2]) continue;
+    data.push({
+      rowNumber:  i + 1,
+      Name:       row[0] || "",
+      Category:   row[1] || "",
+      URL:        row[2] || "#",
+      Thumbnail:  row[3] || "",
+      FileId:     row[4] || ""
+    });
+  }
+  return ContentService
+    .createTextOutput(JSON.stringify(data))
+    .setMimeType(ContentService.MimeType.JSON);
+}
+
+function doPost(e) {
+  const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_NAME)
+             || SpreadsheetApp.getActiveSpreadsheet().insertSheet(SHEET_NAME);
+  const data = JSON.parse(e.postData.contents);
+
+  // ── DELETE ──
+  if (data.action === "DELETE") {
+    try {
+      if (!data.keepImage && data.rowNumber) {
+        const fileId = sheet.getRange(data.rowNumber, 5).getValue();
+        if (fileId) {
+          try { DriveApp.getFileById(fileId).setTrashed(true); } catch(ex) {}
+        }
+      }
+      sheet.deleteRow(data.rowNumber);
+      return jsonOut({ status: "DELETED" });
+    } catch(ex) {
+      return jsonOut({ status: "ERROR", message: ex.message });
+    }
+  }
+
+  // ── EDIT ──
+  if (data.action === "EDIT") {
+    try {
+      const row = data.rowNumber;
+      if (data.name)     sheet.getRange(row, 1).setValue(data.name);
+      if (data.category) sheet.getRange(row, 2).setValue(data.category);
+      if (data.url)      sheet.getRange(row, 3).setValue(data.url);
+      if (data.thumbnail) {
+        const { url: thumbUrl, fileId } = uploadBase64(data.thumbnail);
+        sheet.getRange(row, 4).setValue(thumbUrl);
+        sheet.getRange(row, 5).setValue(fileId);
+      }
+      return jsonOut({ status: "UPDATED" });
+    } catch(ex) {
+      return jsonOut({ status: "ERROR", message: ex.message });
+    }
+  }
+
+  // ── ADD ──
+  try {
+    let thumbUrl = "", fileId = "";
+    if (data.thumbnail) {
+      const result = uploadBase64(data.thumbnail);
+      thumbUrl = result.url; fileId = result.fileId;
+    } else if (data.existingThumbUrl) {
+      thumbUrl = data.existingThumbUrl;
+      fileId   = data.existingFileId || "";
+    }
+    sheet.appendRow([data.name, data.category, data.url, thumbUrl, fileId]);
+    return jsonOut({ status: "OK", thumbUrl });
+  } catch(ex) {
+    return jsonOut({ status: "ERROR", message: ex.message });
+  }
+}
+
+function uploadBase64(base64Data) {
+  const parts    = base64Data.split(",");
+  const mimeType = parts[0].match(/:(.*?);/)[1];
+  const bytes    = Utilities.base64Decode(parts[1]);
+  const blob     = Utilities.newBlob(bytes, mimeType, "thumb_" + Date.now() + ".jpg");
+  let folder;
+  try { folder = DriveApp.getFolderById(DRIVE_FOLDER_ID); }
+  catch(e) { folder = DriveApp.getRootFolder(); }
+  const file = folder.createFile(blob);
+  file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+  const fileId = file.getId();
+  const url    = "https://lh3.googleusercontent.com/d/" + fileId;
+  return { url, fileId };
+}
+
+function jsonOut(obj) {
+  return ContentService
+    .createTextOutput(JSON.stringify(obj))
+    .setMimeType(ContentService.MimeType.JSON);
+}</div>
+
+    <button class="sheet-close-btn" onclick="document.getElementById('newSheetPanel').style.display='none'">Close</button>
+  </div>
+</div>
+
+<!-- ── RENAME CATEGORY MODAL ── -->
+<div id="renameCatModal">
+  <div class="rename-box">
+    <h3>✏️ Rename Category</h3>
+    <input type="text" id="renameCatInput" placeholder="New category name">
+    <div class="rename-btns">
+      <button style="background:var(--accent);color:white;" onclick="confirmRenameCategory()">Rename</button>
+      <button style="background:#2a3452;color:#aaa;" onclick="document.getElementById('renameCatModal').style.display='none'">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── PROGRESS ── -->
 <div id="progressOverlay" class="progress-overlay">
   <div class="progress-card">
-    <h4 style="color:#00aaff;">⚙️ Processing</h4>
+    <h4 style="color:var(--accent); font-family:var(--font-head);">⚙️ Processing</h4>
     <div class="progress-bar-container">
       <div class="progress-fill" id="progressFillBar">0%</div>
     </div>
@@ -303,12 +716,12 @@
   </div>
 </div>
 
-<!-- CROP MODAL -->
+<!-- ── CROP MODAL ── -->
 <div id="cropToolModal" class="crop-modal-container">
   <div class="crop-inner">
     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
-      <h4 style="color:#00aaff;">✂️ Image Editor</h4>
-      <button id="closeCropModalBtn" style="background:#ff5555; border:none; padding:5px 16px; border-radius:40px;">✖️</button>
+      <h4 style="color:var(--accent); font-family:var(--font-head);">✂️ Image Editor</h4>
+      <button id="closeCropModalBtn" style="background:#ff5555; border:none; padding:5px 14px; border-radius:30px; color:white; cursor:pointer;">✖️</button>
     </div>
     <div class="crop-canvas-area">
       <div class="canvas-relative">
@@ -326,8 +739,8 @@
       </div>
     </div>
     <div class="crop-buttons">
-      <button id="applyCropSaveBtn" style="background:#2ecc71;">💾 Save Cropped</button>
-      <button id="cancelCropToolBtn" style="background:#777;">Cancel</button>
+      <button id="applyCropSaveBtn" style="background:var(--green); color:#000;">💾 Save Cropped</button>
+      <button id="cancelCropToolBtn" style="background:#555; color:white;">Cancel</button>
     </div>
   </div>
 </div>
@@ -335,15 +748,128 @@
 <div id="toastMessage" class="toast-msg"></div>
 
 <script>
-  const API_URL = "https://script.google.com/macros/s/AKfycbyQ08jZpjHgRrFbgWH7KQtELVgbXdgrKzhzicLqWqI-92VrSdTKsbWjziJrqfCNYC1GNQ/exec";
+  // ── CONFIG ──
+  let API_URL = localStorage.getItem("adminApiUrl") || "https://script.google.com/macros/s/AKfycbyQ08jZpjHgRrFbgWH7KQtELVgbXdgrKzhzicLqWqI-92VrSdTKsbWjziJrqfCNYC1GNQ/exec";
 
   let allVideos        = [];
+  let customCategories = JSON.parse(localStorage.getItem("adminCustomCats") || "[]");
   let currentEditRow   = null;
-  let currentEditThumb = "";   // ✅ Purani thumbnail URL
-  let currentEditFile  = "";   // ✅ Purana Drive fileId
+  let currentEditThumb = "";
+  let currentEditFile  = "";
   let isEditMode       = false;
+  let renameCatOldName = "";
 
-  // ─── Progress ────────────────────────────────────────────────────────────────
+  const DEFAULT_CATS = ["Live","Movies","Drama","Slider","Sports","TV Shows"];
+
+  // ── DRAWER ──
+  function toggleDrawer() {
+    const d = document.getElementById("sideDrawer");
+    const o = document.getElementById("drawerOverlay");
+    const open = d.classList.contains("open");
+    if (open) { d.classList.remove("open"); o.classList.remove("open"); }
+    else { d.classList.add("open"); o.classList.add("open"); renderDrawerCats(); }
+  }
+  function closeDrawer() {
+    document.getElementById("sideDrawer").classList.remove("open");
+    document.getElementById("drawerOverlay").classList.remove("open");
+  }
+  function scrollToTop() { window.scrollTo({ top: 0, behavior: "smooth" }); }
+
+  // ── CATEGORIES (merged: default + custom + from data) ──
+  function getAllCategories() {
+    const fromData = [...new Set(allVideos.map(v => v.Category).filter(Boolean))];
+    const merged   = [...new Set([...DEFAULT_CATS, ...customCategories, ...fromData])];
+    return merged.sort((a, b) => {
+      const ia = DEFAULT_CATS.indexOf(a), ib = DEFAULT_CATS.indexOf(b);
+      if (ia !== -1 && ib !== -1) return ia - ib;
+      if (ia !== -1) return -1; if (ib !== -1) return 1;
+      return a.localeCompare(b);
+    });
+  }
+
+  function saveCustomCats() {
+    localStorage.setItem("adminCustomCats", JSON.stringify(customCategories));
+  }
+
+  function addCategoryFromDrawer() {
+    const inp = document.getElementById("newCatNameInput");
+    const name = inp.value.trim();
+    if (!name) { showToast("Category name likhna zaroori hai!", "error"); return; }
+    if (getAllCategories().map(c=>c.toLowerCase()).includes(name.toLowerCase())) {
+      showToast("Yeh category pehle se exist karti hai", "error"); return;
+    }
+    customCategories.push(name);
+    saveCustomCats();
+    inp.value = "";
+    renderDrawerCats();
+    updateCategoryDropdown();
+    showToast("✅ Category add ho gayi: " + name);
+  }
+
+  function deleteCategoryChip(catName) {
+    if (!confirm(`"${catName}" category delete karein? (Videos delete nahi honge)`)) return;
+    customCategories = customCategories.filter(c => c !== catName);
+    saveCustomCats();
+    renderDrawerCats();
+    updateCategoryDropdown();
+    renderCategories();
+    showToast("🗑️ Category removed from list");
+  }
+
+  function openRenameCat(oldName) {
+    renameCatOldName = oldName;
+    document.getElementById("renameCatInput").value = oldName;
+    document.getElementById("renameCatModal").style.display = "flex";
+  }
+  function confirmRenameCategory() {
+    const newName = document.getElementById("renameCatInput").value.trim();
+    if (!newName || newName === renameCatOldName) {
+      document.getElementById("renameCatModal").style.display = "none"; return;
+    }
+    // rename in customCategories
+    const idx = customCategories.indexOf(renameCatOldName);
+    if (idx !== -1) customCategories[idx] = newName;
+    saveCustomCats();
+    document.getElementById("renameCatModal").style.display = "none";
+    renderDrawerCats();
+    updateCategoryDropdown();
+    showToast("✏️ Category renamed");
+  }
+
+  function renderDrawerCats() {
+    const cats = getAllCategories();
+    const list = document.getElementById("drawerCatList");
+    list.innerHTML = cats.map(c => {
+      const count = allVideos.filter(v => v.Category === c).length;
+      return `<div class="cat-chip">
+        <div class="cc-left">
+          <div class="cc-dot"></div>
+          <span onclick="filterToCat('${esc(c)}')" style="cursor:pointer">${esc(c)}</span>
+          <span class="cc-count">${count}</span>
+        </div>
+        <div style="display:flex;gap:4px;">
+          <button class="cc-del" onclick="openRenameCat('${esc(c)}')" title="Rename" style="color:var(--gold)">✏️</button>
+          <button class="cc-del" onclick="deleteCategoryChip('${esc(c)}')" title="Remove">✕</button>
+        </div>
+      </div>`;
+    }).join("");
+  }
+
+  function filterToCat(catName) {
+    closeDrawer();
+    const el = document.querySelector(`[data-cat="${catName}"]`);
+    if (el) el.scrollIntoView({ behavior: "smooth", block: "center" });
+  }
+
+  function updateCategoryDropdown() {
+    const sel = document.getElementById("videoCategorySelect");
+    const cur = sel.value;
+    const cats = getAllCategories();
+    sel.innerHTML = `<option value="">-- Select Category --</option>` +
+      cats.map(c => `<option value="${esc(c)}" ${c===cur?'selected':''}>${esc(c)}</option>`).join("");
+  }
+
+  // ── PROGRESS ──
   function showProgress(show, percent = 0, msg = "Processing...") {
     document.getElementById("progressOverlay").style.display = show ? "flex" : "none";
     if (show) updateProgress(percent, msg);
@@ -363,7 +889,7 @@
     setTimeout(() => { t.style.display = "none"; }, 3000);
   }
 
-  // ─── Load Data ───────────────────────────────────────────────────────────────
+  // ── LOAD DATA ──
   async function loadData() {
     try {
       showProgress(true, 15, "Fetching data...");
@@ -375,55 +901,62 @@
         Category:  item.Category  || "",
         URL:       item.URL       || "#",
         Thumbnail: item.Thumbnail || "",
-        FileId:    item.FileId    || ""   // ✅ Drive fileId bhi store karo
+        FileId:    item.FileId    || ""
       })) : [];
       updateProgress(100, "Rendering...");
       setTimeout(() => showProgress(false), 300);
       renderCategories();
+      updateCategoryDropdown();
     } catch (e) {
       showProgress(false);
       showToast("Load error: " + e.message, "error");
       allVideos = [];
       renderCategories();
+      updateCategoryDropdown();
     }
   }
 
-  // ─── Render ──────────────────────────────────────────────────────────────────
-  function getCategories() {
-    const order = ["Sports", "Tv Show", "Live", "Movies", "Drama", "Slider"];
-    const cats  = [...new Set(allVideos.map(v => v.Category).filter(Boolean))];
-    return cats.sort((a, b) => {
+  // ── RENDER ──
+  function getActiveCats() {
+    const fromData = [...new Set(allVideos.map(v => v.Category).filter(Boolean))];
+    const order    = ["Sports","TV Shows","Live","Movies","Drama","Slider"];
+    return fromData.sort((a, b) => {
       const ia = order.indexOf(a), ib = order.indexOf(b);
       if (ia !== -1 && ib !== -1) return ia - ib;
-      if (ia !== -1) return -1;
-      if (ib !== -1) return 1;
+      if (ia !== -1) return -1; if (ib !== -1) return 1;
       return a.localeCompare(b);
     });
   }
 
   function esc(str) {
     if (!str) return '';
-    return str.replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[m]);
+    return String(str).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[m]);
   }
 
   function renderCategories() {
     const container  = document.getElementById("categoriesContainer");
-    const categories = getCategories();
+    const categories = getActiveCats();
     if (!categories.length) {
-      container.innerHTML = `<div style="background:#0f1624;border-radius:38px;padding:34px;text-align:center;">✨ No categories. Click + to add ✨</div>`;
+      container.innerHTML = `<div style="background:#0f1624;border-radius:28px;padding:40px;text-align:center;color:#6c7aa3;">✨ No videos yet. Click + to add your first video ✨</div>`;
       return;
     }
     let html = "";
     for (const cat of categories) {
       const videos = allVideos.filter(v => v.Category === cat);
-      html += `<div class="category-card">
+      html += `<div class="category-card" data-cat="${esc(cat)}">
         <div class="category-header">
-          <span class="category-title">${esc(cat)}</span>
-          <span class="category-badge">${videos.length} Item${videos.length !== 1 ? 's' : ''}</span>
+          <div class="cat-title-group">
+            <span class="category-title">${esc(cat)}</span>
+            <span class="category-badge">${videos.length} item${videos.length!==1?'s':''}</span>
+          </div>
+          <div class="cat-actions">
+            <button class="cat-action-btn" onclick="openAddInCat('${esc(cat)}')">+ Add</button>
+            <button class="cat-action-btn" onclick="openRenameCat('${esc(cat)}')">✏️ Rename</button>
+          </div>
         </div>
         <div class="horizontal-scroll">`;
       if (!videos.length) {
-        html += `<div class="empty-cat-msg">📭 No videos yet.</div>`;
+        html += `<div class="empty-cat-msg">📭 No videos yet. Click "+ Add" to add one.</div>`;
       } else {
         for (const v of videos) {
           const thumb = v.Thumbnail || "https://placehold.co/300x180/1a2340/white?text=No+Image";
@@ -433,18 +966,14 @@
             </div>
             <div class="video-info">
               <div class="video-name">${esc(v.Name)}</div>
-              <div class="video-url">${v.URL.length > 42 ? esc(v.URL.substring(0,40))+'...' : esc(v.URL)}</div>
+              <div class="video-url">${v.URL.length>42 ? esc(v.URL.substring(0,40))+'...' : esc(v.URL)}</div>
               <div class="video-actions">
                 <button class="small-edit"
-                  data-row="${v.rowNumber}"
-                  data-name="${esc(v.Name)}"
-                  data-cat="${esc(v.Category)}"
-                  data-url="${esc(v.URL)}"
-                  data-thumb="${esc(v.Thumbnail)}"
-                  data-fileid="${esc(v.FileId)}">✏️ Edit</button>
+                  data-row="${v.rowNumber}" data-name="${esc(v.Name)}"
+                  data-cat="${esc(v.Category)}" data-url="${esc(v.URL)}"
+                  data-thumb="${esc(v.Thumbnail)}" data-fileid="${esc(v.FileId)}">✏️ Edit</button>
                 <button class="small-delete"
-                  data-row="${v.rowNumber}"
-                  data-name="${esc(v.Name)}">🗑️ Delete</button>
+                  data-row="${v.rowNumber}" data-name="${esc(v.Name)}">🗑️ Del</button>
               </div>
             </div>
           </div>`;
@@ -460,14 +989,7 @@
     document.querySelectorAll(".small-edit").forEach(btn => {
       btn.addEventListener("click", e => {
         e.stopPropagation();
-        openEditModal(
-          parseInt(btn.dataset.row),
-          btn.dataset.name,
-          btn.dataset.cat,
-          btn.dataset.url,
-          btn.dataset.thumb,
-          btn.dataset.fileid  // ✅ fileId bhi pass karo
-        );
+        openEditModal(parseInt(btn.dataset.row), btn.dataset.name, btn.dataset.cat, btn.dataset.url, btn.dataset.thumb, btn.dataset.fileid);
       });
     });
     document.querySelectorAll(".small-delete").forEach(btn => {
@@ -485,217 +1007,153 @@
     });
   }
 
-  // ─── Delete ──────────────────────────────────────────────────────────────────
+  // ── DELETE ──
   async function deleteVideo(rowNumber) {
     showProgress(true, 30, "Deleting...");
     try {
-      // Normal delete → image bhi Drive se delete hogi (keepImage nahi bheja)
       const res    = await fetch(API_URL, { method: "POST", body: JSON.stringify({ action: "DELETE", rowNumber }) });
       const result = await res.json();
-      if (result.status === "DELETED") {
-        showToast("🗑️ Deleted!");
-        await loadData();
-      } else {
-        showToast("Delete failed: " + (result.message || ""), "error");
-      }
-    } catch (e) {
-      showToast("Error: " + e.message, "error");
-    } finally {
-      showProgress(false);
-    }
+      if (result.status === "DELETED") { showToast("🗑️ Deleted!"); await loadData(); }
+      else showToast("Delete failed: " + (result.message || ""), "error");
+    } catch (e) { showToast("Error: " + e.message, "error"); }
+    finally { showProgress(false); }
   }
 
-  // ─── Modal Open ───────────────────────────────────────────────────────────────
-  function openAddModal() {
-    isEditMode       = false;
-    currentEditRow   = null;
-    currentEditThumb = "";
-    currentEditFile  = "";
-
-    document.getElementById("modalTitle").innerHTML        = "➕ Add New Video";
-    document.getElementById("modalSubmitBtn").innerHTML    = "Add";
-    document.getElementById("modalSubmitBtn").style.background = "#00aaff";
-    document.getElementById("videoName").value             = "";
-    document.getElementById("videoCategorySelect").value   = "";
-    document.getElementById("videoUrl").value              = "";
-    document.getElementById("thumbFile").value             = "";
+  // ── MODAL OPEN ──
+  function openAddModal(prefillCat = "") {
+    isEditMode = false; currentEditRow = null; currentEditThumb = ""; currentEditFile = "";
+    updateCategoryDropdown();
+    document.getElementById("modalTitle").innerHTML = "➕ Add New Video";
+    document.getElementById("modalSubmitBtn").innerHTML = "Add";
+    document.getElementById("modalSubmitBtn").style.background = "var(--accent)";
+    document.getElementById("videoName").value = "";
+    document.getElementById("videoCategorySelect").value = prefillCat;
+    document.getElementById("videoUrl").value = "";
+    document.getElementById("thumbFile").value = "";
     document.getElementById("currentThumbRow").style.display = "none";
-    document.getElementById("thumbBadge").textContent      = "Required";
-    document.getElementById("thumbBadge").className        = "badge-req";
+    document.getElementById("thumbBadge").textContent = "Required";
+    document.getElementById("thumbBadge").className = "badge-req";
     document.getElementById("replaceCbWrap").style.display = "none";
-    document.getElementById("replaceOldCb").checked        = false;
-    document.getElementById("globalModal").style.display   = "flex";
+    document.getElementById("replaceOldCb").checked = false;
+    document.getElementById("globalModal").style.display = "flex";
+  }
+
+  function openAddInCat(catName) {
+    openAddModal(catName);
   }
 
   function openEditModal(row, name, cat, url, thumb, fileId) {
-    isEditMode       = true;
-    currentEditRow   = row;
-    currentEditThumb = thumb  || ""; // ✅ Purani image URL
-    currentEditFile  = fileId || ""; // ✅ Purana Drive fileId
-
-    document.getElementById("modalTitle").innerHTML        = "✏️ Edit Video";
-    document.getElementById("modalSubmitBtn").innerHTML    = "Update";
-    document.getElementById("modalSubmitBtn").style.background = "#ffaa33";
-    document.getElementById("videoName").value             = name;
-    document.getElementById("videoCategorySelect").value   = cat;
-    document.getElementById("videoUrl").value              = url;
-    document.getElementById("thumbFile").value             = "";
-
+    isEditMode = true; currentEditRow = row;
+    currentEditThumb = thumb || ""; currentEditFile = fileId || "";
+    updateCategoryDropdown();
+    document.getElementById("modalTitle").innerHTML = "✏️ Edit Video";
+    document.getElementById("modalSubmitBtn").innerHTML = "Update";
+    document.getElementById("modalSubmitBtn").style.background = "var(--gold)";
+    document.getElementById("videoName").value = name;
+    document.getElementById("videoCategorySelect").value = cat;
+    document.getElementById("videoUrl").value = url;
+    document.getElementById("thumbFile").value = "";
     const previewRow = document.getElementById("currentThumbRow");
-    if (thumb && thumb.trim()) {
-      document.getElementById("currentThumbImg").src = thumb;
-      previewRow.style.display = "flex";
-    } else {
-      previewRow.style.display = "none";
-    }
-
-    document.getElementById("thumbBadge").textContent      = "Optional";
-    document.getElementById("thumbBadge").className        = "badge-opt";
+    if (thumb && thumb.trim()) { document.getElementById("currentThumbImg").src = thumb; previewRow.style.display = "flex"; }
+    else previewRow.style.display = "none";
+    document.getElementById("thumbBadge").textContent = "Optional";
+    document.getElementById("thumbBadge").className = "badge-opt";
     document.getElementById("replaceCbWrap").style.display = "flex";
-    document.getElementById("replaceOldCb").checked        = false;
-    document.getElementById("globalModal").style.display   = "flex";
+    document.getElementById("replaceOldCb").checked = false;
+    document.getElementById("globalModal").style.display = "flex";
   }
 
-  // ─── Submit ───────────────────────────────────────────────────────────────────
+  // ── SUBMIT ──
   async function submitVideo() {
     const name        = document.getElementById("videoName").value.trim();
     const category    = document.getElementById("videoCategorySelect").value;
     const url         = document.getElementById("videoUrl").value.trim();
     const file        = document.getElementById("thumbFile").files[0];
     const replaceMode = document.getElementById("replaceOldCb").checked;
-
-    if (!name || !category || !url) {
-      showToast("❌ Name, Category aur URL bharo", "error");
-      return;
-    }
-
+    if (!name || !category || !url) { showToast("❌ Name, Category aur URL bharo", "error"); return; }
     document.getElementById("globalModal").style.display = "none";
     showProgress(true, 10, "Preparing...");
-
     let base64Thumb = null;
     if (file) {
       base64Thumb = await new Promise(resolve => {
-        const rd = new FileReader();
-        rd.onload = () => resolve(rd.result);
-        rd.readAsDataURL(file);
+        const rd = new FileReader(); rd.onload = () => resolve(rd.result); rd.readAsDataURL(file);
       });
     }
-
-    // ════ EDIT MODE ════
     if (isEditMode && currentEditRow !== null) {
-
-      // ✅ Replace checkbox CHECK → purani row DELETE (image safe) + nai row ADD
       if (replaceMode) {
-
-        // Step 1: DELETE — keepImage:true bhejo taake Drive se image DELETE NA HO
         updateProgress(25, "Purani entry delete ho rahi hai...");
         try {
-          const delRes = await fetch(API_URL, {
-            method: "POST",
-            body: JSON.stringify({
-              action:    "DELETE",
-              rowNumber: currentEditRow,
-              keepImage: true          // ✅ YEH KEY FLAG HAI — image Drive se delete nahi hogi
-            })
-          });
+          const delRes = await fetch(API_URL, { method: "POST", body: JSON.stringify({ action: "DELETE", rowNumber: currentEditRow, keepImage: true }) });
           const delResult = await delRes.json();
-          if (delResult.status !== "DELETED") {
-            showToast("Delete failed: " + (delResult.message || ""), "error");
-            showProgress(false);
-            return;
-          }
-        } catch (e) {
-          showToast("Delete error: " + e.message, "error");
-          showProgress(false);
-          return;
-        }
-
-        // Step 2: ADD nai row
-        // ✅ Nai image select ki → nai base64 upload
-        // ✅ Nai image nahi → purani image ka URL aur fileId bhejo (Drive file wahi rahegi)
+          if (delResult.status !== "DELETED") { showToast("Delete failed: " + (delResult.message||""), "error"); showProgress(false); return; }
+        } catch(e) { showToast("Delete error: " + e.message, "error"); showProgress(false); return; }
         updateProgress(65, "Nai entry add ho rahi hai...");
         try {
-          let payload;
-          if (base64Thumb) {
-            // Nai image → normal add with base64
-            payload = { name, category, url, thumbnail: base64Thumb };
-          } else {
-            // ✅ Nai image nahi → purani image URL + fileId directly bhejo
-            // Apps Script isko existingThumbUrl aur existingFileId se handle karega
-            payload = {
-              name,
-              category,
-              url,
-              existingThumbUrl: currentEditThumb,  // purana thumbnail URL
-              existingFileId:   currentEditFile     // purana Drive fileId
-            };
-          }
-
-          const res    = await fetch(API_URL, { method: "POST", body: JSON.stringify(payload) });
+          const payload = base64Thumb
+            ? { name, category, url, thumbnail: base64Thumb }
+            : { name, category, url, existingThumbUrl: currentEditThumb, existingFileId: currentEditFile };
+          const res = await fetch(API_URL, { method: "POST", body: JSON.stringify(payload) });
           const result = await res.json();
-          if (result.status === "OK") {
-            showToast("✅ Entry replace ho gayi! Image bilkul safe hai ✅");
-            await loadData();
-          } else {
-            showToast("Add failed: " + (result.message || ""), "error");
-          }
-        } catch (e) {
-          showToast("Error: " + e.message, "error");
-        } finally {
-          showProgress(false);
-        }
-        return;
+          if (result.status === "OK") { showToast("✅ Entry replace ho gayi!"); await loadData(); }
+          else showToast("Add failed: " + (result.message||""), "error");
+        } catch(e) { showToast("Error: " + e.message, "error"); }
+        finally { showProgress(false); } return;
       }
-
-      // ── Normal edit (checkbox unchecked) ──
       updateProgress(30, "Updating record...");
       try {
         const payload = { action: "EDIT", rowNumber: currentEditRow, name, category, url };
         if (base64Thumb) payload.thumbnail = base64Thumb;
-
-        const res    = await fetch(API_URL, { method: "POST", body: JSON.stringify(payload) });
+        const res = await fetch(API_URL, { method: "POST", body: JSON.stringify(payload) });
         const result = await res.json();
-
-        if (result.status === "UPDATED") {
-          showToast("✅ Video updated!");
-          await loadData();
-        } else {
-          showToast("Update failed: " + (result.message || ""), "error");
-        }
-      } catch (e) {
-        showToast("Error: " + e.message, "error");
-      } finally {
-        showProgress(false);
-      }
-      return;
+        if (result.status === "UPDATED") { showToast("✅ Video updated!"); await loadData(); }
+        else showToast("Update failed: " + (result.message||""), "error");
+      } catch(e) { showToast("Error: " + e.message, "error"); }
+      finally { showProgress(false); } return;
     }
-
-    // ════ ADD MODE ════
-    if (!base64Thumb) {
-      showProgress(false);
-      showToast("❌ Nai video ke liye thumbnail zaroori hai!", "error");
-      return;
-    }
-
+    if (!base64Thumb) { showProgress(false); showToast("❌ Nai video ke liye thumbnail zaroori hai!", "error"); return; }
     updateProgress(50, "Adding video...");
     try {
-      const payload = { name, category, url, thumbnail: base64Thumb };
-      const res     = await fetch(API_URL, { method: "POST", body: JSON.stringify(payload) });
-      const result  = await res.json();
-      if (result.status === "OK") {
-        showToast("✅ Video added!");
-        await loadData();
-      } else {
-        showToast("Add failed: " + (result.message || ""), "error");
-      }
-    } catch (e) {
-      showToast("Error: " + e.message, "error");
-    } finally {
-      showProgress(false);
-    }
+      const res = await fetch(API_URL, { method: "POST", body: JSON.stringify({ name, category, url, thumbnail: base64Thumb }) });
+      const result = await res.json();
+      if (result.status === "OK") { showToast("✅ Video added!"); await loadData(); }
+      else showToast("Add failed: " + (result.message||""), "error");
+    } catch(e) { showToast("Error: " + e.message, "error"); }
+    finally { showProgress(false); }
   }
 
-  // ─── Cropper ──────────────────────────────────────────────────────────────────
+  // ── SETTINGS ──
+  function openSettings() {
+    document.getElementById("settingsApiUrl").value = API_URL;
+    document.getElementById("settingsDashTitle").value = localStorage.getItem("adminDashTitle") || "ADMIN DASHBOARD";
+    document.getElementById("settingsPanel").style.display = "flex";
+  }
+  function saveSettings() {
+    const newUrl   = document.getElementById("settingsApiUrl").value.trim();
+    const newTitle = document.getElementById("settingsDashTitle").value.trim();
+    if (newUrl) { API_URL = newUrl; localStorage.setItem("adminApiUrl", newUrl); }
+    if (newTitle) {
+      localStorage.setItem("adminDashTitle", newTitle);
+      document.querySelector(".logo-area h2").innerText = "🎬 " + newTitle;
+    }
+    document.getElementById("settingsPanel").style.display = "none";
+    showToast("✅ Settings saved!");
+    loadData();
+  }
+
+  // ── NEW SHEET ──
+  function openNewSheetPanel() {
+    document.getElementById("newSheetPanel").style.display = "flex";
+  }
+  function copyAppsScriptCode() {
+    const code = document.getElementById("appsScriptCodeBlock").innerText;
+    navigator.clipboard.writeText(code).then(() => showToast("✅ Code copied!")).catch(() => {
+      const ta = document.createElement("textarea"); ta.value = code;
+      document.body.appendChild(ta); ta.select(); document.execCommand("copy");
+      document.body.removeChild(ta); showToast("✅ Code copied!");
+    });
+  }
+
+  // ── CROPPER ──
   let cropImg = new Image();
   let naturalW = 1, naturalH = 1;
   let zoomVal = 0.45, cropW = 240, cropH = 180, cropX = 0, cropY = 0;
@@ -706,9 +1164,7 @@
       cropImg = new Image();
       cropImg.onload = () => {
         naturalW = cropImg.width; naturalH = cropImg.height;
-        zoomVal = 0.45;
-        cropW = Math.min(380, naturalW); cropH = Math.min(260, naturalH);
-        cropX = 0; cropY = 0;
+        zoomVal = 0.45; cropW = Math.min(380, naturalW); cropH = Math.min(260, naturalH); cropX = 0; cropY = 0;
         document.getElementById("zoomScaleSlider").value  = zoomVal * 100;
         document.getElementById("cropWidthSlider").value  = cropW;
         document.getElementById("cropHeightSlider").value = cropH;
@@ -739,25 +1195,20 @@
     document.getElementById("heightVal").innerText   = Math.round(cropH) + "px";
     document.getElementById("zoomPercent").innerText = Math.round(zoomVal * 100) + "%";
     const maxX = Math.max(0, naturalW - cropW), maxY = Math.max(0, naturalH - cropH);
-    document.getElementById("cropXSlider").max   = maxX;
-    document.getElementById("cropYSlider").max   = maxY;
-    document.getElementById("cropXSlider").value = Math.min(maxX, cropX);
-    document.getElementById("cropYSlider").value = Math.min(maxY, cropY);
-    document.getElementById("cropWidthSlider").max  = naturalW;
-    document.getElementById("cropHeightSlider").max = naturalH;
+    document.getElementById("cropXSlider").max = maxX; document.getElementById("cropYSlider").max = maxY;
+    document.getElementById("cropXSlider").value = Math.min(maxX, cropX); document.getElementById("cropYSlider").value = Math.min(maxY, cropY);
+    document.getElementById("cropWidthSlider").max = naturalW; document.getElementById("cropHeightSlider").max = naturalH;
   }
 
   function applyCrop() {
-    let fx = Math.min(cropX, naturalW - cropW);
-    let fy = Math.min(cropY, naturalH - cropH);
-    let fw = Math.min(cropW, naturalW - fx);
-    let fh = Math.min(cropH, naturalH - fy);
+    let fx = Math.min(cropX, naturalW - cropW), fy = Math.min(cropY, naturalH - cropH);
+    let fw = Math.min(cropW, naturalW - fx),   fh = Math.min(cropH, naturalH - fy);
     if (fw <= 0 || fh <= 0) { showToast("Invalid crop area", "error"); return; }
     const tmp = document.createElement("canvas");
     tmp.width = fw; tmp.height = fh;
     tmp.getContext("2d").drawImage(cropImg, fx, fy, fw, fh, 0, 0, fw, fh);
     tmp.toBlob(blob => {
-      const f  = new File([blob], "cropped.jpg", { type: "image/jpeg" });
+      const f = new File([blob], "cropped.jpg", { type: "image/jpeg" });
       const dt = new DataTransfer(); dt.items.add(f);
       document.getElementById("thumbFile").files = dt.files;
       showToast("✅ Crop applied!");
@@ -768,16 +1219,16 @@
   ["cropXSlider","cropYSlider","cropWidthSlider","cropHeightSlider","zoomScaleSlider"].forEach(id => {
     document.getElementById(id)?.addEventListener("input", e => {
       const v = parseFloat(e.target.value);
-      if (id === "cropXSlider")      cropX   = v;
-      if (id === "cropYSlider")      cropY   = v;
-      if (id === "cropWidthSlider")  cropW   = v;
-      if (id === "cropHeightSlider") cropH   = v;
-      if (id === "zoomScaleSlider")  zoomVal = v / 100;
+      if (id==="cropXSlider")      cropX   = v;
+      if (id==="cropYSlider")      cropY   = v;
+      if (id==="cropWidthSlider")  cropW   = v;
+      if (id==="cropHeightSlider") cropH   = v;
+      if (id==="zoomScaleSlider")  zoomVal = v / 100;
       drawCropCanvas();
     });
   });
 
-  // ─── Button wiring ────────────────────────────────────────────────────────────
+  // ── BUTTON WIRING ──
   document.getElementById("openMiniImageBtn").addEventListener("click", () => {
     const inp = document.getElementById("thumbFile");
     if (inp.files?.[0]) openCropper(inp.files[0]);
@@ -786,9 +1237,12 @@
   document.getElementById("applyCropSaveBtn").addEventListener("click", applyCrop);
   document.getElementById("cancelCropToolBtn").addEventListener("click", () => document.getElementById("cropToolModal").style.display = "none");
   document.getElementById("closeCropModalBtn").addEventListener("click", () => document.getElementById("cropToolModal").style.display = "none");
-  document.getElementById("openAddGlobalBtn").onclick  = openAddModal;
-  document.getElementById("closeModalBtn").onclick     = () => document.getElementById("globalModal").style.display = "none";
-  document.getElementById("modalSubmitBtn").onclick    = submitVideo;
+  document.getElementById("closeModalBtn").onclick  = () => document.getElementById("globalModal").style.display = "none";
+  document.getElementById("modalSubmitBtn").onclick = submitVideo;
+
+  // ── APPLY SAVED TITLE ──
+  const savedTitle = localStorage.getItem("adminDashTitle");
+  if (savedTitle) document.querySelector(".logo-area h2").innerText = "🎬 " + savedTitle;
 
   loadData();
 </script>
