@@ -470,7 +470,8 @@
       <!-- filled by JS -->
     </div>
     <div class="add-cat-row">
-      <input type="text" id="newCatNameInput" placeholder="New category name...">
+      <input type="text" id="newCatIconInput" placeholder="Icon 📁" style="max-width:64px;text-align:center;">
+      <input type="text" id="newCatNameInput" placeholder="New category..." onkeydown="if(event.key==='Enter')addCategoryFromDrawer()">
       <button onclick="addCategoryFromDrawer()">+ Add</button>
     </div>
 
@@ -482,7 +483,10 @@
       <div class="d-icon di-green">📄</div> New Google Sheet
     </div>
   </nav>
-  <div class="drawer-footer">Admin Hub v2.0 · © 2024</div>
+  <div class="drawer-footer">
+    Admin Hub v2.1<br>
+    <span style="font-size:0.65rem;">📂 Cat Sheet: <span id="catSheetStatusText" style="color:#ffaa33;">URL set nahi</span></span>
+  </div>
 </div>
 
 <!-- ── MAIN ── -->
@@ -536,8 +540,16 @@
   <div class="settings-box">
     <h3>⚙️ Settings</h3>
     <div class="settings-row">
-      <label>Google Apps Script API URL</label>
+      <label>📺 Videos Sheet — API URL</label>
       <input type="text" id="settingsApiUrl" placeholder="https://script.google.com/macros/s/...">
+    </div>
+    <div class="settings-divider"></div>
+    <div class="settings-row">
+      <label>📂 Category Sheet — API URL <span style="color:#ffaa33;font-size:0.65rem;font-weight:700;background:rgba(255,170,51,0.15);padding:2px 8px;border-radius:20px;margin-left:4px;">NEW</span></label>
+      <input type="text" id="settingsCatApiUrl" placeholder="https://script.google.com/macros/s/...">
+      <div style="font-size:0.65rem;color:#6c7aa3;margin-top:4px;padding:0 6px;">
+        ⚠️ Alag sheet ka alag deployment URL — neeche Apps Script code mein Category Sheet ka code bhi hai
+      </div>
     </div>
     <div class="settings-divider"></div>
     <div class="settings-row">
@@ -574,113 +586,238 @@
 
     <button class="copy-code-btn" onclick="copyAppsScriptCode()">📋 Apps Script Code Copy Karo</button>
 
-    <div class="code-block" id="appsScriptCodeBlock">// ═══════════════════════════════════════════════
-// ADMIN HUB — Google Apps Script Backend
-// Google Drive + Sheets Integration
-// ═══════════════════════════════════════════════
+    <div class="code-block" id="appsScriptCodeBlock">// ═══════════════════════════════════════════════════════════
+// ADMIN HUB — Google Apps Script Backend (FULL)
+// Sheet1 = Videos | CategorySheet = Categories
+// ═══════════════════════════════════════════════════════════
 
-const SHEET_NAME      = "Videos";
-const DRIVE_FOLDER_ID = "YOUR_DRIVE_FOLDER_ID"; // optional
+const SHEET_NAME      = "Sheet1";           // Videos sheet
+const CAT_SHEET_NAME  = "CategorySheet";    // Categories sheet (auto-create)
+const DRIVE_FOLDER_ID = "1pNaljHHLMB5zZem1YgIWy7ISh-sUt3XX";
 
+// ───────────────────────────────────────────────────────────
+// doGet — GET requests handle karo
+// ───────────────────────────────────────────────────────────
 function doGet(e) {
-  const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_NAME)
-             || SpreadsheetApp.getActiveSpreadsheet().insertSheet(SHEET_NAME);
-  
-  // Auto-create headers if empty
-  if (sheet.getLastRow() === 0) {
-    sheet.appendRow(["Name","Category","URL","Thumbnail","FileId"]);
-    sheet.getRange(1,1,1,5).setFontWeight("bold");
+  var params = e ? e.parameter : {};
+
+  // Category Sheet GET
+  if (params.action === "getCats") {
+    return getCategoriesResponse();
   }
 
-  const rows = sheet.getDataRange().getValues();
-  const headers = rows[0];
-  const data = [];
-  for (let i = 1; i < rows.length; i++) {
-    const row = rows[i];
-    if (!row[0] && !row[2]) continue;
-    data.push({
-      rowNumber:  i + 1,
-      Name:       row[0] || "",
-      Category:   row[1] || "",
-      URL:        row[2] || "#",
-      Thumbnail:  row[3] || "",
-      FileId:     row[4] || ""
+  // Default: Videos GET
+  return getVideosResponse();
+}
+
+function getVideosResponse() {
+  var sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_NAME);
+  var data  = sheet.getDataRange().getValues();
+  var result = [];
+  for (var i = 1; i < data.length; i++) {
+    result.push({
+      rowNumber: i - 1,
+      Name:      data[i][2],
+      Category:  data[i][3],
+      URL:       data[i][4],
+      Thumbnail: data[i][5]
     });
   }
-  return ContentService
-    .createTextOutput(JSON.stringify(data))
-    .setMimeType(ContentService.MimeType.JSON);
+  return jsonOut(result);
 }
 
-function doPost(e) {
-  const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_NAME)
-             || SpreadsheetApp.getActiveSpreadsheet().insertSheet(SHEET_NAME);
-  const data = JSON.parse(e.postData.contents);
+function getCategoriesResponse() {
+  var sheet = getOrCreateCatSheet();
+  var data  = sheet.getDataRange().getValues();
+  var result = [];
+  for (var i = 1; i < data.length; i++) {
+    if (!data[i][0]) continue;
+    result.push({
+      rowNumber:   i + 1,           // 1-based actual row number
+      Category:    data[i][0] || "",
+      Icon:        data[i][1] || "📁",
+      Status:      data[i][2] || "Active",
+      VideoCount:  data[i][3] || 0,
+      LastUpdated: data[i][4] || "",
+      Timestamp:   data[i][5] || ""
+    });
+  }
+  return jsonOut(result);
+}
 
-  // ── DELETE ──
-  if (data.action === "DELETE") {
-    try {
-      if (!data.keepImage && data.rowNumber) {
-        const fileId = sheet.getRange(data.rowNumber, 5).getValue();
-        if (fileId) {
-          try { DriveApp.getFileById(fileId).setTrashed(true); } catch(ex) {}
+// ───────────────────────────────────────────────────────────
+// doPost — POST requests handle karo
+// ───────────────────────────────────────────────────────────
+function doPost(request) {
+  try {
+    var data = JSON.parse(request.postData.contents);
+
+    // ══ CATEGORY SHEET ACTIONS ══════════════════════════════
+
+    // ADD_CAT — nai category add karo
+    if (data.action === "ADD_CAT") {
+      var catSheet = getOrCreateCatSheet();
+      var now      = new Date().toISOString();
+      catSheet.appendRow([
+        data.category  || "",
+        data.icon       || "📁",
+        data.status     || "Active",
+        data.videoCount || 0,
+        now,
+        data.timestamp  || Date.now()
+      ]);
+      var newRow = catSheet.getLastRow();
+      return jsonOut({ status: "OK", rowNumber: newRow });
+    }
+
+    // RENAME_CAT — category rename karo
+    if (data.action === "RENAME_CAT") {
+      var catSheet = getOrCreateCatSheet();
+      catSheet.getRange(data.rowNumber, 1).setValue(data.newCategory);
+      catSheet.getRange(data.rowNumber, 5).setValue(data.lastUpdated || new Date().toISOString());
+      return jsonOut({ status: "UPDATED" });
+    }
+
+    // DELETE_CAT — category delete karo
+    if (data.action === "DELETE_CAT") {
+      var catSheet = getOrCreateCatSheet();
+      catSheet.deleteRow(data.rowNumber);
+      return jsonOut({ status: "DELETED" });
+    }
+
+    // UPDATE_COUNT — video count update karo
+    if (data.action === "UPDATE_COUNT") {
+      var catSheet = getOrCreateCatSheet();
+      catSheet.getRange(data.rowNumber, 4).setValue(data.videoCount || 0);
+      catSheet.getRange(data.rowNumber, 5).setValue(data.lastUpdated || new Date().toISOString());
+      return jsonOut({ status: "UPDATED" });
+    }
+
+    // ══ VIDEO SHEET ACTIONS ═════════════════════════════════
+
+    var sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_NAME);
+
+    // ADD VIDEO
+    if (data.action === undefined) {
+      var timestamp    = new Date().getTime();
+      var fileId       = "";
+      var thumbnailUrl = "";
+
+      if (data.thumbnail && data.thumbnail.includes("base64")) {
+        var folder    = DriveApp.getFolderById(DRIVE_FOLDER_ID);
+        var imageData = data.thumbnail.split(",")[1];
+        var blob      = Utilities.newBlob(
+          Utilities.base64Decode(imageData), "image/png",
+          "thumb_" + timestamp + ".png"
+        );
+        var file     = folder.createFile(blob);
+        fileId       = file.getId();
+        thumbnailUrl = "https://drive.google.com/thumbnail?id=" + fileId + "&sz=w500";
+      } else if (data.existingThumbUrl) {
+        thumbnailUrl = data.existingThumbUrl;
+        fileId       = data.existingFileId || "";
+      }
+
+      sheet.appendRow([timestamp, fileId, data.name, data.category, data.url, thumbnailUrl]);
+
+      // VideoCount update karo Category Sheet mein
+      updateVideoCountForCat(data.category);
+      return jsonOut({ status: "OK" });
+    }
+
+    // DELETE VIDEO
+    if (data.action === "DELETE") {
+      var row = Number(data.rowNumber) + 2;
+      var cat = sheet.getRange(row, 4).getValue();
+      if (!data.keepImage) {
+        var oldFileId = sheet.getRange(row, 2).getValue();
+        if (oldFileId) {
+          try { DriveApp.getFileById(oldFileId).setTrashed(true); } catch(e) {}
         }
       }
-      sheet.deleteRow(data.rowNumber);
+      sheet.deleteRow(row);
+      updateVideoCountForCat(cat);
       return jsonOut({ status: "DELETED" });
-    } catch(ex) {
-      return jsonOut({ status: "ERROR", message: ex.message });
     }
-  }
 
-  // ── EDIT ──
-  if (data.action === "EDIT") {
-    try {
-      const row = data.rowNumber;
-      if (data.name)     sheet.getRange(row, 1).setValue(data.name);
-      if (data.category) sheet.getRange(row, 2).setValue(data.category);
-      if (data.url)      sheet.getRange(row, 3).setValue(data.url);
-      if (data.thumbnail) {
-        const { url: thumbUrl, fileId } = uploadBase64(data.thumbnail);
-        sheet.getRange(row, 4).setValue(thumbUrl);
-        sheet.getRange(row, 5).setValue(fileId);
+    // EDIT VIDEO
+    if (data.action === "EDIT") {
+      var row    = Number(data.rowNumber) + 2;
+      var oldCat = sheet.getRange(row, 4).getValue();
+      sheet.getRange(row, 3).setValue(data.name);
+      sheet.getRange(row, 4).setValue(data.category);
+      sheet.getRange(row, 5).setValue(data.url);
+
+      if (data.thumbnail && data.thumbnail.includes("base64")) {
+        var oldFid = sheet.getRange(row, 2).getValue();
+        if (oldFid) { try { DriveApp.getFileById(oldFid).setTrashed(true); } catch(e) {} }
+        var folder    = DriveApp.getFolderById(DRIVE_FOLDER_ID);
+        var imageData = data.thumbnail.split(",")[1];
+        var blob      = Utilities.newBlob(
+          Utilities.base64Decode(imageData), "image/png",
+          "thumb_" + new Date().getTime() + ".png"
+        );
+        var file = folder.createFile(blob);
+        sheet.getRange(row, 2).setValue(file.getId());
+        sheet.getRange(row, 6).setValue(
+          "https://drive.google.com/thumbnail?id=" + file.getId() + "&sz=w500"
+        );
       }
-      return jsonOut({ status: "UPDATED" });
-    } catch(ex) {
-      return jsonOut({ status: "ERROR", message: ex.message });
-    }
-  }
 
-  // ── ADD ──
-  try {
-    let thumbUrl = "", fileId = "";
-    if (data.thumbnail) {
-      const result = uploadBase64(data.thumbnail);
-      thumbUrl = result.url; fileId = result.fileId;
-    } else if (data.existingThumbUrl) {
-      thumbUrl = data.existingThumbUrl;
-      fileId   = data.existingFileId || "";
+      // Category badli ho to dono ki count update karo
+      if (oldCat !== data.category) updateVideoCountForCat(oldCat);
+      updateVideoCountForCat(data.category);
+      return jsonOut({ status: "UPDATED" });
     }
-    sheet.appendRow([data.name, data.category, data.url, thumbUrl, fileId]);
-    return jsonOut({ status: "OK", thumbUrl });
-  } catch(ex) {
-    return jsonOut({ status: "ERROR", message: ex.message });
+
+  } catch(e) {
+    return jsonOut({ status: "ERROR", message: e.toString() });
   }
 }
 
-function uploadBase64(base64Data) {
-  const parts    = base64Data.split(",");
-  const mimeType = parts[0].match(/:(.*?);/)[1];
-  const bytes    = Utilities.base64Decode(parts[1]);
-  const blob     = Utilities.newBlob(bytes, mimeType, "thumb_" + Date.now() + ".jpg");
-  let folder;
-  try { folder = DriveApp.getFolderById(DRIVE_FOLDER_ID); }
-  catch(e) { folder = DriveApp.getRootFolder(); }
-  const file = folder.createFile(blob);
-  file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
-  const fileId = file.getId();
-  const url    = "https://lh3.googleusercontent.com/d/" + fileId;
-  return { url, fileId };
+// ───────────────────────────────────────────────────────────
+// HELPERS
+// ───────────────────────────────────────────────────────────
+
+// CategorySheet auto-create with headers
+function getOrCreateCatSheet() {
+  var ss    = SpreadsheetApp.getActiveSpreadsheet();
+  var sheet = ss.getSheetByName(CAT_SHEET_NAME);
+  if (!sheet) {
+    sheet = ss.insertSheet(CAT_SHEET_NAME);
+    sheet.appendRow(["Category","Icon","Status","VideoCount","LastUpdated","Timestamp"]);
+    sheet.getRange(1,1,1,6).setFontWeight("bold")
+         .setBackground("#1a1a2e").setFontColor("#ffffff");
+    sheet.setColumnWidth(1, 160);
+    sheet.setColumnWidth(2, 60);
+    sheet.setColumnWidth(3, 90);
+    sheet.setColumnWidth(4, 100);
+    sheet.setColumnWidth(5, 180);
+    sheet.setColumnWidth(6, 150);
+  }
+  return sheet;
+}
+
+// Video count update karo CategorySheet mein
+function updateVideoCountForCat(catName) {
+  if (!catName) return;
+  try {
+    var vidSheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_NAME);
+    var catSheet = getOrCreateCatSheet();
+    var vData    = vidSheet.getDataRange().getValues();
+    var count    = 0;
+    for (var i = 1; i < vData.length; i++) {
+      if (vData[i][3] === catName) count++;
+    }
+    var cData = catSheet.getDataRange().getValues();
+    for (var j = 1; j < cData.length; j++) {
+      if (cData[j][0] === catName) {
+        catSheet.getRange(j+1, 4).setValue(count);
+        catSheet.getRange(j+1, 5).setValue(new Date().toISOString());
+        break;
+      }
+    }
+  } catch(e) {}
 }
 
 function jsonOut(obj) {
@@ -749,15 +886,18 @@ function jsonOut(obj) {
 
 <script>
   // ── CONFIG ──
-  let API_URL = localStorage.getItem("adminApiUrl") || "https://script.google.com/macros/s/AKfycbyQ08jZpjHgRrFbgWH7KQtELVgbXdgrKzhzicLqWqI-92VrSdTKsbWjziJrqfCNYC1GNQ/exec";
+  let API_URL     = localStorage.getItem("adminApiUrl")    || "https://script.google.com/macros/s/AKfycbyQ08jZpjHgRrFbgWH7KQtELVgbXdgrKzhzicLqWqI-92VrSdTKsbWjziJrqfCNYC1GNQ/exec";
+  let CAT_API_URL = localStorage.getItem("adminCatApiUrl") || ""; // Category Sheet ka alag API URL
 
   let allVideos        = [];
+  let allCatSheetData  = []; // Category Sheet se loaded data
   let customCategories = JSON.parse(localStorage.getItem("adminCustomCats") || "[]");
   let currentEditRow   = null;
   let currentEditThumb = "";
   let currentEditFile  = "";
   let isEditMode       = false;
   let renameCatOldName = "";
+  let renameCatOldRow  = null; // Category Sheet mein rename ke liye rowNumber
 
   const DEFAULT_CATS = ["Live","Movies","Drama","Slider","Sports","TV Shows"];
 
@@ -791,29 +931,165 @@ function jsonOut(obj) {
     localStorage.setItem("adminCustomCats", JSON.stringify(customCategories));
   }
 
-  function addCategoryFromDrawer() {
-    const inp = document.getElementById("newCatNameInput");
+  // ══════════════════════════════════════════════
+  // CATEGORY SHEET — CRUD FUNCTIONS
+  // ══════════════════════════════════════════════
+
+  // Category Sheet se saari categories load karo
+  async function loadCategorySheet() {
+    if (!CAT_API_URL) return;
+    try {
+      const res  = await fetch(CAT_API_URL + "?action=getCats");
+      const data = await res.json();
+      if (Array.isArray(data)) {
+        allCatSheetData = data;
+        // Sheet ki categories bhi customCategories mein merge karo
+        data.forEach(item => {
+          if (item.Category && !customCategories.includes(item.Category)) {
+            customCategories.push(item.Category);
+          }
+        });
+        saveCustomCats();
+        updateCategoryDropdown();
+        renderDrawerCats();
+      }
+    } catch(e) { console.warn("Category sheet load error:", e); }
+  }
+
+  // Category Sheet mein nai category add karo
+  async function addCatToSheet(name, icon = "📁") {
+    if (!CAT_API_URL) return true; // agar URL nahi to skip
+    try {
+      const res = await fetch(CAT_API_URL, {
+        method: "POST",
+        body: JSON.stringify({
+          action:    "ADD_CAT",
+          category:  name,
+          icon:      icon,
+          status:    "Active",
+          videoCount: 0,
+          timestamp: Date.now()
+        })
+      });
+      const result = await res.json();
+      if (result.status === "OK") {
+        allCatSheetData.push({ rowNumber: result.rowNumber, Category: name, Icon: icon, Status: "Active", VideoCount: 0 });
+        return true;
+      }
+      return false;
+    } catch(e) { console.warn("Cat add error:", e); return false; }
+  }
+
+  // Category Sheet mein category rename karo
+  async function renameCatInSheet(oldName, newName) {
+    if (!CAT_API_URL) return true;
+    const found = allCatSheetData.find(c => c.Category === oldName);
+    if (!found) return true;
+    try {
+      const res = await fetch(CAT_API_URL, {
+        method: "POST",
+        body: JSON.stringify({
+          action:      "RENAME_CAT",
+          rowNumber:   found.rowNumber,
+          newCategory: newName,
+          lastUpdated: new Date().toISOString()
+        })
+      });
+      const result = await res.json();
+      if (result.status === "UPDATED") {
+        found.Category = newName;
+        return true;
+      }
+      return false;
+    } catch(e) { console.warn("Cat rename error:", e); return false; }
+  }
+
+  // Category Sheet se category delete karo
+  async function deleteCatFromSheet(catName) {
+    if (!CAT_API_URL) return true;
+    const found = allCatSheetData.find(c => c.Category === catName);
+    if (!found) return true;
+    try {
+      const res = await fetch(CAT_API_URL, {
+        method: "POST",
+        body: JSON.stringify({
+          action:    "DELETE_CAT",
+          rowNumber: found.rowNumber
+        })
+      });
+      const result = await res.json();
+      if (result.status === "DELETED") {
+        allCatSheetData = allCatSheetData.filter(c => c.Category !== catName);
+        return true;
+      }
+      return false;
+    } catch(e) { console.warn("Cat delete error:", e); return false; }
+  }
+
+  // Video count update karo Category Sheet mein
+  async function updateCatVideoCount(catName) {
+    if (!CAT_API_URL) return;
+    const found = allCatSheetData.find(c => c.Category === catName);
+    if (!found) return;
+    const count = allVideos.filter(v => v.Category === catName).length;
+    try {
+      await fetch(CAT_API_URL, {
+        method: "POST",
+        body: JSON.stringify({
+          action:      "UPDATE_COUNT",
+          rowNumber:   found.rowNumber,
+          videoCount:  count,
+          lastUpdated: new Date().toISOString()
+        })
+      });
+      found.VideoCount = count;
+    } catch(e) {}
+  }
+
+  async function addCategoryFromDrawer() {
+    const inp  = document.getElementById("newCatNameInput");
     const name = inp.value.trim();
+    const icon = document.getElementById("newCatIconInput")?.value.trim() || "📁";
     if (!name) { showToast("Category name likhna zaroori hai!", "error"); return; }
     if (getAllCategories().map(c=>c.toLowerCase()).includes(name.toLowerCase())) {
       showToast("Yeh category pehle se exist karti hai", "error"); return;
     }
+
+    // Show loading
+    const btn = document.querySelector(".add-cat-row button");
+    const orig = btn.innerHTML; btn.innerHTML = "⏳"; btn.disabled = true;
+
+    // Category Sheet mein add karo
+    const sheetOk = await addCatToSheet(name, icon);
+
     customCategories.push(name);
     saveCustomCats();
     inp.value = "";
+    if (document.getElementById("newCatIconInput")) document.getElementById("newCatIconInput").value = "";
     renderDrawerCats();
     updateCategoryDropdown();
-    showToast("✅ Category add ho gayi: " + name);
+
+    btn.innerHTML = orig; btn.disabled = false;
+
+    if (sheetOk && CAT_API_URL) showToast("✅ Category add ho gayi Sheet mein: " + name);
+    else if (!CAT_API_URL) showToast("✅ Category add: " + name + " (Sheet URL nahi)");
+    else showToast("⚠️ Category add hui lekin Sheet mein error", "error");
   }
 
-  function deleteCategoryChip(catName) {
+  async function deleteCategoryChip(catName) {
     if (!confirm(`"${catName}" category delete karein? (Videos delete nahi honge)`)) return;
+
+    showProgress(true, 30, "Category delete ho rahi hai...");
+    const sheetOk = await deleteCatFromSheet(catName);
     customCategories = customCategories.filter(c => c !== catName);
     saveCustomCats();
     renderDrawerCats();
     updateCategoryDropdown();
     renderCategories();
-    showToast("🗑️ Category removed from list");
+    showProgress(false);
+
+    if (sheetOk && CAT_API_URL) showToast("🗑️ Category Sheet se bhi delete ho gayi");
+    else showToast("🗑️ Category removed");
   }
 
   function openRenameCat(oldName) {
@@ -821,19 +1097,28 @@ function jsonOut(obj) {
     document.getElementById("renameCatInput").value = oldName;
     document.getElementById("renameCatModal").style.display = "flex";
   }
-  function confirmRenameCategory() {
+  async function confirmRenameCategory() {
     const newName = document.getElementById("renameCatInput").value.trim();
     if (!newName || newName === renameCatOldName) {
       document.getElementById("renameCatModal").style.display = "none"; return;
     }
-    // rename in customCategories
+    document.getElementById("renameCatModal").style.display = "none";
+    showProgress(true, 40, "Category rename ho rahi hai...");
+
+    // Category Sheet mein rename karo
+    const sheetOk = await renameCatInSheet(renameCatOldName, newName);
+
+    // Local update
     const idx = customCategories.indexOf(renameCatOldName);
     if (idx !== -1) customCategories[idx] = newName;
+    else customCategories.push(newName);
     saveCustomCats();
-    document.getElementById("renameCatModal").style.display = "none";
+    showProgress(false);
     renderDrawerCats();
     updateCategoryDropdown();
-    showToast("✏️ Category renamed");
+
+    if (sheetOk && CAT_API_URL) showToast("✏️ Renamed in Sheet: " + newName);
+    else showToast("✏️ Category renamed: " + newName);
   }
 
   function renderDrawerCats() {
@@ -892,7 +1177,7 @@ function jsonOut(obj) {
   // ── LOAD DATA ──
   async function loadData() {
     try {
-      showProgress(true, 15, "Fetching data...");
+      showProgress(true, 10, "Fetching videos...");
       const res  = await fetch(API_URL);
       const data = await res.json();
       allVideos  = Array.isArray(data) ? data.map(item => ({
@@ -903,6 +1188,8 @@ function jsonOut(obj) {
         Thumbnail: item.Thumbnail || "",
         FileId:    item.FileId    || ""
       })) : [];
+      updateProgress(60, "Loading categories...");
+      await loadCategorySheet();
       updateProgress(100, "Rendering...");
       setTimeout(() => showProgress(false), 300);
       renderCategories();
@@ -1123,20 +1410,24 @@ function jsonOut(obj) {
 
   // ── SETTINGS ──
   function openSettings() {
-    document.getElementById("settingsApiUrl").value = API_URL;
+    document.getElementById("settingsApiUrl").value    = API_URL;
+    document.getElementById("settingsCatApiUrl").value = CAT_API_URL;
     document.getElementById("settingsDashTitle").value = localStorage.getItem("adminDashTitle") || "ADMIN DASHBOARD";
     document.getElementById("settingsPanel").style.display = "flex";
   }
   function saveSettings() {
-    const newUrl   = document.getElementById("settingsApiUrl").value.trim();
-    const newTitle = document.getElementById("settingsDashTitle").value.trim();
-    if (newUrl) { API_URL = newUrl; localStorage.setItem("adminApiUrl", newUrl); }
-    if (newTitle) {
+    const newUrl    = document.getElementById("settingsApiUrl").value.trim();
+    const newCatUrl = document.getElementById("settingsCatApiUrl").value.trim();
+    const newTitle  = document.getElementById("settingsDashTitle").value.trim();
+    if (newUrl)    { API_URL     = newUrl;    localStorage.setItem("adminApiUrl",    newUrl);    }
+    if (newCatUrl) { CAT_API_URL = newCatUrl; localStorage.setItem("adminCatApiUrl", newCatUrl); }
+    if (newTitle)  {
       localStorage.setItem("adminDashTitle", newTitle);
       document.querySelector(".logo-area h2").innerText = "🎬 " + newTitle;
     }
     document.getElementById("settingsPanel").style.display = "none";
     showToast("✅ Settings saved!");
+    updateCatSheetStatus();
     loadData();
   }
 
@@ -1243,6 +1534,20 @@ function jsonOut(obj) {
   // ── APPLY SAVED TITLE ──
   const savedTitle = localStorage.getItem("adminDashTitle");
   if (savedTitle) document.querySelector(".logo-area h2").innerText = "🎬 " + savedTitle;
+
+  // ── CAT SHEET STATUS ──
+  function updateCatSheetStatus() {
+    const el = document.getElementById("catSheetStatusText");
+    if (!el) return;
+    if (CAT_API_URL) {
+      el.style.color   = "#2ecc71";
+      el.innerText     = "✅ Connected";
+    } else {
+      el.style.color   = "#ffaa33";
+      el.innerText     = "⚠️ URL set nahi";
+    }
+  }
+  updateCatSheetStatus();
 
   loadData();
 </script>
