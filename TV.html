@@ -182,7 +182,7 @@
         .category-section { margin-bottom: 25px; padding: 0 10px; }
         .category-header { display: flex; justify-content: space-between; align-items: center; padding: 10px 5px; }
         .category-title { display: flex; align-items: center; gap: 8px; font-weight: 600; color: #fff; font-size: 14px; text-transform: uppercase; letter-spacing: 0.5px; }
-        .category-title i { color: var(--main-color); font-size: 16px; }
+        .category-title i { color: var(--main-color); font-size: 16px; width: 20px; text-align: center; }
         .read-more-btn { background: rgba(0, 188, 212, 0.15); color: var(--main-color); border: 1px solid rgba(0, 188, 212, 0.3); padding: 4px 12px; border-radius: 20px; font-size: 11px; cursor: pointer; font-weight: 600; text-transform: uppercase; transition: 0.2s; }
         .read-more-btn:active { transform: scale(0.95); background: var(--main-color); color: #000; }
         
@@ -835,6 +835,25 @@
     let availableCategories = []; 
     let favorites = JSON.parse(localStorage.getItem(FAV_KEY_STORAGE) || '[]');
     
+    // Automatic fallback icon function
+    function getCleanIcon(iconString, catName) {
+        if (iconString && iconString.trim() !== "") {
+            let i = iconString.trim().toLowerCase();
+            if (i.startsWith('fa-')) return `fa ${i}`;
+            if (i.startsWith('fa ')) return i;
+            return `fa fa-${i}`;
+        }
+        // Fallback checks based on category name
+        let lowerName = (catName || "").toLowerCase();
+        if (lowerName.includes('movie')) return 'fa fa-film';
+        if (lowerName.includes('show') || lowerName.includes('tv')) return 'fa fa-tv';
+        if (lowerName.includes('sport')) return 'fa fa-futbol';
+        if (lowerName.includes('live')) return 'fa fa-circle-play';
+        if (lowerName.includes('music')) return 'fa fa-music';
+        if (lowerName.includes('star') || lowerName.includes('fav')) return 'fa fa-star';
+        return 'fa fa-folder';
+    }
+
     function generateDataHash(data) { try { const importantFields = data.map(item => ({ name: item.name || item.Name || '', url: item.URL || item.url || '', category: item.Category || item.category || '', thumbnail: item.Thumbnail || item.thumbnail || '' })); return btoa(unescape(encodeURIComponent(JSON.stringify(importantFields)))); } catch(e) { return Date.now().toString(); } }
     function isDataSame(newData, oldData) { if(newData.length !== oldData.length) return false; return generateDataHash(newData) === generateDataHash(oldData); }
     function saveDataToCache(data, settings) { try { const dataHash = generateDataHash(data); currentDataHash = dataHash; localStorage.setItem(STORAGE_KEY_DATA, JSON.stringify({ rawData: data, settingsData: settings, timestamp: Date.now(), dataHash })); localStorage.setItem(STORAGE_KEY_HASH, dataHash); } catch(e) {} }
@@ -862,7 +881,6 @@
         updateSlider(); 
         buildDynamicCategoryMenu(); 
         
-        // Auto fallback the initial view if currentCategory is All
         if(currentCategory === 'All') {
             let initialCat = 'All';
             if(availableCategories.length > 0) {
@@ -894,7 +912,7 @@
                         download: true, header: true, skipEmptyLines: true, complete: function(settingsResults) {
                             settingsData = settingsResults.data[0] || {};
                             availableCategories = settingsResults.data.filter(row => row.Category || row.category).map(row => {
-                                return { name: (row.Category || row.category || "").trim(), icon: (row.Icon || row.icon || "fa-folder").trim() };
+                                return { name: (row.Category || row.category || "").trim(), icon: (row.Icon || row.icon || "").trim() };
                             });
 
                             if(!isDataSame(newRawData, rawData) && newRawData.length) { 
@@ -928,7 +946,7 @@
             availableCategories.forEach(catObj => {
                 let lowerCat = catObj.name.toLowerCase();
                 if (lowerCat === 'live' || lowerCat === 'life' || lowerCat === 'slider') return;
-                let cleanIcon = catObj.icon.startsWith('fa-') ? `fa ${catObj.icon}` : `fa fa-${catObj.icon}`;
+                let cleanIcon = getCleanIcon(catObj.icon, catObj.name);
                 sideNavDynamicLinks.innerHTML += `<a href="#" onclick="filterData('${catObj.name}', null, true)"><i class="${cleanIcon}"></i> ${catObj.name}</a>`;
             });
         }
@@ -965,7 +983,7 @@
             let categoriesToDisplay = availableCategories;
             if(!categoriesToDisplay.length) {
                 const uniqueCategories = [...new Set(rawData.map(item => (item.Category || item.category || "").trim()))].filter(Boolean);
-                categoriesToDisplay = uniqueCategories.map(c => ({ name: c, icon: 'fa-folder' }));
+                categoriesToDisplay = uniqueCategories.map(c => ({ name: c, icon: '' }));
             }
             
             let finalHtml = '';
@@ -982,7 +1000,7 @@
                 const hasMore = filteredItems.length > 5;
                 const itemsToShow = filteredItems.slice(0, 5);
                 
-                let cleanIcon = catObj.icon.startsWith('fa-') ? `fa ${catObj.icon}` : `fa fa-${catObj.icon}`;
+                let cleanIcon = getCleanIcon(catObj.icon, catName);
 
                 finalHtml += `
                 <div class="category-section">
@@ -1024,12 +1042,12 @@
             mainCategoryView.style.display = 'block';
             
             let matchedCategory = availableCategories.find(c => c.name.toLowerCase() === cat.toLowerCase());
-            let currentIconClass = matchedCategory ? matchedCategory.icon : "fa-folder";
+            let currentIconClass = matchedCategory ? matchedCategory.icon : "";
             
             if(cat.toLowerCase() === 'live' || cat.toLowerCase() === 'life') {
                 currentIconClass = "fa-circle-play";
             }
-            let cleanIcon = currentIconClass.startsWith('fa-') ? `fa ${currentIconClass}` : `fa fa-${currentIconClass}`;
+            let cleanIcon = getCleanIcon(currentIconClass, cat);
             specificCategoryTitle.innerHTML = `<i class="${cleanIcon}"></i> ${cat.toUpperCase()}`;
             
             let filtered = rawData.filter(d => {
@@ -1069,7 +1087,7 @@
         if(e) e.stopPropagation();
         let idx = favorites.indexOf(url);
         if (idx > -1) { favorites.splice(idx, 1); } else { favorites.push(url); }
-        localStorage.setItem(FAV_KEY_STORAGE, JSON.stringify(favorites));
+        localStorage.setItem(FAV_KEY_STORAGE) = JSON.stringify(favorites);
         
         document.querySelectorAll(`.card[data-url="${url}"] .fav-badge`).forEach(badge => {
             if (favorites.includes(url)) badge.classList.add('active');
@@ -1242,7 +1260,6 @@
             updateSlider(); 
             buildDynamicCategoryMenu();
 
-            // Auto fallback for cached data
             if(currentCategory === 'All') {
                 let initialCat = 'All';
                 if(availableCategories.length > 0) {
