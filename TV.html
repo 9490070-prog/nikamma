@@ -13,7 +13,7 @@
     <script src="https://vjs.zencdn.net/8.10.0/video.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/mpegts.js@1.7.3/dist/mpegts.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
-    <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons-Round" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     
@@ -858,7 +858,30 @@
     
     function showCachedDataBadge() { const badge = document.getElementById('data-save-badge'); badge.classList.add('show'); setTimeout(() => badge.classList.remove('show'), 2000); }
     function showNoUpdateBadge() { const badge = document.getElementById('no-update-badge'); badge.classList.add('show'); setTimeout(() => badge.classList.remove('show'), 2000); }
-    function updateUIAfterDataLoad() { updateSlider(); buildDynamicCategoryMenu(); filterData(currentCategory, null, false); const splash = document.getElementById('splash-screen'); if(splash && splash.style.display !== 'none') { splash.style.opacity = '0'; setTimeout(() => splash.style.display = 'none', 500); } }
+    function updateUIAfterDataLoad() { 
+        updateSlider(); 
+        buildDynamicCategoryMenu(); 
+        
+        // Auto fallback the initial view if currentCategory is All
+        if(currentCategory === 'All') {
+            let initialCat = 'All';
+            if(availableCategories.length > 0) {
+                let firstValid = availableCategories.find(c => {
+                    let name = (c.name || '').toLowerCase();
+                    return name !== 'slider' && name !== 'live' && name !== 'life';
+                });
+                if(firstValid) initialCat = firstValid.name;
+            }
+            currentCategory = initialCat;
+        }
+        
+        filterData(currentCategory, null, false); 
+        const splash = document.getElementById('splash-screen'); 
+        if(splash && splash.style.display !== 'none') { 
+            splash.style.opacity = '0'; 
+            setTimeout(() => splash.style.display = 'none', 500); 
+        } 
+    }
     function applySettings() { if(settingsData.ratingUrl) document.getElementById('rating-link').href = settingsData.ratingUrl; if(settingsData.privacyUrl) document.getElementById('privacy-link').href = settingsData.privacyUrl; if(settingsData.version && parseFloat(settingsData.version) > 3.9) { document.getElementById('update-overlay').style.display = 'flex'; document.getElementById('update-btn').onclick = () => window.location.href = settingsData.updateUrl; } }
     
     async function fetchFreshData() {
@@ -950,7 +973,6 @@
                 const catName = catObj.name;
                 const lowerCatName = catName.toLowerCase();
                 
-                // Pure Home Screen me Live ya Life categories ko hide rakha gaya hai
                 if(lowerCatName === 'slider' || lowerCatName === 'live' || lowerCatName === 'life') return;
                 
                 let filteredItems = rawData.filter(d => (d.Category || d.category || "").trim().toLowerCase() === lowerCatName);
@@ -1010,7 +1032,6 @@
             let cleanIcon = currentIconClass.startsWith('fa-') ? `fa ${currentIconClass}` : `fa fa-${currentIconClass}`;
             specificCategoryTitle.innerHTML = `<i class="${cleanIcon}"></i> ${cat.toUpperCase()}`;
             
-            // Matches Live/Life dynamically
             let filtered = rawData.filter(d => {
                 let c = (d.Category || d.category || "").trim().toLowerCase();
                 if (cat.toLowerCase() === 'live') {
@@ -1220,6 +1241,20 @@
             document.getElementById('splash-screen').style.display = 'none'; 
             updateSlider(); 
             buildDynamicCategoryMenu();
+
+            // Auto fallback for cached data
+            if(currentCategory === 'All') {
+                let initialCat = 'All';
+                if(availableCategories.length > 0) {
+                    let firstValid = availableCategories.find(c => {
+                        let name = (c.name || '').toLowerCase();
+                        return name !== 'slider' && name !== 'live' && name !== 'life';
+                    });
+                    if(firstValid) initialCat = firstValid.name;
+                }
+                currentCategory = initialCat;
+            }
+
             filterData(currentCategory, null, false); 
             showCachedDataBadge(); 
             fetchFreshData().then(updated => { if(updated) console.log("Data updated"); }); 
