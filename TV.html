@@ -35,6 +35,7 @@
             font-family: var(--main-font); 
             margin: 0; padding-bottom: 80px; overflow-x: hidden;
             user-select: none; -webkit-tap-highlight-color: transparent;
+            transition: background 0.3s ease;
         }
         .container { max-width: var(--max-width); margin: 0 auto; width: 100%; }
         
@@ -181,7 +182,6 @@
         .menu-icon-btn:active { transform: scale(0.9); }
         .app-name { font-weight: 800; font-size: 18px; color: var(--main-color); letter-spacing: 0.5px; text-transform: uppercase; margin-left: 8px; }
         
-        /* Dynamic Category Section Styling */
         .category-section { margin-bottom: 25px; padding: 0 10px; }
         .category-header { display: flex; justify-content: space-between; align-items: center; padding: 10px 5px; }
         .category-title { display: flex; align-items: center; gap: 8px; font-weight: 600; color: #fff; font-size: 14px; text-transform: uppercase; letter-spacing: 0.5px; }
@@ -195,6 +195,11 @@
         .card-title { font-size: 11px; padding: 6px 3px; text-align: center; color: #efefef; font-weight: 400; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; background: rgba(0,0,0,0.3); }
         .card.playing { background: var(--main-color) !important; border-color: #fff; transform: scale(0.95); }
         .card.playing .card-title { color: #000 !important; font-weight: 800; }
+        
+        /* Favorite Icon Badge on Card */
+        .fav-badge { position: absolute; top: 5px; right: 5px; background: rgba(0,0,0,0.6); color: #fff; width: 26px; height: 26px; border-radius: 50%; display: flex; align-items: center; justify-content: center; z-index: 5; font-size: 12px; cursor: pointer; transition: 0.2s; border: 1px solid rgba(255,255,255,0.1); }
+        .fav-badge.active { color: #ff3b30; background: rgba(255,255,255,0.9); }
+        
         .empty-state { text-align: center; padding: 60px 20px; color: #666; }
         .empty-state i { font-size: 64px; margin-bottom: 20px; opacity: 0.5; }
         .empty-state h3 { font-size: 18px; margin-bottom: 10px; color: #888; }
@@ -322,6 +327,18 @@
         .nav-btn i { font-size: 18px; margin-bottom: 2px; display: block; }
         .nav-btn.active { color: var(--main-color); }
         
+        /* More Section Styles */
+        .profile-container { padding: 20px; max-width: 600px; margin: 0 auto; }
+        .profile-card { background: var(--card-bg); border-radius: 15px; border: 1px solid #282828; padding: 20px; margin-bottom: 20px; text-align: center; }
+        .profile-pic { width: 80px; height: 80px; border-radius: 50%; object-fit: cover; border: 2px solid var(--main-color); margin-bottom: 10px; }
+        .profile-form input { width: 100%; background: #222; border: 1px solid #333; color: white; padding: 10px 15px; border-radius: 10px; outline: none; margin-bottom: 10px; font-family: var(--main-font); box-sizing: border-box; }
+        .profile-btn { background: var(--main-color); color: black; border: none; padding: 10px 20px; border-radius: 20px; font-weight: 600; cursor: pointer; width: 100%; margin-top: 5px; transition: 0.2s; }
+        .profile-btn:active { transform: scale(0.98); }
+        
+        .theme-selector { display: flex; justify-content: center; gap: 15px; margin: 15px 0; }
+        .theme-dot { width: 35px; height: 35px; border-radius: 50%; cursor: pointer; border: 2px solid white; transition: 0.2s; }
+        .theme-dot:active { transform: scale(0.9); }
+        
         #update-overlay { display: none; position: fixed; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.9); z-index: 10000; flex-direction: column; align-items: center; justify-content: center; }
         .update-box { background: var(--card-bg); padding: 30px; border-radius: 15px; border: 1px solid var(--main-color); text-align: center; width: 80%; max-width: 400px; }
         .skeleton-card { background: linear-gradient(90deg, #1a1a1a 25%, #2a2a2a 50%, #1a1a1a 75%); background-size: 200% 100%; animation: loading 1.5s infinite; border-radius: 10px; aspect-ratio: 1/1; }
@@ -441,10 +458,52 @@
             <div class="skeleton-card"></div>
         </div>
     </div>
+
+    <div id="moreSectionView" style="display: none;">
+        <div class="profile-container">
+            <div class="profile-card" id="profileContent">
+                <div id="loggedOutView">
+                    <i class="fa fa-user-circle" style="font-size: 60px; color: #444; margin-bottom: 15px;"></i>
+                    <h3 style="margin:0 0 10px;">Guest User</h3>
+                    <div class="profile-form">
+                        <input type="text" id="loginUsername" placeholder="Enter Username">
+                        <button class="profile-btn" onclick="userLogin()">LOGIN</button>
+                    </div>
+                </div>
+                <div id="loggedInView" style="display:none;">
+                    <img id="userPic" src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR6A63t7tXh8Gj7956mGq4n8-yK9vT-w_S46A&s" class="profile-pic">
+                    <h3 style="margin:0 0 5px;" id="welcomeUser">Hi, User!</h3>
+                    <p style="color:#777; font-size:12px; margin:0 0 15px;">Authenticated Member</p>
+                    <button class="profile-btn" style="background:#ff3b30; color:white;" onclick="userLogout()">LOGOUT</button>
+                </div>
+            </div>
+
+            <div class="profile-card">
+                <h4 style="margin: 0 0 10px; font-size: 14px; text-transform: uppercase; color: var(--main-color);">Select App Theme</h4>
+                <div class="theme-selector">
+                    <div class="theme-dot" style="background: #00bcd4;" onclick="changeTheme('#00bcd4')"></div>
+                    <div class="theme-dot" style="background: #ff9800;" onclick="changeTheme('#ff9800')"></div>
+                    <div class="theme-dot" style="background: #e91e63;" onclick="changeTheme('#e91e63')"></div>
+                    <div class="theme-dot" style="background: #4caf50;" onclick="changeTheme('#4caf50')"></div>
+                </div>
+            </div>
+
+            <div class="profile-card">
+                <h4 style="margin: 0 0 10px; font-size: 14px; text-transform: uppercase; color: var(--main-color);">About App</h4>
+                <p style="font-size: 12px; color: #aaa; line-height: 1.6; margin:0;">
+                    Nikamma 4k is a high-performance web media streaming application. Enjoy premium movies, live TV, and your personal favorites seamlessly on any modern device.
+                </p>
+                <p style="font-size: 11px; color: #555; margin-top: 10px;">Version 3.9 | All rights reserved.</p>
+            </div>
+        </div>
+    </div>
 </div>
 
 <div class="bottom-nav" id="bottomNav">
     <div class="nav-btn active" id="home-nav-btn" onclick="filterData('All', this)"><i class="fa fa-house"></i>HOME</div>
+    <div class="nav-btn" id="live-nav-btn" style="display:none;" onclick="filterData('Live', this)"><i class="fa fa-circle-play"></i>LIVE</div>
+    <div class="nav-btn" id="fav-nav-btn" onclick="showFavorites(this)"><i class="fa fa-heart"></i>FAVOURITE</div>
+    <div class="nav-btn" id="more-nav-btn" onclick="showMoreSection(this)"><i class="fa fa-ellipsis"></i>MORE</div>
 </div>
 
 <div id="update-overlay"><div class="update-box"><h2 style="color: var(--main-color); font-weight:800;">Update Available!</h2><p>Please update to the latest version.</p><button id="update-btn" style="background:var(--main-color); border:none; padding:12px 25px; border-radius:25px; font-weight:bold; cursor:pointer;">UPDATE NOW</button></div></div>
@@ -462,6 +521,7 @@
     const STORAGE_KEY_DATA = 'nikamma_cached_data';
     const STORAGE_KEY_HASH = 'nikamma_data_hash';
     const SPLASH_SEEN_KEY = 'nikamma_splash_seen';
+    const FAV_KEY_STORAGE = 'nikamma_fav_list';
     
     let isFullscreen = false;
     let gestureActive = false;
@@ -971,6 +1031,7 @@
     let rawData = [], settingsData = {}, currentCategory = 'All';
     let isRefreshing = false, currentDataHash = '';
     let availableCategories = []; 
+    let favorites = JSON.parse(localStorage.getItem(FAV_KEY_STORAGE) || '[]');
     
     function generateDataHash(data) { try { const importantFields = data.map(item => ({ name: item.name || item.Name || '', url: item.URL || item.url || '', category: item.Category || item.category || '', thumbnail: item.Thumbnail || item.thumbnail || '' })); return btoa(unescape(encodeURIComponent(JSON.stringify(importantFields)))); } catch(e) { return Date.now().toString(); } }
     function isDataSame(newData, oldData) { if(newData.length !== oldData.length) return false; return generateDataHash(newData) === generateDataHash(oldData); }
@@ -1039,25 +1100,20 @@
     
     function updateSlider() { const sliders = rawData.filter(d => (d.Category || d.category || "").toLowerCase() === 'slider'); const track = document.getElementById('sliderTrack'); if(sliders.length && track) { track.innerHTML = sliders.map(s => `<div class="slide-item"><img src="${s.Thumbnail || s.thumbnail || s.URL || s.url || MASTER_LOGO}" loading="lazy" onerror="handleImageError(this)" onload="handleImageLoad(this)" class="img-loading"></div>`).join(''); const videoBoxDisplay = document.getElementById('videoBox').style.display; document.getElementById('mainSlider').style.display = (currentCategory === 'All' && videoBoxDisplay !== 'block') ? 'block' : 'none'; } else document.getElementById('mainSlider').style.display = 'none'; }
 
-    // Bottom menu mein Top 3 categories add karna with their icons
     function buildDynamicCategoryMenu() {
-        const bottomNav = document.getElementById('bottomNav');
+        const liveBtn = document.getElementById('live-nav-btn');
         const sideNavDynamicLinks = document.getElementById('sideNavDynamicLinks');
         
-        bottomNav.innerHTML = `<div class="nav-btn active" id="home-nav-btn" onclick="filterData('All', this)"><i class="fa fa-house"></i>HOME</div>`;
+        // Check dynamic live category
+        let hasLiveCategory = rawData.some(d => (d.Category || d.category || '').trim().toLowerCase() === 'live');
+        if (hasLiveCategory) {
+            liveBtn.style.display = 'block';
+        } else {
+            liveBtn.style.display = 'none';
+        }
+
         sideNavDynamicLinks.innerHTML = `<a href="#" onclick="filterData('All', null, true)"><i class="fa fa-home"></i> Home</a>`;
-        
         if (availableCategories.length > 0) {
-            const topMenuCats = availableCategories.slice(0, 3);
-            topMenuCats.forEach(catObj => {
-                let cleanIcon = catObj.icon.startsWith('fa-') ? `fa ${catObj.icon}` : `fa fa-${catObj.icon}`;
-                bottomNav.innerHTML += `
-                    <div class="nav-btn" data-cat="${catObj.name}" onclick="filterData('${catObj.name}', this)">
-                        <i class="${cleanIcon}"></i>${catObj.name}
-                    </div>
-                `;
-            });
-            
             availableCategories.forEach(catObj => {
                 let cleanIcon = catObj.icon.startsWith('fa-') ? `fa ${catObj.icon}` : `fa fa-${catObj.icon}`;
                 sideNavDynamicLinks.innerHTML += `
@@ -1080,14 +1136,18 @@
         sliderDiv.style.display = (cat === 'All' && videoBox.style.display !== 'block' && sliders.length) ? 'block' : 'none'; 
         
         document.querySelectorAll('.nav-btn').forEach(b => { 
-            if(b.getAttribute('data-cat') === cat || (cat === 'All' && b.id === 'home-nav-btn')) b.classList.add('active'); 
+            if(b === btn) b.classList.add('active'); 
+            else if(!btn && (b.getAttribute('data-cat') === cat || (cat === 'All' && b.id === 'home-nav-btn'))) b.classList.add('active');
             else b.classList.remove('active'); 
         }); 
 
         const homeCategoriesContainer = document.getElementById('homeCategoriesContainer');
         const mainCategoryView = document.getElementById('mainCategoryView');
+        const moreSectionView = document.getElementById('moreSectionView');
         const specificGrid = document.getElementById('specificGrid');
         const specificCategoryTitle = document.getElementById('specificCategoryTitle');
+
+        moreSectionView.style.display = 'none';
 
         if (cat === 'All') {
             mainCategoryView.style.display = 'none';
@@ -1125,10 +1185,14 @@
                             let thumb = item.Thumbnail || item.thumbnail || MASTER_LOGO;
                             let itemName = item.name || item.Name || "Untitled";
                             let url = item.URL || item.url || "#";
+                            let isFav = favorites.includes(url);
                             return `
-                            <div class="card" data-url="${escapeHtml(url)}" data-title="${escapeHtml(itemName)}" onclick="play('${escapeHtml(url)}', '${escapeHtml(itemName)}', this)">
-                                <img src="${thumb}" loading="lazy" onerror="handleImageError(this)" onload="handleImageLoad(this)" class="img-loading">
-                                <div class="card-title">${itemName}</div>
+                            <div class="card" data-url="${escapeHtml(url)}" data-title="${escapeHtml(itemName)}">
+                                <div class="fav-badge ${isFav ? 'active' : ''}" onclick="toggleFav(event, '${escapeHtml(url)}')"><i class="fa fa-heart"></i></div>
+                                <div style="width:100%; height:100%;" onclick="play('${escapeHtml(url)}', '${escapeHtml(itemName)}', this.parentElement)">
+                                    <img src="${thumb}" loading="lazy" onerror="handleImageError(this)" onload="handleImageLoad(this)" class="img-loading">
+                                    <div class="card-title">${itemName}</div>
+                                </div>
                             </div>`;
                         }).join('')}
                     </div>
@@ -1152,6 +1216,7 @@
             
             let matchedCategory = availableCategories.find(c => c.name.toLowerCase() === cat.toLowerCase());
             let currentIconClass = matchedCategory ? matchedCategory.icon : "fa-folder";
+            if(cat.toLowerCase() === 'live') currentIconClass = "fa-circle-play";
             let cleanIcon = currentIconClass.startsWith('fa-') ? `fa ${currentIconClass}` : `fa fa-${currentIconClass}`;
             
             specificCategoryTitle.innerHTML = `<i class="${cleanIcon}"></i> ${cat.toUpperCase()}`;
@@ -1168,14 +1233,124 @@
             } else {
                 specificGrid.innerHTML = filtered.map(item => {
                     let thumb = item.Thumbnail || item.thumbnail || MASTER_LOGO, itemName = item.name || item.Name || "Untitled", url = item.URL || item.url || "#";
+                    let isFav = favorites.includes(url);
                     return `
-                    <div class="card" data-url="${escapeHtml(url)}" data-title="${escapeHtml(itemName)}" onclick="play('${escapeHtml(url)}', '${escapeHtml(itemName)}', this)">
-                        <img src="${thumb}" loading="lazy" onerror="handleImageError(this)" onload="handleImageLoad(this)" class="img-loading">
-                        <div class="card-title">${itemName}</div>
+                    <div class="card" data-url="${escapeHtml(url)}" data-title="${escapeHtml(itemName)}">
+                        <div class="fav-badge ${isFav ? 'active' : ''}" onclick="toggleFav(event, '${escapeHtml(url)}')"><i class="fa fa-heart"></i></div>
+                        <div style="width:100%; height:100%;" onclick="play('${escapeHtml(url)}', '${escapeHtml(itemName)}', this.parentElement)">
+                            <img src="${thumb}" loading="lazy" onerror="handleImageError(this)" onload="handleImageLoad(this)" class="img-loading">
+                            <div class="card-title">${itemName}</div>
+                        </div>
                     </div>`;
                 }).join('');
             }
         }
+    };
+
+    window.toggleFav = function(e, url) {
+        if(e) e.stopPropagation();
+        let idx = favorites.indexOf(url);
+        if (idx > -1) {
+            favorites.splice(idx, 1);
+        } else {
+            favorites.push(url);
+        }
+        localStorage.setItem(FAV_KEY_STORAGE, JSON.stringify(favorites));
+        
+        // Refresh dynamic classes
+        document.querySelectorAll(`.card[data-url="${url}"] .fav-badge`).forEach(badge => {
+            if (favorites.includes(url)) badge.classList.add('active');
+            else badge.classList.remove('active');
+        });
+
+        if (currentCategory === 'favorites_view') {
+            showFavorites(document.getElementById('fav-nav-btn'));
+        }
+    };
+
+    window.showFavorites = function(btn) {
+        closeNav();
+        currentCategory = 'favorites_view';
+        document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+        if(btn) btn.classList.add('active');
+
+        document.getElementById('mainSlider').style.display = 'none';
+        document.getElementById('homeCategoriesContainer').style.display = 'none';
+        document.getElementById('moreSectionView').style.display = 'none';
+        
+        const mainCategoryView = document.getElementById('mainCategoryView');
+        const specificGrid = document.getElementById('specificGrid');
+        const specificCategoryTitle = document.getElementById('specificCategoryTitle');
+        
+        mainCategoryView.style.display = 'block';
+        specificCategoryTitle.innerHTML = `<i class="fa fa-heart" style="color:#ff3b30;"></i> MY FAVORITES`;
+
+        let filtered = rawData.filter(d => favorites.includes(d.URL || d.url));
+        filtered = filtered.slice().reverse();
+
+        if(!filtered.length) {
+            specificGrid.innerHTML = `
+            <div style="grid-column:1/-1" class="empty-state">
+                <i class="fa fa-heart-broken" style="color:#555;"></i>
+                <h3>No favorites yet</h3>
+                <p>Click on the heart badge to add items</p>
+            </div>`;
+        } else {
+            specificGrid.innerHTML = filtered.map(item => {
+                let thumb = item.Thumbnail || item.thumbnail || MASTER_LOGO, itemName = item.name || item.Name || "Untitled", url = item.URL || item.url || "#";
+                return `
+                <div class="card" data-url="${escapeHtml(url)}" data-title="${escapeHtml(itemName)}">
+                    <div class="fav-badge active" onclick="toggleFav(event, '${escapeHtml(url)}')"><i class="fa fa-heart"></i></div>
+                    <div style="width:100%; height:100%;" onclick="play('${escapeHtml(url)}', '${escapeHtml(itemName)}', this.parentElement)">
+                        <img src="${thumb}" loading="lazy" onerror="handleImageError(this)" onload="handleImageLoad(this)" class="img-loading">
+                        <div class="card-title">${itemName}</div>
+                    </div>
+                </div>`;
+            }).join('');
+        }
+    };
+
+    window.showMoreSection = function(btn) {
+        closeNav();
+        currentCategory = 'more_section';
+        document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+        if(btn) btn.classList.add('active');
+
+        document.getElementById('mainSlider').style.display = 'none';
+        document.getElementById('homeCategoriesContainer').style.display = 'none';
+        document.getElementById('mainCategoryView').style.display = 'none';
+        document.getElementById('moreSectionView').style.display = 'block';
+
+        // Check Login Status
+        let user = localStorage.getItem('nikamma_user');
+        if(user) {
+            document.getElementById('loggedOutView').style.display = 'none';
+            document.getElementById('loggedInView').style.display = 'block';
+            document.getElementById('welcomeUser').innerText = `Hi, ${user}!`;
+        } else {
+            document.getElementById('loggedOutView').style.display = 'block';
+            document.getElementById('loggedInView').style.display = 'none';
+        }
+    };
+
+    window.userLogin = function() {
+        let u = document.getElementById('loginUsername').value.trim();
+        if(u) {
+            localStorage.setItem('nikamma_user', u);
+            showMoreSection(document.getElementById('more-nav-btn'));
+        }
+    };
+
+    window.userLogout = function() {
+        localStorage.removeItem('nikamma_user');
+        showMoreSection(document.getElementById('more-nav-btn'));
+    };
+
+    window.changeTheme = function(color) {
+        document.documentElement.style.setProperty('--main-color', color);
+        localStorage.setItem('nikamma_theme_color', color);
+        // Refresh dynamic indicators
+        document.querySelectorAll('.category-title i').forEach(el => el.style.color = color);
     };
 
     function escapeHtml(str) { if(!str) return ''; return String(str).replace(/[&<>]/g, function(m) { if(m === '&') return '&amp;'; if(m === '<') return '&lt;'; if(m === '>') return '&gt;'; return m; }); }
@@ -1261,6 +1436,10 @@
     setInterval(() => { const track = document.getElementById('sliderTrack'); if(track && track.children.length && !sliderInterval) startSlider(); }, 1000);
     
     async function init() { 
+        let cachedColor = localStorage.getItem('nikamma_theme_color');
+        if(cachedColor) {
+            document.documentElement.style.setProperty('--main-color', cachedColor);
+        }
         attachPlayerControls(); 
         const hasInternet = await checkInternetBeforeStart(); 
         if(hasInternet) fetchData(); 
