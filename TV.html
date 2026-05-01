@@ -182,7 +182,7 @@
         .category-section { margin-bottom: 25px; padding: 0 10px; }
         .category-header { display: flex; justify-content: space-between; align-items: center; padding: 10px 5px; }
         .category-title { display: flex; align-items: center; gap: 8px; font-weight: 600; color: #fff; font-size: 14px; text-transform: uppercase; letter-spacing: 0.5px; }
-        .category-title i { color: var(--main-color); font-size: 16px; width: 20px; text-align: center; }
+        .category-title i { color: var(--main-color); font-size: 16px; }
         .read-more-btn { background: rgba(0, 188, 212, 0.15); color: var(--main-color); border: 1px solid rgba(0, 188, 212, 0.3); padding: 4px 12px; border-radius: 20px; font-size: 11px; cursor: pointer; font-weight: 600; text-transform: uppercase; transition: 0.2s; }
         .read-more-btn:active { transform: scale(0.95); background: var(--main-color); color: #000; }
         
@@ -442,130 +442,451 @@
     const STORAGE_KEY_DATA = 'nikamma_cached_data';
     const STORAGE_KEY_HASH = 'nikamma_data_hash';
     const SPLASH_SEEN_KEY = 'nikamma_splash_seen';
-    const FAV_KEY_STORAGE = 'nikamma_fav_list';
-    
+    const FAV_KEY = 'nikamma_fav';
+
+    let rawData = [];
+    let availableCategories = [];
+    let currentCategory = 'All';
+    let currentDataHash = '';
+    let settingsData = {};
+    let favorites = JSON.parse(localStorage.getItem(FAV_KEY) || "[]");
+    let isRefreshing = false;
+    let sliderInterval = null;
+
+    // Advanced video variables
+    let advVideo, currentMpegtsPlayer, currentHlsPlayer, currentSourceUrl;
     let isFullscreen = false;
+    let controlsTimeout;
+    let bufferingTimeout;
+    let currentBrightness = 1.0;
+    
+    // UI gesture state
     let gestureActive = false;
-    let gestureStartY = 0, gestureStartX = 0;
-    let gestureStartValue = 0;
-    let gestureSide = null;
+    let gestureStartX, gestureStartY;
+    let gestureStartValue;
+    let gestureSide;
     let gesturePrevented = false;
     let activeTouchId = null;
-    const gestureIndicator = document.getElementById('gestureIndicator');
-    const gestureIcon = document.getElementById('gestureIcon');
-    const gestureValueSpan = document.getElementById('gestureValue');
-    
-    let currentBrightness = 1.0;
-    function setVideoBrightness(value) {
-        currentBrightness = Math.min(2.0, Math.max(0.2, value));
-        advVideo.style.filter = `brightness(${currentBrightness})`;
+
+    // Helper function to format Font Awesome classes correctly
+    function getCleanIconClass(iconStr) {
+        if (!iconStr) return 'fa fa-folder';
+        let str = iconStr.trim();
+        // Agar pehle se fa ya fas module lagaya hua ho
+        if (str.startsWith('fa ') || str.startsWith('fas ') || str.startsWith('far ')) {
+            return str;
+        }
+        // Agar sirf 'fa-ghost' jaisa likha ho
+        if (str.startsWith('fa-')) {
+            return `fa ${str}`;
+        }
+        // Agar normal word ho jese 'ghost', to `fa fa-ghost` banayein
+        return `fa fa-${str}`;
     }
-    
-    function showGestureIndicator(iconClass, percent) {
-        gestureIcon.className = iconClass;
-        gestureValueSpan.innerText = Math.round(percent) + '%';
-        gestureIndicator.style.opacity = '1';
-        if (window.gestureTimeout) clearTimeout(window.gestureTimeout);
-        window.gestureTimeout = setTimeout(() => { gestureIndicator.style.opacity = '0'; }, 800);
+
+    function openNav() {
+        document.getElementById("mySidenav").classList.add("open");
+        document.getElementById("menu-overlay").classList.add("visible");
     }
-    
-    function handleTouchStart(e) {
-        if (!isFullscreen) return;
-        let target = e.target;
-        if(target.closest && (target.closest('.icon-btn') || target.closest('.menu-bar') || target.closest('.top-bar'))) return;
-        
-        const touch = e.touches[0];
-        activeTouchId = touch.identifier;
-        gestureStartX = touch.clientX;
-        gestureStartY = touch.clientY;
-        gesturePrevented = false;
-        
-        const screenWidth = window.innerWidth;
-        gestureSide = gestureStartX < screenWidth / 2 ? 'left' : 'right';
-        if (gestureSide === 'right') {
-            gestureStartValue = advVideo.volume;
+    function closeNav() {
+        document.getElementById("mySidenav").classList.remove("open");
+        document.getElementById("menu-overlay").classList.remove("visible");
+    }
+
+    function toggleSearch(show) {
+        const hIcons = document.getElementById('header-icons');
+        const hMain = document.getElementById('header-main');
+        const sContainer = document.getElementById('search-container');
+        const sBar = document.getElementById('searchBar');
+        if(show) {
+            hIcons.style.display = 'none';
+            hMain.style.display = 'none';
+            sContainer.style.display = 'flex';
+            sBar.value = '';
+            sBar.focus();
         } else {
-            gestureStartValue = currentBrightness;
+            hIcons.style.display = 'flex';
+            hMain.style.display = 'flex';
+            sContainer.style.display = 'none';
+            sBar.value = '';
+            filterData(currentCategory, null, false);
         }
-        gestureActive = true;
     }
-    
-    function handleTouchMove(e) {
-        if (!gestureActive || !isFullscreen) return;
-        let touch = null;
-        for (let i = 0; i < e.touches.length; i++) {
-            if (e.touches[i].identifier === activeTouchId) {
-                touch = e.touches[i];
-                break;
-            }
+
+    function handleImageError(img) {
+        img.src = MASTER_LOGO;
+        img.classList.remove('img-loading');
+        img.classList.add('img-loaded');
+    }
+    function handleImageLoad(img) {
+        img.classList.remove('img-loading');
+        img.classList.add('img-loaded');
+    }
+
+    function updateSlider() {
+        const track = document.getElementById('sliderTrack');
+        const sliders = rawData.filter(d => (d.Category || d.category || "").toLowerCase() === 'slider');
+        if(!sliders.length) {
+            document.getElementById('mainSlider').style.display = 'none';
+            return;
         }
-        if (!touch) return;
-        
-        const deltaY = gestureStartY - touch.clientY;
-        const deltaX = Math.abs(touch.clientX - gestureStartX);
-        if (!gesturePrevented && Math.abs(deltaY) > 12 && Math.abs(deltaY) > deltaX * 1.2) {
-            gesturePrevented = true;
-            e.preventDefault();
+        track.innerHTML = sliders.map(s => {
+            let img = s.Thumbnail || s.thumbnail || MASTER_LOGO;
+            let name = s.name || s.Name || "Special Release";
+            let url = s.URL || s.url || "#";
+            return `<div class="slide-item" onclick="play('${escapeHtml(url)}', '${escapeHtml(name)}')"><img src="${img}" onerror="this.src=MASTER_LOGO"></div>`;
+        }).join('');
+        const videoBoxDisplay = document.getElementById('videoBox').style.display;
+        if(currentCategory === 'All') {
+            document.getElementById('mainSlider').style.display = (sliders.length && videoBoxDisplay !== 'block') ? 'block' : 'none';
+        } else document.getElementById('mainSlider').style.display = 'none';
+    }
+
+    function buildDynamicCategoryMenu() {
+        const liveBtn = document.getElementById('live-nav-btn');
+        const sideNavDynamicLinks = document.getElementById('sideNavDynamicLinks');
+        let hasLiveCategory = rawData.some(d => {
+            let c = (d.Category || d.category || '').trim().toLowerCase();
+            return c === 'live' || c === 'life';
+        });
+        if (hasLiveCategory) {
+            liveBtn.style.display = 'block';
+        } else {
+            liveBtn.style.display = 'none';
         }
+        sideNavDynamicLinks.innerHTML = `<a href="#" onclick="filterData('All', null, true)"><i class="fa fa-home"></i> Home</a>`;
+        if (availableCategories.length > 0) {
+            availableCategories.forEach(catObj => {
+                let lowerCat = catObj.name.toLowerCase();
+                if (lowerCat === 'live' || lowerCat === 'life' || lowerCat === 'slider') return;
+                let cleanIcon = getCleanIconClass(catObj.icon);
+                sideNavDynamicLinks.innerHTML += `<a href="#" onclick="filterData('${catObj.name}', null, true)"><i class="${cleanIcon}"></i> ${catObj.name}</a>`;
+            });
+        }
+    }
+
+    window.filterData = function(cat, btn, shouldClose = true) {
+        currentCategory = cat;
+        if(shouldClose) closeNav();
+        const sliderDiv = document.getElementById('mainSlider');
+        const videoBox = document.getElementById('videoBox');
+        const sliders = rawData.filter(d => (d.Category || d.category || "").toLowerCase() === 'slider');
+        sliderDiv.style.display = (cat === 'All' && videoBox.style.display !== 'block' && sliders.length) ? 'block' : 'none';
+        document.querySelectorAll('.nav-btn').forEach(b => {
+            if(b === btn) b.classList.add('active');
+            else if(!btn && (b.getAttribute('data-cat') === cat || (cat === 'All' && b.id === 'home-nav-btn'))) b.classList.add('active');
+            else b.classList.remove('active');
+        });
+        const homeCategoriesContainer = document.getElementById('homeCategoriesContainer');
+        const mainCategoryView = document.getElementById('mainCategoryView');
+        const moreSectionView = document.getElementById('moreSectionView');
+        const specificGrid = document.getElementById('specificGrid');
+        const specificCategoryTitle = document.getElementById('specificCategoryTitle');
+        moreSectionView.style.display = 'none';
         
-        if (gesturePrevented) {
-            e.preventDefault();
-            let newValue = gestureStartValue + (deltaY / 200) * (gestureSide === 'right' ? 1.0 : 1.8);
-            if (gestureSide === 'right') {
-                newValue = Math.min(1.0, Math.max(0.0, newValue));
-                advVideo.volume = newValue;
-                if (advVideo.muted && newValue > 0) advVideo.muted = false;
-                if (newValue === 0) advVideo.muted = true;
-                exoMuteBtn.innerHTML = `<span class="material-icons-round">${advVideo.muted || advVideo.volume === 0 ? 'volume_off' : 'volume_up'}</span>`;
-                showGestureIndicator('fa fa-volume-up', newValue * 100);
+        if (cat === 'All') {
+            mainCategoryView.style.display = 'none';
+            homeCategoriesContainer.style.display = 'block';
+            let categoriesToDisplay = availableCategories.filter(c => {
+                let ln = c.name.toLowerCase();
+                return ln !== 'slider' && ln !== 'live' && ln !== 'life';
+            });
+            let finalHtml = '';
+            categoriesToDisplay.forEach(catItem => {
+                let catLower = catItem.name.toLowerCase();
+                let filteredItems = rawData.filter(d => (d.Category || d.category || "").trim().toLowerCase() === catLower).slice().reverse();
+                if(!filteredItems.length) return;
+                let displayCount = filteredItems.length > 6 ? 6 : filteredItems.length;
+                let subset = filteredItems.slice(0, displayCount);
+                let cleanIcon = getCleanIconClass(catItem.icon);
+                finalHtml += `
+                <div class="category-section">
+                    <div class="category-header">
+                        <div class="category-title"><i class="${cleanIcon}"></i> ${catItem.name.toUpperCase()}</div>
+                        ${filteredItems.length > 6 ? `<div class="read-more-btn" onclick="filterData('${catItem.name}', null, false)">More</div>` : ''}
+                    </div>
+                    <div class="grid">
+                        ${subset.map(item => {
+                            let thumb = item.Thumbnail || item.thumbnail || MASTER_LOGO;
+                            let itemName = item.name || item.Name || "Untitled";
+                            let url = item.URL || item.url || "#";
+                            let isFav = favorites.includes(url);
+                            return `
+                            <div class="card" data-url="${escapeHtml(url)}" data-title="${escapeHtml(itemName)}">
+                                <div class="fav-badge ${isFav ? 'active' : ''}" onclick="toggleFav(event, '${escapeHtml(url)}')"><i class="fa fa-heart"></i></div>
+                                <div style="width:100%; height:100%;" onclick="play('${escapeHtml(url)}', '${escapeHtml(itemName)}', this.parentElement)">
+                                    <img src="${thumb}" loading="lazy" onerror="handleImageError(this)" onload="handleImageLoad(this)" class="img-loading">
+                                    <div class="card-title">${itemName}</div>
+                                </div>
+                            </div>`;
+                        }).join('')}
+                    </div>
+                </div>`;
+            });
+            if(!finalHtml) {
+                homeCategoriesContainer.innerHTML = `
+                <div class="empty-state">
+                    <i class="fa fa-folder-open"></i>
+                    <h3>No content available</h3>
+                </div>`;
             } else {
-                newValue = Math.min(2.0, Math.max(0.2, newValue));
-                setVideoBrightness(newValue);
-                const percent = ((newValue - 0.2) / 1.8) * 100;
-                showGestureIndicator('fa fa-sun', percent);
+                homeCategoriesContainer.innerHTML = finalHtml;
             }
+        } else {
+            homeCategoriesContainer.style.display = 'none';
+            mainCategoryView.style.display = 'block';
+            let matchedCategory = availableCategories.find(c => c.name.toLowerCase() === cat.toLowerCase());
+            let currentIconClass = matchedCategory ? matchedCategory.icon : "fa-folder";
+            if(cat.toLowerCase() === 'live' || cat.toLowerCase() === 'life') {
+                currentIconClass = "fa-circle-play";
+            }
+            let cleanIcon = getCleanIconClass(currentIconClass);
+            specificCategoryTitle.innerHTML = `<i class="${cleanIcon}"></i> ${cat.toUpperCase()}`;
+            let filtered = rawData.filter(d => {
+                let c = (d.Category || d.category || "").trim().toLowerCase();
+                if (cat.toLowerCase() === 'live') {
+                    return c === 'live' || c === 'life';
+                }
+                return c === cat.toLowerCase();
+            });
+            filtered = filtered.slice().reverse();
+            if(!filtered.length) {
+                specificGrid.innerHTML = `
+                <div style="grid-column:1/-1" class="empty-state">
+                    <i class="fa fa-folder-open"></i>
+                    <h3>No content found</h3>
+                </div>`;
+            } else {
+                specificGrid.innerHTML = filtered.map(item => {
+                    let thumb = item.Thumbnail || item.thumbnail || MASTER_LOGO,
+                        itemName = item.name || item.Name || "Untitled",
+                        url = item.URL || item.url || "#";
+                    let isFav = favorites.includes(url);
+                    return `
+                    <div class="card" data-url="${escapeHtml(url)}" data-title="${escapeHtml(itemName)}">
+                        <div class="fav-badge ${isFav ? 'active' : ''}" onclick="toggleFav(event, '${escapeHtml(url)}')"><i class="fa fa-heart"></i></div>
+                        <div style="width:100%; height:100%;" onclick="play('${escapeHtml(url)}', '${escapeHtml(itemName)}', this.parentElement)">
+                            <img src="${thumb}" loading="lazy" onerror="handleImageError(this)" onload="handleImageLoad(this)" class="img-loading">
+                            <div class="card-title">${itemName}</div>
+                        </div>
+                    </div>`;
+                }).join('');
+            }
+        }
+    };
+
+    window.toggleFav = function(event, url) {
+        if(event) event.stopPropagation();
+        const index = favorites.indexOf(url);
+        if(index > -1) favorites.splice(index, 1);
+        else favorites.push(url);
+        localStorage.setItem(FAV_KEY, JSON.stringify(favorites));
+        document.querySelectorAll(`.fav-badge[onclick*="${url}"]`).forEach(badge => {
+            if(favorites.includes(url)) badge.classList.add('active');
+            else badge.classList.remove('active');
+        });
+        if(currentCategory === 'Favorites') showFavorites();
+    };
+
+    window.showFavorites = function(btn) {
+        closeNav();
+        currentCategory = 'Favorites';
+        document.querySelectorAll('.nav-btn').forEach(b => {
+            if(b === btn) b.classList.add('active');
+            else b.classList.remove('active');
+        });
+        document.getElementById('mainSlider').style.display = 'none';
+        document.getElementById('homeCategoriesContainer').style.display = 'none';
+        document.getElementById('moreSectionView').style.display = 'none';
+        const mainCategoryView = document.getElementById('mainCategoryView');
+        const specificGrid = document.getElementById('specificGrid');
+        const specificCategoryTitle = document.getElementById('specificCategoryTitle');
+        mainCategoryView.style.display = 'block';
+        specificCategoryTitle.innerHTML = `<i class="fa fa-heart"></i> FAVOURITES`;
+        let filtered = rawData.filter(d => favorites.includes(d.URL || d.url || "#"));
+        if(!filtered.length) {
+            specificGrid.innerHTML = `
+            <div style="grid-column:1/-1" class="empty-state">
+                <i class="fa fa-heart" style="color:#444;"></i>
+                <h3>No favorites added</h3>
+                <p>Click on the heart icon to add items</p>
+            </div>`;
+        } else {
+            specificGrid.innerHTML = filtered.map(item => {
+                let thumb = item.Thumbnail || item.thumbnail || MASTER_LOGO,
+                    itemName = item.name || item.Name || "Untitled",
+                    url = item.URL || item.url || "#";
+                return `
+                <div class="card" data-url="${escapeHtml(url)}" data-title="${escapeHtml(itemName)}">
+                    <div class="fav-badge active" onclick="toggleFav(event, '${escapeHtml(url)}')"><i class="fa fa-heart"></i></div>
+                    <div style="width:100%; height:100%;" onclick="play('${escapeHtml(url)}', '${escapeHtml(itemName)}', this.parentElement)">
+                        <img src="${thumb}" loading="lazy" onerror="handleImageError(this)" onload="handleImageLoad(this)" class="img-loading">
+                        <div class="card-title">${itemName}</div>
+                    </div>
+                </div>`;
+            }).join('');
+        }
+    };
+
+    window.showMoreSection = function(btn) {
+        closeNav();
+        currentCategory = 'more_section';
+        document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+        if(btn) btn.classList.add('active');
+        document.getElementById('mainSlider').style.display = 'none';
+        document.getElementById('homeCategoriesContainer').style.display = 'none';
+        document.getElementById('mainCategoryView').style.display = 'none';
+        document.getElementById('moreSectionView').style.display = 'block';
+        let user = localStorage.getItem('nikamma_user');
+        if(user) {
+            document.getElementById('loggedOutView').style.display = 'none';
+            document.getElementById('loggedInView').style.display = 'block';
+            document.getElementById('welcomeUser').innerText = `Hi, ${user}!`;
+        } else {
+            document.getElementById('loggedOutView').style.display = 'block';
+            document.getElementById('loggedInView').style.display = 'none';
+        }
+    };
+
+    window.userLogin = function() {
+        let u = document.getElementById('loginUsername').value.trim();
+        if(u) {
+            localStorage.setItem('nikamma_user', u);
+            showMoreSection(document.getElementById('more-nav-btn'));
+        }
+    };
+    window.userLogout = function() {
+        localStorage.removeItem('nikamma_user');
+        showMoreSection(document.getElementById('more-nav-btn'));
+    };
+
+    window.changeTheme = function(color) {
+        document.documentElement.style.setProperty('--main-color', color);
+        localStorage.setItem('nikamma_theme_color', color);
+        document.querySelectorAll('.category-title i').forEach(el => el.style.color = color);
+    };
+
+    function escapeHtml(str) {
+        if(!str) return '';
+        return String(str).replace(/[&<>]/g, function(m) {
+            if(m === '&') return '&amp;';
+            if(m === '<') return '&lt;';
+            return '&gt;';
+        });
+    }
+
+    function search() {
+        const term = document.getElementById('searchBar').value.toLowerCase().trim();
+        const specificGrid = document.getElementById('specificGrid');
+        const specificCategoryTitle = document.getElementById('specificCategoryTitle');
+        if(!term) {
+            filterData(currentCategory, null, false);
+            return;
+        }
+        document.getElementById('homeCategoriesContainer').style.display = 'none';
+        document.getElementById('mainCategoryView').style.display = 'block';
+        document.getElementById('moreSectionView').style.display = 'none';
+        document.getElementById('mainSlider').style.display = 'none';
+        specificCategoryTitle.innerHTML = `<i class="fa fa-search"></i> SEARCHING...`;
+        
+        let filtered = rawData.filter(d => (d.name || d.Name || "").toLowerCase().includes(term) && (d.Category || d.category || "").toLowerCase() !== 'slider').slice().reverse();
+        if(!filtered.length) {
+            specificGrid.innerHTML = `<div style="grid-column:1/-1" class="empty-state"><i class="fa fa-search"></i><h3>No results for "${term}"</h3></div>`;
+            return;
+        }
+        specificGrid.innerHTML = filtered.map(item => `
+            <div class="card" onclick="play('${escapeHtml(item.URL || item.url || "#")}', '${escapeHtml(item.name || item.Name)}', this)">
+                <img src="${item.Thumbnail || item.thumbnail || MASTER_LOGO}" loading="lazy" onerror="handleImageError(this)" onload="handleImageLoad(this)" class="img-loading">
+                <div class="card-title">${item.name || item.Name}</div>
+            </div>`).join('');
+    }
+
+    window.forceRefreshData = async function() {
+        if(isRefreshing) return;
+        isRefreshing = true;
+        updatePTR('release');
+        const updated = await fetchFreshData();
+        updatePTR('complete');
+        if(updated) showCachedDataBadge();
+        else showNoUpdateBadge();
+        setTimeout(() => isRefreshing = false, 500);
+        closeNav();
+    };
+
+    let ptrStartY = 0, ptrActive = false, ptrHeight = 0, isTouching = false;
+    function updatePTR(status, pullDistance = 0) {
+        var pc = document.getElementById('ptr-container');
+        var pt = document.getElementById('ptr-text');
+        var pi = document.getElementById('ptr-icon');
+        if(status === 'pull') {
+            pc.style.transform = `translateY(${Math.min(pullDistance - 70, 0)}px)`;
+            pt.innerText = pullDistance > 70 ? 'Release to refresh' : 'Pull to refresh';
+            pi.className = pullDistance > 70 ? 'fa fa-arrow-up' : 'fa fa-arrow-down';
+        } else if(status === 'release') {
+            pc.style.transform = 'translateY(0px)';
+            pt.innerText = 'Refreshing...';
+            pi.className = 'ptr-spinner';
+        } else if(status === 'complete') {
+            pt.innerText = 'Updated successfully';
+            pi.className = 'fa fa-check-circle';
+            setTimeout(() => { pc.style.transform = 'translateY(-70px)'; }, 1000);
         }
     }
     
-    function handleTouchEnd(e) { gestureActive = false; gestureSide = null; gesturePrevented = false; activeTouchId = null; }
-    
-    function attachGestureListeners() {
-        const container = document.getElementById('advancedPlayerContainer');
-        if (!container) return;
-        container.removeEventListener('touchstart', handleTouchStart);
-        container.removeEventListener('touchmove', handleTouchMove);
-        container.removeEventListener('touchend', handleTouchEnd);
-        container.addEventListener('touchstart', handleTouchStart, { passive: true });
-        container.addEventListener('touchmove', handleTouchMove, { passive: false });
-        container.addEventListener('touchend', handleTouchEnd);
+    window.addEventListener('touchstart', (e) => {
+        if(window.scrollY === 0 && e.touches[0].clientY < 200) {
+            ptrStartY = e.touches[0].clientY;
+            ptrActive = true;
+            isTouching = true;
+        }
+    });
+    window.addEventListener('touchmove', (e) => {
+        if(!ptrActive || isRefreshing) return;
+        var distance = e.touches[0].clientY - ptrStartY;
+        if(distance > 0) {
+            e.preventDefault();
+            ptrHeight = distance;
+            updatePTR('pull', distance);
+        } else ptrActive = false;
+    }, {passive:false});
+    window.addEventListener('touchend', () => {
+        isTouching = false;
+        if(ptrActive && ptrHeight > 70 && !isRefreshing) {
+            forceRefreshData();
+        } else if(ptrActive) {
+            document.getElementById('ptr-container').style.transform = 'translateY(-70px)';
+        }
+        ptrActive = false;
+        ptrHeight = 0;
+    });
+
+    function setVideoFitMode(mode = null) {
+        const video = document.getElementById('advancedVideo');
+        const badge = document.getElementById('mode-text');
+        const modes = ['contain', 'cover', 'fill'];
+        let cur = video.className.replace('fit-', '');
+        let nextMode = mode || modes[(modes.indexOf(cur) + 1) % modes.length];
+        video.className = `fit-${nextMode}`;
+        badge.innerText = nextMode.toUpperCase();
+        localStorage.setItem('nikamma_video_fit', nextMode);
     }
-    
-    let currentMpegtsPlayer = null, currentHlsPlayer = null, currentSourceUrl = null, bufferingTimeout = null, reloadAttempts = 0;
-    const MAX_RELOAD_ATTEMPTS = 2;
-    
-    const advVideo = document.getElementById('advancedVideo');
-    const exoLoader = document.getElementById('exoLoader');
-    const exoPlayBtn = document.getElementById('exoPlayBtn');
-    const exoMuteBtn = document.getElementById('exoMuteBtn');
-    const exoScreenSetBtn = document.getElementById('exoScreenSetBtn');
-    const exoFullBtn = document.getElementById('exoFullBtn');
-    const modeTextSpan = document.getElementById('mode-text');
-    const exoOverlay = document.getElementById('exoOverlay');
-    
-    let controlsTimeout = null;
-    let currentFitMode = 2;
-    const fitModes = ['contain', 'cover', 'fill'];
-    
-    function setVideoFitMode() {
-        const mode = fitModes[currentFitMode];
-        advVideo.classList.remove('fit-contain', 'fit-cover', 'fit-fill');
-        advVideo.classList.add('fit-' + mode);
-        advVideo.style.objectFit = mode;
-        modeTextSpan.innerText = mode.toUpperCase();
+
+    function showGestureIndicator(icon, val) {
+        const gi = document.getElementById('gestureIndicator');
+        const giIcon = document.getElementById('gestureIcon');
+        const giVal = document.getElementById('gestureValue');
+        giIcon.className = icon;
+        giVal.innerText = Math.round(val) + '%';
+        gi.style.opacity = '1';
+        setTimeout(() => { gi.style.opacity = '0'; }, 1000);
     }
-    
+    function setVideoBrightness(v) {
+        currentBrightness = v;
+        advVideo.style.filter = `brightness(${v})`;
+    }
+
     function showControls() {
-        if (exoOverlay && !exoOverlay.classList.contains('visible')) {
+        if (exoOverlay) {
             exoOverlay.classList.add('visible');
             clearTimeout(controlsTimeout);
             if (!advVideo.paused) {
@@ -575,10 +896,16 @@
             }
         }
     }
-    
-    function hideControls() { if (exoOverlay && exoOverlay.classList.contains('visible')) { exoOverlay.classList.remove('visible'); clearTimeout(controlsTimeout); } }
-    function toggleControls() { if (exoOverlay.classList.contains('visible')) hideControls(); else showControls(); }
-    
+    function hideControls() {
+        if (exoOverlay && exoOverlay.classList.contains('visible')) {
+            exoOverlay.classList.remove('visible');
+            clearTimeout(controlsTimeout);
+        }
+    }
+    function toggleControls() {
+        if (exoOverlay.classList.contains('visible')) hideControls();
+        else showControls();
+    }
     function attachToggleControls() {
         const container = document.getElementById('advancedPlayerContainer');
         if (!container) return;
@@ -587,18 +914,27 @@
             toggleControls();
         };
         container.addEventListener('click', handleToggle);
-        advVideo.addEventListener('click', (e) => { e.stopPropagation(); toggleControls(); });
+        advVideo.addEventListener('click', (e) => {
+            e.stopPropagation();
+            toggleControls();
+        });
         advVideo.addEventListener('pause', () => showControls());
         advVideo.addEventListener('play', () => {
             if (exoOverlay.classList.contains('visible')) {
                 clearTimeout(controlsTimeout);
-                controlsTimeout = setTimeout(() => { if (exoOverlay && !advVideo.paused) exoOverlay.classList.remove('visible'); }, 5000);
+                controlsTimeout = setTimeout(() => {
+                    if (exoOverlay && !advVideo.paused) exoOverlay.classList.remove('visible');
+                }, 5000);
             }
         });
     }
-    
-    function clearBufferingTimeout() { if (bufferingTimeout) { clearTimeout(bufferingTimeout); bufferingTimeout = null; } }
-    
+
+    function clearBufferingTimeout() {
+        if (bufferingTimeout) {
+            clearTimeout(bufferingTimeout);
+            bufferingTimeout = null;
+        }
+    }
     function attemptResume() {
         if (!currentSourceUrl) return;
         if (advVideo.readyState >= 2) {
@@ -628,7 +964,7 @@
             }
         }
     }
-    
+
     function handleWaiting() {
         if (!currentSourceUrl) return;
         clearBufferingTimeout();
@@ -638,49 +974,122 @@
             }
         }, 4000);
     }
-    
-    function handlePlaying() { clearBufferingTimeout(); reloadAttempts = 0; }
-    function handleStalled() { if (!currentSourceUrl) return; attemptResume(); }
-    function handleError(e) { if (currentSourceUrl && reloadAttempts < MAX_RELOAD_ATTEMPTS) { reloadAttempts++; attemptResume(); } }
-    
+
+    function handleTouchStart(e) {
+        if (!isFullscreen) return;
+        const target = e.target;
+        if (target.closest && (target.closest('.menu-bar') || target.closest('.top-bar'))) return;
+        const touch = e.touches[0];
+        activeTouchId = touch.identifier;
+        gestureStartX = touch.clientX;
+        gestureStartY = touch.clientY;
+        gesturePrevented = false;
+        const screenWidth = window.innerWidth;
+        gestureSide = gestureStartX < screenWidth / 2 ? 'left' : 'right';
+        if (gestureSide === 'right') {
+            gestureStartValue = advVideo.volume;
+        } else {
+            gestureStartValue = currentBrightness;
+        }
+        gestureActive = true;
+    }
+    function handleTouchMove(e) {
+        if (!gestureActive || !isFullscreen) return;
+        let touch = null;
+        for (let i = 0; i < e.touches.length; i++) {
+            if (e.touches[i].identifier === activeTouchId) {
+                touch = e.touches[i];
+                break;
+            }
+        }
+        if (!touch) return;
+        const deltaY = gestureStartY - touch.clientY;
+        const deltaX = Math.abs(touch.clientX - gestureStartX);
+        if (!gesturePrevented && Math.abs(deltaY) > 12 && Math.abs(deltaY) > deltaX * 1.2) {
+            gesturePrevented = true;
+            e.preventDefault();
+        }
+        if (gesturePrevented) {
+            e.preventDefault();
+            let newValue = gestureStartValue + (deltaY / 200) * (gestureSide === 'right' ? 1.0 : 1.8);
+            if (gestureSide === 'right') {
+                newValue = Math.min(1.0, Math.max(0.0, newValue));
+                advVideo.volume = newValue;
+                if (advVideo.muted && newValue > 0) advVideo.muted = false;
+                if (newValue === 0) advVideo.muted = true;
+                document.getElementById('exoMuteBtn').innerHTML = `<span class="material-icons-round">${advVideo.muted || advVideo.volume === 0 ? 'volume_off' : 'volume_up'}</span>`;
+                showGestureIndicator('fa fa-volume-up', newValue * 100);
+            } else {
+                newValue = Math.min(2.0, Math.max(0.2, newValue));
+                setVideoBrightness(newValue);
+                const percent = ((newValue - 0.2) / 1.8) * 100;
+                showGestureIndicator('fa fa-sun', percent);
+            }
+        }
+    }
+    function handleTouchEnd(e) {
+        gestureActive = false;
+        gestureSide = null;
+        gesturePrevented = false;
+        activeTouchId = null;
+    }
+    function attachGestureListeners() {
+        const container = document.getElementById('advancedPlayerContainer');
+        if (!container) return;
+        container.removeEventListener('touchstart', handleTouchStart);
+        container.removeEventListener('touchmove', handleTouchMove);
+        container.removeEventListener('touchend', handleTouchEnd);
+        container.addEventListener('touchstart', handleTouchStart, { passive: false });
+        container.addEventListener('touchmove', handleTouchMove, { passive: false });
+        container.addEventListener('touchend', handleTouchEnd, { passive: false });
+    }
+
     function destroyAdvancedPlayer() {
         clearBufferingTimeout();
-        if (currentMpegtsPlayer) { try { currentMpegtsPlayer.unload(); currentMpegtsPlayer.destroy(); } catch(e) {} currentMpegtsPlayer = null; }
-        if (currentHlsPlayer) { try { currentHlsPlayer.destroy(); } catch(e) {} currentHlsPlayer = null; }
-        advVideo.pause();
-        advVideo.removeAttribute('src');
-        advVideo.load();
-        advVideo.removeEventListener('waiting', handleWaiting);
-        advVideo.removeEventListener('playing', handlePlaying);
-        advVideo.removeEventListener('stalled', handleStalled);
-        advVideo.removeEventListener('error', handleError);
+        if (currentMpegtsPlayer) {
+            try { currentMpegtsPlayer.unload(); currentMpegtsPlayer.destroy(); } catch(e) {}
+            currentMpegtsPlayer = null;
+        }
+        if (currentHlsPlayer) {
+            try { currentHlsPlayer.destroy(); } catch(e) {}
+            currentHlsPlayer = null;
+        }
+        if (advVideo) {
+            advVideo.pause();
+            advVideo.removeAttribute('src');
+            advVideo.load();
+        }
     }
-    
+
+    function fallbackNative(url, autoPlay) {
+        advVideo.src = url;
+        advVideo.load();
+        if (autoPlay) {
+            advVideo.play().catch(e => {
+                advVideo.muted = true;
+                advVideo.play().catch(err => console.warn("Native player auto play failed", err));
+            });
+        }
+    }
+
     function loadIntoAdvancedPlayer(url, title, cardElement, autoPlay = true) {
-        if (url === currentSourceUrl && advVideo.src) return;
         destroyAdvancedPlayer();
         currentSourceUrl = url;
-        reloadAttempts = 0;
+        const exoLoader = document.getElementById('exoLoader');
         exoLoader.style.display = 'flex';
-        advVideo.muted = true;
-        
-        advVideo.addEventListener('waiting', handleWaiting);
-        advVideo.addEventListener('playing', handlePlaying);
-        advVideo.addEventListener('stalled', handleStalled);
-        advVideo.addEventListener('error', handleError);
-        
-        const isTs = url.includes('.ts') || url.includes('transportstream');
+        let fit = localStorage.getItem('nikamma_video_fit') || 'fill';
+        setVideoFitMode(fit);
+        const isMpegTs = url.includes('.ts') || url.includes('type=m3u8') || url.includes('.ts?') || url.toLowerCase().includes('mpegts');
         const isM3u8 = url.includes('.m3u8') || url.includes('m3u8');
         
-        if (isTs && typeof mpegts !== 'undefined') {
+        if (isMpegTs && typeof mpegts !== 'undefined') {
             try {
                 currentMpegtsPlayer = mpegts.createPlayer({ type: 'mse', isLive: true, url: url, enableStashBuffer: false });
                 currentMpegtsPlayer.attachMediaElement(advVideo);
                 currentMpegtsPlayer.load();
                 if (autoPlay) currentMpegtsPlayer.play().catch(e => console.warn);
             } catch(e) { fallbackNative(url, autoPlay); }
-        } 
-        else if (isM3u8 && window.Hls && Hls.isSupported()) {
+        } else if (isM3u8 && window.Hls && Hls.isSupported()) {
             try {
                 currentHlsPlayer = new Hls({ lowLatencyMode: true });
                 currentHlsPlayer.loadSource(url);
@@ -688,17 +1097,26 @@
                 currentHlsPlayer.on(Hls.Events.MANIFEST_PARSED, () => {
                     if (autoPlay) advVideo.play().catch(e=>console.warn);
                 });
-                currentHlsPlayer.on(Hls.Events.ERROR, (evt, data) => { if (data.fatal) attemptResume(); });
+                currentHlsPlayer.on(Hls.Events.ERROR, (evt, data) => {
+                    if (data.fatal) attemptResume();
+                });
             } catch(e) { fallbackNative(url, autoPlay); }
+        } else {
+            fallbackNative(url, autoPlay);
         }
-        else { fallbackNative(url, autoPlay); }
-        
-        advVideo.onplaying = () => { exoLoader.style.display = 'none'; showControls(); };
-        advVideo.onwaiting = () => { exoLoader.style.display = 'flex'; };
-        advVideo.onerror = () => { exoLoader.style.display = 'none'; };
+        advVideo.onplaying = () => {
+            exoLoader.style.display = 'none';
+            showControls();
+        };
+        advVideo.onwaiting = () => {
+            exoLoader.style.display = 'flex';
+        };
+        advVideo.onerror = () => {
+            exoLoader.style.display = 'none';
+        };
         setTimeout(() => { if(advVideo.readyState > 0) exoLoader.style.display = 'none'; }, 1500);
     }
-    
+
     function toggleFullscreen() {
         const container = document.getElementById('advancedPlayerContainer');
         const isCurrentlyFull = !!(document.fullscreenElement || document.webkitFullscreenElement);
@@ -710,57 +1128,52 @@
             if (exitMethod) exitMethod.call(document).catch(err => console.warn(err));
         }
     }
-    
     function updateFullscreenIcon() {
         const isFs = !!(document.fullscreenElement || document.webkitFullscreenElement);
         isFullscreen = isFs;
-        exoFullBtn.innerHTML = `<span class="material-icons-round">${isFs ? 'fullscreen_exit' : 'fullscreen'}</span>`;
-        if (!isFs) { setVideoFitMode(); } else { setTimeout(() => { if (exoOverlay && !advVideo.paused) showControls(); }, 100); }
+        document.getElementById('exoFullBtn').innerHTML = `<span class="material-icons-round">${isFs ? 'fullscreen_exit' : 'fullscreen'}</span>`;
+        if (!isFs) {
+            setVideoFitMode();
+        } else {
+            setTimeout(() => {
+                if (exoOverlay && !advVideo.paused) showControls();
+            }, 100);
+        }
     }
-    
     document.addEventListener('fullscreenchange', updateFullscreenIcon);
     document.addEventListener('webkitfullscreenchange', updateFullscreenIcon);
-    
+
     function attachPlayerControls() {
         const exoTopCloseBtn = document.getElementById('exoTopCloseBtn');
-        if (exoTopCloseBtn) { exoTopCloseBtn.onclick = (e) => { e.stopPropagation(); stopVideo(); }; }
+        if (exoTopCloseBtn) {
+            exoTopCloseBtn.onclick = (e) => { e.stopPropagation(); stopVideo(); };
+        }
+        advVideo = document.getElementById('advancedVideo');
+        const exoPlayBtn = document.getElementById('exoPlayBtn');
+        const exoMuteBtn = document.getElementById('exoMuteBtn');
+        const exoScreenSetBtn = document.getElementById('exoScreenSetBtn');
+        const exoFullBtn = document.getElementById('exoFullBtn');
         
         exoPlayBtn.onclick = (e) => {
             e.stopPropagation();
-            if (advVideo.paused) { advVideo.play(); exoPlayBtn.innerHTML = '<span class="material-icons-round">pause</span>'; } 
+            if (advVideo.paused) { advVideo.play(); exoPlayBtn.innerHTML = '<span class="material-icons-round">pause</span>'; }
             else { advVideo.pause(); exoPlayBtn.innerHTML = '<span class="material-icons-round">play_arrow</span>'; }
-            showControls();
         };
         exoMuteBtn.onclick = (e) => {
             e.stopPropagation();
             advVideo.muted = !advVideo.muted;
-            exoMuteBtn.innerHTML = `<span class="material-icons-round">${advVideo.muted ? 'volume_off' : 'volume_up'}</span>`;
-            showControls();
+            exoMuteBtn.innerHTML = `<span class="material-icons-round">${advVideo.muted || advVideo.volume === 0 ? 'volume_off' : 'volume_up'}</span>`;
         };
-        exoScreenSetBtn.onclick = (e) => {
-            e.stopPropagation();
-            currentFitMode = (currentFitMode + 1) % fitModes.length;
-            setVideoFitMode();
-            showControls();
-        };
-        exoFullBtn.onclick = (e) => { e.stopPropagation(); toggleFullscreen(); showControls(); };
-        advVideo.onplay = () => { exoPlayBtn.innerHTML = '<span class="material-icons-round">pause</span>'; };
-        advVideo.onpause = () => { exoPlayBtn.innerHTML = '<span class="material-icons-round">play_arrow</span>'; };
-        advVideo.onvolumechange = () => {
-            exoMuteBtn.innerHTML = `<span class="material-icons-round">${advVideo.muted ? 'volume_off' : 'volume_up'}</span>`;
-        };
-        setVideoFitMode();
+        exoScreenSetBtn.onclick = (e) => { e.stopPropagation(); setVideoFitMode(); };
+        exoFullBtn.onclick = (e) => { e.stopPropagation(); toggleFullscreen(); };
+        
         attachToggleControls();
         attachGestureListeners();
-        updateFullscreenIcon();
+        advVideo.addEventListener('waiting', handleWaiting);
+        advVideo.addEventListener('playing', clearBufferingTimeout);
     }
-    
+
     function isWebpageUrl(url) {
-        if (!url || url === '#') return false;
-        if (/\.(m3u8|ts|mp4|mkv|avi|flv|webm|mpd)(\?|$)/i.test(url)) return false;
-        if (/\/(stream|live|hls|dash|playlist|channel)\//i.test(url)) return false;
-        if (/\.(m3u8|ts|mp4)/.test(url)) return false;
-        if (/\.(php|html|htm|asp|aspx|jsp)([\?#]|$)/i.test(url)) return true;
         if (/executeandship\.com|dailymotion\.com|streamtp\.com|embedstream|player\.|embed\./i.test(url)) return true;
         if (url.includes('?') && !/\.(m3u8|ts|mp4|mpd)/i.test(url)) return true;
         return false;
@@ -781,7 +1194,6 @@
         document.getElementById('mainSlider').style.display = 'none';
         document.getElementById('videoTitle').innerText = title;
         window.scrollTo({top: 0, behavior: 'smooth'});
-
         if (isWebpageUrl(url)) {
             destroyAdvancedPlayer();
             currentSourceUrl = url;
@@ -797,7 +1209,7 @@
             loadIntoAdvancedPlayer(url, title, cardElement, true);
         }
     };
-    
+
     window.stopVideo = function() {
         destroyAdvancedPlayer();
         currentSourceUrl = null;
@@ -813,74 +1225,58 @@
         hideControls();
         setVideoBrightness(1.0);
     };
-    
+
     async function checkInternetBeforeStart() {
         const checker = document.getElementById('internetChecker');
-        if (!navigator.onLine) { checker.style.display = 'flex'; return false; }
+        if (!navigator.onLine) {
+            checker.style.display = 'flex';
+            return false;
+        }
         checker.style.display = 'none';
         return true;
     }
-    
     window.checkInternetAgain = async function() {
         const btn = document.querySelector('#internetChecker .retry-btn');
-        btn.innerHTML = '<i class="fa fa-spinner fa-spin"></i> Checking...';
-        btn.disabled = true;
-        const hasInternet = await checkInternetBeforeStart();
-        if (hasInternet) window.location.reload();
-        else { btn.innerHTML = '<i class="fa fa-arrow-rotate-right"></i> Try Again'; btn.disabled = false; }
+        btn.innerHTML = '<i class="fa fa-circle-notch fa-spin"></i> Checking...';
+        setTimeout(async () => {
+            const ok = await checkInternetBeforeStart();
+            if (ok) { fetchData(); }
+            else { btn.innerHTML = '<i class="fa fa-arrow-rotate-right"></i> Check Again'; }
+        }, 1000);
     };
-    
-    let rawData = [], settingsData = {}, currentCategory = 'All';
-    let isRefreshing = false, currentDataHash = '';
-    let availableCategories = []; 
-    let favorites = JSON.parse(localStorage.getItem(FAV_KEY_STORAGE) || '[]');
-    
-    // Automatic fallback icon function
-    function getCleanIcon(iconString, catName) {
-        if (iconString && iconString.trim() !== "") {
-            let i = iconString.trim().toLowerCase();
-            if (i.startsWith('fa-')) return `fa ${i}`;
-            if (i.startsWith('fa ')) return i;
-            return `fa fa-${i}`;
-        }
-        // Fallback checks based on category name
-        let lowerName = (catName || "").toLowerCase();
-        if (lowerName.includes('movie')) return 'fa fa-film';
-        if (lowerName.includes('show') || lowerName.includes('tv')) return 'fa fa-tv';
-        if (lowerName.includes('sport')) return 'fa fa-futbol';
-        if (lowerName.includes('live')) return 'fa fa-circle-play';
-        if (lowerName.includes('music')) return 'fa fa-music';
-        if (lowerName.includes('star') || lowerName.includes('fav')) return 'fa fa-star';
-        return 'fa fa-folder';
+
+    function loadDataFromCache() {
+        try {
+            let cached = localStorage.getItem(STORAGE_KEY_DATA);
+            if(cached) {
+                let cacheData = JSON.parse(cached);
+                if(cacheData.rawData && cacheData.rawData.length) {
+                    rawData = cacheData.rawData;
+                    currentDataHash = cacheData.dataHash || '';
+                    if(cacheData.settingsData) settingsData = cacheData.settingsData;
+                    availableCategories = cacheData.availableCategories || [];
+                    applySettings();
+                    return true;
+                }
+            }
+        } catch(e) {}
+        return false;
     }
 
-    function generateDataHash(data) { try { const importantFields = data.map(item => ({ name: item.name || item.Name || '', url: item.URL || item.url || '', category: item.Category || item.category || '', thumbnail: item.Thumbnail || item.thumbnail || '' })); return btoa(unescape(encodeURIComponent(JSON.stringify(importantFields)))); } catch(e) { return Date.now().toString(); } }
-    function isDataSame(newData, oldData) { if(newData.length !== oldData.length) return false; return generateDataHash(newData) === generateDataHash(oldData); }
-    function saveDataToCache(data, settings) { try { const dataHash = generateDataHash(data); currentDataHash = dataHash; localStorage.setItem(STORAGE_KEY_DATA, JSON.stringify({ rawData: data, settingsData: settings, timestamp: Date.now(), dataHash })); localStorage.setItem(STORAGE_KEY_HASH, dataHash); } catch(e) {} }
-    
-    function loadDataFromCache() { 
-        try { 
-            const cached = localStorage.getItem(STORAGE_KEY_DATA); 
-            if(cached) { 
-                const cacheData = JSON.parse(cached); 
-                if(cacheData.rawData && cacheData.rawData.length) { 
-                    rawData = cacheData.rawData; 
-                    currentDataHash = cacheData.dataHash || ''; 
-                    if(cacheData.settingsData) settingsData = cacheData.settingsData; 
-                    applySettings(); 
-                    return true; 
-                } 
-            } 
-        } catch(e) {} 
-        return false; 
+    function showCachedDataBadge() {
+        const badge = document.getElementById('data-save-badge');
+        badge.classList.add('show');
+        setTimeout(() => badge.classList.remove('show'), 2000);
     }
-    
-    function showCachedDataBadge() { const badge = document.getElementById('data-save-badge'); badge.classList.add('show'); setTimeout(() => badge.classList.remove('show'), 2000); }
-    function showNoUpdateBadge() { const badge = document.getElementById('no-update-badge'); badge.classList.add('show'); setTimeout(() => badge.classList.remove('show'), 2000); }
-    function updateUIAfterDataLoad() { 
-        updateSlider(); 
-        buildDynamicCategoryMenu(); 
-        
+    function showNoUpdateBadge() {
+        const badge = document.getElementById('no-update-badge');
+        badge.classList.add('show');
+        setTimeout(() => badge.classList.remove('show'), 2000);
+    }
+
+    function updateUIAfterDataLoad() {
+        updateSlider();
+        buildDynamicCategoryMenu();
         if(currentCategory === 'All') {
             let initialCat = 'All';
             if(availableCategories.length > 0) {
@@ -892,355 +1288,100 @@
             }
             currentCategory = initialCat;
         }
-        
-        filterData(currentCategory, null, false); 
-        const splash = document.getElementById('splash-screen'); 
-        if(splash && splash.style.display !== 'none') { 
-            splash.style.opacity = '0'; 
-            setTimeout(() => splash.style.display = 'none', 500); 
-        } 
+        filterData(currentCategory, null, false);
+        const splash = document.getElementById('splash-screen');
+        if(splash && splash.style.display !== 'none') {
+            splash.style.opacity = '0';
+            setTimeout(() => splash.style.display = 'none', 500);
+        }
     }
-    function applySettings() { if(settingsData.ratingUrl) document.getElementById('rating-link').href = settingsData.ratingUrl; if(settingsData.privacyUrl) document.getElementById('privacy-link').href = settingsData.privacyUrl; if(settingsData.version && parseFloat(settingsData.version) > 3.9) { document.getElementById('update-overlay').style.display = 'flex'; document.getElementById('update-btn').onclick = () => window.location.href = settingsData.updateUrl; } }
-    
+
+    function applySettings() {
+        if(settingsData.ratingUrl) document.getElementById('rating-link').href = settingsData.ratingUrl;
+        if(settingsData.privacyUrl) document.getElementById('privacy-link').href = settingsData.privacyUrl;
+        if(settingsData.version && parseFloat(settingsData.version) > 3.9) {
+            document.getElementById('update-overlay').style.display = 'flex';
+            document.getElementById('update-btn').onclick = () => window.location.href = settingsData.updateUrl;
+        }
+    }
+
     async function fetchFreshData() {
         return new Promise((resolve) => {
             Papa.parse('https://docs.google.com/spreadsheets/d/e/2PACX-1vQJM1FvOsBuKL_Al7PpwYerGDVFhs5tLF4PaVs3_TOLX-TFLW-iF3B6qLLLeuuBmjfZFGe3CFxJA-TR/pub?output=csv', {
-                download: true, header: true, skipEmptyLines: true, complete: function(results) {
-                    let newRawData = results.data.filter(item => item && (item.name || item.Name || item.URL || item.url)).map(item => { let cat = (item.Category || item.category || "").trim(); if(cat.toLowerCase() === "tv shows" || cat.toLowerCase() === "tvshow") item.Category = "TV Shows"; return item; });
-                    
-                    Papa.parse('https://docs.google.com/spreadsheets/d/e/2PACX-1vQD2lHL-u6zHPZKdYIVD4eXp98XipkVP4jKfxLDoNje9DeZ1726o0zFZf-gAR2kZj0ls7VhceXbbKih/pub?gid=1123743396&single=true&output=csv', { 
-                        download: true, header: true, skipEmptyLines: true, complete: function(settingsResults) {
-                            settingsData = settingsResults.data[0] || {};
-                            availableCategories = settingsResults.data.filter(row => row.Category || row.category).map(row => {
-                                return { name: (row.Category || row.category || "").trim(), icon: (row.Icon || row.icon || "").trim() };
-                            });
-
-                            if(!isDataSame(newRawData, rawData) && newRawData.length) { 
-                                rawData = newRawData; applySettings(); saveDataToCache(rawData, settingsData); updateUIAfterDataLoad(); resolve(true); 
-                            } else if(rawData.length === 0 && newRawData.length) { 
-                                rawData = newRawData; applySettings(); saveDataToCache(rawData, settingsData); updateUIAfterDataLoad(); resolve(true); 
-                            } else { resolve(false); }
-                        } 
+                download: true,
+                header: true,
+                skipEmptyLines: true,
+                complete: function(results) {
+                    let newRawData = results.data.filter(item => item && (item.name || item.Name || item.URL || item.url)).map(item => {
+                        let parsed = {};
+                        for (let key in item) { parsed[key.trim()] = item[key]; }
+                        return parsed;
                     });
-                }, error: () => resolve(false)
-            });
-        });
-    }
-    
-    function updateSlider() { const sliders = rawData.filter(d => (d.Category || d.category || "").toLowerCase() === 'slider'); const track = document.getElementById('sliderTrack'); if(sliders.length && track) { track.innerHTML = sliders.map(s => `<div class="slide-item"><img src="${s.Thumbnail || s.thumbnail || s.URL || s.url || MASTER_LOGO}" loading="lazy" onerror="handleImageError(this)" onload="handleImageLoad(this)" class="img-loading"></div>`).join(''); const videoBoxDisplay = document.getElementById('videoBox').style.display; document.getElementById('mainSlider').style.display = (currentCategory === 'All' && videoBoxDisplay !== 'block') ? 'block' : 'none'; } else document.getElementById('mainSlider').style.display = 'none'; }
+                    
+                    let newSettingsData = {};
+                    let newAvailableCategories = [];
+                    let hasCategorySheet = results.data.some(d => d.Category_Name || d.category_name);
+                    
+                    if(hasCategorySheet) {
+                        results.data.forEach(row => {
+                            if (row.Category_Name || row.category_name) {
+                                let cName = (row.Category_Name || row.category_name).trim();
+                                let cIcon = (row.Icon || row.icon || 'fa-folder').trim();
+                                if (cName && !newAvailableCategories.some(c => c.name.toLowerCase() === cName.toLowerCase())) {
+                                    newAvailableCategories.push({ name: cName, icon: cIcon });
+                                }
+                            }
+                            if (row.Setting_Key || row.setting_key) {
+                                let sKey = (row.Setting_Key || row.setting_key).trim();
+                                let sVal = (row.Setting_Value || row.setting_value).trim();
+                                if(sKey && sVal) newSettingsData[sKey] = sVal;
+                            }
+                        });
+                    } else {
+                        let dynamicCats = [...new Set(newRawData.map(d => (d.Category || d.category || '').trim()).filter(Boolean))];
+                        dynamicCats.forEach(catName => {
+                            if(!newAvailableCategories.some(c => c.name.toLowerCase() === catName.toLowerCase())) {
+                                newAvailableCategories.push({ name: catName, icon: 'fa-folder' });
+                            }
+                        });
+                    }
 
-    function buildDynamicCategoryMenu() {
-        const liveBtn = document.getElementById('live-nav-btn');
-        const sideNavDynamicLinks = document.getElementById('sideNavDynamicLinks');
-        
-        let hasLiveCategory = rawData.some(d => {
-            let c = (d.Category || d.category || '').trim().toLowerCase();
-            return c === 'live' || c === 'life';
-        });
+                    availableCategories = newAvailableCategories;
+                    rawData = newRawData;
+                    settingsData = newSettingsData;
+                    applySettings();
 
-        if (hasLiveCategory) { liveBtn.style.display = 'block'; } 
-        else { liveBtn.style.display = 'none'; }
+                    let stringifiedData = JSON.stringify(rawData);
+                    let newHash = '';
+                    for (let i = 0; i < stringifiedData.length; i++) {
+                        newHash = ((newHash << 5) - newHash) + stringifiedData.charCodeAt(i);
+                        newHash |= 0;
+                    }
+                    newHash = String(newHash);
 
-        sideNavDynamicLinks.innerHTML = `<a href="#" onclick="filterData('All', null, true)"><i class="fa fa-home"></i> Home</a>`;
-        if (availableCategories.length > 0) {
-            availableCategories.forEach(catObj => {
-                let lowerCat = catObj.name.toLowerCase();
-                if (lowerCat === 'live' || lowerCat === 'life' || lowerCat === 'slider') return;
-                let cleanIcon = getCleanIcon(catObj.icon, catObj.name);
-                sideNavDynamicLinks.innerHTML += `<a href="#" onclick="filterData('${catObj.name}', null, true)"><i class="${cleanIcon}"></i> ${catObj.name}</a>`;
-            });
-        }
-    }
-
-    window.filterData = function(cat, btn, shouldClose = true) { 
-        currentCategory = cat; 
-        if(shouldClose) closeNav(); 
-        
-        const sliderDiv = document.getElementById('mainSlider');
-        const videoBox = document.getElementById('videoBox'); 
-        const sliders = rawData.filter(d => (d.Category || d.category || "").toLowerCase() === 'slider'); 
-        
-        sliderDiv.style.display = (cat === 'All' && videoBox.style.display !== 'block' && sliders.length) ? 'block' : 'none'; 
-        
-        document.querySelectorAll('.nav-btn').forEach(b => { 
-            if(b === btn) b.classList.add('active'); 
-            else if(!btn && (b.getAttribute('data-cat') === cat || (cat === 'All' && b.id === 'home-nav-btn'))) b.classList.add('active');
-            else b.classList.remove('active'); 
-        }); 
-
-        const homeCategoriesContainer = document.getElementById('homeCategoriesContainer');
-        const mainCategoryView = document.getElementById('mainCategoryView');
-        const moreSectionView = document.getElementById('moreSectionView');
-        const specificGrid = document.getElementById('specificGrid');
-        const specificCategoryTitle = document.getElementById('specificCategoryTitle');
-
-        moreSectionView.style.display = 'none';
-
-        if (cat === 'All') {
-            mainCategoryView.style.display = 'none';
-            homeCategoriesContainer.style.display = 'block';
-            
-            let categoriesToDisplay = availableCategories;
-            if(!categoriesToDisplay.length) {
-                const uniqueCategories = [...new Set(rawData.map(item => (item.Category || item.category || "").trim()))].filter(Boolean);
-                categoriesToDisplay = uniqueCategories.map(c => ({ name: c, icon: '' }));
-            }
-            
-            let finalHtml = '';
-            categoriesToDisplay.forEach(catObj => {
-                const catName = catObj.name;
-                const lowerCatName = catName.toLowerCase();
-                
-                if(lowerCatName === 'slider' || lowerCatName === 'live' || lowerCatName === 'life') return;
-                
-                let filteredItems = rawData.filter(d => (d.Category || d.category || "").trim().toLowerCase() === lowerCatName);
-                if (!filteredItems.length) return;
-                
-                filteredItems = filteredItems.slice().reverse();
-                const hasMore = filteredItems.length > 5;
-                const itemsToShow = filteredItems.slice(0, 5);
-                
-                let cleanIcon = getCleanIcon(catObj.icon, catName);
-
-                finalHtml += `
-                <div class="category-section">
-                    <div class="category-header">
-                        <div class="category-title"><i class="${cleanIcon}"></i> ${catName}</div>
-                        ${hasMore ? `<div class="read-more-btn" onclick="filterData('${catName}', null, false)">Read More</div>` : ''}
-                    </div>
-                    <div class="grid">
-                        ${itemsToShow.map(item => {
-                            let thumb = item.Thumbnail || item.thumbnail || MASTER_LOGO;
-                            let itemName = item.name || item.Name || "Untitled";
-                            let url = item.URL || item.url || "#";
-                            let isFav = favorites.includes(url);
-                            return `
-                            <div class="card" data-url="${escapeHtml(url)}" data-title="${escapeHtml(itemName)}">
-                                <div class="fav-badge ${isFav ? 'active' : ''}" onclick="toggleFav(event, '${escapeHtml(url)}')"><i class="fa fa-heart"></i></div>
-                                <div style="width:100%; height:100%;" onclick="play('${escapeHtml(url)}', '${escapeHtml(itemName)}', this.parentElement)">
-                                    <img src="${thumb}" loading="lazy" onerror="handleImageError(this)" onload="handleImageLoad(this)" class="img-loading">
-                                    <div class="card-title">${itemName}</div>
-                                </div>
-                            </div>`;
-                        }).join('')}
-                    </div>
-                </div>`;
-            });
-            
-            if(!finalHtml) {
-                homeCategoriesContainer.innerHTML = `
-                <div class="empty-state">
-                    <i class="fa fa-folder-open"></i>
-                    <h3>No content available</h3>
-                </div>`;
-            } else {
-                homeCategoriesContainer.innerHTML = finalHtml;
-            }
-            
-        } else {
-            homeCategoriesContainer.style.display = 'none';
-            mainCategoryView.style.display = 'block';
-            
-            let matchedCategory = availableCategories.find(c => c.name.toLowerCase() === cat.toLowerCase());
-            let currentIconClass = matchedCategory ? matchedCategory.icon : "";
-            
-            if(cat.toLowerCase() === 'live' || cat.toLowerCase() === 'life') {
-                currentIconClass = "fa-circle-play";
-            }
-            let cleanIcon = getCleanIcon(currentIconClass, cat);
-            specificCategoryTitle.innerHTML = `<i class="${cleanIcon}"></i> ${cat.toUpperCase()}`;
-            
-            let filtered = rawData.filter(d => {
-                let c = (d.Category || d.category || "").trim().toLowerCase();
-                if (cat.toLowerCase() === 'live') {
-                    return c === 'live' || c === 'life';
+                    if (newHash !== currentDataHash) {
+                        currentDataHash = newHash;
+                        localStorage.setItem(STORAGE_KEY_DATA, JSON.stringify({
+                            rawData,
+                            dataHash: currentDataHash,
+                            settingsData,
+                            availableCategories
+                        }));
+                        updateUIAfterDataLoad();
+                        resolve(true);
+                    } else {
+                        updateUIAfterDataLoad();
+                        resolve(false);
+                    }
+                },
+                error: function() {
+                    updateUIAfterDataLoad();
+                    resolve(false);
                 }
-                return c === cat.toLowerCase();
             });
-            
-            filtered = filtered.slice().reverse();
-            
-            if(!filtered.length) {
-                specificGrid.innerHTML = `
-                <div style="grid-column:1/-1" class="empty-state">
-                    <i class="fa fa-folder-open"></i>
-                    <h3>No content found</h3>
-                </div>`;
-            } else {
-                specificGrid.innerHTML = filtered.map(item => {
-                    let thumb = item.Thumbnail || item.thumbnail || MASTER_LOGO, itemName = item.name || item.Name || "Untitled", url = item.URL || item.url || "#";
-                    let isFav = favorites.includes(url);
-                    return `
-                    <div class="card" data-url="${escapeHtml(url)}" data-title="${escapeHtml(itemName)}">
-                        <div class="fav-badge ${isFav ? 'active' : ''}" onclick="toggleFav(event, '${escapeHtml(url)}')"><i class="fa fa-heart"></i></div>
-                        <div style="width:100%; height:100%;" onclick="play('${escapeHtml(url)}', '${escapeHtml(itemName)}', this.parentElement)">
-                            <img src="${thumb}" loading="lazy" onerror="handleImageError(this)" onload="handleImageLoad(this)" class="img-loading">
-                            <div class="card-title">${itemName}</div>
-                        </div>
-                    </div>`;
-                }).join('');
-            }
-        }
-    };
-
-    window.toggleFav = function(e, url) {
-        if(e) e.stopPropagation();
-        let idx = favorites.indexOf(url);
-        if (idx > -1) { favorites.splice(idx, 1); } else { favorites.push(url); }
-        localStorage.setItem(FAV_KEY_STORAGE) = JSON.stringify(favorites);
-        
-        document.querySelectorAll(`.card[data-url="${url}"] .fav-badge`).forEach(badge => {
-            if (favorites.includes(url)) badge.classList.add('active');
-            else badge.classList.remove('active');
         });
-
-        if (currentCategory === 'favorites_view') { showFavorites(document.getElementById('fav-nav-btn')); }
-    };
-
-    window.showFavorites = function(btn) {
-        closeNav();
-        currentCategory = 'favorites_view';
-        document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
-        if(btn) btn.classList.add('active');
-
-        document.getElementById('mainSlider').style.display = 'none';
-        document.getElementById('homeCategoriesContainer').style.display = 'none';
-        document.getElementById('moreSectionView').style.display = 'none';
-        
-        const mainCategoryView = document.getElementById('mainCategoryView');
-        const specificGrid = document.getElementById('specificGrid');
-        const specificCategoryTitle = document.getElementById('specificCategoryTitle');
-        
-        mainCategoryView.style.display = 'block';
-        specificCategoryTitle.innerHTML = `<i class="fa fa-heart" style="color:#ff3b30;"></i> MY FAVORITES`;
-
-        let filtered = rawData.filter(d => favorites.includes(d.URL || d.url));
-        filtered = filtered.slice().reverse();
-
-        if(!filtered.length) {
-            specificGrid.innerHTML = `
-            <div style="grid-column:1/-1" class="empty-state">
-                <i class="fa fa-heart-broken" style="color:#555;"></i>
-                <h3>No favorites yet</h3>
-                <p>Click on the heart icon to add items</p>
-            </div>`;
-        } else {
-            specificGrid.innerHTML = filtered.map(item => {
-                let thumb = item.Thumbnail || item.thumbnail || MASTER_LOGO, itemName = item.name || item.Name || "Untitled", url = item.URL || item.url || "#";
-                return `
-                <div class="card" data-url="${escapeHtml(url)}" data-title="${escapeHtml(itemName)}">
-                    <div class="fav-badge active" onclick="toggleFav(event, '${escapeHtml(url)}')"><i class="fa fa-heart"></i></div>
-                    <div style="width:100%; height:100%;" onclick="play('${escapeHtml(url)}', '${escapeHtml(itemName)}', this.parentElement)">
-                        <img src="${thumb}" loading="lazy" onerror="handleImageError(this)" onload="handleImageLoad(this)" class="img-loading">
-                        <div class="card-title">${itemName}</div>
-                    </div>
-                </div>`;
-            }).join('');
-        }
-    };
-
-    window.showMoreSection = function(btn) {
-        closeNav();
-        currentCategory = 'more_section';
-        document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
-        if(btn) btn.classList.add('active');
-
-        document.getElementById('mainSlider').style.display = 'none';
-        document.getElementById('homeCategoriesContainer').style.display = 'none';
-        document.getElementById('mainCategoryView').style.display = 'none';
-        document.getElementById('moreSectionView').style.display = 'block';
-
-        let user = localStorage.getItem('nikamma_user');
-        if(user) {
-            document.getElementById('loggedOutView').style.display = 'none';
-            document.getElementById('loggedInView').style.display = 'block';
-            document.getElementById('welcomeUser').innerText = `Hi, ${user}!`;
-        } else {
-            document.getElementById('loggedOutView').style.display = 'block';
-            document.getElementById('loggedInView').style.display = 'none';
-        }
-    };
-
-    window.userLogin = function() {
-        let u = document.getElementById('loginUsername').value.trim();
-        if(u) { localStorage.setItem('nikamma_user', u); showMoreSection(document.getElementById('more-nav-btn')); }
-    };
-
-    window.userLogout = function() { localStorage.removeItem('nikamma_user'); showMoreSection(document.getElementById('more-nav-btn')); };
-
-    window.changeTheme = function(color) {
-        document.documentElement.style.setProperty('--main-color', color);
-        localStorage.setItem('nikamma_theme_color', color);
-        document.querySelectorAll('.category-title i').forEach(el => el.style.color = color);
-    };
-
-    function escapeHtml(str) { if(!str) return ''; return String(str).replace(/[&<>]/g, function(m) { if(m === '&') return '&amp;'; if(m === '<') return '&lt;'; if(m === '>') return '&gt;'; return m; }); }
-    function handleImageError(img) { if(img && img.src !== MASTER_LOGO) { img.src = MASTER_LOGO; img.classList.add('img-loading'); img.onerror = null; } }
-    function handleImageLoad(img) { if(img) { img.classList.remove('img-loading'); img.classList.add('img-loaded'); } }
-    function shareApp(e) { if(e) e.preventDefault(); const shareURL = settingsData.shareUrl || window.location.href; if(navigator.share) navigator.share({ title: 'Nikamma 4k', url: shareURL }); else window.open(shareURL, '_blank'); }
-    
-    function openNav() { const sideNav = document.getElementById("mySidenav"), overlay = document.getElementById("menu-overlay"); overlay.style.display = "block"; setTimeout(() => { sideNav.classList.add("open"); overlay.classList.add("visible"); }, 10); }
-    function closeNav() { const sideNav = document.getElementById("mySidenav"), overlay = document.getElementById("menu-overlay"); sideNav.classList.remove("open"); overlay.classList.remove("visible"); setTimeout(() => { if(!sideNav.classList.contains('open')) overlay.style.display = "none"; }, 400); }
-    function toggleSearch(show) { document.getElementById('header-main').style.display = show ? 'none' : 'flex'; document.getElementById('header-icons').style.display = show ? 'none' : 'flex'; document.getElementById('search-container').style.display = show ? 'flex' : 'none'; if(show) document.getElementById('searchBar').focus(); }
-    
-    window.search = function() { 
-        let term = document.getElementById('searchBar').value.toLowerCase().trim(); 
-        const homeCategoriesContainer = document.getElementById('homeCategoriesContainer');
-        const mainCategoryView = document.getElementById('mainCategoryView');
-        const specificGrid = document.getElementById('specificGrid');
-        const specificCategoryTitle = document.getElementById('specificCategoryTitle');
-
-        if(term === '') { filterData(currentCategory, null, false); return; } 
-        
-        homeCategoriesContainer.style.display = 'none';
-        mainCategoryView.style.display = 'block';
-        specificCategoryTitle.innerHTML = `<i class="fa fa-search"></i> SEARCH RESULTS`;
-        
-        const filtered = rawData.filter(d => (d.name || d.Name || "").toLowerCase().includes(term) && (d.Category || d.category || "").toLowerCase() !== 'slider').slice().reverse(); 
-        if(!filtered.length) { 
-            specificGrid.innerHTML = `<div style="grid-column:1/-1" class="empty-state"><i class="fa fa-search"></i><h3>No results for "${term}"</h3></div>`; 
-            return; 
-        } 
-        
-        specificGrid.innerHTML = filtered.map(item => `
-        <div class="card" onclick="play('${escapeHtml(item.URL || item.url || "#")}', '${escapeHtml(item.name || item.Name)}', this)">
-            <img src="${item.Thumbnail || item.thumbnail || MASTER_LOGO}" loading="lazy" onerror="handleImageError(this)" onload="handleImageLoad(this)" class="img-loading">
-            <div class="card-title">${item.name || item.Name}</div>
-        </div>`).join(''); 
-    };
-
-    window.forceRefreshData = async function() { if(isRefreshing) return; isRefreshing = true; updatePTR('release'); const updated = await fetchFreshData(); updatePTR('complete'); if(updated) showCachedDataBadge(); else showNoUpdateBadge(); setTimeout(() => isRefreshing = false, 500); closeNav(); };
-    
-    let ptrStartY = 0, ptrActive = false, ptrHeight = 0, isTouching = false;
-
-    function updatePTR(status, pullDistance = 0) {
-        var pc = document.getElementById('ptr-container');
-        var pt = document.getElementById('ptr-text');
-        var pi = document.getElementById('ptr-icon');
-        if (status === 'pull') {
-            var show = Math.min(pullDistance, 70);
-            var ty = -70 + show;
-            pc.style.transition = 'none';
-            pc.style.transform = 'translateY(' + ty + 'px)';
-            if (pullDistance > 50) { pt.innerText = 'Release to refresh'; pi.className = 'fa fa-rotate'; } 
-            else { pt.innerText = 'Pull to refresh'; pi.className = 'fa fa-arrow-down'; }
-        } else if (status === 'release') {
-            pc.style.transition = 'transform 0.3s ease'; pc.style.transform = 'translateY(0px)'; pt.innerText = 'Refreshing...';
-            pi.className = 'ptr-spinner';
-        } else if (status === 'complete') {
-            pc.style.transition = 'transform 0.3s ease'; pc.style.transform = 'translateY(-70px)';
-            setTimeout(function() { pt.innerText = 'Pull to refresh'; pi.className = 'fa fa-arrow-down'; }, 400);
-        }
     }
 
-    document.addEventListener('touchstart', function(e) { if(window.pageYOffset === 0 && !isRefreshing) { ptrStartY = e.touches[0].pageY; isTouching = true; } }, {passive: true});
-    document.addEventListener('touchmove', function(e) { if(window.pageYOffset === 0 && isTouching && !isRefreshing) { const diffY = e.touches[0].pageY - ptrStartY; if(diffY > 0) { ptrActive = true; ptrHeight = Math.min(diffY, 70); updatePTR('pull', ptrHeight); } } }, {passive: false});
-    document.addEventListener('touchend', function() { if(ptrActive && ptrHeight > 50 && !isRefreshing) forceRefreshData(); else if(ptrActive) updatePTR('complete'); isTouching = false; ptrActive = false; ptrHeight = 0; });
-    
-    let sliderInterval, slideIndex = 0;
-    function startSlider() { if(sliderInterval) clearInterval(sliderInterval); sliderInterval = setInterval(() => { const track = document.getElementById('sliderTrack'); if(track && track.children.length) { slideIndex = (slideIndex + 1) % track.children.length; track.style.transform = `translateX(-${slideIndex * 100}%)`; } }, 3000); }
-    setInterval(() => { const track = document.getElementById('sliderTrack'); if(track && track.children.length && !sliderInterval) startSlider(); }, 1000);
-    
     async function init() { 
         let cachedColor = localStorage.getItem('nikamma_theme_color');
         if(cachedColor) { document.documentElement.style.setProperty('--main-color', cachedColor); }
@@ -1259,19 +1400,6 @@
             document.getElementById('splash-screen').style.display = 'none'; 
             updateSlider(); 
             buildDynamicCategoryMenu();
-
-            if(currentCategory === 'All') {
-                let initialCat = 'All';
-                if(availableCategories.length > 0) {
-                    let firstValid = availableCategories.find(c => {
-                        let name = (c.name || '').toLowerCase();
-                        return name !== 'slider' && name !== 'live' && name !== 'life';
-                    });
-                    if(firstValid) initialCat = firstValid.name;
-                }
-                currentCategory = initialCat;
-            }
-
             filterData(currentCategory, null, false); 
             showCachedDataBadge(); 
             fetchFreshData().then(updated => { if(updated) console.log("Data updated"); }); 
