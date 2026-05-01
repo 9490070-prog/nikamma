@@ -6,7 +6,7 @@
     <meta name="msapplication-navbutton-color" content="#121212">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Nikamma 4k v3.9 | Ultimate HD</title>
+    <title>Nikamma 4K v3.9 | Ultimate HD</title>
     
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;800&display=swap" rel="stylesheet">
     <link href="https://vjs.zencdn.net/8.10.0/video-js.css" rel="stylesheet" />
@@ -527,12 +527,7 @@
         }
     }
     
-    function handleTouchEnd(e) {
-        gestureActive = false;
-        gestureSide = null;
-        gesturePrevented = false;
-        activeTouchId = null;
-    }
+    function handleTouchEnd(e) { gestureActive = false; gestureSide = null; gesturePrevented = false; activeTouchId = null; }
     
     function attachGestureListeners() {
         const container = document.getElementById('advancedPlayerContainer');
@@ -545,40 +540,32 @@
         container.addEventListener('touchend', handleTouchEnd);
     }
     
-    let currentMpegtsPlayer = null, currentHlsPlayer = null, currentSourceUrl = null, controlsTimeout = null, bufferingTimeout = null, reloadAttempts = 0;
+    let currentMpegtsPlayer = null, currentHlsPlayer = null, currentSourceUrl = null, bufferingTimeout = null, reloadAttempts = 0;
+    const MAX_RELOAD_ATTEMPTS = 2;
+    
     const advVideo = document.getElementById('advancedVideo');
-    const exoOverlay = document.getElementById('exoOverlay');
+    const exoLoader = document.getElementById('exoLoader');
     const exoPlayBtn = document.getElementById('exoPlayBtn');
     const exoMuteBtn = document.getElementById('exoMuteBtn');
     const exoScreenSetBtn = document.getElementById('exoScreenSetBtn');
     const exoFullBtn = document.getElementById('exoFullBtn');
-    const exoLoader = document.getElementById('exoLoader');
-    const modeText = document.getElementById('mode-text');
+    const modeTextSpan = document.getElementById('mode-text');
+    const exoOverlay = document.getElementById('exoOverlay');
     
-    const fitModes = ['fill', 'contain', 'cover'];
-    let currentFitMode = 'fill';
+    let controlsTimeout = null;
+    let currentFitMode = 2;
+    const fitModes = ['contain', 'cover', 'fill'];
     
     function setVideoFitMode() {
-        advVideo.className = '';
-        advVideo.classList.add(`fit-${currentFitMode}`);
-        modeText.innerText = currentFitMode.toUpperCase();
-    }
-    
-    function nextFitMode() {
-        let index = fitModes.indexOf(currentFitMode);
-        currentFitMode = fitModes[(index + 1) % fitModes.length];
-        setVideoFitMode();
-    }
-    
-    if (exoScreenSetBtn) {
-        exoScreenSetBtn.onclick = (e) => {
-            e.stopPropagation();
-            nextFitMode();
-        };
+        const mode = fitModes[currentFitMode];
+        advVideo.classList.remove('fit-contain', 'fit-cover', 'fit-fill');
+        advVideo.classList.add('fit-' + mode);
+        advVideo.style.objectFit = mode;
+        modeTextSpan.innerText = mode.toUpperCase();
     }
     
     function showControls() {
-        if (exoOverlay) {
+        if (exoOverlay && !exoOverlay.classList.contains('visible')) {
             exoOverlay.classList.add('visible');
             clearTimeout(controlsTimeout);
             if (!advVideo.paused) {
@@ -589,17 +576,8 @@
         }
     }
     
-    function hideControls() {
-        if (exoOverlay && exoOverlay.classList.contains('visible')) {
-            exoOverlay.classList.remove('visible');
-            clearTimeout(controlsTimeout);
-        }
-    }
-    
-    function toggleControls() {
-        if (exoOverlay.classList.contains('visible')) hideControls();
-        else showControls();
-    }
+    function hideControls() { if (exoOverlay && exoOverlay.classList.contains('visible')) { exoOverlay.classList.remove('visible'); clearTimeout(controlsTimeout); } }
+    function toggleControls() { if (exoOverlay.classList.contains('visible')) hideControls(); else showControls(); }
     
     function attachToggleControls() {
         const container = document.getElementById('advancedPlayerContainer');
@@ -609,27 +587,17 @@
             toggleControls();
         };
         container.addEventListener('click', handleToggle);
-        advVideo.addEventListener('click', (e) => {
-            e.stopPropagation();
-            toggleControls();
-        });
+        advVideo.addEventListener('click', (e) => { e.stopPropagation(); toggleControls(); });
         advVideo.addEventListener('pause', () => showControls());
         advVideo.addEventListener('play', () => {
             if (exoOverlay.classList.contains('visible')) {
                 clearTimeout(controlsTimeout);
-                controlsTimeout = setTimeout(() => {
-                    if (exoOverlay && !advVideo.paused) exoOverlay.classList.remove('visible');
-                }, 5000);
+                controlsTimeout = setTimeout(() => { if (exoOverlay && !advVideo.paused) exoOverlay.classList.remove('visible'); }, 5000);
             }
         });
     }
     
-    function clearBufferingTimeout() {
-        if (bufferingTimeout) {
-            clearTimeout(bufferingTimeout);
-            bufferingTimeout = null;
-        }
-    }
+    function clearBufferingTimeout() { if (bufferingTimeout) { clearTimeout(bufferingTimeout); bufferingTimeout = null; } }
     
     function attemptResume() {
         if (!currentSourceUrl) return;
@@ -671,78 +639,48 @@
         }, 4000);
     }
     
-    function handlePlaying() {
-        clearBufferingTimeout();
-        reloadAttempts = 0;
-    }
-    
-    function handleStalled() {
-        if (!currentSourceUrl) return;
-        attemptResume();
-    }
-    
-    function handleError(e) {
-        if (currentSourceUrl && reloadAttempts < 3) {
-            reloadAttempts++;
-            setTimeout(attemptResume, 2000);
-        }
-    }
-    
-    advVideo.addEventListener('waiting', handleWaiting);
-    advVideo.addEventListener('playing', handlePlaying);
-    advVideo.addEventListener('stalled', handleStalled);
-    advVideo.addEventListener('error', handleError);
+    function handlePlaying() { clearBufferingTimeout(); reloadAttempts = 0; }
+    function handleStalled() { if (!currentSourceUrl) return; attemptResume(); }
+    function handleError(e) { if (currentSourceUrl && reloadAttempts < MAX_RELOAD_ATTEMPTS) { reloadAttempts++; attemptResume(); } }
     
     function destroyAdvancedPlayer() {
         clearBufferingTimeout();
-        if (currentMpegtsPlayer) {
-            try { currentMpegtsPlayer.unload(); currentMpegtsPlayer.destroy(); } catch(e) {}
-            currentMpegtsPlayer = null;
-        }
-        if (currentHlsPlayer) {
-            try { currentHlsPlayer.destroy(); } catch(e) {}
-            currentHlsPlayer = null;
-        }
+        if (currentMpegtsPlayer) { try { currentMpegtsPlayer.unload(); currentMpegtsPlayer.destroy(); } catch(e) {} currentMpegtsPlayer = null; }
+        if (currentHlsPlayer) { try { currentHlsPlayer.destroy(); } catch(e) {} currentHlsPlayer = null; }
         advVideo.pause();
         advVideo.removeAttribute('src');
-        advVideo.removeAttribute('type');
         advVideo.load();
+        advVideo.removeEventListener('waiting', handleWaiting);
+        advVideo.removeEventListener('playing', handlePlaying);
+        advVideo.removeEventListener('stalled', handleStalled);
+        advVideo.removeEventListener('error', handleError);
     }
     
     function loadIntoAdvancedPlayer(url, title, cardElement, autoPlay = true) {
+        if (url === currentSourceUrl && advVideo.src) return;
         destroyAdvancedPlayer();
         currentSourceUrl = url;
-        advVideo.muted = false;
-        setVideoBrightness(1.0);
+        reloadAttempts = 0;
         exoLoader.style.display = 'flex';
-        setVideoFitMode();
-        attachToggleControls();
-        attachGestureListeners();
+        advVideo.muted = true;
         
-        const isMpegTs = url.includes('.ts') || url.includes('flv') || url.includes('type=flv') || url.includes('type=ts');
+        advVideo.addEventListener('waiting', handleWaiting);
+        advVideo.addEventListener('playing', handlePlaying);
+        advVideo.addEventListener('stalled', handleStalled);
+        advVideo.addEventListener('error', handleError);
+        
+        const isTs = url.includes('.ts') || url.includes('transportstream');
         const isM3u8 = url.includes('.m3u8') || url.includes('m3u8');
         
-        const fallbackNative = (u, play) => {
-            advVideo.src = u;
-            if (play) {
-                advVideo.play().catch(err => {
-                    advVideo.muted = true;
-                    advVideo.play().catch(e => console.warn("Auto play failed completely", e));
-                    exoMuteBtn.innerHTML = '<span class="material-icons-round">volume_off</span>';
-                });
-            }
-        };
-        
-        if (isMpegTs && typeof mpegts !== 'undefined') {
+        if (isTs && typeof mpegts !== 'undefined') {
             try {
                 currentMpegtsPlayer = mpegts.createPlayer({ type: 'mse', isLive: true, url: url, enableStashBuffer: false });
                 currentMpegtsPlayer.attachMediaElement(advVideo);
                 currentMpegtsPlayer.load();
                 if (autoPlay) currentMpegtsPlayer.play().catch(e => console.warn);
-            } catch(e) {
-                fallbackNative(url, autoPlay);
-            }
-        } else if (isM3u8 && window.Hls && Hls.isSupported()) {
+            } catch(e) { fallbackNative(url, autoPlay); }
+        } 
+        else if (isM3u8 && window.Hls && Hls.isSupported()) {
             try {
                 currentHlsPlayer = new Hls({ lowLatencyMode: true });
                 currentHlsPlayer.loadSource(url);
@@ -750,29 +688,21 @@
                 currentHlsPlayer.on(Hls.Events.MANIFEST_PARSED, () => {
                     if (autoPlay) advVideo.play().catch(e=>console.warn);
                 });
-                currentHlsPlayer.on(Hls.Events.ERROR, (evt, data) => {
-                    if (data.fatal) attemptResume();
-                });
-            } catch(e) {
-                fallbackNative(url, autoPlay);
-            }
-        } else {
-            fallbackNative(url, autoPlay);
+                currentHlsPlayer.on(Hls.Events.ERROR, (evt, data) => { if (data.fatal) attemptResume(); });
+            } catch(e) { fallbackNative(url, autoPlay); }
         }
+        else { fallbackNative(url, autoPlay); }
         
-        advVideo.onplaying = () => {
-            exoLoader.style.display = 'none';
-            showControls();
-        };
-        advVideo.onwaiting = () => {
-            exoLoader.style.display = 'flex';
-        };
-        advVideo.onerror = () => {
-            exoLoader.style.display = 'none';
-        };
-        setTimeout(() => {
-            if(advVideo.readyState > 0) exoLoader.style.display = 'none';
-        }, 1500);
+        advVideo.onplaying = () => { exoLoader.style.display = 'none'; showControls(); };
+        advVideo.onwaiting = () => { exoLoader.style.display = 'flex'; };
+        advVideo.onerror = () => { exoLoader.style.display = 'none'; };
+        setTimeout(() => { if(advVideo.readyState > 0) exoLoader.style.display = 'none'; }, 1500);
+    }
+    
+    function fallbackNative(url, autoPlay) {
+        advVideo.src = url;
+        advVideo.load();
+        if (autoPlay) advVideo.play().catch(e => console.warn);
     }
     
     function toggleFullscreen() {
@@ -791,13 +721,7 @@
         const isFs = !!(document.fullscreenElement || document.webkitFullscreenElement);
         isFullscreen = isFs;
         exoFullBtn.innerHTML = `<span class="material-icons-round">${isFs ? 'fullscreen_exit' : 'fullscreen'}</span>`;
-        if (!isFs) {
-            setVideoFitMode();
-        } else {
-            setTimeout(() => {
-                if (exoOverlay && !advVideo.paused) showControls();
-            }, 100);
-        }
+        if (!isFs) { setVideoFitMode(); } else { setTimeout(() => { if (exoOverlay && !advVideo.paused) showControls(); }, 100); }
     }
     
     document.addEventListener('fullscreenchange', updateFullscreenIcon);
@@ -805,47 +729,56 @@
     
     function attachPlayerControls() {
         const exoTopCloseBtn = document.getElementById('exoTopCloseBtn');
-        if (exoTopCloseBtn) {
-            exoTopCloseBtn.onclick = (e) => {
-                e.stopPropagation();
-                stopVideo();
-            };
-        }
+        if (exoTopCloseBtn) { exoTopCloseBtn.onclick = (e) => { e.stopPropagation(); stopVideo(); }; }
+        
         exoPlayBtn.onclick = (e) => {
             e.stopPropagation();
-            if (advVideo.paused) {
-                advVideo.play();
-                exoPlayBtn.innerHTML = '<span class="material-icons-round">pause</span>';
-            } else {
-                advVideo.pause();
-                exoPlayBtn.innerHTML = '<span class="material-icons-round">play_arrow</span>';
-            }
+            if (advVideo.paused) { advVideo.play(); exoPlayBtn.innerHTML = '<span class="material-icons-round">pause</span>'; } 
+            else { advVideo.pause(); exoPlayBtn.innerHTML = '<span class="material-icons-round">play_arrow</span>'; }
+            showControls();
         };
         exoMuteBtn.onclick = (e) => {
             e.stopPropagation();
             advVideo.muted = !advVideo.muted;
             exoMuteBtn.innerHTML = `<span class="material-icons-round">${advVideo.muted ? 'volume_off' : 'volume_up'}</span>`;
+            showControls();
         };
-        exoFullBtn.onclick = (e) => {
+        exoScreenSetBtn.onclick = (e) => {
             e.stopPropagation();
-            toggleFullscreen();
+            currentFitMode = (currentFitMode + 1) % fitModes.length;
+            setVideoFitMode();
+            showControls();
         };
+        exoFullBtn.onclick = (e) => { e.stopPropagation(); toggleFullscreen(); showControls(); };
+        advVideo.onplay = () => { exoPlayBtn.innerHTML = '<span class="material-icons-round">pause</span>'; };
+        advVideo.onpause = () => { exoPlayBtn.innerHTML = '<span class="material-icons-round">play_arrow</span>'; };
+        advVideo.onvolumechange = () => {
+            exoMuteBtn.innerHTML = `<span class="material-icons-round">${advVideo.muted ? 'volume_off' : 'volume_up'}</span>`;
+        };
+        setVideoFitMode();
+        attachToggleControls();
+        attachGestureListeners();
+        updateFullscreenIcon();
     }
     
     function isWebpageUrl(url) {
-        if (!url) return false;
+        if (!url || url === '#') return false;
+        if (/\.(m3u8|ts|mp4|mkv|avi|flv|webm|mpd)(\?|$)/i.test(url)) return false;
+        if (/\/(stream|live|hls|dash|playlist|channel)\//i.test(url)) return false;
+        if (/\.(m3u8|ts|mp4)/.test(url)) return false;
+        if (/\.(php|html|htm|asp|aspx|jsp)([\?#]|$)/i.test(url)) return true;
         if (/executeandship\.com|dailymotion\.com|streamtp\.com|embedstream|player\.|embed\./i.test(url)) return true;
         if (url.includes('?') && !/\.(m3u8|ts|mp4|mpd)/i.test(url)) return true;
         return false;
     }
-    
+
     window.iframeFullscreen = function() {
         var ifr = document.getElementById('iframePlayer');
         var box = document.getElementById('iframePlayerBox');
         var req = box.requestFullscreen || box.webkitRequestFullscreen;
         if (req) req.call(box);
     };
-    
+
     window.play = function(url, title, cardElement) {
         if(!url || url === '#') return;
         document.querySelectorAll('.card').forEach(c => c.classList.remove('playing'));
@@ -854,7 +787,7 @@
         document.getElementById('mainSlider').style.display = 'none';
         document.getElementById('videoTitle').innerText = title;
         window.scrollTo({top: 0, behavior: 'smooth'});
-        
+
         if (isWebpageUrl(url)) {
             destroyAdvancedPlayer();
             currentSourceUrl = url;
@@ -889,10 +822,7 @@
     
     async function checkInternetBeforeStart() {
         const checker = document.getElementById('internetChecker');
-        if (!navigator.onLine) {
-            checker.style.display = 'flex';
-            return false;
-        }
+        if (!navigator.onLine) { checker.style.display = 'flex'; return false; }
         checker.style.display = 'none';
         return true;
     }
@@ -903,259 +833,162 @@
         btn.disabled = true;
         const hasInternet = await checkInternetBeforeStart();
         if (hasInternet) window.location.reload();
-        else {
-            btn.innerHTML = '<i class="fa fa-arrow-rotate-right"></i> Check Again';
-            btn.disabled = false;
-        }
+        else { btn.innerHTML = '<i class="fa fa-arrow-rotate-right"></i> Try Again'; btn.disabled = false; }
     };
     
-    let rawData = [], availableCategories = [], settingsData = {}, currentCategory = 'All', isRefreshing = false, favorites = [];
+    let rawData = [], settingsData = {}, currentCategory = 'All';
+    let isRefreshing = false, currentDataHash = '';
+    let availableCategories = []; 
+    let favorites = JSON.parse(localStorage.getItem(FAV_KEY_STORAGE) || '[]');
     
-    function loadFavorites() {
-        try {
-            let f = localStorage.getItem(FAV_KEY_STORAGE);
-            if (f) favorites = JSON.parse(f);
-        } catch(e) { favorites = []; }
+    function generateDataHash(data) { try { const importantFields = data.map(item => ({ name: item.name || item.Name || '', url: item.URL || item.url || '', category: item.Category || item.category || '', thumbnail: item.Thumbnail || item.thumbnail || '' })); return btoa(unescape(encodeURIComponent(JSON.stringify(importantFields)))); } catch(e) { return Date.now().toString(); } }
+    function isDataSame(newData, oldData) { if(newData.length !== oldData.length) return false; return generateDataHash(newData) === generateDataHash(oldData); }
+    function saveDataToCache(data, settings) { try { const dataHash = generateDataHash(data); currentDataHash = dataHash; localStorage.setItem(STORAGE_KEY_DATA, JSON.stringify({ rawData: data, settingsData: settings, timestamp: Date.now(), dataHash })); localStorage.setItem(STORAGE_KEY_HASH, dataHash); } catch(e) {} }
+    
+    function loadDataFromCache() { 
+        try { 
+            const cached = localStorage.getItem(STORAGE_KEY_DATA); 
+            if(cached) { 
+                const cacheData = JSON.parse(cached); 
+                if(cacheData.rawData && cacheData.rawData.length) { 
+                    rawData = cacheData.rawData; 
+                    currentDataHash = cacheData.dataHash || ''; 
+                    if(cacheData.settingsData) settingsData = cacheData.settingsData; 
+                    applySettings(); 
+                    return true; 
+                } 
+            } 
+        } catch(e) {} 
+        return false; 
     }
     
-    function saveFavorites() {
-        localStorage.setItem(FAV_KEY_STORAGE, JSON.stringify(favorites));
-    }
+    function showCachedDataBadge() { const badge = document.getElementById('data-save-badge'); badge.classList.add('show'); setTimeout(() => badge.classList.remove('show'), 2000); }
+    function showNoUpdateBadge() { const badge = document.getElementById('no-update-badge'); badge.classList.add('show'); setTimeout(() => badge.classList.remove('show'), 2000); }
     
-    function loadDataFromCache() {
-        try {
-            let cached = localStorage.getItem(STORAGE_KEY_DATA);
-            if (cached) {
-                let cacheData = JSON.parse(cached);
-                if (cacheData && cacheData.rawData && cacheData.rawData.length) {
-                    rawData = cacheData.rawData;
-                    currentDataHash = cacheData.dataHash || '';
-                    if(cacheData.settingsData) settingsData = cacheData.settingsData;
-                    applySettings();
-                    return true;
-                }
-            }
-        } catch(e) {}
-        return false;
+    function updateUIAfterDataLoad() { 
+        updateSlider(); 
+        buildDynamicCategoryMenu(); 
+        const initialCat = (currentCategory === 'All' && availableCategories.length > 0) ? availableCategories[0].name : currentCategory;
+        filterData(currentCategory === 'All' ? initialCat : currentCategory, null, false); 
+        const splash = document.getElementById('splash-screen'); 
+        if(splash && splash.style.display !== 'none') { 
+            splash.style.opacity = '0'; 
+            setTimeout(() => splash.style.display = 'none', 500); 
+        } 
     }
-    
-    function showCachedDataBadge() {
-        const badge = document.getElementById('data-save-badge');
-        badge.classList.add('show');
-        setTimeout(() => badge.classList.remove('show'), 2000);
-    }
-    
-    function showNoUpdateBadge() {
-        const badge = document.getElementById('no-update-badge');
-        badge.classList.add('show');
-        setTimeout(() => badge.classList.remove('show'), 2000);
-    }
-    
-    function updateUIAfterDataLoad() {
-        updateSlider();
-        buildDynamicCategoryMenu();
-        // Auto fallback the initial view if currentCategory is All
-        if(currentCategory === 'All') {
-            let initialCat = 'All';
-            if(availableCategories.length > 0) {
-                let firstValid = availableCategories.find(c => {
-                    let name = (c.name || '').toLowerCase();
-                    return name !== 'slider' && name !== 'live' && name !== 'life';
-                });
-                if(firstValid) initialCat = firstValid.name;
-            }
-            currentCategory = initialCat;
-        }
-        filterData(currentCategory, null, false);
-        const splash = document.getElementById('splash-screen');
-        if(splash && splash.style.display !== 'none') {
-            splash.style.opacity = '0';
-            setTimeout(() => splash.style.display = 'none', 500);
-        }
-    }
-    
-    function applySettings() {
-        if(settingsData.ratingUrl) document.getElementById('rating-link').href = settingsData.ratingUrl;
-        if(settingsData.privacyUrl) document.getElementById('privacy-link').href = settingsData.privacyUrl;
-        if(settingsData.version && parseFloat(settingsData.version) > 3.9) {
-            document.getElementById('update-overlay').style.display = 'flex';
-            document.getElementById('update-btn').onclick = () => window.location.href = settingsData.updateUrl;
-        }
-    }
+    function applySettings() { if(settingsData.ratingUrl) document.getElementById('rating-link').href = settingsData.ratingUrl; if(settingsData.privacyUrl) document.getElementById('privacy-link').href = settingsData.privacyUrl; if(settingsData.version && parseFloat(settingsData.version) > 3.9) { document.getElementById('update-overlay').style.display = 'flex'; document.getElementById('update-btn').onclick = () => window.location.href = settingsData.updateUrl; } }
     
     async function fetchFreshData() {
         return new Promise((resolve) => {
             Papa.parse('https://docs.google.com/spreadsheets/d/e/2PACX-1vQJM1FvOsBuKL_Al7PpwYerGDVFhs5tLF4PaVs3_TOLX-TFLW-iF3B6qLLLeuuBmjfZFGe3CFxJA-TR/pub?output=csv', {
-                download: true,
-                header: true,
-                skipEmptyLines: true,
-                complete: function(results) {
-                    let newRawData = results.data.filter(item => item && (item.name || item.Name || item.URL || item.url)).map(item => {
-                        let cat = (item.Category || item.category || "").trim();
-                        if(cat.toLowerCase() === "tv shows" || cat.toLowerCase() === "tvshow") item.Category = "TV SHOWS";
-                        return item;
-                    });
+                download: true, header: true, skipEmptyLines: true, complete: function(results) {
+                    let newRawData = results.data.filter(item => item && (item.name || item.Name || item.URL || item.url)).map(item => { let cat = (item.Category || item.category || "").trim(); if(cat.toLowerCase() === "tv shows" || cat.toLowerCase() === "tvshow") item.Category = "TV Shows"; return item; });
                     
-                    if (newRawData.length > 0) {
-                        rawData = newRawData;
-                        
-                        let cats = [];
-                        let added = new Set();
-                        rawData.forEach(item => {
-                            let c = (item.Category || item.category || "").trim();
-                            let icon = (item.Icon || item.icon || "folder").trim();
-                            let order = parseInt(item.Order || item.order || "9999");
-                            
-                            if (c && !added.has(c.toLowerCase())) {
-                                added.add(c.toLowerCase());
-                                cats.push({ name: c, icon: icon, order: order });
-                            }
-                        });
-                        cats.sort((a, b) => a.order - b.order);
-                        availableCategories = cats;
-                        
-                        let settingsObj = rawData.find(item => {
-                            let c = (item.Category || item.category || "").trim().toLowerCase();
-                            return c === 'app settings' || c === 'settings';
-                        });
-                        if (settingsObj) {
-                            settingsData = {
-                                ratingUrl: settingsObj.ratingUrl || settingsObj.RatingUrl || '#',
-                                privacyUrl: settingsObj.privacyUrl || settingsObj.PrivacyUrl || '#',
-                                version: settingsObj.version || settingsObj.Version || '3.9',
-                                updateUrl: settingsObj.updateUrl || settingsObj.UpdateUrl || '#'
-                            };
-                            applySettings();
-                        }
-                        
-                        let localHash = stringHash(JSON.stringify(rawData));
-                        let currentHash = localStorage.getItem(STORAGE_KEY_HASH);
-                        
-                        if(localHash !== currentHash) {
-                            localStorage.setItem(STORAGE_KEY_DATA, JSON.stringify({ rawData, dataHash: localHash, settingsData }));
-                            localStorage.setItem(STORAGE_KEY_HASH, localHash);
-                            updateUIAfterDataLoad();
-                            resolve(true);
-                        } else {
-                            updateUIAfterDataLoad();
-                            resolve(false);
-                        }
-                    } else resolve(false);
-                },
-                error: function() { resolve(false); }
+                    Papa.parse('https://docs.google.com/spreadsheets/d/e/2PACX-1vQD2lHL-u6zHPZKdYIVD4eXp98XipkVP4jKfxLDoNje9DeZ1726o0zFZf-gAR2kZj0ls7VhceXbbKih/pub?gid=1123743396&single=true&output=csv', { 
+                        download: true, header: true, skipEmptyLines: true, complete: function(settingsResults) {
+                            settingsData = settingsResults.data[0] || {};
+                            availableCategories = settingsResults.data.filter(row => row.Category || row.category).map(row => {
+                                let iconVal = (row.Icon || row.icon || "fa-folder").trim();
+                                if(!iconVal.startsWith("fa-")) iconVal = "fa-" + iconVal;
+                                if(iconVal === "fa-fa-folder") iconVal = "fa-folder";
+                                return { name: (row.Category || row.category || "").trim(), icon: iconVal };
+                            });
+
+                            if(!isDataSame(newRawData, rawData) && newRawData.length) { 
+                                rawData = newRawData; applySettings(); saveDataToCache(rawData, settingsData); updateUIAfterDataLoad(); resolve(true); 
+                            } else if(rawData.length === 0 && newRawData.length) { 
+                                rawData = newRawData; applySettings(); saveDataToCache(rawData, settingsData); updateUIAfterDataLoad(); resolve(true); 
+                            } else { resolve(false); }
+                        } 
+                    });
+                }, error: () => resolve(false)
             });
         });
     }
     
-    function stringHash(str) {
-        let hash = 0;
-        if (str.length === 0) return hash;
-        for (let i = 0; i < str.length; i++) {
-            let char = str.charCodeAt(i);
-            hash = ((hash << 5) - hash) + char;
-            hash |= 0;
-        }
-        return hash.toString();
-    }
-    
-    function updateSlider() {
-        const track = document.getElementById('sliderTrack');
-        const sliderDiv = document.getElementById('mainSlider');
-        const videoBox = document.getElementById('videoBox');
-        let sliders = rawData.filter(d => (d.Category || d.category || "").toLowerCase() === 'slider');
-        if (sliders.length > 0) {
-            track.innerHTML = sliders.map(s => {
-                let thumb = s.Thumbnail || s.thumbnail || MASTER_LOGO, itemName = s.name || s.Name || "", url = s.URL || s.url || "#";
-                return ` <div class="slide-item" onclick="play('${escapeHtml(url)}', '${escapeHtml(itemName)}', null)"><img src="${thumb}" loading="lazy" onerror="handleImageError(this)" onload="handleImageLoad(this)" class="img-loading"></div>`;
-            }).join('');
-            let videoBoxDisplay = videoBox.style.display;
-            sliderDiv.style.display = (currentCategory === 'All' && videoBoxDisplay !== 'block') ? 'block' : 'none';
-        } else document.getElementById('mainSlider').style.display = 'none';
-    }
-    
-    // آئیکن کو فارمیٹ کرنے کا نیا بہتر فنکشن
-    function getValidIcon(iconStr) {
-        if (!iconStr) return "fa fa-folder";
-        iconStr = iconStr.trim();
-        if (iconStr.includes('fa-') && iconStr.includes(' ')) return iconStr;
-        if (iconStr.startsWith('fa-')) return `fa ${iconStr}`;
-        return `fa fa-${iconStr}`;
-    }
+    function updateSlider() { const sliders = rawData.filter(d => (d.Category || d.category || "").toLowerCase() === 'slider'); const track = document.getElementById('sliderTrack'); if(sliders.length && track) { track.innerHTML = sliders.map(s => `<div class="slide-item"><img src="${s.Thumbnail || s.thumbnail || s.URL || s.url || MASTER_LOGO}" loading="lazy" onerror="handleImageError(this)" onload="handleImageLoad(this)" class="img-loading"></div>`).join(''); const videoBoxDisplay = document.getElementById('videoBox').style.display; document.getElementById('mainSlider').style.display = (currentCategory === 'All' && videoBoxDisplay !== 'block') ? 'block' : 'none'; } else document.getElementById('mainSlider').style.display = 'none'; }
 
     function buildDynamicCategoryMenu() {
         const liveBtn = document.getElementById('live-nav-btn');
         const sideNavDynamicLinks = document.getElementById('sideNavDynamicLinks');
+        
         let hasLiveCategory = rawData.some(d => {
             let c = (d.Category || d.category || '').trim().toLowerCase();
             return c === 'live' || c === 'life';
         });
-        if (hasLiveCategory) {
-            liveBtn.style.display = 'block';
-        } else {
-            liveBtn.style.display = 'none';
-        }
+
+        if (hasLiveCategory) { liveBtn.style.display = 'block'; } 
+        else { liveBtn.style.display = 'none'; }
+
         sideNavDynamicLinks.innerHTML = `<a href="#" onclick="filterData('All', null, true)"><i class="fa fa-home"></i> Home</a>`;
         if (availableCategories.length > 0) {
             availableCategories.forEach(catObj => {
                 let lowerCat = catObj.name.toLowerCase();
                 if (lowerCat === 'live' || lowerCat === 'life' || lowerCat === 'slider') return;
-                
-                // نیا فنکشن یہاں استعمال کیا گیا ہے
-                let cleanIcon = getValidIcon(catObj.icon);
-                
-                sideNavDynamicLinks.innerHTML += `<a href="#" onclick="filterData('${catObj.name}', null, true)"><i class="${cleanIcon}"></i> ${catObj.name}</a>`;
+                let cleanIcon = catObj.icon.startsWith('fa-') ? catObj.icon : `fa-${catObj.icon}`;
+                sideNavDynamicLinks.innerHTML += `<a href="#" onclick="filterData('${catObj.name.replace(/'/g, "\\'")}', null, true)"><i class="${cleanIcon}"></i> ${catObj.name}</a>`;
             });
         }
     }
-    
-    window.filterData = function(cat, btn, shouldClose = true) {
-        currentCategory = cat;
-        if(shouldClose) closeNav();
+
+    window.filterData = function(cat, btn, shouldClose = true) { 
+        currentCategory = cat; 
+        if(shouldClose) closeNav(); 
+        
         const sliderDiv = document.getElementById('mainSlider');
-        const videoBox = document.getElementById('videoBox');
-        const sliders = rawData.filter(d => (d.Category || d.category || "").toLowerCase() === 'slider');
-        sliderDiv.style.display = (cat === 'All' && videoBox.style.display !== 'block' && sliders.length) ? 'block' : 'none';
+        const videoBox = document.getElementById('videoBox'); 
+        const sliders = rawData.filter(d => (d.Category || d.category || "").toLowerCase() === 'slider'); 
         
-        document.querySelectorAll('.nav-btn').forEach(b => {
-            if(b === btn) b.classList.add('active');
+        sliderDiv.style.display = (cat === 'All' && videoBox.style.display !== 'block' && sliders.length) ? 'block' : 'none'; 
+        
+        document.querySelectorAll('.nav-btn').forEach(b => { 
+            if(b === btn) b.classList.add('active'); 
             else if(!btn && (b.getAttribute('data-cat') === cat || (cat === 'All' && b.id === 'home-nav-btn'))) b.classList.add('active');
-            else b.classList.remove('active');
-        });
-        
+            else b.classList.remove('active'); 
+        }); 
+
         const homeCategoriesContainer = document.getElementById('homeCategoriesContainer');
         const mainCategoryView = document.getElementById('mainCategoryView');
         const moreSectionView = document.getElementById('moreSectionView');
         const specificGrid = document.getElementById('specificGrid');
         const specificCategoryTitle = document.getElementById('specificCategoryTitle');
+
         moreSectionView.style.display = 'none';
-        
+
         if (cat === 'All') {
             mainCategoryView.style.display = 'none';
             homeCategoriesContainer.style.display = 'block';
+            
             let categoriesToDisplay = availableCategories;
             if(!categoriesToDisplay.length) {
                 const uniqueCategories = [...new Set(rawData.map(item => (item.Category || item.category || "").trim()))].filter(Boolean);
-                categoriesToDisplay = uniqueCategories.map(c => ({ name: c, icon: "folder", order: 999 }));
+                categoriesToDisplay = uniqueCategories.map(c => ({ name: c, icon: 'fa-folder' }));
             }
+            
             let finalHtml = '';
             categoriesToDisplay.forEach(catObj => {
-                let lowerCat = catObj.name.toLowerCase();
-                if (lowerCat === 'live' || lowerCat === 'life' || lowerCat === 'slider' || lowerCat === 'app settings' || lowerCat === 'settings') return;
+                const catName = catObj.name;
+                const lowerCatName = catName.toLowerCase();
                 
-                let filtered = rawData.filter(d => (d.Category || d.category || "").trim().toLowerCase() === lowerCat).slice().reverse().slice(0, 3);
-                if (!filtered.length) return;
+                if(lowerCatName === 'slider' || lowerCatName === 'live' || lowerCatName === 'life') return;
                 
-                // نیا فنکشن یہاں بھی استعمال کیا گیا ہے
-                let cleanIcon = getValidIcon(catObj.icon);
+                let filteredItems = rawData.filter(d => (d.Category || d.category || "").trim().toLowerCase() === lowerCatName);
+                if (!filteredItems.length) return;
                 
+                filteredItems = filteredItems.slice().reverse();
+                const hasMore = filteredItems.length > 5;
+                const itemsToShow = filteredItems.slice(0, 5);
+                
+                let cleanIcon = catObj.icon.startsWith('fa-') ? catObj.icon : `fa-${catObj.icon}`;
+
                 finalHtml += `
-                <div class="category-section" data-cat="${escapeHtml(catObj.name)}">
+                <div class="category-section">
                     <div class="category-header">
-                        <div class="category-title"><i class="${cleanIcon}"></i> ${catObj.name.toUpperCase()}</div>
-                        <div class="read-more-btn" onclick="filterData('${escapeHtml(catObj.name)}', null, true)">View All</div>
+                        <div class="category-title"><i class="${cleanIcon}"></i> ${catName}</div>
+                        ${hasMore ? `<div class="read-more-btn" onclick="filterData('${catName.replace(/'/g, "\\'")}', null, false)">Read More</div>` : ''}
                     </div>
                     <div class="grid">
-                        ${filtered.map(item => {
+                        ${itemsToShow.map(item => {
                             let thumb = item.Thumbnail || item.thumbnail || MASTER_LOGO;
                             let itemName = item.name || item.Name || "Untitled";
                             let url = item.URL || item.url || "#";
@@ -1172,47 +1005,36 @@
                     </div>
                 </div>`;
             });
+            
             if(!finalHtml) {
-                homeCategoriesContainer.innerHTML = `
-                <div class="empty-state">
-                    <i class="fa fa-folder-open"></i>
-                    <h3>No content available</h3>
-                </div>`;
+                homeCategoriesContainer.innerHTML = `<div class="empty-state"><i class="fa fa-folder-open"></i><h3>No content available</h3></div>`;
             } else {
                 homeCategoriesContainer.innerHTML = finalHtml;
             }
+            
         } else {
             homeCategoriesContainer.style.display = 'none';
             mainCategoryView.style.display = 'block';
+            
             let matchedCategory = availableCategories.find(c => c.name.toLowerCase() === cat.toLowerCase());
             let currentIconClass = matchedCategory ? matchedCategory.icon : "fa-folder";
-            if(cat.toLowerCase() === 'live' || cat.toLowerCase() === 'life') {
-                currentIconClass = "fa-circle-play";
-            }
-            
-            // نیا فنکشن یہاں بھی استعمال کیا گیا ہے
-            let cleanIcon = getValidIcon(currentIconClass);
-            
+            if(cat.toLowerCase() === 'live' || cat.toLowerCase() === 'life') currentIconClass = "fa-circle-play";
+            let cleanIcon = currentIconClass.startsWith('fa-') ? currentIconClass : `fa-${currentIconClass}`;
             specificCategoryTitle.innerHTML = `<i class="${cleanIcon}"></i> ${cat.toUpperCase()}`;
+            
             let filtered = rawData.filter(d => {
                 let c = (d.Category || d.category || "").trim().toLowerCase();
-                if (cat.toLowerCase() === 'live') {
-                    return c === 'live' || c === 'life';
-                }
+                if (cat.toLowerCase() === 'live') return c === 'live' || c === 'life';
                 return c === cat.toLowerCase();
             });
+            
             filtered = filtered.slice().reverse();
+            
             if(!filtered.length) {
-                specificGrid.innerHTML = `
-                <div style="grid-column:1/-1" class="empty-state">
-                    <i class="fa fa-folder-open"></i>
-                    <h3>No content found</h3>
-                </div>`;
+                specificGrid.innerHTML = `<div style="grid-column:1/-1" class="empty-state"><i class="fa fa-folder-open"></i><h3>No content found</h3></div>`;
             } else {
                 specificGrid.innerHTML = filtered.map(item => {
-                    let thumb = item.Thumbnail || item.thumbnail || MASTER_LOGO,
-                        itemName = item.name || item.Name || "Untitled",
-                        url = item.URL || item.url || "#";
+                    let thumb = item.Thumbnail || item.thumbnail || MASTER_LOGO, itemName = item.name || item.Name || "Untitled", url = item.URL || item.url || "#";
                     let isFav = favorites.includes(url);
                     return `
                     <div class="card" data-url="${escapeHtml(url)}" data-title="${escapeHtml(itemName)}">
@@ -1226,71 +1048,62 @@
             }
         }
     };
-    
+
     window.toggleFav = function(e, url) {
         if(e) e.stopPropagation();
         let idx = favorites.indexOf(url);
-        if (idx === -1) favorites.push(url);
-        else favorites.splice(idx, 1);
-        saveFavorites();
-        document.querySelectorAll(`.card[data-url="${url}"] .fav-badge`).forEach(b => {
-            if(favorites.includes(url)) b.classList.add('active');
-            else b.classList.remove('active');
+        if (idx > -1) { favorites.splice(idx, 1); } else { favorites.push(url); }
+        localStorage.setItem(FAV_KEY_STORAGE, JSON.stringify(favorites));
+        
+        document.querySelectorAll(`.card[data-url="${url}"] .fav-badge`).forEach(badge => {
+            if (favorites.includes(url)) badge.classList.add('active');
+            else badge.classList.remove('active');
         });
-        if(currentCategory === 'favorites') showFavorites();
+
+        if (currentCategory === 'favorites_view') { showFavorites(document.getElementById('fav-nav-btn')); }
     };
-    
+
     window.showFavorites = function(btn) {
         closeNav();
-        currentCategory = 'favorites';
+        currentCategory = 'favorites_view';
         document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
         if(btn) btn.classList.add('active');
-        else document.getElementById('fav-nav-btn').classList.add('active');
-        
+
         document.getElementById('mainSlider').style.display = 'none';
         document.getElementById('homeCategoriesContainer').style.display = 'none';
-        document.getElementById('mainCategoryView').style.display = 'block';
+        document.getElementById('moreSectionView').style.display = 'none';
         
-        const specificCategoryTitle = document.getElementById('specificCategoryTitle');
+        const mainCategoryView = document.getElementById('mainCategoryView');
         const specificGrid = document.getElementById('specificGrid');
+        const specificCategoryTitle = document.getElementById('specificCategoryTitle');
         
-        specificCategoryTitle.innerHTML = `<i class="fa fa-heart"></i> MY FAVORITES`;
-        
+        mainCategoryView.style.display = 'block';
+        specificCategoryTitle.innerHTML = `<i class="fa fa-heart" style="color:#ff3b30;"></i> MY FAVORITES`;
+
         let filtered = rawData.filter(d => favorites.includes(d.URL || d.url));
+        filtered = filtered.slice().reverse();
+
         if(!filtered.length) {
-            specificGrid.innerHTML = `
-            <div style="grid-column:1/-1" class="empty-state">
-                <i class="fa fa-heart" style="color:#ff3b30"></i>
-                <h3>No favorites added yet</h3>
-                <p>Click on the heart icon to add items</p>
-            </div>`;
+            specificGrid.innerHTML = `<div style="grid-column:1/-1" class="empty-state"><i class="fa fa-heart-broken" style="color:#555;"></i><h3>No favorites yet</h3><p>Click on the heart icon to add items</p></div>`;
         } else {
             specificGrid.innerHTML = filtered.map(item => {
-                let thumb = item.Thumbnail || item.thumbnail || MASTER_LOGO,
-                    itemName = item.name || item.Name || "Untitled",
-                    url = item.URL || item.url || "#";
-                return `
-                <div class="card" data-url="${escapeHtml(url)}" data-title="${escapeHtml(itemName)}">
-                    <div class="fav-badge active" onclick="toggleFav(event, '${escapeHtml(url)}')"><i class="fa fa-heart"></i></div>
-                    <div style="width:100%; height:100%;" onclick="play('${escapeHtml(url)}', '${escapeHtml(itemName)}', this.parentElement)">
-                        <img src="${thumb}" loading="lazy" onerror="handleImageError(this)" onload="handleImageLoad(this)" class="img-loading">
-                        <div class="card-title">${itemName}</div>
-                    </div>
-                </div>`;
+                let thumb = item.Thumbnail || item.thumbnail || MASTER_LOGO, itemName = item.name || item.Name || "Untitled", url = item.URL || item.url || "#";
+                return `<div class="card" data-url="${escapeHtml(url)}" data-title="${escapeHtml(itemName)}"><div class="fav-badge active" onclick="toggleFav(event, '${escapeHtml(url)}')"><i class="fa fa-heart"></i></div><div style="width:100%; height:100%;" onclick="play('${escapeHtml(url)}', '${escapeHtml(itemName)}', this.parentElement)"><img src="${thumb}" loading="lazy" onerror="handleImageError(this)" onload="handleImageLoad(this)" class="img-loading"><div class="card-title">${itemName}</div></div></div>`;
             }).join('');
         }
     };
-    
+
     window.showMoreSection = function(btn) {
         closeNav();
         currentCategory = 'more_section';
         document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
         if(btn) btn.classList.add('active');
+
         document.getElementById('mainSlider').style.display = 'none';
         document.getElementById('homeCategoriesContainer').style.display = 'none';
         document.getElementById('mainCategoryView').style.display = 'none';
         document.getElementById('moreSectionView').style.display = 'block';
-        
+
         let user = localStorage.getItem('nikamma_user');
         if(user) {
             document.getElementById('loggedOutView').style.display = 'none';
@@ -1301,252 +1114,104 @@
             document.getElementById('loggedInView').style.display = 'none';
         }
     };
-    
+
     window.userLogin = function() {
         let u = document.getElementById('loginUsername').value.trim();
-        if(u) {
-            localStorage.setItem('nikamma_user', u);
-            showMoreSection(document.getElementById('more-nav-btn'));
-        }
+        if(u) { localStorage.setItem('nikamma_user', u); showMoreSection(document.getElementById('more-nav-btn')); }
     };
-    
-    window.userLogout = function() {
-        localStorage.removeItem('nikamma_user');
-        showMoreSection(document.getElementById('more-nav-btn'));
-    };
-    
+
+    window.userLogout = function() { localStorage.removeItem('nikamma_user'); showMoreSection(document.getElementById('more-nav-btn')); };
+
     window.changeTheme = function(color) {
         document.documentElement.style.setProperty('--main-color', color);
         localStorage.setItem('nikamma_theme_color', color);
-        document.querySelectorAll('.category-title i').forEach(el => el.style.color = color);
     };
+
+    function escapeHtml(str) { if(!str) return ''; return String(str).replace(/[&<>]/g, function(m) { if(m === '&') return '&amp;'; if(m === '<') return '&lt;'; if(m === '>') return '&gt;'; return m; }); }
+    function handleImageError(img) { if(img && img.src !== MASTER_LOGO) { img.src = MASTER_LOGO; img.classList.add('img-loading'); img.onerror = null; } }
+    function handleImageLoad(img) { if(img) { img.classList.remove('img-loading'); img.classList.add('img-loaded'); } }
+    function shareApp(e) { if(e) e.preventDefault(); const shareURL = settingsData.shareUrl || window.location.href; if(navigator.share) navigator.share({ title: 'Nikamma 4k', url: shareURL }); else window.open(shareURL, '_blank'); }
     
-    function escapeHtml(str) {
-        if(!str) return '';
-        return String(str).replace(/[&<>]/g, function(m) {
-            if(m === '&') return '&amp;';
-            if(m === '<') return '&lt;';
-            if(m === '>') return '&gt;';
-            return m;
-        });
-    }
+    function openNav() { const sideNav = document.getElementById("mySidenav"), overlay = document.getElementById("menu-overlay"); overlay.style.display = "block"; setTimeout(() => { sideNav.classList.add("open"); overlay.classList.add("visible"); }, 10); }
+    function closeNav() { const sideNav = document.getElementById("mySidenav"), overlay = document.getElementById("menu-overlay"); sideNav.classList.remove("open"); overlay.classList.remove("visible"); setTimeout(() => { if(!sideNav.classList.contains('open')) overlay.style.display = "none"; }, 400); }
+    function toggleSearch(show) { document.getElementById('header-main').style.display = show ? 'none' : 'flex'; document.getElementById('header-icons').style.display = show ? 'none' : 'flex'; document.getElementById('search-container').style.display = show ? 'flex' : 'none'; if(show) document.getElementById('searchBar').focus(); }
     
-    function handleImageError(img) {
-        if(img && img.src !== MASTER_LOGO) {
-            img.src = MASTER_LOGO;
-        }
-    }
-    
-    function handleImageLoad(img) {
-        if(img) {
-            img.classList.remove('img-loading');
-            img.classList.add('img-loaded');
-        }
-    }
-    
-    window.openNav = function() {
-        document.getElementById("mySidenav").classList.add('open');
-        document.getElementById("menu-overlay").classList.add('visible');
-    };
-    
-    window.closeNav = function() {
-        document.getElementById("mySidenav").classList.remove('open');
-        document.getElementById("menu-overlay").classList.remove('visible');
-    };
-    
-    window.shareApp = function(e) {
-        if(e) e.preventDefault();
-        if (navigator.share) {
-            navigator.share({ title: 'Nikamma 4k', text: 'Checkout this cool app!', url: window.location.href });
-        } else {
-            alert("Sharing not supported in this browser. Copy link: " + window.location.href);
-        }
-    };
-    
-    window.toggleSearch = function(open) {
-        if (open) {
-            document.getElementById('header-main').style.display = 'none';
-            document.getElementById('header-icons').style.display = 'none';
-            document.getElementById('search-container').style.display = 'flex';
-            document.getElementById('searchBar').focus();
-        } else {
-            document.getElementById('header-main').style.display = 'flex';
-            document.getElementById('header-icons').style.display = 'flex';
-            document.getElementById('search-container').style.display = 'none';
-            document.getElementById('searchBar').value = '';
-            search();
-        }
-    };
-    
-    window.search = function() {
-        let term = document.getElementById('searchBar').value.toLowerCase().trim();
+    window.search = function() { 
+        let term = document.getElementById('searchBar').value.toLowerCase().trim(); 
         const homeCategoriesContainer = document.getElementById('homeCategoriesContainer');
         const mainCategoryView = document.getElementById('mainCategoryView');
-        const moreSectionView = document.getElementById('moreSectionView');
         const specificGrid = document.getElementById('specificGrid');
         const specificCategoryTitle = document.getElementById('specificCategoryTitle');
-        
-        if (!term) {
-            filterData(currentCategory, null, false);
-            return;
-        }
+
+        if(term === '') { filterData(currentCategory, null, false); return; } 
         
         homeCategoriesContainer.style.display = 'none';
-        moreSectionView.style.display = 'none';
         mainCategoryView.style.display = 'block';
-        specificCategoryTitle.innerHTML = `<i class="fa fa-search"></i> RESULTS: "${term.toUpperCase()}"`;
+        specificCategoryTitle.innerHTML = `<i class="fa fa-search"></i> SEARCH RESULTS`;
         
-        let filtered = rawData.filter(d => (d.name || d.Name || "").toLowerCase().includes(term) && (d.Category || d.category || "").toLowerCase() !== 'slider').slice().reverse();
-        if(!filtered.length) {
-            specificGrid.innerHTML = `<div style="grid-column:1/-1" class="empty-state"><i class="fa fa-search"></i><h3>No results for "${term}"</h3></div>`;
-            return;
-        }
-        specificGrid.innerHTML = filtered.map(item => `
-        <div class="card" onclick="play('${escapeHtml(item.URL || item.url || "#")}', '${escapeHtml(item.name || item.Name)}', this)">
-            <img src="${item.Thumbnail || item.thumbnail || MASTER_LOGO}" loading="lazy" onerror="handleImageError(this)" onload="handleImageLoad(this)" class="img-loading">
-            <div class="card-title">${item.name || item.Name}</div>
-        </div>`).join('');
+        const filtered = rawData.filter(d => (d.name || d.Name || "").toLowerCase().includes(term) && (d.Category || d.category || "").toLowerCase() !== 'slider').slice().reverse(); 
+        if(!filtered.length) { 
+            specificGrid.innerHTML = `<div style="grid-column:1/-1" class="empty-state"><i class="fa fa-search"></i><h3>No results for "${escapeHtml(term)}"</h3></div>`; 
+            return; 
+        } 
+        specificGrid.innerHTML = filtered.map(item => `<div class="card" onclick="play('${escapeHtml(item.URL || item.url || "#")}', '${escapeHtml(item.name || item.Name)}', this)"><img src="${item.Thumbnail || item.thumbnail || MASTER_LOGO}" loading="lazy" onerror="handleImageError(this)" onload="handleImageLoad(this)" class="img-loading"><div class="card-title">${item.name || item.Name}</div></div>`).join(''); 
     };
-    
-    window.forceRefreshData = async function() {
-        if(isRefreshing) return;
-        isRefreshing = true;
-        updatePTR('release');
-        const updated = await fetchFreshData();
-        updatePTR('complete');
-        if(updated) showCachedDataBadge();
-        else showNoUpdateBadge();
-        setTimeout(() => isRefreshing = false, 500);
-        closeNav();
-    };
+
+    window.forceRefreshData = async function() { if(isRefreshing) return; isRefreshing = true; updatePTR('release'); const updated = await fetchFreshData(); updatePTR('complete'); if(updated) showCachedDataBadge(); else showNoUpdateBadge(); setTimeout(() => isRefreshing = false, 500); closeNav(); };
     
     let ptrStartY = 0, ptrActive = false, ptrHeight = 0, isTouching = false;
+
     function updatePTR(status, pullDistance = 0) {
         var pc = document.getElementById('ptr-container');
         var pt = document.getElementById('ptr-text');
         var pi = document.getElementById('ptr-icon');
-        
         if (status === 'pull') {
             var show = Math.min(pullDistance, 70);
-            pc.style.transform = 'translateY(' + (-70 + show) + 'px)';
+            var ty = -70 + show;
             pc.style.transition = 'none';
-            if (pullDistance > 60) {
-                pi.className = 'fa fa-arrow-up';
-                pt.innerText = 'Release to refresh';
-            } else {
-                pi.className = 'fa fa-arrow-down';
-                pt.innerText = 'Pull to refresh';
-            }
+            pc.style.transform = 'translateY(' + ty + 'px)';
+            if (pullDistance > 50) { pt.innerText = 'Release to refresh'; pi.className = 'fa fa-rotate'; } 
+            else { pt.innerText = 'Pull to refresh'; pi.className = 'fa fa-arrow-down'; }
         } else if (status === 'release') {
-            pc.style.transform = 'translateY(0)';
-            pc.style.transition = 'transform 0.3s ease';
+            pc.style.transition = 'transform 0.3s ease'; pc.style.transform = 'translateY(0px)'; pt.innerText = 'Refreshing...';
             pi.className = 'ptr-spinner';
-            pt.innerText = 'Refreshing...';
         } else if (status === 'complete') {
-            pc.style.transform = 'translateY(-70px)';
-            pc.style.transition = 'transform 0.3s ease';
-            pi.className = 'fa fa-check-circle';
-            pt.innerText = 'Refreshed';
-        } else {
-            pc.style.transform = 'translateY(-70px)';
-            pc.style.transition = 'transform 0.3s ease';
-            pi.className = 'fa fa-arrow-down';
-            pt.innerText = 'Pull to refresh';
+            pc.style.transition = 'transform 0.3s ease'; pc.style.transform = 'translateY(-70px)';
+            setTimeout(function() { pt.innerText = 'Pull to refresh'; pi.className = 'fa fa-arrow-down'; }, 400);
         }
     }
+
+    document.addEventListener('touchstart', function(e) { if(window.pageYOffset === 0 && !isRefreshing) { ptrStartY = e.touches[0].pageY; isTouching = true; } }, {passive: true});
+    document.addEventListener('touchmove', function(e) { if(window.pageYOffset === 0 && isTouching && !isRefreshing) { const diffY = e.touches[0].pageY - ptrStartY; if(diffY > 0) { ptrActive = true; ptrHeight = Math.min(diffY, 70); updatePTR('pull', ptrHeight); } } }, {passive: false});
+    document.addEventListener('touchend', function() { if(ptrActive && ptrHeight > 50 && !isRefreshing) forceRefreshData(); else if(ptrActive) updatePTR('complete'); isTouching = false; ptrActive = false; ptrHeight = 0; });
     
-    window.addEventListener('touchstart', function(e) {
-        if (window.scrollY === 0 && !ptrActive && e.touches[0].clientY > 100) {
-            ptrStartY = e.touches[0].clientY;
-            isTouching = true;
-        }
-    }, { passive: true });
+    let sliderInterval, slideIndex = 0;
+    function startSlider() { if(sliderInterval) clearInterval(sliderInterval); sliderInterval = setInterval(() => { const track = document.getElementById('sliderTrack'); if(track && track.children.length) { slideIndex = (slideIndex + 1) % track.children.length; track.style.transform = `translateX(-${slideIndex * 100}%)`; } }, 3000); }
+    setInterval(() => { const track = document.getElementById('sliderTrack'); if(track && track.children.length && !sliderInterval) startSlider(); }, 1000);
     
-    window.addEventListener('touchmove', function(e) {
-        if (!isTouching) return;
-        var distance = e.touches[0].clientY - ptrStartY;
-        if (distance > 0 && window.scrollY === 0) {
-            ptrActive = true;
-            ptrHeight = distance * 0.4;
-            updatePTR('pull', ptrHeight);
-            if (ptrHeight > 5) e.preventDefault();
-        } else {
-            ptrActive = false;
-            isTouching = false;
-            updatePTR('cancel');
-        }
-    }, { passive: false });
-    
-    window.addEventListener('touchend', async function() {
-        if (!ptrActive) {
-            isTouching = false;
-            return;
-        }
-        isTouching = false;
-        ptrActive = false;
-        if (ptrHeight > 60) {
-            updatePTR('release');
-            const updated = await fetchFreshData();
-            updatePTR('complete');
-            if(updated) showCachedDataBadge();
-            else showNoUpdateBadge();
-            setTimeout(() => { updatePTR('cancel'); }, 500);
-        } else {
-            updatePTR('cancel');
-        }
-        ptrHeight = 0;
-    }, { passive: true });
-    
-    let sliderIndex = 0;
-    function autoScrollSlider() {
-        const track = document.getElementById('sliderTrack');
-        const items = document.querySelectorAll('.slide-item');
-        if (items.length > 1) {
-            sliderIndex = (sliderIndex + 1) % items.length;
-            track.style.transform = `translateX(-${sliderIndex * 100}%)`;
-        }
-    }
-    setInterval(autoScrollSlider, 4000);
-    
-    async function init() {
-        loadFavorites();
+    async function init() { 
         let cachedColor = localStorage.getItem('nikamma_theme_color');
-        if(cachedColor) {
-            document.documentElement.style.setProperty('--main-color', cachedColor);
-        }
-        attachPlayerControls();
-        const hasInternet = await checkInternetBeforeStart();
-        if(hasInternet) fetchData();
+        if(cachedColor) { document.documentElement.style.setProperty('--main-color', cachedColor); }
+        attachPlayerControls(); 
+        const hasInternet = await checkInternetBeforeStart(); 
+        if(hasInternet) fetchData(); 
     }
     
-    async function fetchData() {
-        const hasCache = loadDataFromCache();
-        if(!hasCache || rawData.length === 0) {
-            document.getElementById('splash-screen').style.display = 'flex';
-            localStorage.setItem(SPLASH_SEEN_KEY, 'true');
-            await fetchFreshData();
-        } else {
-            document.getElementById('splash-screen').style.display = 'none';
-            updateSlider();
+    async function fetchData() { 
+        const hasCache = loadDataFromCache(); 
+        if(!hasCache || rawData.length === 0) { 
+            document.getElementById('splash-screen').style.display = 'flex'; 
+            localStorage.setItem(SPLASH_SEEN_KEY, 'true'); 
+            await fetchFreshData(); 
+        } else { 
+            document.getElementById('splash-screen').style.display = 'none'; 
+            updateSlider(); 
             buildDynamicCategoryMenu();
-
-            // Auto fallback for cached data
-            if(currentCategory === 'All') {
-                let initialCat = 'All';
-                if(availableCategories.length > 0) {
-                    let firstValid = availableCategories.find(c => {
-                        let name = (c.name || '').toLowerCase();
-                        return name !== 'slider' && name !== 'live' && name !== 'life';
-                    });
-                    if(firstValid) initialCat = firstValid.name;
-                }
-                currentCategory = initialCat;
-            }
-
-            filterData(currentCategory, null, false);
-            showCachedDataBadge();
-            fetchFreshData().then(updated => { if(updated) console.log("Data updated"); });
-        }
+            const initialCat = (currentCategory === 'All' && availableCategories.length > 0) ? availableCategories[0].name : 'All';
+            filterData(initialCat, null, false); 
+            showCachedDataBadge(); 
+            fetchFreshData().then(updated => { if(updated) console.log("Data updated"); }); 
+        } 
     }
     
     document.getElementById('nav-header-static-img').src = NAV_HEADER_IMAGE;
