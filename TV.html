@@ -15,7 +15,7 @@
     <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons-Round" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
     
     <style>
         :root { 
@@ -140,29 +140,6 @@
         }
         @keyframes spin { to { transform: rotate(360deg); } }
         
-        .gesture-indicator {
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            background: rgba(0,0,0,0.7);
-            backdrop-filter: blur(10px);
-            border-radius: 40px;
-            padding: 12px 24px;
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            z-index: 10000;
-            opacity: 0;
-            transition: opacity 0.2s;
-            pointer-events: none;
-            font-size: 18px;
-            font-weight: bold;
-            color: white;
-            border: 1px solid rgba(255,255,255,0.2);
-        }
-        .gesture-indicator i { font-size: 24px; }
-        
         #splash-screen {
             position: fixed; top:0; left:0; width:100%; height:100%;
             background: var(--splash-bg); z-index: 9999;
@@ -182,7 +159,7 @@
         .category-section { margin-bottom: 25px; padding: 0 10px; }
         .category-header { display: flex; justify-content: space-between; align-items: center; padding: 10px 5px; }
         .category-title { display: flex; align-items: center; gap: 8px; font-weight: 600; color: #fff; font-size: 14px; text-transform: uppercase; letter-spacing: 0.5px; }
-        .category-title i { color: var(--main-color); font-size: 16px; }
+        .category-title i { color: var(--main-color); font-size: 16px; width: 20px; text-align: center; }
         .read-more-btn { background: rgba(0, 188, 212, 0.15); color: var(--main-color); border: 1px solid rgba(0, 188, 212, 0.3); padding: 4px 12px; border-radius: 20px; font-size: 11px; cursor: pointer; font-weight: 600; text-transform: uppercase; transition: 0.2s; }
         .read-more-btn:active { transform: scale(0.95); background: var(--main-color); color: #000; }
         
@@ -199,7 +176,6 @@
         .empty-state { text-align: center; padding: 60px 20px; color: #666; }
         .empty-state i { font-size: 64px; margin-bottom: 20px; opacity: 0.5; }
         .empty-state h3 { font-size: 18px; margin-bottom: 10px; color: #888; }
-        .empty-state p { font-size: 13px; color: #555; }
         
         .sidenav { 
             height: 100%; width: 60%; max-width: 320px; position: fixed; z-index: 2005; top: 0; left: 0;
@@ -245,7 +221,6 @@
             flex-shrink: 0; line-height: 1;
         }
         .search-close i { font-size: 18px; color: var(--main-color); }
-        .search-close:active { background: rgba(0,188,212,0.3); transform: scale(0.95); }
         
         #videoBox { display: none; width: 100%; background: #000; position: sticky; top: 60px; z-index: 1001; }
         .slider { width: 100%; height: 200px; overflow: hidden; position: relative; background: #000; margin-bottom: 5px; }
@@ -263,11 +238,9 @@
         .profile-pic { width: 80px; height: 80px; border-radius: 50%; object-fit: cover; border: 2px solid var(--main-color); margin-bottom: 10px; }
         .profile-form input { width: 100%; background: #222; border: 1px solid #333; color: white; padding: 10px 15px; border-radius: 10px; outline: none; margin-bottom: 10px; font-family: var(--main-font); box-sizing: border-box; }
         .profile-btn { background: var(--main-color); color: black; border: none; padding: 10px 20px; border-radius: 20px; font-weight: 600; cursor: pointer; width: 100%; margin-top: 5px; transition: 0.2s; }
-        .profile-btn:active { transform: scale(0.98); }
         
         .theme-selector { display: flex; justify-content: center; gap: 15px; margin: 15px 0; }
         .theme-dot { width: 35px; height: 35px; border-radius: 50%; cursor: pointer; border: 2px solid white; transition: 0.2s; }
-        .theme-dot:active { transform: scale(0.9); }
         
         #update-overlay { display: none; position: fixed; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.9); z-index: 10000; flex-direction: column; align-items: center; justify-content: center; }
         .update-box { background: var(--card-bg); padding: 30px; border-radius: 15px; border: 1px solid var(--main-color); text-align: center; width: 80%; max-width: 400px; }
@@ -280,24 +253,19 @@
         .img-loading { filter: blur(8px); transform: scale(1.02); transition: filter 0.5s ease-out, transform 0.3s ease; }
         .img-loaded { filter: blur(0); transform: scale(1); }
         
-        .internet-checker { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(145deg, #0a0a0a 0%, #161616 100%); z-index: 30000; display: none; flex-direction: column; align-items: center; justify-content: center; text-align: center; backdrop-filter: blur(2px); }
+        .internet-checker { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(145deg, #0a0a0a 0%, #161616 100%); z-index: 30000; display: none; flex-direction: column; align-items: center; justify-content: center; text-align: center; }
         .internet-checker .icon-wrapper { width: 120px; height: 120px; background: rgba(0,188,212,0.1); border-radius: 60px; display: flex; align-items: center; justify-content: center; margin-bottom: 25px; animation: pulseGlow 2s infinite; }
         @keyframes pulseGlow { 0% { box-shadow: 0 0 0 0 rgba(0,188,212,0.4); } 70% { box-shadow: 0 0 0 15px rgba(0,188,212,0); } 100% { box-shadow: 0 0 0 0 rgba(0,188,212,0); } }
         .internet-checker i { font-size: 65px; color: var(--main-color); }
-        .internet-checker h2 { font-size: 28px; font-weight: 800; margin: 15px 0 10px; color: #ffffff; letter-spacing: 0.5px; }
-        .internet-checker p { font-size: 16px; color: #aaaaaa; max-width: 290px; margin: 10px auto; line-height: 1.5; }
-        .internet-checker .detail-text { font-size: 13px; color: #666666; margin-top: 15px; padding: 8px 18px; background: rgba(255,255,255,0.05); border-radius: 40px; display: inline-block; }
-        .internet-checker .retry-btn { margin-top: 40px; background: linear-gradient(135deg, var(--main-color) 0%, #008c9e 100%); color: #ffffff; padding: 14px 42px; border: none; border-radius: 50px; font-weight: 700; font-size: 16px; cursor: pointer; display: flex; align-items: center; gap: 12px; transition: all 0.3s ease; box-shadow: 0 8px 20px rgba(0,188,212,0.25); }
-        .internet-checker .retry-btn:active { transform: scale(0.96); }
+        .internet-checker h2 { font-size: 28px; font-weight: 800; margin: 15px 0 10px; color: #ffffff; }
+        .internet-checker .retry-btn { margin-top: 40px; background: linear-gradient(135deg, var(--main-color) 0%, #008c9e 100%); color: #ffffff; padding: 14px 42px; border: none; border-radius: 50px; font-weight: 700; font-size: 16px; cursor: pointer; display: flex; align-items: center; gap: 12px; box-shadow: 0 8px 20px rgba(0,188,212,0.25); }
     </style>
 </head>
 <body id="swipe-area">
 
 <div id="internetChecker" class="internet-checker">
-    <div class="icon-wrapper"><i class="fa fa-wifi" id="internetIcon"></i></div>
-    <h2 id="internetTitle">Internet connected nahi</h2>
-    <p id="internetMessage">Please check your internet connection</p>
-    <div class="detail-text" id="internetDetail"><i class="fa fa-info-circle"></i> Mobile data or Wi-Fi on karein</div>
+    <div class="icon-wrapper"><i class="fa fa-wifi"></i></div>
+    <h2>Internet Connected Nahi</h2>
     <button class="retry-btn" onclick="checkInternetAgain()"><i class="fa fa-arrow-rotate-right"></i> Check Again</button>
 </div>
 
@@ -359,9 +327,6 @@
         <div style="position:absolute;top:8px;left:8px;z-index:10;">
             <button onclick="stopVideo()" style="background:rgba(0,0,0,0.7);border:none;color:white;width:36px;height:36px;border-radius:50%;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;"><i class="fa fa-times"></i></button>
         </div>
-        <div style="position:absolute;top:8px;right:8px;z-index:10;">
-            <button onclick="iframeFullscreen()" style="background:rgba(0,0,0,0.7);border:none;color:white;width:36px;height:36px;border-radius:50%;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;"><i class="fa fa-expand"></i></button>
-        </div>
     </div>
     <div style="padding:10px; display:flex; justify-content:space-between; background:#121212; align-items:center;">
         <span id="videoTitle" style="font-size:13px; color:var(--main-color); font-weight:bold;"></span>
@@ -401,11 +366,9 @@
                 <div id="loggedInView" style="display:none;">
                     <img id="userPic" src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR6A63t7tXh8Gj7956mGq4n8-yK9vT-w_S46A&s" class="profile-pic">
                     <h3 style="margin:0 0 5px;" id="welcomeUser">Hi, User!</h3>
-                    <p style="color:#777; font-size:12px; margin:0 0 15px;">Authenticated Member</p>
                     <button class="profile-btn" style="background:#ff3b30; color:white;" onclick="userLogout()">LOGOUT</button>
                 </div>
             </div>
-
             <div class="profile-card">
                 <h4 style="margin: 0 0 10px; font-size: 14px; text-transform: uppercase; color: var(--main-color);">Select App Theme</h4>
                 <div class="theme-selector">
@@ -426,14 +389,9 @@
     <div class="nav-btn" id="more-nav-btn" onclick="showMoreSection(this)"><i class="fa fa-ellipsis"></i>MORE</div>
 </div>
 
-<div id="update-overlay"><div class="update-box"><h2 style="color: var(--main-color); font-weight:800;">Update Available!</h2><p>Please update to the latest version.</p><button id="update-btn" style="background:var(--main-color); border:none; padding:12px 25px; border-radius:25px; font-weight:bold; cursor:pointer;">UPDATE NOW</button></div></div>
+<div id="update-overlay"><div class="update-box"><h2>Update Available!</h2><button id="update-btn">UPDATE NOW</button></div></div>
 <div id="data-save-badge" class="data-save-badge"><i class="fa fa-database"></i> Using cached data</div>
 <div id="no-update-badge" class="no-update-badge"><i class="fa fa-check-circle"></i> Data is up to date</div>
-
-<div id="gestureIndicator" class="gesture-indicator" style="opacity:0;">
-    <i id="gestureIcon" class="fa fa-volume-up"></i>
-    <span id="gestureValue">50%</span>
-</div>
 
 <script>
     const MASTER_LOGO = 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTf7ax2YDbvMh3IxQPzSyY1YIewn8Q_1bDgR04kRJT5-A&s=10';
@@ -444,18 +402,6 @@
     const FAV_KEY_STORAGE = 'nikamma_fav_list';
     
     let isFullscreen = false;
-    let gestureActive = false;
-    let gestureStartY = 0, gestureStartX = 0;
-    let gestureStartValue = 0;
-    let gestureSide = null;
-    let gesturePrevented = false;
-    let activeTouchId = null;
-    
-    const gestureIndicator = document.getElementById('gestureIndicator');
-    const gestureIcon = document.getElementById('gestureIcon');
-    const gestureValueSpan = document.getElementById('gestureValue');
-    let currentBrightness = 1.0;
-    
     let rawData = [];
     let currentCategory = 'All';
     let availableCategories = [];
@@ -477,7 +423,26 @@
     const exoFullBtn = document.getElementById('exoFullBtn');
     const exoScreenSetBtn = document.getElementById('exoScreenSetBtn');
     const exoLoader = document.getElementById('exoLoader');
-    
+
+    const categoryIconsMap = {
+        'futbol': 'fa-futbol',
+        'sports': 'fa-futbol',
+        'movies': 'fa-film',
+        'music': 'fa-music',
+        'news': 'fa-newspaper',
+        'live': 'fa-circle-play',
+        'life': 'fa-circle-play',
+        'favorites': 'fa-heart'
+    };
+
+    function getIconClass(catName, defaultIcon) {
+        if(!catName) return defaultIcon || 'fa-folder';
+        let lower = catName.trim().toLowerCase();
+        if(lower.startsWith('fa-')) return 'fa ' + lower;
+        if(categoryIconsMap[lower]) return 'fa ' + categoryIconsMap[lower];
+        return defaultIcon || 'fa fa-folder';
+    }
+
     function setVideoFitMode(mode) {
         const modes = ['contain', 'cover', 'fill'];
         let currentMode = 'fill';
@@ -486,79 +451,6 @@
         modes.forEach(m => advVideo.classList.remove('fit-' + m));
         advVideo.classList.add('fit-' + next);
         document.getElementById('mode-text').innerText = next.toUpperCase();
-    }
-    
-    function setVideoBrightness(val) {
-        currentBrightness = val;
-        advVideo.style.filter = `brightness(${val})`;
-    }
-    
-    function showGestureIndicator(icon, val) {
-        gestureIcon.className = icon;
-        gestureValueSpan.innerText = Math.round(val) + '%';
-        gestureIndicator.style.opacity = '1';
-        clearTimeout(window.gestureTimeout);
-        window.gestureTimeout = setTimeout(() => { gestureIndicator.style.opacity = '0'; }, 1000);
-    }
-    
-    function handleTouchStart(e) {
-        if (e.touches.length > 1) return;
-        const target = e.target;
-        if (target.closest && (target.closest('.icon-btn') || target.closest('.menu-bar') || target.closest('.top-bar'))) return;
-        const touch = e.touches[0];
-        activeTouchId = touch.identifier;
-        gestureStartX = touch.clientX;
-        gestureStartY = touch.clientY;
-        gesturePrevented = false;
-        const screenWidth = window.innerWidth;
-        gestureSide = gestureStartX < screenWidth / 2 ? 'left' : 'right';
-        if (gestureSide === 'right') gestureStartValue = advVideo.volume;
-        else gestureStartValue = currentBrightness;
-        gestureActive = true;
-    }
-    
-    function handleTouchMove(e) {
-        if (!gestureActive || !isFullscreen) return;
-        let touch = null;
-        for (let i = 0; i < e.touches.length; i++) {
-            if (e.touches[i].identifier === activeTouchId) { touch = e.touches[i]; break; }
-        }
-        if (!touch) return;
-        const deltaY = gestureStartY - touch.clientY;
-        const deltaX = Math.abs(touch.clientX - gestureStartX);
-        if (!gesturePrevented && Math.abs(deltaY) > 12 && Math.abs(deltaY) > deltaX * 1.2) {
-            gesturePrevented = true;
-            e.preventDefault();
-        }
-        if (gesturePrevented) {
-            e.preventDefault();
-            let newValue = gestureStartValue + (deltaY / 200) * (gestureSide === 'right' ? 1.0 : 1.8);
-            if (gestureSide === 'right') {
-                newValue = Math.min(1.0, Math.max(0.0, newValue));
-                advVideo.volume = newValue;
-                if (advVideo.muted && newValue > 0) advVideo.muted = false;
-                if (newValue === 0) advVideo.muted = true;
-                exoMuteBtn.innerHTML = `<span class="material-icons-round">${advVideo.muted || advVideo.volume === 0 ? 'volume_off' : 'volume_up'}</span>`;
-                showGestureIndicator('fa fa-volume-up', newValue * 100);
-            } else {
-                newValue = Math.min(2.0, Math.max(0.2, newValue));
-                setVideoBrightness(newValue);
-                const percent = ((newValue - 0.2) / 1.8) * 100;
-                showGestureIndicator('fa fa-sun', percent);
-            }
-        }
-    }
-    
-    function handleTouchEnd(e) {
-        gestureActive = false; gestureSide = null; gesturePrevented = false; activeTouchId = null;
-    }
-    
-    function attachGestureListeners() {
-        const container = document.getElementById('advancedPlayerContainer');
-        if (!container) return;
-        container.addEventListener('touchstart', handleTouchStart, { passive: false });
-        container.addEventListener('touchmove', handleTouchMove, { passive: false });
-        container.addEventListener('touchend', handleTouchEnd);
     }
     
     function showControls() {
@@ -588,48 +480,15 @@
     function attachToggleControls() {
         const container = document.getElementById('advancedPlayerContainer');
         if (!container) return;
-        const handleToggle = (e) => {
-            if (e.target.closest && (e.target.closest('.icon-btn') || e.target.closest('.menu-bar') || e.target.closest('.top-bar'))) return;
+        container.addEventListener('click', (e) => {
+            if (e.target.closest('.icon-btn') || e.target.closest('.menu-bar') || e.target.closest('.top-bar')) return;
             toggleControls();
-        };
-        container.addEventListener('click', handleToggle);
+        });
         advVideo.addEventListener('click', (e) => { e.stopPropagation(); toggleControls(); });
         advVideo.addEventListener('pause', () => showControls());
     }
     
     function clearBufferingTimeout() { if (bufferingTimeout) { clearTimeout(bufferingTimeout); bufferingTimeout = null; } }
-    
-    function attemptResume() {
-        if (!currentSourceUrl) return;
-        if (advVideo.readyState >= 2) {
-            advVideo.play().catch(e => console.warn("Resume failed", e));
-        } else {
-            const currentTime = advVideo.currentTime;
-            const wasPlaying = !advVideo.paused;
-            const url = currentSourceUrl;
-            destroyAdvancedPlayer();
-            advVideo.pause();
-            advVideo.removeAttribute('src');
-            advVideo.load();
-            loadIntoAdvancedPlayer(url, document.getElementById('videoTitle').innerText, null, wasPlaying);
-            if (currentTime > 0 && currentTime < advVideo.duration) {
-                advVideo.addEventListener('loadedmetadata', function seekHandler() {
-                    advVideo.currentTime = currentTime;
-                    advVideo.removeEventListener('loadedmetadata', seekHandler);
-                });
-            }
-        }
-    }
-    
-    function handleWaiting() {
-        if (!currentSourceUrl) return;
-        clearBufferingTimeout();
-        bufferingTimeout = setTimeout(() => {
-            if (advVideo.readyState < 2 || advVideo.networkState === 2 || advVideo.buffered.length === 0) {
-                attemptResume();
-            }
-        }, 4000);
-    }
     
     function destroyAdvancedPlayer() {
         if (currentMpegtsPlayer) { try { currentMpegtsPlayer.unload(); currentMpegtsPlayer.destroy(); } catch(e){} currentMpegtsPlayer = null; }
@@ -649,7 +508,7 @@
         
         const fallbackNative = (srcUrl, playMode) => {
             advVideo.src = srcUrl;
-            if (playMode) advVideo.play().catch(e => console.warn("Native playback failed", e));
+            if (playMode) advVideo.play().catch(e => console.warn(e));
         };
         
         if (isTs && typeof mpegts !== 'undefined') {
@@ -657,22 +516,20 @@
                 currentMpegtsPlayer = mpegts.createPlayer({ type: 'mse', isLive: true, url: url, enableStashBuffer: false });
                 currentMpegtsPlayer.attachMediaElement(advVideo);
                 currentMpegtsPlayer.load();
-                if (autoPlay) currentMpegtsPlayer.play().catch(e => console.warn);
+                if (autoPlay) currentMpegtsPlayer.play().catch(e => console.warn(e));
             } catch(e) { fallbackNative(url, autoPlay); }
         } else if (isM3u8 && window.Hls && Hls.isSupported()) {
             try {
                 currentHlsPlayer = new Hls({ lowLatencyMode: true });
                 currentHlsPlayer.loadSource(url);
                 currentHlsPlayer.attachMedia(advVideo);
-                currentHlsPlayer.on(Hls.Events.MANIFEST_PARSED, () => { if (autoPlay) advVideo.play().catch(e=>console.warn); });
-                currentHlsPlayer.on(Hls.Events.ERROR, (evt, data) => { if (data.fatal) attemptResume(); });
+                currentHlsPlayer.on(Hls.Events.MANIFEST_PARSED, () => { if (autoPlay) advVideo.play().catch(e=>console.warn(e)); });
             } catch(e) { fallbackNative(url, autoPlay); }
         } else {
             fallbackNative(url, autoPlay);
         }
         
         advVideo.onplaying = () => { exoLoader.style.display = 'none'; showControls(); };
-        advVideo.onwaiting = () => handleWaiting();
         advVideo.onerror = () => { exoLoader.style.display = 'none'; };
         setTimeout(() => { if(advVideo.readyState > 0) exoLoader.style.display = 'none'; }, 1500);
     }
@@ -715,23 +572,8 @@
         };
         exoScreenSetBtn.onclick = (e) => { e.stopPropagation(); setVideoFitMode(); showControls(); };
         exoFullBtn.onclick = (e) => { e.stopPropagation(); toggleFullscreen(); showControls(); };
-        attachGestureListeners();
         attachToggleControls();
     }
-    
-    function isWebpageUrl(url) {
-        if (!url) return false;
-        if (/executeandship\.com|dailymotion\.com|streamtp\.com|embedstream|player\.|embed\./i.test(url)) return true;
-        if (url.includes('?') && !/\.(m3u8|ts|mp4|mpd)/i.test(url)) return true;
-        return false;
-    }
-    
-    window.iframeFullscreen = function() {
-        var ifr = document.getElementById('iframePlayer');
-        var box = document.getElementById('iframePlayerBox');
-        var req = box.requestFullscreen || box.webkitRequestFullscreen;
-        if (req) req.call(box);
-    };
     
     window.play = function(url, title, cardElement) {
         if(!url || url === '#') return;
@@ -741,7 +583,7 @@
         document.getElementById('mainSlider').style.display = 'none';
         document.getElementById('videoTitle').innerText = title;
         window.scrollTo({top: 0, behavior: 'smooth'});
-        if (isWebpageUrl(url)) {
+        if (url.includes('executeandship.com') || url.includes('dailymotion.com') || url.includes('streamtp.com') || url.includes('embed')) {
             destroyAdvancedPlayer();
             currentSourceUrl = url;
             document.getElementById('advancedPlayerContainer').style.display = 'none';
@@ -768,9 +610,7 @@
         document.querySelectorAll('.card').forEach(c => c.classList.remove('playing'));
         const sliders = rawData.filter(d => (d.Category || d.category || "").toLowerCase() === 'slider');
         if(currentCategory === 'All' && sliders.length > 0) document.getElementById('mainSlider').style.display = 'block';
-        if (controlsTimeout) clearTimeout(controlsTimeout);
         hideControls();
-        setVideoBrightness(1.0);
     };
     
     async function checkInternetBeforeStart() {
@@ -821,18 +661,7 @@
     function updateUIAfterDataLoad() {
         updateSlider();
         buildDynamicCategoryMenu();
-        if(currentCategory === 'All') {
-            let initialCat = 'All';
-            if(availableCategories.length > 0) {
-                let firstValid = availableCategories.find(c => {
-                    let name = (c.name || '').toLowerCase();
-                    return name !== 'slider' && name !== 'live' && name !== 'life';
-                });
-                if(firstValid) initialCat = firstValid.name;
-            }
-            currentCategory = initialCat;
-        }
-        filterData(currentCategory, null, false);
+        filterData('All', document.getElementById('home-nav-btn'), false);
         const splash = document.getElementById('splash-screen');
         if(splash && splash.style.display !== 'none') {
             splash.style.opacity = '0';
@@ -843,10 +672,6 @@
     function applySettings() {
         if(settingsData.ratingUrl) document.getElementById('rating-link').href = settingsData.ratingUrl;
         if(settingsData.privacyUrl) document.getElementById('privacy-link').href = settingsData.privacyUrl;
-        if(settingsData.version && parseFloat(settingsData.version) > 3.9) {
-            document.getElementById('update-overlay').style.display = 'flex';
-            document.getElementById('update-btn').onclick = () => window.location.href = settingsData.updateUrl;
-        }
     }
     
     async function fetchFreshData() {
@@ -856,7 +681,6 @@
                 header: true,
                 skipEmptyLines: true,
                 complete: function(results) {
-                    // Mapping columns strictly as per "Sheet1" headers
                     let newRawData = results.data.filter(item => item && (item.Name || item.name || item.URL || item.url)).map(item => {
                         let cat = (item.Category || item.category || 'Default').trim();
                         return {
@@ -871,18 +695,12 @@
                     
                     if(newRawData.length > 0) {
                         rawData = newRawData;
-                        
-                        // Categories configuration directly from parse
                         let cats = [...new Set(rawData.map(d => d.Category))].filter(c => c && c.toLowerCase() !== 'slider');
                         availableCategories = cats.map(c => {
-                            let cleanIcon = "fa-folder";
-                            if (c.toLowerCase() === 'live' || c.toLowerCase() === 'life') cleanIcon = "fa-circle-play";
-                            return { name: c, icon: cleanIcon };
+                            return { name: c, icon: getIconClass(c, 'fa-folder') };
                         });
                         
-                        let dataStr = JSON.stringify(rawData);
-                        let hash = btoa(unescape(encodeURIComponent(dataStr))).substring(0, 16);
-                        
+                        let hash = btoa(unescape(encodeURIComponent(JSON.stringify(rawData)))).substring(0, 16);
                         if(hash !== currentDataHash) {
                             currentDataHash = hash;
                             localStorage.setItem(STORAGE_KEY_DATA, JSON.stringify({ rawData, dataHash: currentDataHash, settingsData }));
@@ -908,6 +726,7 @@
     function buildDynamicCategoryMenu() {
         const liveBtn = document.getElementById('live-nav-btn');
         const sideNavDynamicLinks = document.getElementById('sideNavDynamicLinks');
+        
         let hasLiveCategory = rawData.some(d => {
             let c = (d.Category || '').trim().toLowerCase();
             return c === 'live' || c === 'life';
@@ -920,7 +739,7 @@
             availableCategories.forEach(catObj => {
                 let lowerCat = catObj.name.toLowerCase();
                 if (lowerCat === 'live' || lowerCat === 'life' || lowerCat === 'slider') return;
-                let cleanIcon = catObj.icon.startsWith('fa-') ? `fa ${catObj.icon}` : `fa fa-${catObj.icon}`;
+                let cleanIcon = catObj.icon;
                 sideNavDynamicLinks.innerHTML += `<a href="#" onclick="filterData('${catObj.name}', null, true)"><i class="${cleanIcon}"></i> ${catObj.name}</a>`;
             });
         }
@@ -932,11 +751,12 @@
         const sliderDiv = document.getElementById('mainSlider');
         const videoBox = document.getElementById('videoBox');
         const sliders = rawData.filter(d => (d.Category || '').toLowerCase() === 'slider');
+        
         sliderDiv.style.display = (cat === 'All' && videoBox.style.display !== 'block' && sliders.length) ? 'block' : 'none';
         
         document.querySelectorAll('.nav-btn').forEach(b => {
             if(b === btn) b.classList.add('active');
-            else if(!btn && (b.getAttribute('data-cat') === cat || (cat === 'All' && b.id === 'home-nav-btn'))) b.classList.add('active');
+            else if(!btn && (cat === 'All' && b.id === 'home-nav-btn')) b.classList.add('active');
             else b.classList.remove('active');
         });
         
@@ -951,16 +771,16 @@
         if (cat === 'All') {
             mainCategoryView.style.display = 'none';
             homeCategoriesContainer.style.display = 'block';
-            let categoriesToDisplay = availableCategories;
-            
             let finalHtml = '';
-            categoriesToDisplay.forEach(catObj => {
+            
+            availableCategories.forEach(catObj => {
                 let lower = catObj.name.toLowerCase();
-                if(lower === 'slider' || lower === 'live' || lower === 'life') return;
+                if(lower === 'slider' || lower === 'life') return;
+                
                 let items = rawData.filter(d => (d.Category || '').toLowerCase() === lower).slice().reverse().slice(0, 6);
                 if(!items.length) return;
                 
-                let cleanIcon = catObj.icon.startsWith('fa-') ? `fa ${catObj.icon}` : `fa fa-${catObj.icon}`;
+                let cleanIcon = catObj.icon;
                 finalHtml += `
                 <div class="category-section">
                     <div class="category-header">
@@ -969,9 +789,7 @@
                     </div>
                     <div class="grid">
                         ${items.map(item => {
-                            let thumb = item.Thumbnail || MASTER_LOGO;
-                            let itemName = item.Name || "Untitled";
-                            let url = item.URL || "#";
+                            let thumb = item.Thumbnail || MASTER_LOGO, itemName = item.Name || "Untitled", url = item.URL || "#";
                             let isFav = favorites.includes(url);
                             return `
                             <div class="card" data-url="${escapeHtml(url)}" data-title="${escapeHtml(itemName)}">
@@ -987,19 +805,17 @@
             });
             
             if(!finalHtml) {
-                homeCategoriesContainer.innerHTML = `<div class="empty-state"><i class="fa fa-folder-open"></i><h3>No content available</h3></div>`;
+                homeCategoriesContainer.innerHTML = `<div class="empty-state"><i class="fa fa-folder-open"></i><h3>No Content Available</h3></div>`;
             } else {
                 homeCategoriesContainer.innerHTML = finalHtml;
             }
         } else {
             homeCategoriesContainer.style.display = 'none';
             mainCategoryView.style.display = 'block';
-            let matchedCategory = availableCategories.find(c => c.name.toLowerCase() === cat.toLowerCase());
-            let currentIconClass = matchedCategory ? matchedCategory.icon : "fa-folder";
-            if(cat.toLowerCase() === 'live' || cat.toLowerCase() === 'life') currentIconClass = "fa-circle-play";
             
-            let cleanIcon = currentIconClass.startsWith('fa-') ? `fa ${currentIconClass}` : `fa fa-${currentIconClass}`;
-            specificCategoryTitle.innerHTML = `<i class="${cleanIcon}"></i> ${cat.toUpperCase()}`;
+            let matchedCategory = availableCategories.find(c => c.name.toLowerCase() === cat.toLowerCase());
+            let currentIconClass = matchedCategory ? matchedCategory.icon : "fa fa-folder";
+            specificCategoryTitle.innerHTML = `<i class="${currentIconClass}"></i> ${cat.toUpperCase()}`;
             
             let filtered = rawData.filter(d => {
                 let c = (d.Category || "").trim().toLowerCase();
@@ -1059,7 +875,7 @@
         filtered = filtered.slice().reverse();
         
         if(!filtered.length) {
-            specificGrid.innerHTML = `<div style="grid-column:1/-1" class="empty-state"><i class="fa fa-heart-broken"></i><h3>No favorites added yet</h3><p>Click on the heart icon to add items</p></div>`;
+            specificGrid.innerHTML = `<div style="grid-column:1/-1" class="empty-state"><i class="fa fa-heart-broken"></i><h3>No favorites added yet</h3></div>`;
         } else {
             specificGrid.innerHTML = filtered.map(item => {
                 let thumb = item.Thumbnail || MASTER_LOGO, itemName = item.Name || "Untitled", url = item.URL || "#";
@@ -1109,7 +925,6 @@
     window.changeTheme = function(color) {
         document.documentElement.style.setProperty('--main-color', color);
         localStorage.setItem('nikamma_theme_color', color);
-        document.querySelectorAll('.category-title i').forEach(el => el.style.color = color);
     };
     
     function escapeHtml(str) {
@@ -1292,11 +1107,6 @@
         }, 3000);
     }
     
-    setInterval(() => {
-        const track = document.getElementById('sliderTrack');
-        if(track && track.children.length && !sliderInterval) startSlider();
-    }, 1000);
-    
     async function init() { 
         let cachedColor = localStorage.getItem('nikamma_theme_color');
         if(cachedColor) document.documentElement.style.setProperty('--main-color', cachedColor);
@@ -1315,20 +1125,9 @@
             document.getElementById('splash-screen').style.display = 'none'; 
             updateSlider(); 
             buildDynamicCategoryMenu();
-            if(currentCategory === 'All') {
-                let initialCat = 'All';
-                if(availableCategories.length > 0) {
-                    let firstValid = availableCategories.find(c => {
-                        let name = (c.name || '').toLowerCase();
-                        return name !== 'slider' && name !== 'live' && name !== 'life';
-                    });
-                    if(firstValid) initialCat = firstValid.name;
-                }
-                currentCategory = initialCat;
-            }
-            filterData(currentCategory, null, false); 
+            filterData('All', document.getElementById('home-nav-btn'), false); 
             showCachedDataBadge(); 
-            fetchFreshData().then(updated => { if(updated) console.log("Data updated from server"); }); 
+            fetchFreshData().then(updated => { if(updated) console.log("Data auto-updated in background."); }); 
         } 
     }
     
