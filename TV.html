@@ -193,9 +193,6 @@
         .card.playing { background: var(--main-color) !important; border-color: #fff; transform: scale(0.95); }
         .card.playing .card-title { color: #000 !important; font-weight: 800; }
         
-        .fav-badge { position: absolute; top: 5px; right: 5px; background: rgba(0,0,0,0.6); color: #fff; width: 26px; height: 26px; border-radius: 50%; display: flex; align-items: center; justify-content: center; z-index: 5; font-size: 12px; cursor: pointer; transition: 0.2s; border: 1px solid rgba(255,255,255,0.1); }
-        .fav-badge.active { color: #ff3b30; background: rgba(255,255,255,0.9); }
-        
         .empty-state { text-align: center; padding: 60px 20px; color: #666; }
         .empty-state i { font-size: 64px; margin-bottom: 20px; opacity: 0.5; }
         .empty-state h3 { font-size: 18px; margin-bottom: 10px; color: #888; }
@@ -293,9 +290,21 @@
         .internet-checker .retry-btn:active { transform: scale(0.96); }
         
         .exo-container:fullscreen video, .exo-container:-webkit-full-screen video { width: 100%; height: 100%; }
+
+        /* Floating Alert/Toast for Actions */
+        .toast-msg {
+            position: fixed; bottom: 85px; left: 50%; transform: translateX(-50%);
+            background: rgba(0,0,0,0.85); color: #fff; padding: 8px 18px;
+            border-radius: 30px; font-size: 12px; font-weight: 600; z-index: 10005;
+            border: 1px solid rgba(255,255,255,0.1); pointer-events: none;
+            opacity: 0; transition: opacity 0.3s, transform 0.3s;
+        }
+        .toast-msg.show { opacity: 1; transform: translate(-50%, -5px); }
     </style>
 </head>
 <body id="swipe-area">
+
+<div id="toastMessage" class="toast-msg">Added to Favorites</div>
 
 <div id="internetChecker" class="internet-checker">
     <div class="icon-wrapper"><i class="fa fa-wifi" id="internetIcon"></i></div>
@@ -442,125 +451,305 @@
     const STORAGE_KEY_DATA = 'nikamma_cached_data';
     const STORAGE_KEY_HASH = 'nikamma_data_hash';
     const SPLASH_SEEN_KEY = 'nikamma_splash_seen';
-    const FAV_KEY = 'nikamma_fav';
-
+    const FAV_KEY_STORAGE = 'nikamma_fav_list';
+    
     let rawData = [];
     let availableCategories = [];
+    let settingsData = {};
+    let favorites = JSON.parse(localStorage.getItem(FAV_KEY_STORAGE)) || [];
     let currentCategory = 'All';
     let currentDataHash = '';
-    let settingsData = {};
-    let favorites = JSON.parse(localStorage.getItem(FAV_KEY) || "[]");
-    let isRefreshing = false;
-    let sliderInterval = null;
-
-    // Advanced video variables
-    let advVideo, currentMpegtsPlayer, currentHlsPlayer, currentSourceUrl;
-    let isFullscreen = false;
-    let controlsTimeout;
-    let bufferingTimeout;
-    let currentBrightness = 1.0;
     
-    // UI gesture state
-    let gestureActive = false;
-    let gestureStartX, gestureStartY;
-    let gestureStartValue;
-    let gestureSide;
-    let gesturePrevented = false;
-    let activeTouchId = null;
+    let currentHlsPlayer = null;
+    let currentMpegtsPlayer = null;
+    let currentSourceUrl = null;
+    let autoPlay = true;
+    let isFullscreen = false;
+    let currentBrightness = 1.0;
+    let controlsTimeout = null;
+    let bufferingTimeout = null;
+    let isRefreshing = false;
+    
+    // Slider Interval Variable
+    let sliderInterval = null;
+    let slideIndex = 0;
 
-    // Helper function to format Font Awesome classes correctly
-    function getCleanIconClass(iconStr) {
-        if (!iconStr) return 'fa fa-folder';
-        let str = iconStr.trim();
-        // Agar pehle se fa ya fas module lagaya hua ho
-        if (str.startsWith('fa ') || str.startsWith('fas ') || str.startsWith('far ')) {
-            return str;
+    // Advanced Player Video references
+    const advVideo = document.getElementById('advancedVideo');
+    const exoOverlay = document.getElementById('exoOverlay');
+    const exoPlayBtn = document.getElementById('exoPlayBtn');
+    const exoMuteBtn = document.getElementById('exoMuteBtn');
+    const exoScreenSetBtn = document.getElementById('exoScreenSetBtn');
+    const exoFullBtn = document.getElementById('exoFullBtn');
+    const exoLoader = document.getElementById('exoLoader');
+
+    const fitModes = ['fill', 'contain', 'cover'];
+    let currentFitIndex = 0;
+
+    // Toast Notification Maker
+    function showToast(msg) {
+        const t = document.getElementById('toastMessage');
+        t.innerText = msg;
+        t.classList.add('show');
+        setTimeout(() => t.classList.remove('show'), 2000);
+    }
+
+    function setVideoFitMode() {
+        const mode = fitModes[currentFitIndex];
+        advVideo.className = `fit-${mode}`;
+        document.getElementById('mode-text').innerText = mode.toUpperCase();
+    }
+
+    function setVideoBrightness(val) {
+        currentBrightness = val;
+        advVideo.style.filter = `brightness(${val})`;
+    }
+
+    function showGestureIndicator(iconClass, valuePercent) {
+        const gi = document.getElementById('gestureIndicator');
+        document.getElementById('gestureIcon').className = iconClass;
+        document.getElementById('gestureValue').innerText = `${Math.round(valuePercent)}%`;
+        gi.style.opacity = '1';
+        clearTimeout(window.giTimeout);
+        window.giTimeout = setTimeout(() => gi.style.opacity = '0', 1000);
+    }
+
+    // Long Press Event Handling for Favourites
+    let pressTimer = null;
+    window.cardTouchStart = function(e, url, title) {
+        pressTimer = setTimeout(() => {
+            pressTimer = null;
+            toggleFav(url, title);
+        }, 800);
+    };
+
+    window.cardTouchEnd = function(e) {
+        if (pressTimer) {
+            clearTimeout(pressTimer);
+            pressTimer = null;
         }
-        // Agar sirf 'fa-ghost' jaisa likha ho
-        if (str.startsWith('fa-')) {
-            return `fa ${str}`;
-        }
-        // Agar normal word ho jese 'ghost', to `fa fa-ghost` banayein
-        return `fa fa-${str}`;
-    }
+    };
 
-    function openNav() {
-        document.getElementById("mySidenav").classList.add("open");
-        document.getElementById("menu-overlay").classList.add("visible");
-    }
-    function closeNav() {
-        document.getElementById("mySidenav").classList.remove("open");
-        document.getElementById("menu-overlay").classList.remove("visible");
-    }
-
-    function toggleSearch(show) {
-        const hIcons = document.getElementById('header-icons');
-        const hMain = document.getElementById('header-main');
-        const sContainer = document.getElementById('search-container');
-        const sBar = document.getElementById('searchBar');
-        if(show) {
-            hIcons.style.display = 'none';
-            hMain.style.display = 'none';
-            sContainer.style.display = 'flex';
-            sBar.value = '';
-            sBar.focus();
+    window.toggleFav = function(url, title) {
+        if (!url || url === '#') return;
+        const index = favorites.indexOf(url);
+        if (index === -1) {
+            favorites.push(url);
+            showToast(`Added: ${title}`);
         } else {
-            hIcons.style.display = 'flex';
-            hMain.style.display = 'flex';
-            sContainer.style.display = 'none';
-            sBar.value = '';
+            favorites.splice(index, 1);
+            showToast(`Removed: ${title}`);
+        }
+        localStorage.setItem(FAV_KEY_STORAGE, JSON.stringify(favorites));
+        
+        // Dynamic re-render inside Favorite view or main grid if needed
+        if (currentCategory === 'favorites_section') {
+            showFavorites();
+        } else {
             filterData(currentCategory, null, false);
         }
+    };
+
+    function loadDataFromCache() {
+        try {
+            const cached = localStorage.getItem(STORAGE_KEY_DATA);
+            if(cached) {
+                const cacheData = JSON.parse(cached);
+                if(cacheData && cacheData.rawData && cacheData.rawData.length) {
+                    rawData = cacheData.rawData;
+                    currentDataHash = cacheData.dataHash || '';
+                    if(cacheData.settingsData) settingsData = cacheData.settingsData;
+                    applySettings();
+                    return true;
+                }
+            }
+        } catch(e) {}
+        return false;
+    }
+
+    function showCachedDataBadge() {
+        const badge = document.getElementById('data-save-badge');
+        badge.classList.add('show');
+        setTimeout(() => badge.classList.remove('show'), 2000);
+    }
+
+    function showNoUpdateBadge() {
+        const badge = document.getElementById('no-update-badge');
+        badge.classList.add('show');
+        setTimeout(() => badge.classList.remove('show'), 2000);
+    }
+
+    function updateUIAfterDataLoad() {
+        updateSlider();
+        buildDynamicCategoryMenu();
+        // Force the app to stay on the Home (All) section by default
+        currentCategory = 'All';
+        filterData('All', document.getElementById('home-nav-btn'), false);
+        
+        const splash = document.getElementById('splash-screen');
+        if(splash && splash.style.display !== 'none') {
+            splash.style.opacity = '0';
+            setTimeout(() => splash.style.display = 'none', 500);
+        }
+    }
+
+    function applySettings() {
+        if(settingsData.ratingUrl) document.getElementById('rating-link').href = settingsData.ratingUrl;
+        if(settingsData.privacyUrl) document.getElementById('privacy-link').href = settingsData.privacyUrl;
+        if(settingsData.version && parseFloat(settingsData.version) > 3.9) {
+            document.getElementById('update-overlay').style.display = 'flex';
+            document.getElementById('update-btn').onclick = () => window.location.href = settingsData.updateUrl;
+        }
+    }
+
+    async function fetchFreshData() {
+        return new Promise((resolve) => {
+            Papa.parse('https://docs.google.com/spreadsheets/d/e/2PACX-1vQJM1FvOsBuKL_Al7PpwYerGDVFhs5tLF4PaVs3_TOLX-TFLW-iF3B6qLLLeuuBmjfZFGe3CFxJA-TR/pub?output=csv', {
+                download: true, header: true, skipEmptyLines: true,
+                complete: function(results) {
+                    let newRawData = results.data.filter(item => item && (item.name || item.Name || item.URL || item.url)).map(item => {
+                        return {
+                            Name: item.Name || item.name || "",
+                            Category: item.Category || item.category || "",
+                            URL: item.URL || item.url || "#",
+                            Thumbnail: item.Thumbnail || item.thumbnail || MASTER_LOGO,
+                            Unique_Id: item.Unique_Id || item.id || ""
+                        };
+                    });
+                    
+                    // Filter out duplicate or empty items
+                    rawData = newRawData.filter((v, i, a) => a.findIndex(t => t.URL === v.URL) === i);
+                    
+                    // Extracted available valid dynamic categories with Icons handling
+                    let catsMap = {};
+                    results.data.forEach(item => {
+                        let catName = (item.Category || item.category || "").trim();
+                        let catIcon = (item.Icon || item.icon || "folder").trim();
+                        let status = (item.Status || item.status || "").trim().toLowerCase();
+                        
+                        if(catName && status !== 'inactive' && !catsMap[catName]) {
+                            catsMap[catName] = catIcon;
+                        }
+                    });
+
+                    availableCategories = Object.keys(catsMap).map(c => {
+                        return { name: c, icon: catsMap[c] || 'folder' };
+                    }).filter(c => {
+                        let low = c.name.toLowerCase();
+                        return low !== 'slider' && low !== 'live' && low !== 'life';
+                    });
+                    
+                    // Cache processed payload
+                    localStorage.setItem(STORAGE_KEY_DATA, JSON.stringify({ rawData, dataHash: currentDataHash, settingsData }));
+                    
+                    updateUIAfterDataLoad();
+                    resolve(true);
+                },
+                error: function() { resolve(false); }
+            });
+        });
     }
 
     function handleImageError(img) {
         img.src = MASTER_LOGO;
-        img.classList.remove('img-loading');
-        img.classList.add('img-loaded');
+        img.className = "img-loaded";
     }
     function handleImageLoad(img) {
-        img.classList.remove('img-loading');
-        img.classList.add('img-loaded');
+        img.className = "img-loaded";
+    }
+
+    function openNav() {
+        document.getElementById("mySidenav").classList.add('open');
+        document.getElementById("menu-overlay").classList.add('visible');
+    }
+    function closeNav() {
+        document.getElementById("mySidenav").classList.remove('open');
+        document.getElementById("menu-overlay").classList.remove('visible');
+    }
+
+    function toggleSearch(show) {
+        const headerMain = document.getElementById('header-main');
+        const headerIcons = document.getElementById('header-icons');
+        const searchContainer = document.getElementById('search-container');
+        if (show) {
+            headerMain.style.display = 'none';
+            headerIcons.style.display = 'none';
+            searchContainer.style.display = 'flex';
+            document.getElementById('searchBar').focus();
+        } else {
+            headerMain.style.display = 'flex';
+            headerIcons.style.display = 'flex';
+            searchContainer.style.display = 'none';
+            document.getElementById('searchBar').value = '';
+            filterData(currentCategory, null, false);
+        }
     }
 
     function updateSlider() {
-        const track = document.getElementById('sliderTrack');
+        const sliderDiv = document.getElementById('mainSlider');
+        const sliderTrack = document.getElementById('sliderTrack');
         const sliders = rawData.filter(d => (d.Category || d.category || "").toLowerCase() === 'slider');
-        if(!sliders.length) {
-            document.getElementById('mainSlider').style.display = 'none';
-            return;
-        }
-        track.innerHTML = sliders.map(s => {
-            let img = s.Thumbnail || s.thumbnail || MASTER_LOGO;
-            let name = s.name || s.Name || "Special Release";
-            let url = s.URL || s.url || "#";
-            return `<div class="slide-item" onclick="play('${escapeHtml(url)}', '${escapeHtml(name)}')"><img src="${img}" onerror="this.src=MASTER_LOGO"></div>`;
+        if(sliders.length === 0) { sliderDiv.style.display = 'none'; return; }
+        
+        sliderTrack.innerHTML = sliders.map(s => {
+            let title = s.Name || s.name || "Nikamma Slider";
+            let thumb = s.Thumbnail || s.thumbnail || MASTER_LOGO;
+            return `<div class="slide-item" onclick="play('${escapeHtml(s.URL || s.url)}', '${escapeHtml(title)}')">
+                <img src="${thumb}" onerror="this.src=MASTER_LOGO" alt="Banner">
+            </div>`;
         }).join('');
-        const videoBoxDisplay = document.getElementById('videoBox').style.display;
-        if(currentCategory === 'All') {
-            document.getElementById('mainSlider').style.display = (sliders.length && videoBoxDisplay !== 'block') ? 'block' : 'none';
-        } else document.getElementById('mainSlider').style.display = 'none';
+        
+        startSlider();
+    }
+
+    function startSlider() {
+        const track = document.getElementById('sliderTrack');
+        if(sliderInterval) clearInterval(sliderInterval);
+        if(track.children.length <= 1) return;
+        sliderInterval = setInterval(() => {
+            if(track.children.length) {
+                slideIndex = (slideIndex + 1) % track.children.length;
+                track.style.transform = `translateX(-${slideIndex * 100}%)`;
+            }
+        }, 3000);
     }
 
     function buildDynamicCategoryMenu() {
         const liveBtn = document.getElementById('live-nav-btn');
         const sideNavDynamicLinks = document.getElementById('sideNavDynamicLinks');
+        
         let hasLiveCategory = rawData.some(d => {
             let c = (d.Category || d.category || '').trim().toLowerCase();
             return c === 'live' || c === 'life';
         });
+        
         if (hasLiveCategory) {
             liveBtn.style.display = 'block';
         } else {
             liveBtn.style.display = 'none';
         }
+        
         sideNavDynamicLinks.innerHTML = `<a href="#" onclick="filterData('All', null, true)"><i class="fa fa-home"></i> Home</a>`;
         if (availableCategories.length > 0) {
             availableCategories.forEach(catObj => {
                 let lowerCat = catObj.name.toLowerCase();
                 if (lowerCat === 'live' || lowerCat === 'life' || lowerCat === 'slider') return;
-                let cleanIcon = getCleanIconClass(catObj.icon);
-                sideNavDynamicLinks.innerHTML += `<a href="#" onclick="filterData('${catObj.name}', null, true)"><i class="${cleanIcon}"></i> ${catObj.name}</a>`;
+                
+                let iconStyle = catObj.icon;
+                let finalIconClass = 'fa fa-folder';
+                if(iconStyle.startsWith('fa-')) {
+                    finalIconClass = `fa ${iconStyle}`;
+                } else if(iconStyle.startsWith('fa ')) {
+                    finalIconClass = iconStyle;
+                } else {
+                    finalIconClass = `material-icons-round`;
+                }
+
+                if(finalIconClass === 'material-icons-round') {
+                    sideNavDynamicLinks.innerHTML += `<a href="#" onclick="filterData('${catObj.name}', null, true)"><i class="material-icons-round" style="font-size:18px;">${iconStyle}</i> ${catObj.name}</a>`;
+                } else {
+                    sideNavDynamicLinks.innerHTML += `<a href="#" onclick="filterData('${catObj.name}', null, true)"><i class="${finalIconClass}"></i> ${catObj.name}</a>`;
+                }
             });
         }
     }
@@ -568,52 +757,70 @@
     window.filterData = function(cat, btn, shouldClose = true) {
         currentCategory = cat;
         if(shouldClose) closeNav();
+        
         const sliderDiv = document.getElementById('mainSlider');
         const videoBox = document.getElementById('videoBox');
         const sliders = rawData.filter(d => (d.Category || d.category || "").toLowerCase() === 'slider');
+        
         sliderDiv.style.display = (cat === 'All' && videoBox.style.display !== 'block' && sliders.length) ? 'block' : 'none';
+        
         document.querySelectorAll('.nav-btn').forEach(b => {
             if(b === btn) b.classList.add('active');
             else if(!btn && (b.getAttribute('data-cat') === cat || (cat === 'All' && b.id === 'home-nav-btn'))) b.classList.add('active');
             else b.classList.remove('active');
         });
+        
         const homeCategoriesContainer = document.getElementById('homeCategoriesContainer');
         const mainCategoryView = document.getElementById('mainCategoryView');
         const moreSectionView = document.getElementById('moreSectionView');
         const specificGrid = document.getElementById('specificGrid');
         const specificCategoryTitle = document.getElementById('specificCategoryTitle');
+        
         moreSectionView.style.display = 'none';
         
         if (cat === 'All') {
             mainCategoryView.style.display = 'none';
             homeCategoriesContainer.style.display = 'block';
-            let categoriesToDisplay = availableCategories.filter(c => {
-                let ln = c.name.toLowerCase();
-                return ln !== 'slider' && ln !== 'live' && ln !== 'life';
-            });
+            
             let finalHtml = '';
-            categoriesToDisplay.forEach(catItem => {
-                let catLower = catItem.name.toLowerCase();
-                let filteredItems = rawData.filter(d => (d.Category || d.category || "").trim().toLowerCase() === catLower).slice().reverse();
-                if(!filteredItems.length) return;
-                let displayCount = filteredItems.length > 6 ? 6 : filteredItems.length;
-                let subset = filteredItems.slice(0, displayCount);
-                let cleanIcon = getCleanIconClass(catItem.icon);
-                finalHtml += `
-                <div class="category-section">
+            availableCategories.forEach(categoryObj => {
+                let lowerCat = categoryObj.name.toLowerCase();
+                if (lowerCat === 'slider') return;
+                
+                let filtered = rawData.filter(d => (d.Category || d.category || "").trim().toLowerCase() === lowerCat);
+                if (!filtered.length) return;
+                filtered = filtered.slice().reverse();
+                
+                let iconStyle = categoryObj.icon;
+                let finalIconClass = 'fa fa-folder';
+                if (iconStyle.startsWith('fa-')) {
+                    finalIconClass = `fa ${iconStyle}`;
+                } else if(iconStyle.startsWith('fa ')) {
+                    finalIconClass = iconStyle;
+                } else {
+                    finalIconClass = `material-icons-round`;
+                }
+                
+                let iconCodeHtml = finalIconClass === 'material-icons-round' 
+                    ? `<i class="material-icons-round" style="font-size:16px;">${iconStyle}</i>` 
+                    : `<i class="${finalIconClass}"></i>`;
+
+                finalHtml += `<div class="category-section">
                     <div class="category-header">
-                        <div class="category-title"><i class="${cleanIcon}"></i> ${catItem.name.toUpperCase()}</div>
-                        ${filteredItems.length > 6 ? `<div class="read-more-btn" onclick="filterData('${catItem.name}', null, false)">More</div>` : ''}
+                        <div class="category-title">${iconCodeHtml} ${categoryObj.name.toUpperCase()}</div>
+                        <div class="read-more-btn" onclick="filterData('${escapeHtml(categoryObj.name)}', null, false)">View All</div>
                     </div>
                     <div class="grid">
-                        ${subset.map(item => {
+                        ${filtered.slice(0, 3).map(item => {
                             let thumb = item.Thumbnail || item.thumbnail || MASTER_LOGO;
-                            let itemName = item.name || item.Name || "Untitled";
+                            let itemName = item.Name || item.name || "Untitled";
                             let url = item.URL || item.url || "#";
-                            let isFav = favorites.includes(url);
                             return `
-                            <div class="card" data-url="${escapeHtml(url)}" data-title="${escapeHtml(itemName)}">
-                                <div class="fav-badge ${isFav ? 'active' : ''}" onclick="toggleFav(event, '${escapeHtml(url)}')"><i class="fa fa-heart"></i></div>
+                            <div class="card" 
+                                 onTouchStart="cardTouchStart(event, '${escapeHtml(url)}', '${escapeHtml(itemName)}')" 
+                                 onTouchEnd="cardTouchEnd(event)" 
+                                 onMouseDown="cardTouchStart(event, '${escapeHtml(url)}', '${escapeHtml(itemName)}')" 
+                                 onMouseUp="cardTouchEnd(event)">
                                 <div style="width:100%; height:100%;" onclick="play('${escapeHtml(url)}', '${escapeHtml(itemName)}', this.parentElement)">
                                     <img src="${thumb}" loading="lazy" onerror="handleImageError(this)" onload="handleImageLoad(this)" class="img-loading">
                                     <div class="card-title">${itemName}</div>
@@ -623,25 +830,38 @@
                     </div>
                 </div>`;
             });
+            
             if(!finalHtml) {
-                homeCategoriesContainer.innerHTML = `
-                <div class="empty-state">
-                    <i class="fa fa-folder-open"></i>
-                    <h3>No content available</h3>
-                </div>`;
+                homeCategoriesContainer.innerHTML = `<div class="empty-state"><i class="fa fa-folder-open"></i><h3>No content available</h3></div>`;
             } else {
                 homeCategoriesContainer.innerHTML = finalHtml;
             }
         } else {
             homeCategoriesContainer.style.display = 'none';
             mainCategoryView.style.display = 'block';
+            
             let matchedCategory = availableCategories.find(c => c.name.toLowerCase() === cat.toLowerCase());
             let currentIconClass = matchedCategory ? matchedCategory.icon : "fa-folder";
+            
             if(cat.toLowerCase() === 'live' || cat.toLowerCase() === 'life') {
                 currentIconClass = "fa-circle-play";
             }
-            let cleanIcon = getCleanIconClass(currentIconClass);
-            specificCategoryTitle.innerHTML = `<i class="${cleanIcon}"></i> ${cat.toUpperCase()}`;
+            
+            let finalIconClass = 'fa fa-folder';
+            if (currentIconClass.startsWith('fa-')) {
+                finalIconClass = `fa ${currentIconClass}`;
+            } else if(currentIconClass.startsWith('fa ')) {
+                finalIconClass = currentIconClass;
+            } else {
+                finalIconClass = `material-icons-round`;
+            }
+            
+            let iconCodeHtml = finalIconClass === 'material-icons-round' 
+                ? `<i class="material-icons-round" style="font-size:16px;">${currentIconClass}</i>` 
+                : `<i class="${finalIconClass}"></i>`;
+                
+            specificCategoryTitle.innerHTML = `${iconCodeHtml} ${cat.toUpperCase()}`;
+            
             let filtered = rawData.filter(d => {
                 let c = (d.Category || d.category || "").trim().toLowerCase();
                 if (cat.toLowerCase() === 'live') {
@@ -650,21 +870,20 @@
                 return c === cat.toLowerCase();
             });
             filtered = filtered.slice().reverse();
+            
             if(!filtered.length) {
-                specificGrid.innerHTML = `
-                <div style="grid-column:1/-1" class="empty-state">
-                    <i class="fa fa-folder-open"></i>
-                    <h3>No content found</h3>
-                </div>`;
+                specificGrid.innerHTML = `<div style="grid-column:1/-1" class="empty-state"><i class="fa fa-folder-open"></i><h3>No content found</h3></div>`;
             } else {
                 specificGrid.innerHTML = filtered.map(item => {
                     let thumb = item.Thumbnail || item.thumbnail || MASTER_LOGO,
-                        itemName = item.name || item.Name || "Untitled",
+                        itemName = item.Name || item.name || "Untitled",
                         url = item.URL || item.url || "#";
-                    let isFav = favorites.includes(url);
                     return `
-                    <div class="card" data-url="${escapeHtml(url)}" data-title="${escapeHtml(itemName)}">
-                        <div class="fav-badge ${isFav ? 'active' : ''}" onclick="toggleFav(event, '${escapeHtml(url)}')"><i class="fa fa-heart"></i></div>
+                    <div class="card" 
+                         onTouchStart="cardTouchStart(event, '${escapeHtml(url)}', '${escapeHtml(itemName)}')" 
+                         onTouchEnd="cardTouchEnd(event)" 
+                         onMouseDown="cardTouchStart(event, '${escapeHtml(url)}', '${escapeHtml(itemName)}')" 
+                         onMouseUp="cardTouchEnd(event)">
                         <div style="width:100%; height:100%;" onclick="play('${escapeHtml(url)}', '${escapeHtml(itemName)}', this.parentElement)">
                             <img src="${thumb}" loading="lazy" onerror="handleImageError(this)" onload="handleImageLoad(this)" class="img-loading">
                             <div class="card-title">${itemName}</div>
@@ -675,50 +894,39 @@
         }
     };
 
-    window.toggleFav = function(event, url) {
-        if(event) event.stopPropagation();
-        const index = favorites.indexOf(url);
-        if(index > -1) favorites.splice(index, 1);
-        else favorites.push(url);
-        localStorage.setItem(FAV_KEY, JSON.stringify(favorites));
-        document.querySelectorAll(`.fav-badge[onclick*="${url}"]`).forEach(badge => {
-            if(favorites.includes(url)) badge.classList.add('active');
-            else badge.classList.remove('active');
-        });
-        if(currentCategory === 'Favorites') showFavorites();
-    };
-
     window.showFavorites = function(btn) {
         closeNav();
-        currentCategory = 'Favorites';
-        document.querySelectorAll('.nav-btn').forEach(b => {
-            if(b === btn) b.classList.add('active');
-            else b.classList.remove('active');
-        });
+        currentCategory = 'favorites_section';
+        document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+        if(btn) btn.classList.add('active');
+        else document.getElementById('fav-nav-btn').classList.add('active');
+        
         document.getElementById('mainSlider').style.display = 'none';
         document.getElementById('homeCategoriesContainer').style.display = 'none';
+        document.getElementById('mainCategoryView').style.display = 'block';
         document.getElementById('moreSectionView').style.display = 'none';
-        const mainCategoryView = document.getElementById('mainCategoryView');
-        const specificGrid = document.getElementById('specificGrid');
+        
         const specificCategoryTitle = document.getElementById('specificCategoryTitle');
-        mainCategoryView.style.display = 'block';
-        specificCategoryTitle.innerHTML = `<i class="fa fa-heart"></i> FAVOURITES`;
-        let filtered = rawData.filter(d => favorites.includes(d.URL || d.url || "#"));
+        specificCategoryTitle.innerHTML = `<i class="fa fa-heart"></i> FAVORITES`;
+        
+        const specificGrid = document.getElementById('specificGrid');
+        
+        let filtered = rawData.filter(item => favorites.includes(item.URL || item.url));
+        filtered = filtered.slice().reverse();
+        
         if(!filtered.length) {
-            specificGrid.innerHTML = `
-            <div style="grid-column:1/-1" class="empty-state">
-                <i class="fa fa-heart" style="color:#444;"></i>
-                <h3>No favorites added</h3>
-                <p>Click on the heart icon to add items</p>
-            </div>`;
+            specificGrid.innerHTML = `<div style="grid-column:1/-1" class="empty-state"><i class="fa fa-heart-broken"></i><h3>No Favorites saved yet</h3><p>Hold / Long click any item to add it</p></div>`;
         } else {
             specificGrid.innerHTML = filtered.map(item => {
                 let thumb = item.Thumbnail || item.thumbnail || MASTER_LOGO,
-                    itemName = item.name || item.Name || "Untitled",
+                    itemName = item.Name || item.name || "Untitled",
                     url = item.URL || item.url || "#";
                 return `
-                <div class="card" data-url="${escapeHtml(url)}" data-title="${escapeHtml(itemName)}">
-                    <div class="fav-badge active" onclick="toggleFav(event, '${escapeHtml(url)}')"><i class="fa fa-heart"></i></div>
+                <div class="card" 
+                     onTouchStart="cardTouchStart(event, '${escapeHtml(url)}', '${escapeHtml(itemName)}')" 
+                     onTouchEnd="cardTouchEnd(event)" 
+                     onMouseDown="cardTouchStart(event, '${escapeHtml(url)}', '${escapeHtml(itemName)}')" 
+                     onMouseUp="cardTouchEnd(event)">
                     <div style="width:100%; height:100%;" onclick="play('${escapeHtml(url)}', '${escapeHtml(itemName)}', this.parentElement)">
                         <img src="${thumb}" loading="lazy" onerror="handleImageError(this)" onload="handleImageLoad(this)" class="img-loading">
                         <div class="card-title">${itemName}</div>
@@ -733,10 +941,12 @@
         currentCategory = 'more_section';
         document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
         if(btn) btn.classList.add('active');
+        
         document.getElementById('mainSlider').style.display = 'none';
         document.getElementById('homeCategoriesContainer').style.display = 'none';
         document.getElementById('mainCategoryView').style.display = 'none';
         document.getElementById('moreSectionView').style.display = 'block';
+        
         let user = localStorage.getItem('nikamma_user');
         if(user) {
             document.getElementById('loggedOutView').style.display = 'none';
@@ -755,6 +965,7 @@
             showMoreSection(document.getElementById('more-nav-btn'));
         }
     };
+
     window.userLogout = function() {
         localStorage.removeItem('nikamma_user');
         showMoreSection(document.getElementById('more-nav-btn'));
@@ -775,31 +986,40 @@
         });
     }
 
-    function search() {
-        const term = document.getElementById('searchBar').value.toLowerCase().trim();
-        const specificGrid = document.getElementById('specificGrid');
-        const specificCategoryTitle = document.getElementById('specificCategoryTitle');
+    window.search = function() {
+        let term = document.getElementById('searchBar').value.toLowerCase().trim();
+        const sliders = rawData.filter(d => (d.Category || d.category || "").toLowerCase() === 'slider');
+        
         if(!term) {
+            document.getElementById('mainSlider').style.display = (currentCategory === 'All' && sliders.length) ? 'block' : 'none';
             filterData(currentCategory, null, false);
             return;
         }
-        document.getElementById('homeCategoriesContainer').style.display = 'none';
-        document.getElementById('mainCategoryView').style.display = 'block';
-        document.getElementById('moreSectionView').style.display = 'none';
-        document.getElementById('mainSlider').style.display = 'none';
-        specificCategoryTitle.innerHTML = `<i class="fa fa-search"></i> SEARCHING...`;
         
-        let filtered = rawData.filter(d => (d.name || d.Name || "").toLowerCase().includes(term) && (d.Category || d.category || "").toLowerCase() !== 'slider').slice().reverse();
+        document.getElementById('mainSlider').style.display = 'none';
+        document.getElementById('homeCategoriesContainer').style.display = 'none';
+        document.getElementById('moreSectionView').style.display = 'none';
+        
+        const mainCategoryView = document.getElementById('mainCategoryView');
+        const specificGrid = document.getElementById('specificGrid');
+        const specificCategoryTitle = document.getElementById('specificCategoryTitle');
+        
+        mainCategoryView.style.display = 'block';
+        specificCategoryTitle.innerHTML = `<i class="fa fa-search"></i> SEARCH RESULTS`;
+        
+        let filtered = rawData.filter(d => (d.Name || d.name || "").toLowerCase().includes(term) && (d.Category || d.category || "").toLowerCase() !== 'slider').slice().reverse();
+        
         if(!filtered.length) {
             specificGrid.innerHTML = `<div style="grid-column:1/-1" class="empty-state"><i class="fa fa-search"></i><h3>No results for "${term}"</h3></div>`;
             return;
         }
+        
         specificGrid.innerHTML = filtered.map(item => `
-            <div class="card" onclick="play('${escapeHtml(item.URL || item.url || "#")}', '${escapeHtml(item.name || item.Name)}', this)">
+            <div class="card" onclick="play('${escapeHtml(item.URL || item.url || "#")}', '${escapeHtml(item.Name || item.name)}', this)">
                 <img src="${item.Thumbnail || item.thumbnail || MASTER_LOGO}" loading="lazy" onerror="handleImageError(this)" onload="handleImageLoad(this)" class="img-loading">
-                <div class="card-title">${item.name || item.Name}</div>
+                <div class="card-title">${item.Name || item.name}</div>
             </div>`).join('');
-    }
+    };
 
     window.forceRefreshData = async function() {
         if(isRefreshing) return;
@@ -818,71 +1038,269 @@
         var pc = document.getElementById('ptr-container');
         var pt = document.getElementById('ptr-text');
         var pi = document.getElementById('ptr-icon');
-        if(status === 'pull') {
+        
+        if (status === 'pull') {
             pc.style.transform = `translateY(${Math.min(pullDistance - 70, 0)}px)`;
-            pt.innerText = pullDistance > 70 ? 'Release to refresh' : 'Pull to refresh';
-            pi.className = pullDistance > 70 ? 'fa fa-arrow-up' : 'fa fa-arrow-down';
-        } else if(status === 'release') {
+            pt.innerText = pullDistance > 90 ? 'Release to refresh' : 'Pull to refresh';
+            pi.className = pullDistance > 90 ? 'fa fa-arrow-up' : 'fa fa-arrow-down';
+        } else if (status === 'release') {
             pc.style.transform = 'translateY(0px)';
-            pt.innerText = 'Refreshing...';
+            pt.innerText = 'Refreshing data...';
             pi.className = 'ptr-spinner';
-        } else if(status === 'complete') {
-            pt.innerText = 'Updated successfully';
-            pi.className = 'fa fa-check-circle';
-            setTimeout(() => { pc.style.transform = 'translateY(-70px)'; }, 1000);
+        } else if (status === 'complete') {
+            pc.style.transform = 'translateY(-70px)';
+            pt.innerText = 'Pull to refresh';
+            pi.className = 'fa fa-arrow-down';
         }
     }
-    
+
     window.addEventListener('touchstart', (e) => {
-        if(window.scrollY === 0 && e.touches[0].clientY < 200) {
-            ptrStartY = e.touches[0].clientY;
-            ptrActive = true;
+        if (window.scrollY === 0 && !ptrActive && e.touches[0].screenY < 200) {
+            ptrStartY = e.touches[0].screenY;
             isTouching = true;
         }
-    });
+    }, { passive: true });
+
     window.addEventListener('touchmove', (e) => {
-        if(!ptrActive || isRefreshing) return;
-        var distance = e.touches[0].clientY - ptrStartY;
-        if(distance > 0) {
-            e.preventDefault();
-            ptrHeight = distance;
-            updatePTR('pull', distance);
-        } else ptrActive = false;
-    }, {passive:false});
-    window.addEventListener('touchend', () => {
-        isTouching = false;
-        if(ptrActive && ptrHeight > 70 && !isRefreshing) {
-            forceRefreshData();
-        } else if(ptrActive) {
-            document.getElementById('ptr-container').style.transform = 'translateY(-70px)';
+        if (!isTouching) return;
+        let currentY = e.touches[0].screenY;
+        let dist = currentY - ptrStartY;
+        if (dist > 0) {
+            ptrActive = true;
+            updatePTR('pull', dist);
+            if (dist > 15) { if (e.cancelable) e.preventDefault(); }
         }
+    }, { passive: false });
+
+    window.addEventListener('touchend', async () => {
+        if (!isTouching || !ptrActive) { isTouching = false; return; }
+        isTouching = false;
         ptrActive = false;
-        ptrHeight = 0;
-    });
+        let pc = document.getElementById('ptr-container');
+        let currentTrans = parseInt(pc.style.transform.replace(/[^\d.-]/g, '') || -70);
+        if (currentTrans >= -5) {
+            await forceRefreshData();
+        } else {
+            updatePTR('complete');
+        }
+    }, { passive: true });
 
-    function setVideoFitMode(mode = null) {
-        const video = document.getElementById('advancedVideo');
-        const badge = document.getElementById('mode-text');
-        const modes = ['contain', 'cover', 'fill'];
-        let cur = video.className.replace('fit-', '');
-        let nextMode = mode || modes[(modes.indexOf(cur) + 1) % modes.length];
-        video.className = `fit-${nextMode}`;
-        badge.innerText = nextMode.toUpperCase();
-        localStorage.setItem('nikamma_video_fit', nextMode);
+    // Video Player core modules integration
+    function destroyAdvancedPlayer() {
+        if (currentMpegtsPlayer) {
+            try { currentMpegtsPlayer.unload(); currentMpegtsPlayer.destroy(); } catch(e) {}
+            currentMpegtsPlayer = null;
+        }
+        if (currentHlsPlayer) {
+            try { currentHlsPlayer.destroy(); } catch(e) {}
+            currentHlsPlayer = null;
+        }
+        advVideo.pause();
+        advVideo.removeAttribute('src');
+        advVideo.load();
+        clearBufferingTimeout();
+        setVideoBrightness(1.0);
     }
 
-    function showGestureIndicator(icon, val) {
-        const gi = document.getElementById('gestureIndicator');
-        const giIcon = document.getElementById('gestureIcon');
-        const giVal = document.getElementById('gestureValue');
-        giIcon.className = icon;
-        giVal.innerText = Math.round(val) + '%';
-        gi.style.opacity = '1';
-        setTimeout(() => { gi.style.opacity = '0'; }, 1000);
+    function isWebpageUrl(url) {
+        if (!url || url === '#') return false;
+        if (/executeandship\.com|dailymotion\.com|streamtp\.com|embedstream|player\.|embed\./i.test(url)) return true;
+        if (url.includes('?') && !/\.(m3u8|ts|mp4|mpd)/i.test(url)) return true;
+        return false;
     }
-    function setVideoBrightness(v) {
-        currentBrightness = v;
-        advVideo.style.filter = `brightness(${v})`;
+
+    window.iframeFullscreen = function() {
+        var ifr = document.getElementById('iframePlayer');
+        var box = document.getElementById('iframePlayerBox');
+        var req = box.requestFullscreen || box.webkitRequestFullscreen;
+        if (req) req.call(box);
+    };
+
+    window.play = function(url, title, cardElement) {
+        if(!url || url === '#') return;
+        document.querySelectorAll('.card').forEach(c => c.classList.remove('playing'));
+        if(cardElement) cardElement.classList.add('playing');
+        
+        document.getElementById('videoBox').style.display = 'block';
+        document.getElementById('mainSlider').style.display = 'none';
+        document.getElementById('videoTitle').innerText = title;
+        window.scrollTo({top: 0, behavior: 'smooth'});
+        
+        if (isWebpageUrl(url)) {
+            destroyAdvancedPlayer();
+            currentSourceUrl = url;
+            document.getElementById('advancedPlayerContainer').style.display = 'none';
+            var iframeBox = document.getElementById('iframePlayerBox');
+            var iframe = document.getElementById('iframePlayer');
+            iframeBox.style.display = 'block';
+            iframe.src = url;
+        } else {
+            document.getElementById('iframePlayerBox').style.display = 'none';
+            document.getElementById('iframePlayer').src = 'about:blank';
+            document.getElementById('advancedPlayerContainer').style.display = '';
+            loadIntoAdvancedPlayer(url, title, cardElement, true);
+        }
+    };
+
+    window.stopVideo = function() {
+        destroyAdvancedPlayer();
+        currentSourceUrl = null;
+        var iframe = document.getElementById('iframePlayer');
+        if (iframe) iframe.src = 'about:blank';
+        
+        document.getElementById('iframePlayerBox').style.display = 'none';
+        document.getElementById('advancedPlayerContainer').style.display = '';
+        document.getElementById('videoBox').style.display = 'none';
+        document.querySelectorAll('.card').forEach(c => c.classList.remove('playing'));
+        
+        const sliders = rawData.filter(d => (d.Category || d.category || "").toLowerCase() === 'slider');
+        if(currentCategory === 'All' && sliders.length > 0) document.getElementById('mainSlider').style.display = 'block';
+        if (controlsTimeout) clearTimeout(controlsTimeout);
+        hideControls();
+    };
+
+    async function checkInternetBeforeStart() {
+        const checker = document.getElementById('internetChecker');
+        if (!navigator.onLine) {
+            checker.style.display = 'flex';
+            return false;
+        }
+        checker.style.display = 'none';
+        return true;
+    }
+
+    window.checkInternetAgain = async function() {
+        const btn = document.querySelector('#internetChecker .retry-btn');
+        btn.innerHTML = '<i class="fa fa-circle-notch fa-spin"></i> Checking...';
+        setTimeout(async () => {
+            const hasInternet = await checkInternetBeforeStart();
+            if (hasInternet) fetchData();
+            btn.innerHTML = '<i class="fa fa-arrow-rotate-right"></i> Check Again';
+        }, 1000);
+    };
+
+    function loadIntoAdvancedPlayer(url, title, cardEl, autoplayRequested) {
+        destroyAdvancedPlayer();
+        currentSourceUrl = url;
+        exoLoader.style.display = 'flex';
+        
+        const isM3u8 = url.includes('.m3u8');
+        const isTs = url.includes('.ts');
+        
+        const fallbackNative = (u, auto) => {
+            advVideo.src = u;
+            if (auto) advVideo.play().catch(e => console.warn("Native video play rejected."));
+        };
+        
+        if (isTs && typeof mpegts !== 'undefined') {
+            try {
+                currentMpegtsPlayer = mpegts.createPlayer({
+                    type: 'mse', isLive: true, url: url, enableStashBuffer: false
+                });
+                currentMpegtsPlayer.attachMediaElement(advVideo);
+                currentMpegtsPlayer.load();
+                if (autoplayRequested) currentMpegtsPlayer.play().catch(e => console.warn);
+            } catch(e) { fallbackNative(url, autoplayRequested); }
+        } else if (isM3u8 && window.Hls && Hls.isSupported()) {
+            try {
+                currentHlsPlayer = new Hls({ lowLatencyMode: true });
+                currentHlsPlayer.loadSource(url);
+                currentHlsPlayer.attachMedia(advVideo);
+                currentHlsPlayer.on(Hls.Events.MANIFEST_PARSED, () => {
+                    if (autoplayRequested) advVideo.play().catch(e=>console.warn);
+                });
+                currentHlsPlayer.on(Hls.Events.ERROR, (evt, data) => {
+                    if (data.fatal) attemptResume();
+                });
+            } catch(e) { fallbackNative(url, autoplayRequested); }
+        } else {
+            fallbackNative(url, autoplayRequested);
+        }
+        
+        advVideo.onplaying = () => { exoLoader.style.display = 'none'; showControls(); };
+        advVideo.onwaiting = () => { exoLoader.style.display = 'flex'; };
+        advVideo.onerror = () => { exoLoader.style.display = 'none'; };
+        
+        setTimeout(() => {
+            if(advVideo.readyState > 0) exoLoader.style.display = 'none';
+        }, 1500);
+    }
+
+    function toggleFullscreen() {
+        const container = document.getElementById('advancedPlayerContainer');
+        const isCurrentlyFull = !!(document.fullscreenElement || document.webkitFullscreenElement);
+        if (!isCurrentlyFull) {
+            const requestMethod = container.requestFullscreen || container.webkitRequestFullscreen;
+            if (requestMethod) requestMethod.call(container).catch(err => console.warn(err));
+        } else {
+            const exitMethod = document.exitFullscreen || document.webkitExitFullscreen;
+            if (exitMethod) exitMethod.call(document).catch(err => console.warn(err));
+        }
+    }
+
+    function updateFullscreenIcon() {
+        const isFs = !!(document.fullscreenElement || document.webkitFullscreenElement);
+        isFullscreen = isFs;
+        exoFullBtn.innerHTML = `<span class="material-icons-round">${isFs ? 'fullscreen_exit' : 'fullscreen'}</span>`;
+        if (!isFs) {
+            setVideoFitMode();
+        } else {
+            setTimeout(() => {
+                if (exoOverlay && !advVideo.paused) showControls();
+            }, 100);
+        }
+    }
+
+    document.addEventListener('fullscreenchange', updateFullscreenIcon);
+    document.addEventListener('webkitfullscreenchange', updateFullscreenIcon);
+
+    function attachPlayerControls() {
+        const exoTopCloseBtn = document.getElementById('exoTopCloseBtn');
+        if (exoTopCloseBtn) {
+            exoTopCloseBtn.onclick = (e) => {
+                e.stopPropagation();
+                stopVideo();
+            };
+        }
+        if (exoPlayBtn) {
+            exoPlayBtn.onclick = (e) => {
+                e.stopPropagation();
+                if (advVideo.paused) {
+                    advVideo.play();
+                    exoPlayBtn.innerHTML = `<span class="material-icons-round">pause</span>`;
+                } else {
+                    advVideo.pause();
+                    exoPlayBtn.innerHTML = `<span class="material-icons-round">play_arrow</span>`;
+                }
+                showControls();
+            };
+        }
+        if (exoMuteBtn) {
+            exoMuteBtn.onclick = (e) => {
+                e.stopPropagation();
+                advVideo.muted = !advVideo.muted;
+                exoMuteBtn.innerHTML = `<span class="material-icons-round">${advVideo.muted ? 'volume_off' : 'volume_up'}</span>`;
+                showControls();
+            };
+        }
+        if (exoScreenSetBtn) {
+            exoScreenSetBtn.onclick = (e) => {
+                e.stopPropagation();
+                currentFitIndex = (currentFitIndex + 1) % fitModes.length;
+                setVideoFitMode();
+                showControls();
+            };
+        }
+        if (exoFullBtn) {
+            exoFullBtn.onclick = (e) => {
+                e.stopPropagation();
+                toggleFullscreen();
+                showControls();
+            };
+        }
+        
+        attachToggleControls();
+        attachGestureListeners();
     }
 
     function showControls() {
@@ -896,23 +1314,28 @@
             }
         }
     }
+
     function hideControls() {
         if (exoOverlay && exoOverlay.classList.contains('visible')) {
             exoOverlay.classList.remove('visible');
             clearTimeout(controlsTimeout);
         }
     }
+
     function toggleControls() {
         if (exoOverlay.classList.contains('visible')) hideControls();
         else showControls();
     }
+
     function attachToggleControls() {
         const container = document.getElementById('advancedPlayerContainer');
         if (!container) return;
+        
         const handleToggle = (e) => {
             if (e.target.closest && (e.target.closest('.icon-btn') || e.target.closest('.menu-bar') || e.target.closest('.top-bar'))) return;
             toggleControls();
         };
+        
         container.addEventListener('click', handleToggle);
         advVideo.addEventListener('click', (e) => {
             e.stopPropagation();
@@ -935,6 +1358,7 @@
             bufferingTimeout = null;
         }
     }
+
     function attemptResume() {
         if (!currentSourceUrl) return;
         if (advVideo.readyState >= 2) {
@@ -943,20 +1367,11 @@
             const currentTime = advVideo.currentTime;
             const wasPlaying = !advVideo.paused;
             const url = currentSourceUrl;
-            if (currentMpegtsPlayer) {
-                try { currentMpegtsPlayer.unload(); currentMpegtsPlayer.destroy(); } catch(e) {}
-                currentMpegtsPlayer = null;
-            }
-            if (currentHlsPlayer) {
-                try { currentHlsPlayer.destroy(); } catch(e) {}
-                currentHlsPlayer = null;
-            }
-            advVideo.pause();
-            advVideo.removeAttribute('src');
-            advVideo.load();
-            const isLive = url.includes('.m3u8') || url.includes('.ts') || url.includes('live');
+            
+            destroyAdvancedPlayer();
             loadIntoAdvancedPlayer(url, document.getElementById('videoTitle').innerText, null, wasPlaying);
-            if (!isLive && currentTime > 0 && currentTime < advVideo.duration) {
+            
+            if (currentTime > 0 && currentTime < advVideo.duration) {
                 advVideo.addEventListener('loadedmetadata', function seekHandler() {
                     advVideo.currentTime = currentTime;
                     advVideo.removeEventListener('loadedmetadata', seekHandler);
@@ -965,27 +1380,23 @@
         }
     }
 
-    function handleWaiting() {
-        if (!currentSourceUrl) return;
-        clearBufferingTimeout();
-        bufferingTimeout = setTimeout(() => {
-            if (advVideo.readyState < 2 || advVideo.networkState === 2 || advVideo.buffered.length === 0) {
-                attemptResume();
-            }
-        }, 4000);
-    }
+    // Touch and gestures modules
+    let gestureStartX = 0, gestureStartY = 0, gesturePrevented = false;
+    let gestureActive = false, gestureSide = null, gestureStartValue = 0, activeTouchId = null;
 
     function handleTouchStart(e) {
         if (!isFullscreen) return;
-        const target = e.target;
-        if (target.closest && (target.closest('.menu-bar') || target.closest('.top-bar'))) return;
+        if (e.target.closest && (e.target.closest('.menu-bar') || e.target.closest('.top-bar'))) return;
+        
         const touch = e.touches[0];
         activeTouchId = touch.identifier;
         gestureStartX = touch.clientX;
         gestureStartY = touch.clientY;
         gesturePrevented = false;
+        
         const screenWidth = window.innerWidth;
         gestureSide = gestureStartX < screenWidth / 2 ? 'left' : 'right';
+        
         if (gestureSide === 'right') {
             gestureStartValue = advVideo.volume;
         } else {
@@ -993,22 +1404,23 @@
         }
         gestureActive = true;
     }
+
     function handleTouchMove(e) {
         if (!gestureActive || !isFullscreen) return;
         let touch = null;
         for (let i = 0; i < e.touches.length; i++) {
-            if (e.touches[i].identifier === activeTouchId) {
-                touch = e.touches[i];
-                break;
-            }
+            if (e.touches[i].identifier === activeTouchId) { touch = e.touches[i]; break; }
         }
         if (!touch) return;
+        
         const deltaY = gestureStartY - touch.clientY;
         const deltaX = Math.abs(touch.clientX - gestureStartX);
+        
         if (!gesturePrevented && Math.abs(deltaY) > 12 && Math.abs(deltaY) > deltaX * 1.2) {
             gesturePrevented = true;
             e.preventDefault();
         }
+        
         if (gesturePrevented) {
             e.preventDefault();
             let newValue = gestureStartValue + (deltaY / 200) * (gestureSide === 'right' ? 1.0 : 1.8);
@@ -1017,7 +1429,7 @@
                 advVideo.volume = newValue;
                 if (advVideo.muted && newValue > 0) advVideo.muted = false;
                 if (newValue === 0) advVideo.muted = true;
-                document.getElementById('exoMuteBtn').innerHTML = `<span class="material-icons-round">${advVideo.muted || advVideo.volume === 0 ? 'volume_off' : 'volume_up'}</span>`;
+                exoMuteBtn.innerHTML = `<span class="material-icons-round">${advVideo.muted || advVideo.volume === 0 ? 'volume_off' : 'volume_up'}</span>`;
                 showGestureIndicator('fa fa-volume-up', newValue * 100);
             } else {
                 newValue = Math.min(2.0, Math.max(0.2, newValue));
@@ -1027,360 +1439,34 @@
             }
         }
     }
+
     function handleTouchEnd(e) {
         gestureActive = false;
         gestureSide = null;
         gesturePrevented = false;
         activeTouchId = null;
     }
+
     function attachGestureListeners() {
         const container = document.getElementById('advancedPlayerContainer');
         if (!container) return;
         container.removeEventListener('touchstart', handleTouchStart);
         container.removeEventListener('touchmove', handleTouchMove);
         container.removeEventListener('touchend', handleTouchEnd);
+        
         container.addEventListener('touchstart', handleTouchStart, { passive: false });
         container.addEventListener('touchmove', handleTouchMove, { passive: false });
-        container.addEventListener('touchend', handleTouchEnd, { passive: false });
+        container.addEventListener('touchend', handleTouchEnd, { passive: true });
     }
 
-    function destroyAdvancedPlayer() {
-        clearBufferingTimeout();
-        if (currentMpegtsPlayer) {
-            try { currentMpegtsPlayer.unload(); currentMpegtsPlayer.destroy(); } catch(e) {}
-            currentMpegtsPlayer = null;
-        }
-        if (currentHlsPlayer) {
-            try { currentHlsPlayer.destroy(); } catch(e) {}
-            currentHlsPlayer = null;
-        }
-        if (advVideo) {
-            advVideo.pause();
-            advVideo.removeAttribute('src');
-            advVideo.load();
-        }
-    }
-
-    function fallbackNative(url, autoPlay) {
-        advVideo.src = url;
-        advVideo.load();
-        if (autoPlay) {
-            advVideo.play().catch(e => {
-                advVideo.muted = true;
-                advVideo.play().catch(err => console.warn("Native player auto play failed", err));
-            });
-        }
-    }
-
-    function loadIntoAdvancedPlayer(url, title, cardElement, autoPlay = true) {
-        destroyAdvancedPlayer();
-        currentSourceUrl = url;
-        const exoLoader = document.getElementById('exoLoader');
-        exoLoader.style.display = 'flex';
-        let fit = localStorage.getItem('nikamma_video_fit') || 'fill';
-        setVideoFitMode(fit);
-        const isMpegTs = url.includes('.ts') || url.includes('type=m3u8') || url.includes('.ts?') || url.toLowerCase().includes('mpegts');
-        const isM3u8 = url.includes('.m3u8') || url.includes('m3u8');
-        
-        if (isMpegTs && typeof mpegts !== 'undefined') {
-            try {
-                currentMpegtsPlayer = mpegts.createPlayer({ type: 'mse', isLive: true, url: url, enableStashBuffer: false });
-                currentMpegtsPlayer.attachMediaElement(advVideo);
-                currentMpegtsPlayer.load();
-                if (autoPlay) currentMpegtsPlayer.play().catch(e => console.warn);
-            } catch(e) { fallbackNative(url, autoPlay); }
-        } else if (isM3u8 && window.Hls && Hls.isSupported()) {
-            try {
-                currentHlsPlayer = new Hls({ lowLatencyMode: true });
-                currentHlsPlayer.loadSource(url);
-                currentHlsPlayer.attachMedia(advVideo);
-                currentHlsPlayer.on(Hls.Events.MANIFEST_PARSED, () => {
-                    if (autoPlay) advVideo.play().catch(e=>console.warn);
-                });
-                currentHlsPlayer.on(Hls.Events.ERROR, (evt, data) => {
-                    if (data.fatal) attemptResume();
-                });
-            } catch(e) { fallbackNative(url, autoPlay); }
+    window.shareApp = function(e) {
+        e.preventDefault();
+        if (navigator.share) {
+            navigator.share({ title: 'Nikamma 4k', text: 'Check this amazing video app!', url: window.location.href });
         } else {
-            fallbackNative(url, autoPlay);
-        }
-        advVideo.onplaying = () => {
-            exoLoader.style.display = 'none';
-            showControls();
-        };
-        advVideo.onwaiting = () => {
-            exoLoader.style.display = 'flex';
-        };
-        advVideo.onerror = () => {
-            exoLoader.style.display = 'none';
-        };
-        setTimeout(() => { if(advVideo.readyState > 0) exoLoader.style.display = 'none'; }, 1500);
-    }
-
-    function toggleFullscreen() {
-        const container = document.getElementById('advancedPlayerContainer');
-        const isCurrentlyFull = !!(document.fullscreenElement || document.webkitFullscreenElement);
-        if (!isCurrentlyFull) {
-            const requestMethod = container.requestFullscreen || container.webkitRequestFullscreen;
-            if (requestMethod) requestMethod.call(container).catch(err => console.warn(err));
-        } else {
-            const exitMethod = document.exitFullscreen || document.webkitExitFullscreen;
-            if (exitMethod) exitMethod.call(document).catch(err => console.warn(err));
-        }
-    }
-    function updateFullscreenIcon() {
-        const isFs = !!(document.fullscreenElement || document.webkitFullscreenElement);
-        isFullscreen = isFs;
-        document.getElementById('exoFullBtn').innerHTML = `<span class="material-icons-round">${isFs ? 'fullscreen_exit' : 'fullscreen'}</span>`;
-        if (!isFs) {
-            setVideoFitMode();
-        } else {
-            setTimeout(() => {
-                if (exoOverlay && !advVideo.paused) showControls();
-            }, 100);
-        }
-    }
-    document.addEventListener('fullscreenchange', updateFullscreenIcon);
-    document.addEventListener('webkitfullscreenchange', updateFullscreenIcon);
-
-    function attachPlayerControls() {
-        const exoTopCloseBtn = document.getElementById('exoTopCloseBtn');
-        if (exoTopCloseBtn) {
-            exoTopCloseBtn.onclick = (e) => { e.stopPropagation(); stopVideo(); };
-        }
-        advVideo = document.getElementById('advancedVideo');
-        const exoPlayBtn = document.getElementById('exoPlayBtn');
-        const exoMuteBtn = document.getElementById('exoMuteBtn');
-        const exoScreenSetBtn = document.getElementById('exoScreenSetBtn');
-        const exoFullBtn = document.getElementById('exoFullBtn');
-        
-        exoPlayBtn.onclick = (e) => {
-            e.stopPropagation();
-            if (advVideo.paused) { advVideo.play(); exoPlayBtn.innerHTML = '<span class="material-icons-round">pause</span>'; }
-            else { advVideo.pause(); exoPlayBtn.innerHTML = '<span class="material-icons-round">play_arrow</span>'; }
-        };
-        exoMuteBtn.onclick = (e) => {
-            e.stopPropagation();
-            advVideo.muted = !advVideo.muted;
-            exoMuteBtn.innerHTML = `<span class="material-icons-round">${advVideo.muted || advVideo.volume === 0 ? 'volume_off' : 'volume_up'}</span>`;
-        };
-        exoScreenSetBtn.onclick = (e) => { e.stopPropagation(); setVideoFitMode(); };
-        exoFullBtn.onclick = (e) => { e.stopPropagation(); toggleFullscreen(); };
-        
-        attachToggleControls();
-        attachGestureListeners();
-        advVideo.addEventListener('waiting', handleWaiting);
-        advVideo.addEventListener('playing', clearBufferingTimeout);
-    }
-
-    function isWebpageUrl(url) {
-        if (/executeandship\.com|dailymotion\.com|streamtp\.com|embedstream|player\.|embed\./i.test(url)) return true;
-        if (url.includes('?') && !/\.(m3u8|ts|mp4|mpd)/i.test(url)) return true;
-        return false;
-    }
-
-    window.iframeFullscreen = function() {
-        var ifr = document.getElementById('iframePlayer');
-        var box = document.getElementById('iframePlayerBox');
-        var req = box.requestFullscreen || box.webkitRequestFullscreen;
-        if (req) req.call(box);
-    };
-
-    window.play = function(url, title, cardElement) {
-        if(!url || url === '#') return;
-        document.querySelectorAll('.card').forEach(c => c.classList.remove('playing'));
-        if(cardElement) cardElement.classList.add('playing');
-        document.getElementById('videoBox').style.display = 'block';
-        document.getElementById('mainSlider').style.display = 'none';
-        document.getElementById('videoTitle').innerText = title;
-        window.scrollTo({top: 0, behavior: 'smooth'});
-        if (isWebpageUrl(url)) {
-            destroyAdvancedPlayer();
-            currentSourceUrl = url;
-            document.getElementById('advancedPlayerContainer').style.display = 'none';
-            var iframeBox = document.getElementById('iframePlayerBox');
-            var iframe = document.getElementById('iframePlayer');
-            iframeBox.style.display = 'block';
-            iframe.src = url;
-        } else {
-            document.getElementById('iframePlayerBox').style.display = 'none';
-            document.getElementById('iframePlayer').src = 'about:blank';
-            document.getElementById('advancedPlayerContainer').style.display = '';
-            loadIntoAdvancedPlayer(url, title, cardElement, true);
+            showToast('Share link copied!');
         }
     };
-
-    window.stopVideo = function() {
-        destroyAdvancedPlayer();
-        currentSourceUrl = null;
-        var iframe = document.getElementById('iframePlayer');
-        if (iframe) iframe.src = 'about:blank';
-        document.getElementById('iframePlayerBox').style.display = 'none';
-        document.getElementById('advancedPlayerContainer').style.display = '';
-        document.getElementById('videoBox').style.display = 'none';
-        document.querySelectorAll('.card').forEach(c => c.classList.remove('playing'));
-        const sliders = rawData.filter(d => (d.Category || d.category || "").toLowerCase() === 'slider');
-        if(currentCategory === 'All' && sliders.length > 0) document.getElementById('mainSlider').style.display = 'block';
-        if (controlsTimeout) clearTimeout(controlsTimeout);
-        hideControls();
-        setVideoBrightness(1.0);
-    };
-
-    async function checkInternetBeforeStart() {
-        const checker = document.getElementById('internetChecker');
-        if (!navigator.onLine) {
-            checker.style.display = 'flex';
-            return false;
-        }
-        checker.style.display = 'none';
-        return true;
-    }
-    window.checkInternetAgain = async function() {
-        const btn = document.querySelector('#internetChecker .retry-btn');
-        btn.innerHTML = '<i class="fa fa-circle-notch fa-spin"></i> Checking...';
-        setTimeout(async () => {
-            const ok = await checkInternetBeforeStart();
-            if (ok) { fetchData(); }
-            else { btn.innerHTML = '<i class="fa fa-arrow-rotate-right"></i> Check Again'; }
-        }, 1000);
-    };
-
-    function loadDataFromCache() {
-        try {
-            let cached = localStorage.getItem(STORAGE_KEY_DATA);
-            if(cached) {
-                let cacheData = JSON.parse(cached);
-                if(cacheData.rawData && cacheData.rawData.length) {
-                    rawData = cacheData.rawData;
-                    currentDataHash = cacheData.dataHash || '';
-                    if(cacheData.settingsData) settingsData = cacheData.settingsData;
-                    availableCategories = cacheData.availableCategories || [];
-                    applySettings();
-                    return true;
-                }
-            }
-        } catch(e) {}
-        return false;
-    }
-
-    function showCachedDataBadge() {
-        const badge = document.getElementById('data-save-badge');
-        badge.classList.add('show');
-        setTimeout(() => badge.classList.remove('show'), 2000);
-    }
-    function showNoUpdateBadge() {
-        const badge = document.getElementById('no-update-badge');
-        badge.classList.add('show');
-        setTimeout(() => badge.classList.remove('show'), 2000);
-    }
-
-    function updateUIAfterDataLoad() {
-        updateSlider();
-        buildDynamicCategoryMenu();
-        if(currentCategory === 'All') {
-            let initialCat = 'All';
-            if(availableCategories.length > 0) {
-                let firstValid = availableCategories.find(c => {
-                    let name = (c.name || '').toLowerCase();
-                    return name !== 'slider' && name !== 'live' && name !== 'life';
-                });
-                if(firstValid) initialCat = firstValid.name;
-            }
-            currentCategory = initialCat;
-        }
-        filterData(currentCategory, null, false);
-        const splash = document.getElementById('splash-screen');
-        if(splash && splash.style.display !== 'none') {
-            splash.style.opacity = '0';
-            setTimeout(() => splash.style.display = 'none', 500);
-        }
-    }
-
-    function applySettings() {
-        if(settingsData.ratingUrl) document.getElementById('rating-link').href = settingsData.ratingUrl;
-        if(settingsData.privacyUrl) document.getElementById('privacy-link').href = settingsData.privacyUrl;
-        if(settingsData.version && parseFloat(settingsData.version) > 3.9) {
-            document.getElementById('update-overlay').style.display = 'flex';
-            document.getElementById('update-btn').onclick = () => window.location.href = settingsData.updateUrl;
-        }
-    }
-
-    async function fetchFreshData() {
-        return new Promise((resolve) => {
-            Papa.parse('https://docs.google.com/spreadsheets/d/e/2PACX-1vQJM1FvOsBuKL_Al7PpwYerGDVFhs5tLF4PaVs3_TOLX-TFLW-iF3B6qLLLeuuBmjfZFGe3CFxJA-TR/pub?output=csv', {
-                download: true,
-                header: true,
-                skipEmptyLines: true,
-                complete: function(results) {
-                    let newRawData = results.data.filter(item => item && (item.name || item.Name || item.URL || item.url)).map(item => {
-                        let parsed = {};
-                        for (let key in item) { parsed[key.trim()] = item[key]; }
-                        return parsed;
-                    });
-                    
-                    let newSettingsData = {};
-                    let newAvailableCategories = [];
-                    let hasCategorySheet = results.data.some(d => d.Category_Name || d.category_name);
-                    
-                    if(hasCategorySheet) {
-                        results.data.forEach(row => {
-                            if (row.Category_Name || row.category_name) {
-                                let cName = (row.Category_Name || row.category_name).trim();
-                                let cIcon = (row.Icon || row.icon || 'fa-folder').trim();
-                                if (cName && !newAvailableCategories.some(c => c.name.toLowerCase() === cName.toLowerCase())) {
-                                    newAvailableCategories.push({ name: cName, icon: cIcon });
-                                }
-                            }
-                            if (row.Setting_Key || row.setting_key) {
-                                let sKey = (row.Setting_Key || row.setting_key).trim();
-                                let sVal = (row.Setting_Value || row.setting_value).trim();
-                                if(sKey && sVal) newSettingsData[sKey] = sVal;
-                            }
-                        });
-                    } else {
-                        let dynamicCats = [...new Set(newRawData.map(d => (d.Category || d.category || '').trim()).filter(Boolean))];
-                        dynamicCats.forEach(catName => {
-                            if(!newAvailableCategories.some(c => c.name.toLowerCase() === catName.toLowerCase())) {
-                                newAvailableCategories.push({ name: catName, icon: 'fa-folder' });
-                            }
-                        });
-                    }
-
-                    availableCategories = newAvailableCategories;
-                    rawData = newRawData;
-                    settingsData = newSettingsData;
-                    applySettings();
-
-                    let stringifiedData = JSON.stringify(rawData);
-                    let newHash = '';
-                    for (let i = 0; i < stringifiedData.length; i++) {
-                        newHash = ((newHash << 5) - newHash) + stringifiedData.charCodeAt(i);
-                        newHash |= 0;
-                    }
-                    newHash = String(newHash);
-
-                    if (newHash !== currentDataHash) {
-                        currentDataHash = newHash;
-                        localStorage.setItem(STORAGE_KEY_DATA, JSON.stringify({
-                            rawData,
-                            dataHash: currentDataHash,
-                            settingsData,
-                            availableCategories
-                        }));
-                        updateUIAfterDataLoad();
-                        resolve(true);
-                    } else {
-                        updateUIAfterDataLoad();
-                        resolve(false);
-                    }
-                },
-                error: function() {
-                    updateUIAfterDataLoad();
-                    resolve(false);
-                }
-            });
-        });
-    }
 
     async function init() { 
         let cachedColor = localStorage.getItem('nikamma_theme_color');
@@ -1388,22 +1474,6 @@
         attachPlayerControls(); 
         const hasInternet = await checkInternetBeforeStart(); 
         if(hasInternet) fetchData(); 
-    }
-    
-    async function fetchData() { 
-        const hasCache = loadDataFromCache(); 
-        if(!hasCache || rawData.length === 0) { 
-            document.getElementById('splash-screen').style.display = 'flex'; 
-            localStorage.setItem(SPLASH_SEEN_KEY, 'true'); 
-            await fetchFreshData(); 
-        } else { 
-            document.getElementById('splash-screen').style.display = 'none'; 
-            updateSlider(); 
-            buildDynamicCategoryMenu();
-            filterData(currentCategory, null, false); 
-            showCachedDataBadge(); 
-            fetchFreshData().then(updated => { if(updated) console.log("Data updated"); }); 
-        } 
     }
     
     document.getElementById('nav-header-static-img').src = NAV_HEADER_IMAGE;
