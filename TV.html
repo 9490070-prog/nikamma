@@ -318,8 +318,8 @@
         
         /* Bottom Navigation Bar */
         .bottom-nav { position: fixed; bottom: 0; width: 100%; background: rgba(18,18,18,0.95); display: flex; justify-content: space-around; padding: 10px 0; backdrop-filter: blur(10px); border-top: 1px solid #222; z-index: 1000; }
-        .nav-btn i { font-size: 18px; margin-bottom: 2px; display: block; }
         .nav-btn { text-align: center; font-size: 10px; color: #888; flex: 1; cursor: pointer; font-weight: 600; letter-spacing: 0.5px; text-transform: uppercase; }
+        .nav-btn i { font-size: 18px; margin-bottom: 2px; display: block; }
         .nav-btn.active { color: var(--main-color); }
         
         #update-overlay { display: none; position: fixed; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.9); z-index: 10000; flex-direction: column; align-items: center; justify-content: center; }
@@ -752,11 +752,6 @@
             fallbackNative(url, autoPlay);
         }
         
-        function fallbackNative(u, auto) {
-            advVideo.src = u;
-            if (auto) advVideo.play().catch(e => console.warn);
-        }
-        
         advVideo.onplaying = () => { exoLoader.style.display = 'none'; showControls(); };
         advVideo.onwaiting = () => { exoLoader.style.display = 'flex'; };
         advVideo.onerror = () => { exoLoader.style.display = 'none'; };
@@ -1009,12 +1004,10 @@
                 download: true, header: true, skipEmptyLines: true, complete: function(results) {
                     let newRawData = results.data.filter(item => item && (item.name || item.Name || item.URL || item.url)).map(item => { let cat = (item.Category || item.category || "").trim(); if(cat.toLowerCase() === "tv shows" || cat.toLowerCase() === "tvshow") item.Category = "TV Shows"; return item; });
                     
-                    // Fetch categories sheet to acquire Icons & Category listings
                     Papa.parse('https://docs.google.com/spreadsheets/d/e/2PACX-1vQD2lHL-u6zHPZKdYIVD4eXp98XipkVP4jKfxLDoNje9DeZ1726o0zFZf-gAR2kZj0ls7VhceXbbKih/pub?gid=1123743396&single=true&output=csv', { 
                         download: true, header: true, skipEmptyLines: true, complete: function(settingsResults) {
                             settingsData = settingsResults.data[0] || {};
                             
-                            // Map over all rows to capture Category Icons and metadata
                             availableCategories = settingsResults.data.filter(row => row.Category || row.category).map(row => {
                                 return {
                                     name: (row.Category || row.category || "").trim(),
@@ -1046,17 +1039,15 @@
     
     function updateSlider() { const sliders = rawData.filter(d => (d.Category || d.category || "").toLowerCase() === 'slider'); const track = document.getElementById('sliderTrack'); if(sliders.length && track) { track.innerHTML = sliders.map(s => `<div class="slide-item"><img src="${s.Thumbnail || s.thumbnail || s.URL || s.url || MASTER_LOGO}" loading="lazy" onerror="handleImageError(this)" onload="handleImageLoad(this)" class="img-loading"></div>`).join(''); const videoBoxDisplay = document.getElementById('videoBox').style.display; document.getElementById('mainSlider').style.display = (currentCategory === 'All' && videoBoxDisplay !== 'block') ? 'block' : 'none'; } else document.getElementById('mainSlider').style.display = 'none'; }
 
-    // Build Dynamically First 3 categories in Menu and all in Sidebar
+    // Bottom menu mein Top 3 categories add karna with their icons
     function buildDynamicCategoryMenu() {
         const bottomNav = document.getElementById('bottomNav');
         const sideNavDynamicLinks = document.getElementById('sideNavDynamicLinks');
         
-        // Reset dynamic creations leaving initial Home button intact
         bottomNav.innerHTML = `<div class="nav-btn active" id="home-nav-btn" onclick="filterData('All', this)"><i class="fa fa-house"></i>HOME</div>`;
         sideNavDynamicLinks.innerHTML = `<a href="#" onclick="filterData('All', null, true)"><i class="fa fa-home"></i> Home</a>`;
         
         if (availableCategories.length > 0) {
-            // First 3 Categories mapped to Bottom Menu
             const topMenuCats = availableCategories.slice(0, 3);
             topMenuCats.forEach(catObj => {
                 let cleanIcon = catObj.icon.startsWith('fa-') ? `fa ${catObj.icon}` : `fa fa-${catObj.icon}`;
@@ -1067,7 +1058,6 @@
                 `;
             });
             
-            // All available categories added to the Sidebar
             availableCategories.forEach(catObj => {
                 let cleanIcon = catObj.icon.startsWith('fa-') ? `fa ${catObj.icon}` : `fa fa-${catObj.icon}`;
                 sideNavDynamicLinks.innerHTML += `
@@ -1100,13 +1090,11 @@
         const specificCategoryTitle = document.getElementById('specificCategoryTitle');
 
         if (cat === 'All') {
-            // Main Home Screen categorized vertical list view
             mainCategoryView.style.display = 'none';
             homeCategoriesContainer.style.display = 'block';
             
             let categoriesToDisplay = availableCategories;
             if(!categoriesToDisplay.length) {
-                // If dynamic metadata is somehow missing, fall back to extracting categories directly from records
                 const uniqueCategories = [...new Set(rawData.map(item => (item.Category || item.category || "").trim()))].filter(Boolean);
                 categoriesToDisplay = uniqueCategories.map(c => ({ name: c, icon: 'fa-folder' }));
             }
@@ -1119,10 +1107,8 @@
                 let filteredItems = rawData.filter(d => (d.Category || d.category || "").trim().toLowerCase() === catName.toLowerCase());
                 if (!filteredItems.length) return;
                 
-                // Show newly added content first (Reverse order)
                 filteredItems = filteredItems.slice().reverse();
                 
-                // Show Read More button if more than 5 items
                 const hasMore = filteredItems.length > 5;
                 const itemsToShow = filteredItems.slice(0, 5);
                 
@@ -1161,7 +1147,6 @@
             }
             
         } else {
-            // Specific Category detail view
             homeCategoriesContainer.style.display = 'none';
             mainCategoryView.style.display = 'block';
             
@@ -1172,7 +1157,6 @@
             specificCategoryTitle.innerHTML = `<i class="${cleanIcon}"></i> ${cat.toUpperCase()}`;
             
             let filtered = rawData.filter(d => (d.Category || d.category || "").trim().toLowerCase() === cat.toLowerCase());
-            // Reverse sorting: Show Newest added first
             filtered = filtered.slice().reverse();
             
             if(!filtered.length) {
