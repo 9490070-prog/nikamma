@@ -861,21 +861,7 @@
     function updateUIAfterDataLoad() { 
         updateSlider(); 
         buildDynamicCategoryMenu(); 
-        
-        // Auto fallback the initial view if currentCategory is All
-        if(currentCategory === 'All') {
-            let initialCat = 'All';
-            if(availableCategories.length > 0) {
-                let firstValid = availableCategories.find(c => {
-                    let name = (c.name || '').toLowerCase();
-                    return name !== 'slider' && name !== 'live' && name !== 'life';
-                });
-                if(firstValid) initialCat = firstValid.name;
-            }
-            currentCategory = initialCat;
-        }
-        
-        filterData(currentCategory, null, false); 
+        filterData('All', document.getElementById('home-nav-btn'), false); 
         const splash = document.getElementById('splash-screen'); 
         if(splash && splash.style.display !== 'none') { 
             splash.style.opacity = '0'; 
@@ -1009,11 +995,15 @@
                 </div>`;
             });
             
-            homeCategoriesContainer.innerHTML = finalHtml || `
+            if(!finalHtml) {
+                homeCategoriesContainer.innerHTML = `
                 <div class="empty-state">
                     <i class="fa fa-folder-open"></i>
                     <h3>No content available</h3>
                 </div>`;
+            } else {
+                homeCategoriesContainer.innerHTML = finalHtml;
+            }
             
         } else {
             homeCategoriesContainer.style.display = 'none';
@@ -1235,25 +1225,24 @@
             await fetchFreshData(); 
         } else { 
             document.getElementById('splash-screen').style.display = 'none'; 
-            updateSlider(); 
-            buildDynamicCategoryMenu();
-
-            // Auto fallback for cached data
-            if(currentCategory === 'All') {
-                let initialCat = 'All';
-                if(availableCategories.length > 0) {
-                    let firstValid = availableCategories.find(c => {
-                        let name = (c.name || '').toLowerCase();
-                        return name !== 'slider' && name !== 'live' && name !== 'life';
-                    });
-                    if(firstValid) initialCat = firstValid.name;
+            Papa.parse('https://docs.google.com/spreadsheets/d/e/2PACX-1vQJM1FvOsBuKL_Al7PpwYerGDVFhs5tLF4PaVs3_TOLX-TFLW-iF3B6qLLLeuuBmjfZFGe3CFxJA-TR/pub?gid=1155331852&single=true&output=csv', {
+                download: true, header: true, skipEmptyLines: true,
+                complete: function(catResults) {
+                    availableCategories = catResults.data.filter(function(row){ return (row.Category||row.category||'').trim() && (row.Status||'').toLowerCase()!=='inactive'; }).map(function(row){ var ic=(row.Icon||row.icon||'folder').trim(); var resolved=ic.includes(' ')?ic:ic.startsWith('fa-')?'fa '+ic:'fa fa-'+ic; return {name:(row.Category||row.category||'').trim(),icon:resolved}; });
+                    updateSlider();
+                    buildDynamicCategoryMenu();
+                    filterData('All', document.getElementById('home-nav-btn'), false);
+                    showCachedDataBadge();
+                    fetchFreshData().then(updated => { if(updated) console.log("Data updated"); });
+                },
+                error: function() {
+                    updateSlider();
+                    buildDynamicCategoryMenu();
+                    filterData('All', document.getElementById('home-nav-btn'), false);
+                    showCachedDataBadge();
+                    fetchFreshData().then(updated => { if(updated) console.log("Data updated"); });
                 }
-                currentCategory = initialCat;
-            }
-
-            filterData(currentCategory, null, false); 
-            showCachedDataBadge(); 
-            fetchFreshData().then(updated => { if(updated) console.log("Data updated"); }); 
+            });
         } 
     }
     
