@@ -859,9 +859,9 @@
     function showCachedDataBadge() { const badge = document.getElementById('data-save-badge'); badge.classList.add('show'); setTimeout(() => badge.classList.remove('show'), 2000); }
     function showNoUpdateBadge() { const badge = document.getElementById('no-update-badge'); badge.classList.add('show'); setTimeout(() => badge.classList.remove('show'), 2000); }
     function updateUIAfterDataLoad() { 
-        currentCategory = 'All';
         updateSlider(); 
         buildDynamicCategoryMenu(); 
+        currentCategory = 'All';
         filterData('All', document.getElementById('home-nav-btn'), false); 
         const splash = document.getElementById('splash-screen'); 
         if(splash && splash.style.display !== 'none') { 
@@ -885,7 +885,7 @@
                                 download: true, header: true, skipEmptyLines: true,
                                 complete: function(catResults) {
                                     availableCategories = catResults.data.filter(function(row){ return (row.Category||row.category||'').trim() && (row.Status||'').toLowerCase()!=='inactive'; }).map(function(row){ var ic=(row.Icon||row.icon||'folder').trim(); var resolved=ic.includes(' ')?ic:ic.startsWith('fa-')?'fa '+ic:'fa fa-'+ic; return {name:(row.Category||row.category||'').trim(),icon:resolved}; });
-                                    if(newRawData.length) { rawData = newRawData; applySettings(); saveDataToCache(rawData, settingsData); updateUIAfterDataLoad(); resolve(true); } else { resolve(false); }
+                                    if(!isDataSame(newRawData, rawData) && newRawData.length) { rawData = newRawData; applySettings(); saveDataToCache(rawData, settingsData); updateUIAfterDataLoad(); resolve(true); } else if(rawData.length === 0 && newRawData.length) { rawData = newRawData; applySettings(); saveDataToCache(rawData, settingsData); updateUIAfterDataLoad(); resolve(true); } else { if(availableCategories.length) updateUIAfterDataLoad(); resolve(false); }
                                 },
                                 error: function(){ resolve(false); }
                             });
@@ -910,15 +910,7 @@
         if (hasLiveCategory) { liveBtn.style.display = 'block'; } 
         else { liveBtn.style.display = 'none'; }
 
-        sideNavDynamicLinks.innerHTML = `<a href="#" onclick="filterData('All', null, true)"><i class="fa fa-home"></i> Home</a>`;
-        if (availableCategories.length > 0) {
-            availableCategories.forEach(catObj => {
-                let lowerCat = catObj.name.toLowerCase();
-                if (lowerCat === 'live' || lowerCat === 'life' || lowerCat === 'slider') return;
-                let cleanIcon = catObj.icon; // already resolved at fetch time
-                sideNavDynamicLinks.innerHTML += `<a href="#" onclick="filterData('${catObj.name}', null, true)"><i class="${cleanIcon}"></i> ${catObj.name}</a>`;
-            });
-        }
+        sideNavDynamicLinks.innerHTML = `<a href="#" onclick="filterData('All', document.getElementById('home-nav-btn'), true)"><i class="fa fa-home"></i> Home</a>`;
     }
 
     window.filterData = function(cat, btn, shouldClose = true) { 
@@ -1230,17 +1222,17 @@
                 download: true, header: true, skipEmptyLines: true,
                 complete: function(catResults) {
                     availableCategories = catResults.data.filter(function(row){ return (row.Category||row.category||'').trim() && (row.Status||'').toLowerCase()!=='inactive'; }).map(function(row){ var ic=(row.Icon||row.icon||'folder').trim(); var resolved=ic.includes(' ')?ic:ic.startsWith('fa-')?'fa '+ic:'fa fa-'+ic; return {name:(row.Category||row.category||'').trim(),icon:resolved}; });
-                    currentCategory = 'All';
                     updateSlider();
                     buildDynamicCategoryMenu();
+                    currentCategory = 'All';
                     filterData('All', document.getElementById('home-nav-btn'), false);
                     showCachedDataBadge();
                     fetchFreshData().then(updated => { if(updated) console.log("Data updated"); });
                 },
                 error: function() {
-                    currentCategory = 'All';
                     updateSlider();
                     buildDynamicCategoryMenu();
+                    currentCategory = 'All';
                     filterData('All', document.getElementById('home-nav-btn'), false);
                     showCachedDataBadge();
                     fetchFreshData().then(updated => { if(updated) console.log("Data updated"); });
