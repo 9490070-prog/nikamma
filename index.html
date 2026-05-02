@@ -893,15 +893,15 @@
                     Papa.parse('https://docs.google.com/spreadsheets/d/e/2PACX-1vQD2lHL-u6zHPZKdYIVD4eXp98XipkVP4jKfxLDoNje9DeZ1726o0zFZf-gAR2kZj0ls7VhceXbbKih/pub?gid=1123743396&single=true&output=csv', { 
                         download: true, header: true, skipEmptyLines: true, complete: function(settingsResults) {
                             settingsData = settingsResults.data[0] || {};
-                            availableCategories = settingsResults.data.filter(row => row.Category || row.category).map(row => {
-                                return { name: (row.Category || row.category || "").trim(), icon: (row.Icon || row.icon || "fa-folder").trim() };
+                            // FIX: category sheet (gid=1155331852) se icons load karo
+                            Papa.parse('https://docs.google.com/spreadsheets/d/e/2PACX-1vQJM1FvOsBuKL_Al7PpwYerGDVFhs5tLF4PaVs3_TOLX-TFLW-iF3B6qLLLeuuBmjfZFGe3CFxJA-TR/pub?gid=1155331852&single=true&output=csv', {
+                                download: true, header: true, skipEmptyLines: true,
+                                complete: function(catResults) {
+                                    availableCategories = catResults.data.filter(function(row){ return (row.Category||row.category||'').trim() && (row.Status||'').toLowerCase()!=='inactive'; }).map(function(row){ var ic=(row.Icon||row.icon||'folder').trim(); var resolved=ic.includes(' ')?ic:ic.startsWith('fa-')?'fa '+ic:'fa fa-'+ic; return {name:(row.Category||row.category||'').trim(),icon:resolved}; });
+                                    if(!isDataSame(newRawData, rawData) && newRawData.length) { rawData = newRawData; applySettings(); saveDataToCache(rawData, settingsData); updateUIAfterDataLoad(); resolve(true); } else if(rawData.length === 0 && newRawData.length) { rawData = newRawData; applySettings(); saveDataToCache(rawData, settingsData); updateUIAfterDataLoad(); resolve(true); } else { resolve(false); }
+                                },
+                                error: function(){ resolve(false); }
                             });
-
-                            if(!isDataSame(newRawData, rawData) && newRawData.length) { 
-                                rawData = newRawData; applySettings(); saveDataToCache(rawData, settingsData); updateUIAfterDataLoad(); resolve(true); 
-                            } else if(rawData.length === 0 && newRawData.length) { 
-                                rawData = newRawData; applySettings(); saveDataToCache(rawData, settingsData); updateUIAfterDataLoad(); resolve(true); 
-                            } else { resolve(false); }
                         } 
                     });
                 }, error: () => resolve(false)
@@ -928,7 +928,7 @@
             availableCategories.forEach(catObj => {
                 let lowerCat = catObj.name.toLowerCase();
                 if (lowerCat === 'live' || lowerCat === 'life' || lowerCat === 'slider') return;
-                let cleanIcon = catObj.icon.startsWith('fa-') ? `fa ${catObj.icon}` : `fa fa-${catObj.icon}`;
+                let cleanIcon = catObj.icon; // already resolved at fetch time
                 sideNavDynamicLinks.innerHTML += `<a href="#" onclick="filterData('${catObj.name}', null, true)"><i class="${cleanIcon}"></i> ${catObj.name}</a>`;
             });
         }
@@ -982,7 +982,7 @@
                 const hasMore = filteredItems.length > 5;
                 const itemsToShow = filteredItems.slice(0, 5);
                 
-                let cleanIcon = catObj.icon.startsWith('fa-') ? `fa ${catObj.icon}` : `fa fa-${catObj.icon}`;
+                let cleanIcon = catObj.icon; // already resolved at fetch time
 
                 finalHtml += `
                 <div class="category-section">
@@ -1029,7 +1029,7 @@
             if(cat.toLowerCase() === 'live' || cat.toLowerCase() === 'life') {
                 currentIconClass = "fa-circle-play";
             }
-            let cleanIcon = currentIconClass.startsWith('fa-') ? `fa ${currentIconClass}` : `fa fa-${currentIconClass}`;
+            let cleanIcon = currentIconClass.includes(' ') ? currentIconClass : currentIconClass.startsWith('fa-') ? 'fa ' + currentIconClass : 'fa fa-' + currentIconClass;
             specificCategoryTitle.innerHTML = `<i class="${cleanIcon}"></i> ${cat.toUpperCase()}`;
             
             let filtered = rawData.filter(d => {
@@ -1163,8 +1163,6 @@
     
     function openNav() { const sideNav = document.getElementById("mySidenav"), overlay = document.getElementById("menu-overlay"); overlay.style.display = "block"; setTimeout(() => { sideNav.classList.add("open"); overlay.classList.add("visible"); }, 10); }
     function closeNav() { const sideNav = document.getElementById("mySidenav"), overlay = document.getElementById("menu-overlay"); sideNav.classList.remove("open"); overlay.classList.remove("visible"); setTimeout(() => { if(!sideNav.classList.contains('open')) overlay.style.display = "none"; }, 400); }
-    // Sidenav swipe: screen ke left edge (35px) se right swipe karo
-    (function(){ var sx=0,sy=0,sa=false; document.addEventListener('touchstart',function(e){ if(e.touches[0].clientX<35){sx=e.touches[0].clientX;sy=e.touches[0].clientY;sa=true;} },{passive:true}); document.addEventListener('touchmove',function(e){ if(!sa)return; var dx=e.touches[0].clientX-sx,dy=Math.abs(e.touches[0].clientY-sy); if(dx>45&&dy<50){openNav();sa=false;} else if(Math.abs(dx)>10||dy>15)sa=false; },{passive:true}); document.addEventListener('touchend',function(){sa=false;},{passive:true}); })();
     function toggleSearch(show) { document.getElementById('header-main').style.display = show ? 'none' : 'flex'; document.getElementById('header-icons').style.display = show ? 'none' : 'flex'; document.getElementById('search-container').style.display = show ? 'flex' : 'none'; if(show) document.getElementById('searchBar').focus(); }
     
     window.search = function() { 
@@ -1217,10 +1215,9 @@
         }
     }
 
-    let ptrStartX = 0;
-    document.addEventListener('touchstart', function(e) { if(window.pageYOffset === 0 && !isRefreshing) { ptrStartY = e.touches[0].pageY; ptrStartX = e.touches[0].pageX; isTouching = true; } }, {passive: true});
-    document.addEventListener('touchmove', function(e) { if(window.pageYOffset === 0 && isTouching && !isRefreshing) { const diffY = e.touches[0].pageY - ptrStartY; const diffX = Math.abs(e.touches[0].pageX - ptrStartX); if(diffY > 8 && diffX < 35) { e.preventDefault(); ptrActive = true; ptrHeight = Math.min(diffY, 70); updatePTR('pull', ptrHeight); } } }, {passive: false});
-    document.addEventListener('touchend', function() { if(ptrActive && ptrHeight > 65 && !isRefreshing) forceRefreshData(); else if(ptrActive) updatePTR('complete'); isTouching = false; ptrActive = false; ptrHeight = 0; });
+    document.addEventListener('touchstart', function(e) { if(window.pageYOffset === 0 && !isRefreshing) { ptrStartY = e.touches[0].pageY; isTouching = true; } }, {passive: true});
+    document.addEventListener('touchmove', function(e) { if(window.pageYOffset === 0 && isTouching && !isRefreshing) { const diffY = e.touches[0].pageY - ptrStartY; if(diffY > 0) { ptrActive = true; ptrHeight = Math.min(diffY, 70); updatePTR('pull', ptrHeight); } } }, {passive: false});
+    document.addEventListener('touchend', function() { if(ptrActive && ptrHeight > 50 && !isRefreshing) forceRefreshData(); else if(ptrActive) updatePTR('complete'); isTouching = false; ptrActive = false; ptrHeight = 0; });
     
     let sliderInterval, slideIndex = 0;
     function startSlider() { if(sliderInterval) clearInterval(sliderInterval); sliderInterval = setInterval(() => { const track = document.getElementById('sliderTrack'); if(track && track.children.length) { slideIndex = (slideIndex + 1) % track.children.length; track.style.transform = `translateX(-${slideIndex * 100}%)`; } }, 3000); }
