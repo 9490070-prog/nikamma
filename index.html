@@ -1009,13 +1009,26 @@
         const liveBtn = document.getElementById('live-nav-btn');
         const sideNavDynamicLinks = document.getElementById('sideNavDynamicLinks');
         
+        // Live/Life category dhundo rawData mein
         let hasLiveCategory = rawData.some(d => {
             let c = (d.Category || d.category || '').trim().toLowerCase();
             return c === 'live' || c === 'life';
         });
 
-        if (hasLiveCategory) { liveBtn.style.display = 'block'; } 
-        else { liveBtn.style.display = 'none'; }
+        if (hasLiveCategory) {
+            liveBtn.style.display = 'block';
+            // Category sheet se Live/Life category ka icon lo
+            let liveCatObj = availableCategories.find(function(c) {
+                return c.name.toLowerCase() === 'live' || c.name.toLowerCase() === 'life';
+            });
+            if(liveCatObj && liveCatObj.icon) {
+                // icon already resolved at fetch time (e.g. "fa fa-circle-play")
+                var liveBtnIcon = liveBtn.querySelector('i');
+                if(liveBtnIcon) liveBtnIcon.className = liveCatObj.icon;
+            }
+        } else {
+            liveBtn.style.display = 'none';
+        }
 
         sideNavDynamicLinks.innerHTML = `<a href="#" onclick="filterData('All', document.getElementById('home-nav-btn'), true)"><i class="fa fa-home"></i> Home</a>`;
     }
@@ -1113,7 +1126,15 @@
             let currentIconClass = matchedCategory ? matchedCategory.icon : "fa-folder";
             
             if(cat.toLowerCase() === 'live' || cat.toLowerCase() === 'life') {
-                currentIconClass = "fa-circle-play";
+                // Category sheet se icon lo agar available ho, warna fallback
+                let liveCatInSheet = availableCategories.find(function(c){
+                    return c.name.toLowerCase() === 'live' || c.name.toLowerCase() === 'life';
+                });
+                if(liveCatInSheet && liveCatInSheet.icon) {
+                    currentIconClass = liveCatInSheet.icon; // already fully resolved
+                } else {
+                    currentIconClass = "fa fa-circle-play";
+                }
             }
             let cleanIcon = currentIconClass.includes(' ') ? currentIconClass : currentIconClass.startsWith('fa-') ? 'fa ' + currentIconClass : 'fa fa-' + currentIconClass;
             specificCategoryTitle.innerHTML = `<i class="${cleanIcon}"></i> ${cat.toUpperCase()}`;
@@ -1277,7 +1298,21 @@
         </div>`).join(''); 
     };
 
-    window.forceRefreshData = async function() { if(isRefreshing) return; isRefreshing = true; updatePTR('release'); const updated = await fetchFreshData(); updatePTR('complete'); if(updated) showCachedDataBadge(); else showNoUpdateBadge(); setTimeout(() => isRefreshing = false, 500); closeNav(); };
+    window.forceRefreshData = async function() {
+        if(isRefreshing) return;
+        isRefreshing = true;
+        updatePTR('release');
+        // Cache clear karo taake fresh data force load ho
+        try { localStorage.removeItem(STORAGE_KEY_DATA); localStorage.removeItem(STORAGE_KEY_HASH); } catch(e) {}
+        rawData = [];
+        currentDataHash = '';
+        const updated = await fetchFreshData();
+        updatePTR('complete');
+        if(updated) showCachedDataBadge();
+        else showNoUpdateBadge();
+        setTimeout(() => isRefreshing = false, 500);
+        closeNav();
+    };
     
     let ptrStartY = 0, ptrActive = false, ptrHeight = 0, isTouching = false;
 
