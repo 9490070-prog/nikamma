@@ -444,29 +444,29 @@
     const SPLASH_SEEN_KEY = 'nikamma_splash_seen';
     const FAV_KEY_STORAGE = 'nikamma_fav_list';
 
-    // resolveIcon: sheet mein koi bhi format ho → sahi FA class bane
-    // "film" → "fa fa-film"  |  "fa-film" → "fa fa-film"  |  "fa fa-film" → "fa fa-film"
+    // ── FIX: resolveIcon — sheet mein koi bhi format ho sahi icon bane ──
+    // "tv" → "fa fa-tv" | "fa-tv" → "fa fa-tv" | "fa fa-tv" → as-is | "fas fa-tv" → as-is
     function resolveIcon(raw) {
         if (!raw || !raw.trim()) return 'fa fa-folder';
         raw = raw.trim();
-        if (raw.includes(' ')) return raw;           // already full class e.g. "fas fa-tv"
-        if (raw.startsWith('fa-')) return 'fa ' + raw; // "fa-tv" → "fa fa-tv"
-        return 'fa fa-' + raw;                        // "tv" → "fa fa-tv"
+        if (raw.includes(' ')) return raw;
+        if (raw.startsWith('fa-')) return 'fa ' + raw;
+        return 'fa fa-' + raw;
     }
 
-    // Sidenav swipe: left edge se right swipe → nav khule
+    // ── FIX: Sidenav swipe — left edge (30px) se right swipe karo nav khulega ──
     (function() {
-        var sx = 0, sy = 0, sa = false;
+        var _sx = 0, _sy = 0, _sa = false;
         document.addEventListener('touchstart', function(e) {
-            if (e.touches[0].clientX < 30) { sx = e.touches[0].clientX; sy = e.touches[0].clientY; sa = true; }
+            if (e.touches[0].clientX < 30) { _sx = e.touches[0].clientX; _sy = e.touches[0].clientY; _sa = true; }
         }, { passive: true });
         document.addEventListener('touchmove', function(e) {
-            if (!sa) return;
-            var dx = e.touches[0].clientX - sx, dy = Math.abs(e.touches[0].clientY - sy);
-            if (dx > 40 && dy < 40) { openNav(); sa = false; }
-            else if (Math.abs(dx) > 10 || dy > 10) sa = false;
+            if (!_sa) return;
+            var dx = e.touches[0].clientX - _sx, dy = Math.abs(e.touches[0].clientY - _sy);
+            if (dx > 40 && dy < 50) { openNav(); _sa = false; }
+            else if (Math.abs(dx) > 15 || dy > 15) _sa = false;
         }, { passive: true });
-        document.addEventListener('touchend', function() { sa = false; }, { passive: true });
+        document.addEventListener('touchend', function() { _sa = false; }, { passive: true });
     })();
     
     let isFullscreen = false;
@@ -886,21 +886,9 @@
     function updateUIAfterDataLoad() { 
         updateSlider(); 
         buildDynamicCategoryMenu(); 
-        
-        // Auto fallback the initial view if currentCategory is All
-        if(currentCategory === 'All') {
-            let initialCat = 'All';
-            if(availableCategories.length > 0) {
-                let firstValid = availableCategories.find(c => {
-                    let name = (c.name || '').toLowerCase();
-                    return name !== 'slider' && name !== 'live' && name !== 'life';
-                });
-                if(firstValid) initialCat = firstValid.name;
-            }
-            currentCategory = initialCat;
-        }
-        
-        filterData(currentCategory, null, false); 
+        // ── FIX: Always open HOME (All) on load — do not auto-jump to first category ──
+        currentCategory = 'All';
+        filterData('All', null, false); 
         const splash = document.getElementById('splash-screen'); 
         if(splash && splash.style.display !== 'none') { 
             splash.style.opacity = '0'; 
@@ -914,38 +902,52 @@
             Papa.parse('https://docs.google.com/spreadsheets/d/e/2PACX-1vQJM1FvOsBuKL_Al7PpwYerGDVFhs5tLF4PaVs3_TOLX-TFLW-iF3B6qLLLeuuBmjfZFGe3CFxJA-TR/pub?output=csv', {
                 download: true, header: true, skipEmptyLines: true, complete: function(results) {
                     let newRawData = results.data.filter(item => item && (item.name || item.Name || item.URL || item.url)).map(item => { let cat = (item.Category || item.category || "").trim(); if(cat.toLowerCase() === "tv shows" || cat.toLowerCase() === "tvshow") item.Category = "TV Shows"; return item; });
-
-                    // Load settings sheet
-                    Papa.parse('https://docs.google.com/spreadsheets/d/e/2PACX-1vQD2lHL-u6zHPZKdYIVD4eXp98XipkVP4jKfxLDoNje9DeZ1726o0zFZf-gAR2kZj0ls7VhceXbbKih/pub?gid=1123743396&single=true&output=csv', {
+                    
+                    Papa.parse('https://docs.google.com/spreadsheets/d/e/2PACX-1vQD2lHL-u6zHPZKdYIVD4eXp98XipkVP4jKfxLDoNje9DeZ1726o0zFZf-gAR2kZj0ls7VhceXbbKih/pub?gid=1123743396&single=true&output=csv', { 
                         download: true, header: true, skipEmptyLines: true, complete: function(settingsResults) {
                             settingsData = settingsResults.data[0] || {};
 
-                            // ── FIX: Load categories from CORRECT category sheet ──
+                            // ── FIX: Load categories from CORRECT category sheet (gid=1155331852) ──
                             Papa.parse('https://docs.google.com/spreadsheets/d/e/2PACX-1vQJM1FvOsBuKL_Al7PpwYerGDVFhs5tLF4PaVs3_TOLX-TFLW-iF3B6qLLLeuuBmjfZFGe3CFxJA-TR/pub?gid=1155331852&single=true&output=csv', {
-                                download: true, header: true, skipEmptyLines: true, complete: function(catResults) {
+                                download: true, header: true, skipEmptyLines: true,
+                                complete: function(catResults) {
                                     availableCategories = catResults.data
                                         .filter(row => (row.Category || row.category || '').trim() && (row.Status || '').toLowerCase() !== 'inactive')
                                         .map(row => ({
                                             name: (row.Category || row.category || '').trim(),
-                                            icon: (row.Icon || row.icon || 'folder').trim()
+                                            icon: resolveIcon((row.Icon || row.icon || 'folder').trim())
                                         }));
-
-                                    if(!isDataSame(newRawData, rawData) && newRawData.length) {
-                                        rawData = newRawData; applySettings(); saveDataToCache(rawData, settingsData); updateUIAfterDataLoad(); resolve(true);
-                                    } else if(rawData.length === 0 && newRawData.length) {
-                                        rawData = newRawData; applySettings(); saveDataToCache(rawData, settingsData); updateUIAfterDataLoad(); resolve(true);
-                                    } else { resolve(false); }
+                                    afterFetch();
                                 },
                                 error: function() {
-                                    // fallback: derive categories from rawData itself
+                                    // fallback: derive from rawData
                                     availableCategories = [...new Set(newRawData.map(i => (i.Category||i.category||'').trim()))]
                                         .filter(c => c && c.toLowerCase() !== 'slider')
-                                        .map(c => ({ name: c, icon: 'folder' }));
-                                    if(newRawData.length) { rawData = newRawData; applySettings(); saveDataToCache(rawData, settingsData); updateUIAfterDataLoad(); resolve(true); }
-                                    else resolve(false);
+                                        .map(c => ({ name: c, icon: 'fa fa-folder' }));
+                                    afterFetch();
                                 }
                             });
-                        }
+
+                            function afterFetch() {
+                                if (!isDataSame(newRawData, rawData) && newRawData.length) {
+                                    // ── FIX: New data aaye to purana cache clear karo ──
+                                    try { localStorage.removeItem(STORAGE_KEY_DATA); localStorage.removeItem(STORAGE_KEY_HASH); } catch(e) {}
+                                    rawData = newRawData;
+                                    applySettings();
+                                    saveDataToCache(rawData, settingsData);
+                                    updateUIAfterDataLoad();
+                                    resolve(true);
+                                } else if (rawData.length === 0 && newRawData.length) {
+                                    rawData = newRawData;
+                                    applySettings();
+                                    saveDataToCache(rawData, settingsData);
+                                    updateUIAfterDataLoad();
+                                    resolve(true);
+                                } else {
+                                    resolve(false);
+                                }
+                            }
+                        } 
                     });
                 }, error: () => resolve(false)
             });
@@ -971,7 +973,7 @@
             availableCategories.forEach(catObj => {
                 let lowerCat = catObj.name.toLowerCase();
                 if (lowerCat === 'live' || lowerCat === 'life' || lowerCat === 'slider') return;
-                let cleanIcon = resolveIcon(catObj.icon);
+                let cleanIcon = catObj.icon; // already resolved by resolveIcon() at fetch time
                 sideNavDynamicLinks.innerHTML += `<a href="#" onclick="filterData('${catObj.name}', null, true)"><i class="${cleanIcon}"></i> ${catObj.name}</a>`;
             });
         }
@@ -1025,13 +1027,13 @@
                 const hasMore = filteredItems.length > 5;
                 const itemsToShow = filteredItems.slice(0, 5);
                 
-                let cleanIcon = resolveIcon(catObj.icon);
+                let cleanIcon = catObj.icon; // already resolved
 
                 finalHtml += `
                 <div class="category-section">
                     <div class="category-header">
                         <div class="category-title"><i class="${cleanIcon}"></i> ${catName}</div>
-                        ${hasMore ? `<div class="read-more-btn" onclick="filterData('${catName}', null, false)">Read More</div>` : ''}
+                        ${hasMore ? `<div class="read-more-btn" onclick="filterData('${catName}', null, false)">View All</div>` : ''}
                     </div>
                     <div class="grid">
                         ${itemsToShow.map(item => {
@@ -1072,7 +1074,7 @@
             if(cat.toLowerCase() === 'live' || cat.toLowerCase() === 'life') {
                 currentIconClass = "fa-circle-play";
             }
-            let cleanIcon = resolveIcon(currentIconClass);
+            let cleanIcon = catObj ? catObj.icon : resolveIcon(currentIconClass);
             specificCategoryTitle.innerHTML = `<i class="${cleanIcon}"></i> ${cat.toUpperCase()}`;
             
             let filtered = rawData.filter(d => {
@@ -1236,7 +1238,7 @@
 
     window.forceRefreshData = async function() { if(isRefreshing) return; isRefreshing = true; updatePTR('release'); const updated = await fetchFreshData(); updatePTR('complete'); if(updated) showCachedDataBadge(); else showNoUpdateBadge(); setTimeout(() => isRefreshing = false, 500); closeNav(); };
     
-    let ptrStartY = 0, ptrActive = false, ptrHeight = 0, isTouching = false;
+    let ptrStartY = 0, ptrActive = false, ptrHeight = 0, isTouching = false, ptrStartX = 0;
 
     function updatePTR(status, pullDistance = 0) {
         var pc = document.getElementById('ptr-container');
@@ -1247,7 +1249,7 @@
             var ty = -70 + show;
             pc.style.transition = 'none';
             pc.style.transform = 'translateY(' + ty + 'px)';
-            if (pullDistance > 50) { pt.innerText = 'Release to refresh'; pi.className = 'fa fa-rotate'; } 
+            if (pullDistance > 80) { pt.innerText = 'Release to refresh'; pi.className = 'fa fa-rotate'; } 
             else { pt.innerText = 'Pull to refresh'; pi.className = 'fa fa-arrow-down'; }
         } else if (status === 'release') {
             pc.style.transition = 'transform 0.3s ease'; pc.style.transform = 'translateY(0px)'; pt.innerText = 'Refreshing...';
@@ -1258,9 +1260,32 @@
         }
     }
 
-    document.addEventListener('touchstart', function(e) { if(window.pageYOffset === 0 && !isRefreshing) { ptrStartY = e.touches[0].pageY; isTouching = true; } }, {passive: true});
-    document.addEventListener('touchmove', function(e) { if(window.pageYOffset === 0 && isTouching && !isRefreshing) { const diffY = e.touches[0].pageY - ptrStartY; if(diffY > 0) { ptrActive = true; ptrHeight = Math.min(diffY, 70); updatePTR('pull', ptrHeight); } } }, {passive: false});
-    document.addEventListener('touchend', function() { if(ptrActive && ptrHeight > 50 && !isRefreshing) forceRefreshData(); else if(ptrActive) updatePTR('complete'); isTouching = false; ptrActive = false; ptrHeight = 0; });
+    document.addEventListener('touchstart', function(e) {
+        if (window.pageYOffset === 0 && !isRefreshing) {
+            ptrStartY = e.touches[0].pageY;
+            ptrStartX = e.touches[0].pageX;
+            isTouching = true;
+        }
+    }, {passive: true});
+
+    document.addEventListener('touchmove', function(e) {
+        if (!isTouching || isRefreshing) return;
+        var diffY = e.touches[0].pageY - ptrStartY;
+        var diffX = Math.abs(e.touches[0].pageX - ptrStartX);
+        // ── FIX: ignore horizontal scrolls, require clear downward pull (diffX < 30) ──
+        if (window.pageYOffset === 0 && diffY > 0 && diffX < 30) {
+            ptrActive = true;
+            ptrHeight = Math.min(diffY, 70);
+            updatePTR('pull', ptrHeight);
+        }
+    }, {passive: false});
+
+    document.addEventListener('touchend', function() {
+        // ── FIX: threshold 80px — halke swipe se refresh nahi hoga ──
+        if (ptrActive && ptrHeight > 80 && !isRefreshing) forceRefreshData();
+        else if (ptrActive) updatePTR('complete');
+        isTouching = false; ptrActive = false; ptrHeight = 0;
+    });
     
     let sliderInterval, slideIndex = 0;
     function startSlider() { if(sliderInterval) clearInterval(sliderInterval); sliderInterval = setInterval(() => { const track = document.getElementById('sliderTrack'); if(track && track.children.length) { slideIndex = (slideIndex + 1) % track.children.length; track.style.transform = `translateX(-${slideIndex * 100}%)`; } }, 3000); }
@@ -1284,21 +1309,9 @@
             document.getElementById('splash-screen').style.display = 'none'; 
             updateSlider(); 
             buildDynamicCategoryMenu();
-
-            // Auto fallback for cached data
-            if(currentCategory === 'All') {
-                let initialCat = 'All';
-                if(availableCategories.length > 0) {
-                    let firstValid = availableCategories.find(c => {
-                        let name = (c.name || '').toLowerCase();
-                        return name !== 'slider' && name !== 'live' && name !== 'life';
-                    });
-                    if(firstValid) initialCat = firstValid.name;
-                }
-                currentCategory = initialCat;
-            }
-
-            filterData(currentCategory, null, false); 
+            // ── FIX: Always open HOME on app open ──
+            currentCategory = 'All';
+            filterData('All', null, false); 
             showCachedDataBadge(); 
             fetchFreshData().then(updated => { if(updated) console.log("Data updated"); }); 
         } 
