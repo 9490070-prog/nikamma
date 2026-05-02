@@ -6,14 +6,14 @@
     <meta name="msapplication-navbutton-color" content="#121212">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Nikamma 4K v3.9 | Ultimate HD</title>
+    <title>Nikamma 4k v3.9 | Ultimate HD</title>
     
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;800&display=swap" rel="stylesheet">
     <link href="https://vjs.zencdn.net/8.10.0/video-js.css" rel="stylesheet" />
     <script src="https://vjs.zencdn.net/8.10.0/video.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/mpegts.js@1.7.3/dist/mpegts.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
-    <link href="https://fonts.googleapis.com/icon?family=Material+Icons-Round" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     
@@ -443,6 +443,49 @@
     const STORAGE_KEY_HASH = 'nikamma_data_hash';
     const SPLASH_SEEN_KEY = 'nikamma_splash_seen';
     const FAV_KEY_STORAGE = 'nikamma_fav_list';
+
+    // ── ICON RESOLVER ──
+    // Accepts any format from the sheet:
+    //   "tv"           → "fa fa-tv"
+    //   "fa-tv"        → "fa fa-tv"
+    //   "fa fa-tv"     → "fa fa-tv"
+    //   "fas fa-tv"    → "fas fa-tv"
+    //   "fa-solid fa-tv" → "fa-solid fa-tv"
+    //   empty / null   → "fa fa-folder"
+    function resolveIcon(raw) {
+        if (!raw || !raw.trim()) return 'fa fa-folder';
+        raw = raw.trim();
+        // Already has a space → treat as complete class string
+        if (raw.includes(' ')) return raw;
+        // Starts with "fa-" → prepend "fa"
+        if (raw.startsWith('fa-')) return 'fa ' + raw;
+        // Plain word like "tv", "film", "trophy" → "fa fa-word"
+        return 'fa fa-' + raw;
+    }
+
+    // ── SIDENAV SWIPE (left-edge swipe right to open) ──
+    (function() {
+        let swStartX = 0, swStartY = 0, swActive = false;
+        document.addEventListener('touchstart', function(e) {
+            if (e.touches[0].clientX < 30) {
+                swStartX = e.touches[0].clientX;
+                swStartY = e.touches[0].clientY;
+                swActive = true;
+            }
+        }, { passive: true });
+        document.addEventListener('touchmove', function(e) {
+            if (!swActive) return;
+            const dx = e.touches[0].clientX - swStartX;
+            const dy = Math.abs(e.touches[0].clientY - swStartY);
+            if (dx > 40 && dy < 40) {
+                openNav();
+                swActive = false;
+            } else if (Math.abs(dx) > 10 || dy > 10) {
+                swActive = false;
+            }
+        }, { passive: true });
+        document.addEventListener('touchend', function() { swActive = false; }, { passive: true });
+    })();
     
     let isFullscreen = false;
     let gestureActive = false;
@@ -699,12 +742,6 @@
         setTimeout(() => { if(advVideo.readyState > 0) exoLoader.style.display = 'none'; }, 1500);
     }
     
-    function fallbackNative(url, autoPlay) {
-        advVideo.src = url;
-        advVideo.load();
-        if (autoPlay) advVideo.play().catch(e => console.warn);
-    }
-    
     function toggleFullscreen() {
         const container = document.getElementById('advancedPlayerContainer');
         const isCurrentlyFull = !!(document.fullscreenElement || document.webkitFullscreenElement);
@@ -864,12 +901,24 @@
     
     function showCachedDataBadge() { const badge = document.getElementById('data-save-badge'); badge.classList.add('show'); setTimeout(() => badge.classList.remove('show'), 2000); }
     function showNoUpdateBadge() { const badge = document.getElementById('no-update-badge'); badge.classList.add('show'); setTimeout(() => badge.classList.remove('show'), 2000); }
-    
     function updateUIAfterDataLoad() { 
         updateSlider(); 
         buildDynamicCategoryMenu(); 
-        const initialCat = (currentCategory === 'All' && availableCategories.length > 0) ? availableCategories[0].name : currentCategory;
-        filterData(currentCategory === 'All' ? initialCat : currentCategory, null, false); 
+        
+        // Auto fallback the initial view if currentCategory is All
+        if(currentCategory === 'All') {
+            let initialCat = 'All';
+            if(availableCategories.length > 0) {
+                let firstValid = availableCategories.find(c => {
+                    let name = (c.name || '').toLowerCase();
+                    return name !== 'slider' && name !== 'live' && name !== 'life';
+                });
+                if(firstValid) initialCat = firstValid.name;
+            }
+            currentCategory = initialCat;
+        }
+        
+        filterData(currentCategory, null, false); 
         const splash = document.getElementById('splash-screen'); 
         if(splash && splash.style.display !== 'none') { 
             splash.style.opacity = '0'; 
@@ -888,10 +937,7 @@
                         download: true, header: true, skipEmptyLines: true, complete: function(settingsResults) {
                             settingsData = settingsResults.data[0] || {};
                             availableCategories = settingsResults.data.filter(row => row.Category || row.category).map(row => {
-                                let iconVal = (row.Icon || row.icon || "fa-folder").trim();
-                                if(!iconVal.startsWith("fa-")) iconVal = "fa-" + iconVal;
-                                if(iconVal === "fa-fa-folder") iconVal = "fa-folder";
-                                return { name: (row.Category || row.category || "").trim(), icon: iconVal };
+                                return { name: (row.Category || row.category || "").trim(), icon: (row.Icon || row.icon || "fa-folder").trim() };
                             });
 
                             if(!isDataSame(newRawData, rawData) && newRawData.length) { 
@@ -925,8 +971,8 @@
             availableCategories.forEach(catObj => {
                 let lowerCat = catObj.name.toLowerCase();
                 if (lowerCat === 'live' || lowerCat === 'life' || lowerCat === 'slider') return;
-                let cleanIcon = catObj.icon.startsWith('fa-') ? catObj.icon : `fa-${catObj.icon}`;
-                sideNavDynamicLinks.innerHTML += `<a href="#" onclick="filterData('${catObj.name.replace(/'/g, "\\'")}', null, true)"><i class="${cleanIcon}"></i> ${catObj.name}</a>`;
+                let cleanIcon = resolveIcon(catObj.icon);
+                sideNavDynamicLinks.innerHTML += `<a href="#" onclick="filterData('${catObj.name}', null, true)"><i class="${cleanIcon}"></i> ${catObj.name}</a>`;
             });
         }
     }
@@ -979,13 +1025,13 @@
                 const hasMore = filteredItems.length > 5;
                 const itemsToShow = filteredItems.slice(0, 5);
                 
-                let cleanIcon = catObj.icon.startsWith('fa-') ? catObj.icon : `fa-${catObj.icon}`;
+                let cleanIcon = resolveIcon(catObj.icon);
 
                 finalHtml += `
                 <div class="category-section">
                     <div class="category-header">
                         <div class="category-title"><i class="${cleanIcon}"></i> ${catName}</div>
-                        ${hasMore ? `<div class="read-more-btn" onclick="filterData('${catName.replace(/'/g, "\\'")}', null, false)">Read More</div>` : ''}
+                        ${hasMore ? `<div class="read-more-btn" onclick="filterData('${catName}', null, false)">Read More</div>` : ''}
                     </div>
                     <div class="grid">
                         ${itemsToShow.map(item => {
@@ -1007,7 +1053,11 @@
             });
             
             if(!finalHtml) {
-                homeCategoriesContainer.innerHTML = `<div class="empty-state"><i class="fa fa-folder-open"></i><h3>No content available</h3></div>`;
+                homeCategoriesContainer.innerHTML = `
+                <div class="empty-state">
+                    <i class="fa fa-folder-open"></i>
+                    <h3>No content available</h3>
+                </div>`;
             } else {
                 homeCategoriesContainer.innerHTML = finalHtml;
             }
@@ -1018,20 +1068,29 @@
             
             let matchedCategory = availableCategories.find(c => c.name.toLowerCase() === cat.toLowerCase());
             let currentIconClass = matchedCategory ? matchedCategory.icon : "fa-folder";
-            if(cat.toLowerCase() === 'live' || cat.toLowerCase() === 'life') currentIconClass = "fa-circle-play";
-            let cleanIcon = currentIconClass.startsWith('fa-') ? currentIconClass : `fa-${currentIconClass}`;
+            
+            if(cat.toLowerCase() === 'live' || cat.toLowerCase() === 'life') {
+                currentIconClass = "fa-circle-play";
+            }
+            let cleanIcon = resolveIcon(currentIconClass);
             specificCategoryTitle.innerHTML = `<i class="${cleanIcon}"></i> ${cat.toUpperCase()}`;
             
             let filtered = rawData.filter(d => {
                 let c = (d.Category || d.category || "").trim().toLowerCase();
-                if (cat.toLowerCase() === 'live') return c === 'live' || c === 'life';
+                if (cat.toLowerCase() === 'live') {
+                    return c === 'live' || c === 'life';
+                }
                 return c === cat.toLowerCase();
             });
             
             filtered = filtered.slice().reverse();
             
             if(!filtered.length) {
-                specificGrid.innerHTML = `<div style="grid-column:1/-1" class="empty-state"><i class="fa fa-folder-open"></i><h3>No content found</h3></div>`;
+                specificGrid.innerHTML = `
+                <div style="grid-column:1/-1" class="empty-state">
+                    <i class="fa fa-folder-open"></i>
+                    <h3>No content found</h3>
+                </div>`;
             } else {
                 specificGrid.innerHTML = filtered.map(item => {
                     let thumb = item.Thumbnail || item.thumbnail || MASTER_LOGO, itemName = item.name || item.Name || "Untitled", url = item.URL || item.url || "#";
@@ -1084,11 +1143,23 @@
         filtered = filtered.slice().reverse();
 
         if(!filtered.length) {
-            specificGrid.innerHTML = `<div style="grid-column:1/-1" class="empty-state"><i class="fa fa-heart-broken" style="color:#555;"></i><h3>No favorites yet</h3><p>Click on the heart icon to add items</p></div>`;
+            specificGrid.innerHTML = `
+            <div style="grid-column:1/-1" class="empty-state">
+                <i class="fa fa-heart-broken" style="color:#555;"></i>
+                <h3>No favorites yet</h3>
+                <p>Click on the heart icon to add items</p>
+            </div>`;
         } else {
             specificGrid.innerHTML = filtered.map(item => {
                 let thumb = item.Thumbnail || item.thumbnail || MASTER_LOGO, itemName = item.name || item.Name || "Untitled", url = item.URL || item.url || "#";
-                return `<div class="card" data-url="${escapeHtml(url)}" data-title="${escapeHtml(itemName)}"><div class="fav-badge active" onclick="toggleFav(event, '${escapeHtml(url)}')"><i class="fa fa-heart"></i></div><div style="width:100%; height:100%;" onclick="play('${escapeHtml(url)}', '${escapeHtml(itemName)}', this.parentElement)"><img src="${thumb}" loading="lazy" onerror="handleImageError(this)" onload="handleImageLoad(this)" class="img-loading"><div class="card-title">${itemName}</div></div></div>`;
+                return `
+                <div class="card" data-url="${escapeHtml(url)}" data-title="${escapeHtml(itemName)}">
+                    <div class="fav-badge active" onclick="toggleFav(event, '${escapeHtml(url)}')"><i class="fa fa-heart"></i></div>
+                    <div style="width:100%; height:100%;" onclick="play('${escapeHtml(url)}', '${escapeHtml(itemName)}', this.parentElement)">
+                        <img src="${thumb}" loading="lazy" onerror="handleImageError(this)" onload="handleImageLoad(this)" class="img-loading">
+                        <div class="card-title">${itemName}</div>
+                    </div>
+                </div>`;
             }).join('');
         }
     };
@@ -1125,6 +1196,7 @@
     window.changeTheme = function(color) {
         document.documentElement.style.setProperty('--main-color', color);
         localStorage.setItem('nikamma_theme_color', color);
+        document.querySelectorAll('.category-title i').forEach(el => el.style.color = color);
     };
 
     function escapeHtml(str) { if(!str) return ''; return String(str).replace(/[&<>]/g, function(m) { if(m === '&') return '&amp;'; if(m === '<') return '&lt;'; if(m === '>') return '&gt;'; return m; }); }
@@ -1151,10 +1223,15 @@
         
         const filtered = rawData.filter(d => (d.name || d.Name || "").toLowerCase().includes(term) && (d.Category || d.category || "").toLowerCase() !== 'slider').slice().reverse(); 
         if(!filtered.length) { 
-            specificGrid.innerHTML = `<div style="grid-column:1/-1" class="empty-state"><i class="fa fa-search"></i><h3>No results for "${escapeHtml(term)}"</h3></div>`; 
+            specificGrid.innerHTML = `<div style="grid-column:1/-1" class="empty-state"><i class="fa fa-search"></i><h3>No results for "${term}"</h3></div>`; 
             return; 
         } 
-        specificGrid.innerHTML = filtered.map(item => `<div class="card" onclick="play('${escapeHtml(item.URL || item.url || "#")}', '${escapeHtml(item.name || item.Name)}', this)"><img src="${item.Thumbnail || item.thumbnail || MASTER_LOGO}" loading="lazy" onerror="handleImageError(this)" onload="handleImageLoad(this)" class="img-loading"><div class="card-title">${item.name || item.Name}</div></div>`).join(''); 
+        
+        specificGrid.innerHTML = filtered.map(item => `
+        <div class="card" onclick="play('${escapeHtml(item.URL || item.url || "#")}', '${escapeHtml(item.name || item.Name)}', this)">
+            <img src="${item.Thumbnail || item.thumbnail || MASTER_LOGO}" loading="lazy" onerror="handleImageError(this)" onload="handleImageLoad(this)" class="img-loading">
+            <div class="card-title">${item.name || item.Name}</div>
+        </div>`).join(''); 
     };
 
     window.forceRefreshData = async function() { if(isRefreshing) return; isRefreshing = true; updatePTR('release'); const updated = await fetchFreshData(); updatePTR('complete'); if(updated) showCachedDataBadge(); else showNoUpdateBadge(); setTimeout(() => isRefreshing = false, 500); closeNav(); };
@@ -1207,8 +1284,21 @@
             document.getElementById('splash-screen').style.display = 'none'; 
             updateSlider(); 
             buildDynamicCategoryMenu();
-            const initialCat = (currentCategory === 'All' && availableCategories.length > 0) ? availableCategories[0].name : 'All';
-            filterData(initialCat, null, false); 
+
+            // Auto fallback for cached data
+            if(currentCategory === 'All') {
+                let initialCat = 'All';
+                if(availableCategories.length > 0) {
+                    let firstValid = availableCategories.find(c => {
+                        let name = (c.name || '').toLowerCase();
+                        return name !== 'slider' && name !== 'live' && name !== 'life';
+                    });
+                    if(firstValid) initialCat = firstValid.name;
+                }
+                currentCategory = initialCat;
+            }
+
+            filterData(currentCategory, null, false); 
             showCachedDataBadge(); 
             fetchFreshData().then(updated => { if(updated) console.log("Data updated"); }); 
         } 
