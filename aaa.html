@@ -861,21 +861,8 @@
     function updateUIAfterDataLoad() { 
         updateSlider(); 
         buildDynamicCategoryMenu(); 
-        
-        // Auto fallback the initial view if currentCategory is All
-        if(currentCategory === 'All') {
-            let initialCat = 'All';
-            if(availableCategories.length > 0) {
-                let firstValid = availableCategories.find(c => {
-                    let name = (c.name || '').toLowerCase();
-                    return name !== 'slider' && name !== 'live' && name !== 'life';
-                });
-                if(firstValid) initialCat = firstValid.name;
-            }
-            currentCategory = initialCat;
-        }
-        
-        filterData(currentCategory, null, false); 
+        currentCategory = 'All';
+        filterData('All', document.getElementById('home-nav-btn'), false); 
         const splash = document.getElementById('splash-screen'); 
         if(splash && splash.style.display !== 'none') { 
             splash.style.opacity = '0'; 
@@ -884,27 +871,149 @@
     }
     function applySettings() { if(settingsData.ratingUrl) document.getElementById('rating-link').href = settingsData.ratingUrl; if(settingsData.privacyUrl) document.getElementById('privacy-link').href = settingsData.privacyUrl; if(settingsData.version && parseFloat(settingsData.version) > 3.9) { document.getElementById('update-overlay').style.display = 'flex'; document.getElementById('update-btn').onclick = () => window.location.href = settingsData.updateUrl; } }
     
+    function showNoContentScreen() {
+        const homeCategoriesContainer = document.getElementById('homeCategoriesContainer');
+        const mainCategoryView = document.getElementById('mainCategoryView');
+        if(mainCategoryView) mainCategoryView.style.display = 'none';
+        if(homeCategoriesContainer) {
+            homeCategoriesContainer.style.display = 'block';
+            homeCategoriesContainer.innerHTML = `
+            <div class="empty-state">
+                <i class="fa fa-folder-open"></i>
+                <h3>No Content Available</h3>
+                <p>Category sheet mein koi active category nahi mili.</p>
+            </div>`;
+        }
+        const splash = document.getElementById('splash-screen');
+        if(splash && splash.style.display !== 'none') {
+            splash.style.opacity = '0';
+            setTimeout(() => splash.style.display = 'none', 500);
+        }
+    }
+
     async function fetchFreshData() {
         return new Promise((resolve) => {
-            Papa.parse('https://docs.google.com/spreadsheets/d/e/2PACX-1vQJM1FvOsBuKL_Al7PpwYerGDVFhs5tLF4PaVs3_TOLX-TFLW-iF3B6qLLLeuuBmjfZFGe3CFxJA-TR/pub?output=csv', {
-                download: true, header: true, skipEmptyLines: true, complete: function(results) {
-                    let newRawData = results.data.filter(item => item && (item.name || item.Name || item.URL || item.url)).map(item => { let cat = (item.Category || item.category || "").trim(); if(cat.toLowerCase() === "tv shows" || cat.toLowerCase() === "tvshow") item.Category = "TV Shows"; return item; });
+
+            // STEP 1: Pehle Category Sheet check karo
+            Papa.parse('https://docs.google.com/spreadsheets/d/e/2PACX-1vQJM1FvOsBuKL_Al7PpwYerGDVFhs5tLF4PaVs3_TOLX-TFLW-iF3B6qLLLeuuBmjfZFGe3CFxJA-TR/pub?gid=1155331852&single=true&output=csv', {
+                download: true, header: true, skipEmptyLines: true,
+                complete: function(catResults) {
                     
-                    Papa.parse('https://docs.google.com/spreadsheets/d/e/2PACX-1vQD2lHL-u6zHPZKdYIVD4eXp98XipkVP4jKfxLDoNje9DeZ1726o0zFZf-gAR2kZj0ls7VhceXbbKih/pub?gid=1123743396&single=true&output=csv', { 
-                        download: true, header: true, skipEmptyLines: true, complete: function(settingsResults) {
-                            settingsData = settingsResults.data[0] || {};
-                            availableCategories = settingsResults.data.filter(row => row.Category || row.category).map(row => {
-                                return { name: (row.Category || row.category || "").trim(), icon: (row.Icon || row.icon || "fa-folder").trim() };
+                    // Category sheet se active categories filter karo
+                    var loadedCategories = catResults.data.filter(function(row){
+                        return (row.Category||row.category||'').trim() && (row.Status||'').toLowerCase() !== 'inactive';
+                    }).map(function(row){
+                        var ic = (row.Icon||row.icon||'folder').trim();
+                        var resolved = ic.includes(' ') ? ic : ic.startsWith('fa-') ? 'fa '+ic : 'fa fa-'+ic;
+                        return { name: (row.Category||row.category||'').trim(), icon: resolved };
+                    });
+
+                    // STEP 2: Agar category sheet mein koi category nahi hai to No Content dikhao
+                    if(!loadedCategories.length) {
+                        availableCategories = [];
+                        rawData = [];
+                        showNoContentScreen();
+                        resolve(false);
+                        return;
+                    }
+
+                    // Categories mil gayi - ab availableCategories set karo
+                    availableCategories = loadedCategories;
+
+                    // STEP 3: Ab Sheet1 (main data) load karo
+                    Papa.parse('https://docs.google.com/spreadsheets/d/e/2PACX-1vQJM1FvOsBuKL_Al7PpwYerGDVFhs5tLF4PaVs3_TOLX-TFLW-iF3B6qLLLeuuBmjfZFGe3CFxJA-TR/pub?output=csv', {
+                        download: true, header: true, skipEmptyLines: true,
+                        complete: function(results) {
+                            let newRawData = results.data
+                                .filter(item => item && (item.name || item.Name || item.URL || item.url))
+                                .map(item => {
+                                    let cat = (item.Category || item.category || "").trim();
+                                    // Sheet1 category ko Category Sheet ke naam se match + replace karo
+                                    // Pehle exact match (case-insensitive)
+                                    let exactMatch = availableCategories.find(c => c.name.toLowerCase() === cat.toLowerCase());
+                                    if(exactMatch) {
+                                        item.Category = exactMatch.name;
+                                    } else {
+                                        // Partial/contains match: e.g. Sheet1="Movies" <=> CategorySheet="Movies Pk"
+                                        let partialMatch = availableCategories.find(c => {
+                                            let cLow = c.name.toLowerCase();
+                                            let itemLow = cat.toLowerCase();
+                                            return cLow.includes(itemLow) || itemLow.includes(cLow);
+                                        });
+                                        if(partialMatch) {
+                                            item.Category = partialMatch.name;
+                                        }
+                                    }
+                                    return item;
+                                });
+
+                            // STEP 4: Sheet1 data ko category se match karo - sirf matching items rakhein
+                            let categoryNames = availableCategories.map(c => c.name.toLowerCase());
+                            let matchedData = newRawData.filter(item => {
+                                let itemCat = (item.Category || item.category || "").trim().toLowerCase();
+                                return itemCat === 'slider' || categoryNames.includes(itemCat);
                             });
 
-                            if(!isDataSame(newRawData, rawData) && newRawData.length) { 
-                                rawData = newRawData; applySettings(); saveDataToCache(rawData, settingsData); updateUIAfterDataLoad(); resolve(true); 
-                            } else if(rawData.length === 0 && newRawData.length) { 
-                                rawData = newRawData; applySettings(); saveDataToCache(rawData, settingsData); updateUIAfterDataLoad(); resolve(true); 
-                            } else { resolve(false); }
-                        } 
+                            // STEP 5: Settings bhi load karo
+                            Papa.parse('https://docs.google.com/spreadsheets/d/e/2PACX-1vQD2lHL-u6zHPZKdYIVD4eXp98XipkVP4jKfxLDoNje9DeZ1726o0zFZf-gAR2kZj0ls7VhceXbbKih/pub?gid=1123743396&single=true&output=csv', {
+                                download: true, header: true, skipEmptyLines: true,
+                                complete: function(settingsResults) {
+                                    settingsData = settingsResults.data[0] || {};
+
+                                    // STEP 6: Matched data hai to show karo, warna No Content
+                                    if(matchedData.length) {
+                                        if(!isDataSame(matchedData, rawData) || rawData.length === 0) {
+                                            rawData = matchedData;
+                                            applySettings();
+                                            saveDataToCache(rawData, settingsData);
+                                            updateUIAfterDataLoad();
+                                            resolve(true);
+                                        } else {
+                                            updateUIAfterDataLoad();
+                                            resolve(false);
+                                        }
+                                    } else {
+                                        // Sheet1 mein koi bhi category ka data nahi mila
+                                        rawData = [];
+                                        showNoContentScreen();
+                                        resolve(false);
+                                    }
+                                },
+                                error: function() {
+                                    // Settings na aaye tab bhi data dikhao agar hai
+                                    if(matchedData.length) {
+                                        if(!isDataSame(matchedData, rawData) || rawData.length === 0) {
+                                            rawData = matchedData;
+                                            saveDataToCache(rawData, settingsData);
+                                            updateUIAfterDataLoad();
+                                            resolve(true);
+                                        } else {
+                                            updateUIAfterDataLoad();
+                                            resolve(false);
+                                        }
+                                    } else {
+                                        rawData = [];
+                                        showNoContentScreen();
+                                        resolve(false);
+                                    }
+                                }
+                            });
+                        },
+                        error: function() {
+                            // Sheet1 load na ho to No Content
+                            rawData = [];
+                            showNoContentScreen();
+                            resolve(false);
+                        }
                     });
-                }, error: () => resolve(false)
+                },
+                error: function() {
+                    // Category sheet load na ho to No Content
+                    availableCategories = [];
+                    rawData = [];
+                    showNoContentScreen();
+                    resolve(false);
+                }
             });
         });
     }
@@ -923,15 +1032,7 @@
         if (hasLiveCategory) { liveBtn.style.display = 'block'; } 
         else { liveBtn.style.display = 'none'; }
 
-        sideNavDynamicLinks.innerHTML = `<a href="#" onclick="filterData('All', null, true)"><i class="fa fa-home"></i> Home</a>`;
-        if (availableCategories.length > 0) {
-            availableCategories.forEach(catObj => {
-                let lowerCat = catObj.name.toLowerCase();
-                if (lowerCat === 'live' || lowerCat === 'life' || lowerCat === 'slider') return;
-                let cleanIcon = catObj.icon.startsWith('fa-') ? `fa ${catObj.icon}` : `fa fa-${catObj.icon}`;
-                sideNavDynamicLinks.innerHTML += `<a href="#" onclick="filterData('${catObj.name}', null, true)"><i class="${cleanIcon}"></i> ${catObj.name}</a>`;
-            });
-        }
+        sideNavDynamicLinks.innerHTML = `<a href="#" onclick="filterData('All', document.getElementById('home-nav-btn'), true)"><i class="fa fa-home"></i> Home</a>`;
     }
 
     window.filterData = function(cat, btn, shouldClose = true) { 
@@ -982,7 +1083,7 @@
                 const hasMore = filteredItems.length > 5;
                 const itemsToShow = filteredItems.slice(0, 5);
                 
-                let cleanIcon = catObj.icon.startsWith('fa-') ? `fa ${catObj.icon}` : `fa fa-${catObj.icon}`;
+                let cleanIcon = catObj.icon; // already resolved at fetch time
 
                 finalHtml += `
                 <div class="category-section">
@@ -1029,7 +1130,7 @@
             if(cat.toLowerCase() === 'live' || cat.toLowerCase() === 'life') {
                 currentIconClass = "fa-circle-play";
             }
-            let cleanIcon = currentIconClass.startsWith('fa-') ? `fa ${currentIconClass}` : `fa fa-${currentIconClass}`;
+            let cleanIcon = currentIconClass.includes(' ') ? currentIconClass : currentIconClass.startsWith('fa-') ? 'fa ' + currentIconClass : 'fa fa-' + currentIconClass;
             specificCategoryTitle.innerHTML = `<i class="${cleanIcon}"></i> ${cat.toUpperCase()}`;
             
             let filtered = rawData.filter(d => {
@@ -1163,8 +1264,6 @@
     
     function openNav() { const sideNav = document.getElementById("mySidenav"), overlay = document.getElementById("menu-overlay"); overlay.style.display = "block"; setTimeout(() => { sideNav.classList.add("open"); overlay.classList.add("visible"); }, 10); }
     function closeNav() { const sideNav = document.getElementById("mySidenav"), overlay = document.getElementById("menu-overlay"); sideNav.classList.remove("open"); overlay.classList.remove("visible"); setTimeout(() => { if(!sideNav.classList.contains('open')) overlay.style.display = "none"; }, 400); }
-    // Sidenav swipe: screen ke left edge (35px) se right swipe karo
-    (function(){ var sx=0,sy=0,sa=false; document.addEventListener('touchstart',function(e){ if(e.touches[0].clientX<35){sx=e.touches[0].clientX;sy=e.touches[0].clientY;sa=true;} },{passive:true}); document.addEventListener('touchmove',function(e){ if(!sa)return; var dx=e.touches[0].clientX-sx,dy=Math.abs(e.touches[0].clientY-sy); if(dx>45&&dy<50){openNav();sa=false;} else if(Math.abs(dx)>10||dy>15)sa=false; },{passive:true}); document.addEventListener('touchend',function(){sa=false;},{passive:true}); })();
     function toggleSearch(show) { document.getElementById('header-main').style.display = show ? 'none' : 'flex'; document.getElementById('header-icons').style.display = show ? 'none' : 'flex'; document.getElementById('search-container').style.display = show ? 'flex' : 'none'; if(show) document.getElementById('searchBar').focus(); }
     
     window.search = function() { 
@@ -1217,10 +1316,9 @@
         }
     }
 
-    let ptrStartX = 0;
-    document.addEventListener('touchstart', function(e) { if(window.pageYOffset === 0 && !isRefreshing) { ptrStartY = e.touches[0].pageY; ptrStartX = e.touches[0].pageX; isTouching = true; } }, {passive: true});
-    document.addEventListener('touchmove', function(e) { if(window.pageYOffset === 0 && isTouching && !isRefreshing) { const diffY = e.touches[0].pageY - ptrStartY; const diffX = Math.abs(e.touches[0].pageX - ptrStartX); if(diffY > 8 && diffX < 35) { e.preventDefault(); ptrActive = true; ptrHeight = Math.min(diffY, 70); updatePTR('pull', ptrHeight); } } }, {passive: false});
-    document.addEventListener('touchend', function() { if(ptrActive && ptrHeight > 65 && !isRefreshing) forceRefreshData(); else if(ptrActive) updatePTR('complete'); isTouching = false; ptrActive = false; ptrHeight = 0; });
+    document.addEventListener('touchstart', function(e) { if(window.pageYOffset === 0 && !isRefreshing) { ptrStartY = e.touches[0].pageY; isTouching = true; } }, {passive: true});
+    document.addEventListener('touchmove', function(e) { if(window.pageYOffset === 0 && isTouching && !isRefreshing) { const diffY = e.touches[0].pageY - ptrStartY; if(diffY > 0) { ptrActive = true; ptrHeight = Math.min(diffY, 70); updatePTR('pull', ptrHeight); } } }, {passive: false});
+    document.addEventListener('touchend', function() { if(ptrActive && ptrHeight > 50 && !isRefreshing) forceRefreshData(); else if(ptrActive) updatePTR('complete'); isTouching = false; ptrActive = false; ptrHeight = 0; });
     
     let sliderInterval, slideIndex = 0;
     function startSlider() { if(sliderInterval) clearInterval(sliderInterval); sliderInterval = setInterval(() => { const track = document.getElementById('sliderTrack'); if(track && track.children.length) { slideIndex = (slideIndex + 1) % track.children.length; track.style.transform = `translateX(-${slideIndex * 100}%)`; } }, 3000); }
@@ -1241,26 +1339,66 @@
             localStorage.setItem(SPLASH_SEEN_KEY, 'true'); 
             await fetchFreshData(); 
         } else { 
-            document.getElementById('splash-screen').style.display = 'none'; 
-            updateSlider(); 
-            buildDynamicCategoryMenu();
-
-            // Auto fallback for cached data
-            if(currentCategory === 'All') {
-                let initialCat = 'All';
-                if(availableCategories.length > 0) {
-                    let firstValid = availableCategories.find(c => {
-                        let name = (c.name || '').toLowerCase();
-                        return name !== 'slider' && name !== 'live' && name !== 'life';
+            document.getElementById('splash-screen').style.display = 'none';
+            // Cached data hai - pehle category check karo phir UI update karo
+            Papa.parse('https://docs.google.com/spreadsheets/d/e/2PACX-1vQJM1FvOsBuKL_Al7PpwYerGDVFhs5tLF4PaVs3_TOLX-TFLW-iF3B6qLLLeuuBmjfZFGe3CFxJA-TR/pub?gid=1155331852&single=true&output=csv', {
+                download: true, header: true, skipEmptyLines: true,
+                complete: function(catResults) {
+                    var loadedCats = catResults.data.filter(function(row){
+                        return (row.Category||row.category||'').trim() && (row.Status||'').toLowerCase() !== 'inactive';
+                    }).map(function(row){
+                        var ic = (row.Icon||row.icon||'folder').trim();
+                        var resolved = ic.includes(' ') ? ic : ic.startsWith('fa-') ? 'fa '+ic : 'fa fa-'+ic;
+                        return { name: (row.Category||row.category||'').trim(), icon: resolved };
                     });
-                    if(firstValid) initialCat = firstValid.name;
+                    if(!loadedCats.length) {
+                        availableCategories = [];
+                        rawData = [];
+                        showNoContentScreen();
+                    } else {
+                        availableCategories = loadedCats;
+                        // Cached rawData ki categories bhi partial match se fix karo
+                        rawData = rawData.map(function(item){
+                            var cat = (item.Category || item.category || "").trim();
+                            var exact = availableCategories.find(function(c){ return c.name.toLowerCase() === cat.toLowerCase(); });
+                            if(exact) {
+                                item.Category = exact.name;
+                            } else {
+                                var partial = availableCategories.find(function(c){
+                                    var cLow = c.name.toLowerCase();
+                                    var itemLow = cat.toLowerCase();
+                                    return cLow.includes(itemLow) || itemLow.includes(cLow);
+                                });
+                                if(partial) { item.Category = partial.name; }
+                            }
+                            return item;
+                        });
+                        var categoryNames = availableCategories.map(function(c){ return c.name.toLowerCase(); });
+                        rawData = rawData.filter(function(item){
+                            var itemCat = (item.Category || item.category || "").trim().toLowerCase();
+                            return itemCat === 'slider' || categoryNames.includes(itemCat);
+                        });
+                        if(!rawData.length) {
+                            showNoContentScreen();
+                        } else {
+                            updateSlider();
+                            buildDynamicCategoryMenu();
+                            currentCategory = 'All';
+                            filterData('All', document.getElementById('home-nav-btn'), false);
+                            showCachedDataBadge();
+                        }
+                    }
+                    fetchFreshData().then(function(updated){ if(updated) console.log("Data updated"); });
+                },
+                error: function() {
+                    updateSlider();
+                    buildDynamicCategoryMenu();
+                    currentCategory = 'All';
+                    filterData('All', document.getElementById('home-nav-btn'), false);
+                    showCachedDataBadge();
+                    fetchFreshData().then(function(updated){ if(updated) console.log("Data updated"); });
                 }
-                currentCategory = initialCat;
-            }
-
-            filterData(currentCategory, null, false); 
-            showCachedDataBadge(); 
-            fetchFreshData().then(updated => { if(updated) console.log("Data updated"); }); 
+            });
         } 
     }
     
