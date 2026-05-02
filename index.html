@@ -932,12 +932,17 @@
                                     return item;
                                 });
 
-                            // STEP 4: Sheet1 data ko category se match karo - sirf matching items rakhein
+                            // STEP 4: Slider alag karo, baaki sab rawData mein rakho
+                            // Category naam edit hone par strict match tod deta hai - isliye sab rakhein
                             let categoryNames = availableCategories.map(c => c.name.toLowerCase());
                             let matchedData = newRawData.filter(item => {
                                 let itemCat = (item.Category || item.category || "").trim().toLowerCase();
-                                return itemCat === 'slider' || categoryNames.includes(itemCat);
+                                if(itemCat === 'slider') return true;
+                                // exact match ya partial match dono try karo
+                                return categoryNames.some(cn => cn === itemCat || cn.includes(itemCat) || itemCat.includes(cn));
                             });
+                            // agar phir bhi kuch na mile to sab rakho (slider chhod ke)
+                            if(!matchedData.length) matchedData = newRawData;
 
                             // STEP 5: Settings bhi load karo
                             Papa.parse('https://docs.google.com/spreadsheets/d/e/2PACX-1vQD2lHL-u6zHPZKdYIVD4eXp98XipkVP4jKfxLDoNje9DeZ1726o0zFZf-gAR2kZj0ls7VhceXbbKih/pub?gid=1123743396&single=true&output=csv', {
@@ -945,28 +950,39 @@
                                 complete: function(settingsResults) {
                                     settingsData = settingsResults.data[0] || {};
 
-                                    // STEP 6: Data show karo
-                                    // matchedData empty ho to bhi newRawData use karo (category mismatch fallback)
-                                    var finalData = matchedData.length ? matchedData : newRawData;
-                                    if(finalData.length) {
-                                        rawData = finalData;
-                                        applySettings();
-                                        saveDataToCache(rawData, settingsData);
-                                        updateUIAfterDataLoad();
-                                        resolve(true);
+                                    // STEP 6: Matched data hai to show karo, warna No Content
+                                    if(matchedData.length) {
+                                        if(!isDataSame(matchedData, rawData) || rawData.length === 0) {
+                                            rawData = matchedData;
+                                            applySettings();
+                                            saveDataToCache(rawData, settingsData);
+                                            updateUIAfterDataLoad();
+                                            resolve(true);
+                                        } else {
+                                            updateUIAfterDataLoad();
+                                            resolve(false);
+                                        }
                                     } else {
+                                        // Sheet1 mein koi bhi category ka data nahi mila
+                                        rawData = [];
                                         showNoContentScreen();
                                         resolve(false);
                                     }
                                 },
                                 error: function() {
-                                    var finalData = matchedData.length ? matchedData : newRawData;
-                                    if(finalData.length) {
-                                        rawData = finalData;
-                                        saveDataToCache(rawData, settingsData);
-                                        updateUIAfterDataLoad();
-                                        resolve(true);
+                                    // Settings na aaye tab bhi data dikhao agar hai
+                                    if(matchedData.length) {
+                                        if(!isDataSame(matchedData, rawData) || rawData.length === 0) {
+                                            rawData = matchedData;
+                                            saveDataToCache(rawData, settingsData);
+                                            updateUIAfterDataLoad();
+                                            resolve(true);
+                                        } else {
+                                            updateUIAfterDataLoad();
+                                            resolve(false);
+                                        }
                                     } else {
+                                        rawData = [];
                                         showNoContentScreen();
                                         resolve(false);
                                     }
@@ -1064,6 +1080,8 @@
                 if(lowerCatName === 'slider' || lowerCatName === 'live' || lowerCatName === 'life') return;
                 
                 let filteredItems = rawData.filter(d => (d.Category || d.category || "").trim().toLowerCase() === lowerCatName);
+                // fallback: agar match na ho to partial match try karo
+                if(!filteredItems.length) filteredItems = rawData.filter(d => { var dc=(d.Category||d.category||'').trim().toLowerCase(); return dc.includes(lowerCatName)||lowerCatName.includes(dc); });
                 if (!filteredItems.length) return;
                 
                 filteredItems = filteredItems.slice().reverse();
