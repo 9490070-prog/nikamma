@@ -861,8 +861,21 @@
     function updateUIAfterDataLoad() { 
         updateSlider(); 
         buildDynamicCategoryMenu(); 
-        currentCategory = 'All';
-        filterData('All', document.getElementById('home-nav-btn'), false); 
+        
+        // Auto fallback the initial view if currentCategory is All
+        if(currentCategory === 'All') {
+            let initialCat = 'All';
+            if(availableCategories.length > 0) {
+                let firstValid = availableCategories.find(c => {
+                    let name = (c.name || '').toLowerCase();
+                    return name !== 'slider' && name !== 'live' && name !== 'life';
+                });
+                if(firstValid) initialCat = firstValid.name;
+            }
+            currentCategory = initialCat;
+        }
+        
+        filterData(currentCategory, null, false); 
         const splash = document.getElementById('splash-screen'); 
         if(splash && splash.style.display !== 'none') { 
             splash.style.opacity = '0'; 
@@ -885,7 +898,7 @@
                                 download: true, header: true, skipEmptyLines: true,
                                 complete: function(catResults) {
                                     availableCategories = catResults.data.filter(function(row){ return (row.Category||row.category||'').trim() && (row.Status||'').toLowerCase()!=='inactive'; }).map(function(row){ var ic=(row.Icon||row.icon||'folder').trim(); var resolved=ic.includes(' ')?ic:ic.startsWith('fa-')?'fa '+ic:'fa fa-'+ic; return {name:(row.Category||row.category||'').trim(),icon:resolved}; });
-                                    if(!isDataSame(newRawData, rawData) && newRawData.length) { rawData = newRawData; applySettings(); saveDataToCache(rawData, settingsData); updateUIAfterDataLoad(); resolve(true); } else if(rawData.length === 0 && newRawData.length) { rawData = newRawData; applySettings(); saveDataToCache(rawData, settingsData); updateUIAfterDataLoad(); resolve(true); } else { if(availableCategories.length) updateUIAfterDataLoad(); resolve(false); }
+                                    if(!isDataSame(newRawData, rawData) && newRawData.length) { rawData = newRawData; applySettings(); saveDataToCache(rawData, settingsData); updateUIAfterDataLoad(); resolve(true); } else if(rawData.length === 0 && newRawData.length) { rawData = newRawData; applySettings(); saveDataToCache(rawData, settingsData); updateUIAfterDataLoad(); resolve(true); } else { resolve(false); }
                                 },
                                 error: function(){ resolve(false); }
                             });
@@ -910,7 +923,15 @@
         if (hasLiveCategory) { liveBtn.style.display = 'block'; } 
         else { liveBtn.style.display = 'none'; }
 
-        sideNavDynamicLinks.innerHTML = `<a href="#" onclick="filterData('All', document.getElementById('home-nav-btn'), true)"><i class="fa fa-home"></i> Home</a>`;
+        sideNavDynamicLinks.innerHTML = `<a href="#" onclick="filterData('All', null, true)"><i class="fa fa-home"></i> Home</a>`;
+        if (availableCategories.length > 0) {
+            availableCategories.forEach(catObj => {
+                let lowerCat = catObj.name.toLowerCase();
+                if (lowerCat === 'live' || lowerCat === 'life' || lowerCat === 'slider') return;
+                let cleanIcon = catObj.icon; // already resolved at fetch time
+                sideNavDynamicLinks.innerHTML += `<a href="#" onclick="filterData('${catObj.name}', null, true)"><i class="${cleanIcon}"></i> ${catObj.name}</a>`;
+            });
+        }
     }
 
     window.filterData = function(cat, btn, shouldClose = true) { 
@@ -947,6 +968,7 @@
                 categoriesToDisplay = uniqueCategories.map(c => ({ name: c, icon: 'fa-folder' }));
             }
             
+            homeCategoriesContainer.innerHTML = '';
             let finalHtml = '';
             categoriesToDisplay.forEach(catObj => {
                 const catName = catObj.name;
@@ -1217,27 +1239,26 @@
             localStorage.setItem(SPLASH_SEEN_KEY, 'true'); 
             await fetchFreshData(); 
         } else { 
-            document.getElementById('splash-screen').style.display = 'none';
-            Papa.parse('https://docs.google.com/spreadsheets/d/e/2PACX-1vQJM1FvOsBuKL_Al7PpwYerGDVFhs5tLF4PaVs3_TOLX-TFLW-iF3B6qLLLeuuBmjfZFGe3CFxJA-TR/pub?gid=1155331852&single=true&output=csv', {
-                download: true, header: true, skipEmptyLines: true,
-                complete: function(catResults) {
-                    availableCategories = catResults.data.filter(function(row){ return (row.Category||row.category||'').trim() && (row.Status||'').toLowerCase()!=='inactive'; }).map(function(row){ var ic=(row.Icon||row.icon||'folder').trim(); var resolved=ic.includes(' ')?ic:ic.startsWith('fa-')?'fa '+ic:'fa fa-'+ic; return {name:(row.Category||row.category||'').trim(),icon:resolved}; });
-                    updateSlider();
-                    buildDynamicCategoryMenu();
-                    currentCategory = 'All';
-                    filterData('All', document.getElementById('home-nav-btn'), false);
-                    showCachedDataBadge();
-                    fetchFreshData().then(updated => { if(updated) console.log("Data updated"); });
-                },
-                error: function() {
-                    updateSlider();
-                    buildDynamicCategoryMenu();
-                    currentCategory = 'All';
-                    filterData('All', document.getElementById('home-nav-btn'), false);
-                    showCachedDataBadge();
-                    fetchFreshData().then(updated => { if(updated) console.log("Data updated"); });
+            document.getElementById('splash-screen').style.display = 'none'; 
+            updateSlider(); 
+            buildDynamicCategoryMenu();
+
+            // Auto fallback for cached data
+            if(currentCategory === 'All') {
+                let initialCat = 'All';
+                if(availableCategories.length > 0) {
+                    let firstValid = availableCategories.find(c => {
+                        let name = (c.name || '').toLowerCase();
+                        return name !== 'slider' && name !== 'live' && name !== 'life';
+                    });
+                    if(firstValid) initialCat = firstValid.name;
                 }
-            });
+                currentCategory = initialCat;
+            }
+
+            filterData(currentCategory, null, false); 
+            showCachedDataBadge(); 
+            fetchFreshData().then(updated => { if(updated) console.log("Data updated"); }); 
         } 
     }
     
