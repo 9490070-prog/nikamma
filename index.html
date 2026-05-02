@@ -981,14 +981,19 @@
                 const itemsToShow = filteredItems.slice(0, 5);
                 let cleanIcon = catObj.icon;
 
-                let gridContent = '';
-                if(itemsToShow.length) {
-                    gridContent = itemsToShow.map(item => {
-                        let thumb = item.Thumbnail || item.thumbnail || MASTER_LOGO;
-                        let itemName = item.name || item.Name || "Untitled";
-                        let url = item.URL || item.url || "#";
-                        let isFav = favorites.includes(url);
-                        return `
+                finalHtml += `
+                <div class="category-section">
+                    <div class="category-header">
+                        <div class="category-title"><i class="${cleanIcon}"></i> ${catName}</div>
+                        ${hasMore ? `<div class="read-more-btn" onclick="filterData('${catName}', null, false)">Read More</div>` : ''}
+                    </div>
+                    <div class="grid">
+                        ${itemsToShow.length ? itemsToShow.map(item => {
+                            let thumb = item.Thumbnail || item.thumbnail || MASTER_LOGO;
+                            let itemName = item.name || item.Name || "Untitled";
+                            let url = item.URL || item.url || "#";
+                            let isFav = favorites.includes(url);
+                            return `
                             <div class="card" data-url="${escapeHtml(url)}" data-title="${escapeHtml(itemName)}">
                                 <div class="fav-badge ${isFav ? 'active' : ''}" onclick="toggleFav(event, '${escapeHtml(url)}')"><i class="fa fa-heart"></i></div>
                                 <div style="width:100%; height:100%;" onclick="play('${escapeHtml(url)}', '${escapeHtml(itemName)}', this.parentElement)">
@@ -996,18 +1001,8 @@
                                     <div class="card-title">${itemName}</div>
                                 </div>
                             </div>`;
-                    }).join('');
-                } else {
-                    gridContent = `<div style="grid-column:1/-1;padding:15px;text-align:center;color:#555;font-size:12px;">No Content</div>`;
-                }
-
-                finalHtml += `
-                <div class="category-section">
-                    <div class="category-header">
-                        <div class="category-title"><i class="${cleanIcon}"></i> ${catName}</div>
-                        ${hasMore ? `<div class="read-more-btn" onclick="filterData('${catName}', null, false)">Read More</div>` : ''}
+                        }).join('') : '<div style="grid-column:1/-1;padding:15px;text-align:center;color:#555;font-size:12px;">No Content</div>'}
                     </div>
-                    <div class="grid">${gridContent}</div>
                 </div>`;
             });
             
