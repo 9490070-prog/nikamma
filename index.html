@@ -861,7 +861,21 @@
     function updateUIAfterDataLoad() { 
         updateSlider(); 
         buildDynamicCategoryMenu(); 
-        filterData('All', document.getElementById('home-nav-btn'), false); 
+        
+        // Auto fallback the initial view if currentCategory is All
+        if(currentCategory === 'All') {
+            let initialCat = 'All';
+            if(availableCategories.length > 0) {
+                let firstValid = availableCategories.find(c => {
+                    let name = (c.name || '').toLowerCase();
+                    return name !== 'slider' && name !== 'live' && name !== 'life';
+                });
+                if(firstValid) initialCat = firstValid.name;
+            }
+            currentCategory = initialCat;
+        }
+        
+        filterData(currentCategory, null, false); 
         const splash = document.getElementById('splash-screen'); 
         if(splash && splash.style.display !== 'none') { 
             splash.style.opacity = '0'; 
@@ -954,16 +968,12 @@
                 categoriesToDisplay = uniqueCategories.map(c => ({ name: c, icon: 'fa-folder' }));
             }
             
-            // Pehle container clear karo - old data na rahe
-            homeCategoriesContainer.innerHTML = '';
             let finalHtml = '';
-            let hasCats = false;
             categoriesToDisplay.forEach(catObj => {
                 const catName = catObj.name;
                 const lowerCatName = catName.toLowerCase();
                 
                 if(lowerCatName === 'slider' || lowerCatName === 'live' || lowerCatName === 'life') return;
-                hasCats = true;
                 
                 let filteredItems = rawData.filter(d => (d.Category || d.category || "").trim().toLowerCase() === lowerCatName);
                 filteredItems = filteredItems.slice().reverse();
@@ -971,25 +981,24 @@
                 const itemsToShow = filteredItems.slice(0, 5);
                 let cleanIcon = catObj.icon;
 
-                // Category header hamesha show karo
-                let cardsHtml = '';
+                let gridContent = '';
                 if(itemsToShow.length) {
-                    cardsHtml = itemsToShow.map(item => {
+                    gridContent = itemsToShow.map(item => {
                         let thumb = item.Thumbnail || item.thumbnail || MASTER_LOGO;
                         let itemName = item.name || item.Name || "Untitled";
                         let url = item.URL || item.url || "#";
                         let isFav = favorites.includes(url);
                         return `
-                        <div class="card" data-url="${escapeHtml(url)}" data-title="${escapeHtml(itemName)}">
-                            <div class="fav-badge ${isFav ? 'active' : ''}" onclick="toggleFav(event, '${escapeHtml(url)}')"><i class="fa fa-heart"></i></div>
-                            <div style="width:100%; height:100%;" onclick="play('${escapeHtml(url)}', '${escapeHtml(itemName)}', this.parentElement)">
-                                <img src="${thumb}" loading="lazy" onerror="handleImageError(this)" onload="handleImageLoad(this)" class="img-loading">
-                                <div class="card-title">${itemName}</div>
-                            </div>
-                        </div>`;
+                            <div class="card" data-url="${escapeHtml(url)}" data-title="${escapeHtml(itemName)}">
+                                <div class="fav-badge ${isFav ? 'active' : ''}" onclick="toggleFav(event, '${escapeHtml(url)}')"><i class="fa fa-heart"></i></div>
+                                <div style="width:100%; height:100%;" onclick="play('${escapeHtml(url)}', '${escapeHtml(itemName)}', this.parentElement)">
+                                    <img src="${thumb}" loading="lazy" onerror="handleImageError(this)" onload="handleImageLoad(this)" class="img-loading">
+                                    <div class="card-title">${itemName}</div>
+                                </div>
+                            </div>`;
                     }).join('');
                 } else {
-                    cardsHtml = `<div style="grid-column:1/-1;padding:20px;text-align:center;color:#666;font-size:13px;"><i class="fa fa-inbox" style="font-size:32px;display:block;margin-bottom:8px;opacity:0.4;"></i>No Content</div>`;
+                    gridContent = `<div style="grid-column:1/-1;padding:15px;text-align:center;color:#555;font-size:12px;">No Content</div>`;
                 }
 
                 finalHtml += `
@@ -998,15 +1007,15 @@
                         <div class="category-title"><i class="${cleanIcon}"></i> ${catName}</div>
                         ${hasMore ? `<div class="read-more-btn" onclick="filterData('${catName}', null, false)">Read More</div>` : ''}
                     </div>
-                    <div class="grid">${cardsHtml}</div>
+                    <div class="grid">${gridContent}</div>
                 </div>`;
             });
             
-            if(!hasCats) {
+            if(!finalHtml) {
                 homeCategoriesContainer.innerHTML = `
                 <div class="empty-state">
                     <i class="fa fa-folder-open"></i>
-                    <h3>No Content</h3>
+                    <h3>No content available</h3>
                 </div>`;
             } else {
                 homeCategoriesContainer.innerHTML = finalHtml;
@@ -1231,34 +1240,26 @@
             localStorage.setItem(SPLASH_SEEN_KEY, 'true'); 
             await fetchFreshData(); 
         } else { 
-            document.getElementById('splash-screen').style.display = 'none';
-            // Pehle category icons fetch karo phir UI banao
-            Papa.parse('https://docs.google.com/spreadsheets/d/e/2PACX-1vQJM1FvOsBuKL_Al7PpwYerGDVFhs5tLF4PaVs3_TOLX-TFLW-iF3B6qLLLeuuBmjfZFGe3CFxJA-TR/pub?gid=1155331852&single=true&output=csv', {
-                download: true, header: true, skipEmptyLines: true,
-                complete: function(catResults) {
-                    let newCats = catResults.data.filter(function(row){ return (row.Category||row.category||'').trim() && (row.Status||'').toLowerCase()!=='inactive'; }).map(function(row){ var ic=(row.Icon||row.icon||'folder').trim(); var resolved=ic.includes(' ')?ic:ic.startsWith('fa-')?'fa '+ic:'fa fa-'+ic; return {name:(row.Category||row.category||'').trim(),icon:resolved}; });
-                    // Agar category bhi empty aur rawData bhi empty - cache clear karo
-                    if(newCats.length === 0 && rawData.length === 0) {
-                        localStorage.removeItem(STORAGE_KEY_DATA);
-                        localStorage.removeItem(STORAGE_KEY_HASH);
-                        document.getElementById('homeCategoriesContainer').innerHTML = '<div class="empty-state"><i class="fa fa-folder-open"></i><h3>No Content</h3></div>';
-                    } else {
-                        availableCategories = newCats;
-                        updateSlider();
-                        buildDynamicCategoryMenu();
-                        filterData('All', document.getElementById('home-nav-btn'), false);
-                        showCachedDataBadge();
-                    }
-                    fetchFreshData().then(updated => { if(updated) console.log("Data updated"); });
-                },
-                error: function() {
-                    updateSlider();
-                    buildDynamicCategoryMenu();
-                    filterData('All', document.getElementById('home-nav-btn'), false);
-                    showCachedDataBadge();
-                    fetchFreshData().then(updated => { if(updated) console.log("Data updated"); });
+            document.getElementById('splash-screen').style.display = 'none'; 
+            updateSlider(); 
+            buildDynamicCategoryMenu();
+
+            // Auto fallback for cached data
+            if(currentCategory === 'All') {
+                let initialCat = 'All';
+                if(availableCategories.length > 0) {
+                    let firstValid = availableCategories.find(c => {
+                        let name = (c.name || '').toLowerCase();
+                        return name !== 'slider' && name !== 'live' && name !== 'life';
+                    });
+                    if(firstValid) initialCat = firstValid.name;
                 }
-            });
+                currentCategory = initialCat;
+            }
+
+            filterData(currentCategory, null, false); 
+            showCachedDataBadge(); 
+            fetchFreshData().then(updated => { if(updated) console.log("Data updated"); }); 
         } 
     }
     
