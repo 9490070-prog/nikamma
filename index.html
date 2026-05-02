@@ -945,39 +945,28 @@
                                 complete: function(settingsResults) {
                                     settingsData = settingsResults.data[0] || {};
 
-                                    // STEP 6: Matched data hai to show karo, warna No Content
-                                    if(matchedData.length) {
-                                        if(!isDataSame(matchedData, rawData) || rawData.length === 0) {
-                                            rawData = matchedData;
-                                            applySettings();
-                                            saveDataToCache(rawData, settingsData);
-                                            updateUIAfterDataLoad();
-                                            resolve(true);
-                                        } else {
-                                            updateUIAfterDataLoad();
-                                            resolve(false);
-                                        }
+                                    // STEP 6: Data show karo
+                                    // matchedData empty ho to bhi newRawData use karo (category mismatch fallback)
+                                    var finalData = matchedData.length ? matchedData : newRawData;
+                                    if(finalData.length) {
+                                        rawData = finalData;
+                                        applySettings();
+                                        saveDataToCache(rawData, settingsData);
+                                        updateUIAfterDataLoad();
+                                        resolve(true);
                                     } else {
-                                        // Sheet1 mein koi bhi category ka data nahi mila
-                                        rawData = [];
                                         showNoContentScreen();
                                         resolve(false);
                                     }
                                 },
                                 error: function() {
-                                    // Settings na aaye tab bhi data dikhao agar hai
-                                    if(matchedData.length) {
-                                        if(!isDataSame(matchedData, rawData) || rawData.length === 0) {
-                                            rawData = matchedData;
-                                            saveDataToCache(rawData, settingsData);
-                                            updateUIAfterDataLoad();
-                                            resolve(true);
-                                        } else {
-                                            updateUIAfterDataLoad();
-                                            resolve(false);
-                                        }
+                                    var finalData = matchedData.length ? matchedData : newRawData;
+                                    if(finalData.length) {
+                                        rawData = finalData;
+                                        saveDataToCache(rawData, settingsData);
+                                        updateUIAfterDataLoad();
+                                        resolve(true);
                                     } else {
-                                        rawData = [];
                                         showNoContentScreen();
                                         resolve(false);
                                     }
@@ -1372,16 +1361,27 @@
                         var resolved = ic.includes(' ') ? ic : ic.startsWith('fa-') ? 'fa '+ic : 'fa fa-'+ic;
                         return { name: (row.Category||row.category||'').trim(), icon: resolved };
                     });
-                    if(loadedCats.length) {
+                    if(!loadedCats.length) {
+                        availableCategories = [];
+                        rawData = [];
+                        showNoContentScreen();
+                    } else {
                         availableCategories = loadedCats;
+                        var categoryNames = availableCategories.map(function(c){ return c.name.toLowerCase(); });
+                        rawData = rawData.filter(function(item){
+                            var itemCat = (item.Category || item.category || "").trim().toLowerCase();
+                            return itemCat === 'slider' || categoryNames.includes(itemCat);
+                        });
+                        if(!rawData.length) {
+                            showNoContentScreen();
+                        } else {
+                            updateSlider();
+                            buildDynamicCategoryMenu();
+                            currentCategory = 'All';
+                            filterData('All', document.getElementById('home-nav-btn'), false);
+                            showCachedDataBadge();
+                        }
                     }
-                    // Cache se UI foran dikhao - filter mat karo
-                    updateSlider();
-                    buildDynamicCategoryMenu();
-                    currentCategory = 'All';
-                    filterData('All', document.getElementById('home-nav-btn'), false);
-                    showCachedDataBadge();
-                    // Background mein fresh data fetch karo
                     fetchFreshData().then(function(updated){ if(updated) console.log("Data updated"); });
                 },
                 error: function() {
