@@ -327,6 +327,24 @@
     }
     .settings-divider { height: 1px; background: rgba(255,255,255,0.07); margin: 16px 0; }
 
+    /* ── SHEET COLUMN MANAGER ── */
+    .col-mgr-tabs { display: flex; gap: 6px; margin-bottom: 12px; }
+    .col-mgr-tab { flex:1; padding:7px; border-radius:30px; border:1px solid #2c3e62; background:#0a1020; color:#8ea8d0; font-size:0.75rem; font-weight:600; cursor:pointer; text-align:center; transition:0.2s; }
+    .col-mgr-tab.active { background:var(--gold); color:#000; border-color:var(--gold); }
+    .col-mgr-list { display:flex; flex-direction:column; gap:5px; max-height:200px; overflow-y:auto; margin-bottom:10px; padding-right:2px; }
+    .col-mgr-item { display:flex; align-items:center; gap:8px; background:#0a1020; border:1px solid #1e2e4a; border-radius:10px; padding:6px 10px; }
+    .col-mgr-inp { flex:1; background:transparent; border:none; border-bottom:1px solid transparent; color:#e8f0ff; font-size:0.8rem; font-family:var(--font-body); outline:none; padding:1px 0; min-width:0; }
+    .col-mgr-inp:focus { border-bottom-color:var(--gold); }
+    .col-mgr-del { background:none; border:none; color:var(--red); font-size:15px; cursor:pointer; padding:2px 4px; border-radius:4px; flex-shrink:0; opacity:0.65; transition:opacity 0.15s; }
+    .col-mgr-del:hover { opacity:1; }
+    .col-mgr-add-row { display:flex; gap:6px; margin-bottom:10px; }
+    .col-mgr-add-row input { flex:1; background:#0a1020; border:1px solid #2c3e62; border-radius:30px; color:#fff; font-size:0.78rem; padding:7px 14px; outline:none; font-family:var(--font-body); }
+    .col-mgr-add-row input:focus { border-color:var(--gold); }
+    .col-mgr-add-row button { background:var(--gold); border:none; border-radius:30px; color:#000; font-weight:700; font-size:0.72rem; padding:7px 14px; cursor:pointer; white-space:nowrap; }
+    .col-mgr-apply { width:100%; background:linear-gradient(95deg,#00aa44,#007733); border:none; border-radius:30px; color:#fff; font-weight:700; font-size:0.82rem; padding:10px; cursor:pointer; transition:0.2s; }
+    .col-mgr-apply:hover { background:linear-gradient(95deg,#00cc55,#009933); }
+    .col-mgr-note { font-size:0.63rem; color:#5a7aa3; background:rgba(0,180,255,0.05); border:1px solid rgba(0,180,255,0.1); border-radius:8px; padding:6px 10px; margin-bottom:10px; line-height:1.6; }
+
     /* ── NEW SHEET PANEL ── */
     #newSheetPanel {
       display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
@@ -552,6 +570,20 @@
     </div>
     <button class="settings-save-btn" onclick="saveSettings()">💾 Save Settings</button>
     <button class="settings-close-btn" onclick="document.getElementById('settingsPanel').style.display='none'">Close</button>
+
+    <div class="settings-divider"></div>
+    <div style="font-family:var(--font-head);font-size:1rem;font-weight:700;color:#fff;margin-bottom:8px;">🗂️ Sheet Columns Manager</div>
+    <div class="col-mgr-note">Columns add, rename ya delete karo — phir <strong>Apply</strong> dabao taake Google Sheet update ho.</div>
+    <div class="col-mgr-tabs">
+      <div class="col-mgr-tab active" id="cmTab1" onclick="cmSwitchTab('sheet1')">📺 Sheet1 (Videos)</div>
+      <div class="col-mgr-tab" id="cmTabC" onclick="cmSwitchTab('cat')">📂 Category Sheet</div>
+    </div>
+    <div class="col-mgr-list" id="cmList"></div>
+    <div class="col-mgr-add-row">
+      <input type="text" id="cmNewCol" placeholder="Naya column naam...">
+      <button onclick="cmAddCol()">➕ Add</button>
+    </div>
+    <button class="col-mgr-apply" onclick="cmApply()">✅ Apply Changes to Sheet</button>
   </div>
 </div>
 
@@ -1441,6 +1473,7 @@ function jsonOut(obj) {
   // ── SETTINGS ──
   function openSettings() {
     document.getElementById("settingsPanel").style.display = "flex";
+    cmInit();
   }
 
   function saveSettings() {
@@ -1459,6 +1492,111 @@ function jsonOut(obj) {
     showToast("✅ Settings saved!");
     updateCatSheetStatus();
     loadData();
+  }
+
+  // ── COLUMN MANAGER ──
+  // Default columns jo sheet mein pehle se hain
+  const CM_DEFAULT_SHEET1 = ["Timestamp","FileID","Name","Category","URL","Thumbnail"];
+  const CM_DEFAULT_CAT    = ["Category","Icon","Status","VideoCount","LastUpdated","Timestamp","Folder ID"];
+
+  let cmActiveTab = "sheet1";
+  // localStorage se columns load karo (ya default use karo)
+  let cmCols = {
+    sheet1: JSON.parse(localStorage.getItem("cmCols_sheet1") || "null") || [...CM_DEFAULT_SHEET1],
+    cat:    JSON.parse(localStorage.getItem("cmCols_cat")    || "null") || [...CM_DEFAULT_CAT]
+  };
+
+  function cmSaveCols() {
+    localStorage.setItem("cmCols_sheet1", JSON.stringify(cmCols.sheet1));
+    localStorage.setItem("cmCols_cat",    JSON.stringify(cmCols.cat));
+  }
+
+  function cmInit() {
+    cmActiveTab = "sheet1";
+    document.getElementById("cmTab1").classList.add("active");
+    document.getElementById("cmTabC").classList.remove("active");
+    cmRender();
+  }
+
+  function cmSwitchTab(tab) {
+    cmActiveTab = tab;
+    document.getElementById("cmTab1").classList.toggle("active", tab === "sheet1");
+    document.getElementById("cmTabC").classList.toggle("active", tab === "cat");
+    cmRender();
+  }
+
+  function cmRender() {
+    const cols = cmCols[cmActiveTab];
+    const list = document.getElementById("cmList");
+    if (!cols.length) {
+      list.innerHTML = `<div style="color:var(--muted);font-size:0.75rem;text-align:center;padding:10px;">Koi column nahi</div>`;
+      return;
+    }
+    list.innerHTML = cols.map((col, i) =>
+      `<div class="col-mgr-item">
+        <span style="font-size:13px;color:var(--muted);flex-shrink:0;">${i+1}</span>
+        <input class="col-mgr-inp" data-ci="${i}" value="${esc(col)}" placeholder="Column naam...">
+        <button class="col-mgr-del" onclick="cmDeleteCol(${i})" title="Delete">🗑️</button>
+      </div>`
+    ).join("");
+  }
+
+  function cmAddCol() {
+    const inp  = document.getElementById("cmNewCol");
+    const name = inp.value.trim();
+    if (!name) { showToast("Column naam likhna zaroori hai!", "error"); return; }
+    const existing = cmCols[cmActiveTab].map(c => c.toLowerCase());
+    if (existing.includes(name.toLowerCase())) { showToast("Yeh column pehle se hai!", "error"); return; }
+    cmCols[cmActiveTab].push(name);
+    cmSaveCols();
+    inp.value = "";
+    cmRender();
+    showToast("✅ Column add ho gaya — Apply dabao sheet sync ke liye");
+  }
+
+  function cmDeleteCol(i) {
+    const col = cmCols[cmActiveTab][i];
+    if (!confirm(`"${col}" column delete karo?`)) return;
+    cmCols[cmActiveTab].splice(i, 1);
+    cmSaveCols();
+    cmRender();
+    showToast("🗑️ Column removed — Apply dabao sheet sync ke liye");
+  }
+
+  async function cmApply() {
+    // Input fields se latest renamed values collect karo
+    document.querySelectorAll("#cmList .col-mgr-inp").forEach(inp => {
+      const ci = parseInt(inp.dataset.ci);
+      const v  = inp.value.trim();
+      if (v) cmCols[cmActiveTab][ci] = v;
+    });
+    cmSaveCols();
+    cmRender();
+
+    if (!API_URL) { showToast("❌ API URL set nahi — Settings mein URL save karo", "error"); return; }
+
+    showProgress(true, 20, "Sheet columns update ho rahi hain...");
+    try {
+      const res = await fetch(API_URL, {
+        method: "POST",
+        body: JSON.stringify({
+          action    : "UPDATE_COLUMNS",
+          sheetType : cmActiveTab === "sheet1" ? "SHEET1" : "CAT",
+          allCols   : cmCols[cmActiveTab]
+        })
+      });
+      const result = await res.json();
+      updateProgress(100, "Done!");
+      setTimeout(() => showProgress(false), 400);
+      if (result.status === "UPDATED" || result.status === "OK") {
+        showToast("✅ Sheet columns update ho gayi!");
+      } else {
+        showToast("Failed: " + (result.message || ""), "error");
+      }
+    } catch (e) {
+      showProgress(false);
+      showToast("Error: " + e.message, "error");
+    }
   }
 
   // ── NEW SHEET ──
