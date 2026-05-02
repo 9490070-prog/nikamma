@@ -859,23 +859,10 @@
     function showCachedDataBadge() { const badge = document.getElementById('data-save-badge'); badge.classList.add('show'); setTimeout(() => badge.classList.remove('show'), 2000); }
     function showNoUpdateBadge() { const badge = document.getElementById('no-update-badge'); badge.classList.add('show'); setTimeout(() => badge.classList.remove('show'), 2000); }
     function updateUIAfterDataLoad() { 
+        currentCategory = 'All';
         updateSlider(); 
         buildDynamicCategoryMenu(); 
-        
-        // Auto fallback the initial view if currentCategory is All
-        if(currentCategory === 'All') {
-            let initialCat = 'All';
-            if(availableCategories.length > 0) {
-                let firstValid = availableCategories.find(c => {
-                    let name = (c.name || '').toLowerCase();
-                    return name !== 'slider' && name !== 'live' && name !== 'life';
-                });
-                if(firstValid) initialCat = firstValid.name;
-            }
-            currentCategory = initialCat;
-        }
-        
-        filterData(currentCategory, null, false); 
+        filterData('All', document.getElementById('home-nav-btn'), false); 
         const splash = document.getElementById('splash-screen'); 
         if(splash && splash.style.display !== 'none') { 
             splash.style.opacity = '0'; 
@@ -898,7 +885,7 @@
                                 download: true, header: true, skipEmptyLines: true,
                                 complete: function(catResults) {
                                     availableCategories = catResults.data.filter(function(row){ return (row.Category||row.category||'').trim() && (row.Status||'').toLowerCase()!=='inactive'; }).map(function(row){ var ic=(row.Icon||row.icon||'folder').trim(); var resolved=ic.includes(' ')?ic:ic.startsWith('fa-')?'fa '+ic:'fa fa-'+ic; return {name:(row.Category||row.category||'').trim(),icon:resolved}; });
-                                    if(!isDataSame(newRawData, rawData) && newRawData.length) { rawData = newRawData; applySettings(); saveDataToCache(rawData, settingsData); updateUIAfterDataLoad(); resolve(true); } else if(rawData.length === 0 && newRawData.length) { rawData = newRawData; applySettings(); saveDataToCache(rawData, settingsData); updateUIAfterDataLoad(); resolve(true); } else { resolve(false); }
+                                    if(newRawData.length) { rawData = newRawData; applySettings(); saveDataToCache(rawData, settingsData); updateUIAfterDataLoad(); resolve(true); } else { resolve(false); }
                                 },
                                 error: function(){ resolve(false); }
                             });
@@ -1243,16 +1230,18 @@
                 download: true, header: true, skipEmptyLines: true,
                 complete: function(catResults) {
                     availableCategories = catResults.data.filter(function(row){ return (row.Category||row.category||'').trim() && (row.Status||'').toLowerCase()!=='inactive'; }).map(function(row){ var ic=(row.Icon||row.icon||'folder').trim(); var resolved=ic.includes(' ')?ic:ic.startsWith('fa-')?'fa '+ic:'fa fa-'+ic; return {name:(row.Category||row.category||'').trim(),icon:resolved}; });
+                    currentCategory = 'All';
                     updateSlider();
                     buildDynamicCategoryMenu();
-                    filterData(currentCategory, null, false);
+                    filterData('All', document.getElementById('home-nav-btn'), false);
                     showCachedDataBadge();
                     fetchFreshData().then(updated => { if(updated) console.log("Data updated"); });
                 },
                 error: function() {
+                    currentCategory = 'All';
                     updateSlider();
                     buildDynamicCategoryMenu();
-                    filterData(currentCategory, null, false);
+                    filterData('All', document.getElementById('home-nav-btn'), false);
                     showCachedDataBadge();
                     fetchFreshData().then(updated => { if(updated) console.log("Data updated"); });
                 }
