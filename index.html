@@ -1372,27 +1372,16 @@
                         var resolved = ic.includes(' ') ? ic : ic.startsWith('fa-') ? 'fa '+ic : 'fa fa-'+ic;
                         return { name: (row.Category||row.category||'').trim(), icon: resolved };
                     });
-                    if(!loadedCats.length) {
-                        availableCategories = [];
-                        rawData = [];
-                        showNoContentScreen();
-                    } else {
+                    if(loadedCats.length) {
                         availableCategories = loadedCats;
-                        var categoryNames = availableCategories.map(function(c){ return c.name.toLowerCase(); });
-                        rawData = rawData.filter(function(item){
-                            var itemCat = (item.Category || item.category || "").trim().toLowerCase();
-                            return itemCat === 'slider' || categoryNames.includes(itemCat);
-                        });
-                        if(!rawData.length) {
-                            showNoContentScreen();
-                        } else {
-                            updateSlider();
-                            buildDynamicCategoryMenu();
-                            currentCategory = 'All';
-                            filterData('All', document.getElementById('home-nav-btn'), false);
-                            showCachedDataBadge();
-                        }
                     }
+                    // Cache se UI foran dikhao - filter mat karo
+                    updateSlider();
+                    buildDynamicCategoryMenu();
+                    currentCategory = 'All';
+                    filterData('All', document.getElementById('home-nav-btn'), false);
+                    showCachedDataBadge();
+                    // Background mein fresh data fetch karo
                     fetchFreshData().then(function(updated){ if(updated) console.log("Data updated"); });
                 },
                 error: function() {
