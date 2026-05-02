@@ -1,0 +1,1599 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=yes">
+  <title>Admin Hub</title>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #07080f;
+      --bg2: #0d1120;
+      --bg3: #131929;
+      --card: #111827;
+      --border: rgba(0,180,255,0.15);
+      --accent: #00b4ff;
+      --accent2: #0066cc;
+      --gold: #ffaa33;
+      --red: #e34d4d;
+      --green: #2ecc71;
+      --text: #e8f0ff;
+      --muted: #6c7aa3;
+      --drawer-w: 280px;
+      --font-head: 'Syne', sans-serif;
+      --font-body: 'DM Sans', sans-serif;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      background: var(--bg);
+      font-family: var(--font-body);
+      color: var(--text);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* ── DRAWER ── */
+    #drawerOverlay {
+      position: fixed; inset: 0; background: rgba(0,0,0,0.75);
+      backdrop-filter: blur(6px); z-index: 900;
+      opacity: 0; pointer-events: none;
+      transition: opacity 0.3s ease;
+    }
+    #drawerOverlay.open { opacity: 1; pointer-events: all; }
+
+    #sideDrawer {
+      position: fixed; top: 0; left: 0; height: 100%;
+      width: var(--drawer-w); background: var(--bg2);
+      border-right: 1px solid var(--border);
+      z-index: 1000; transform: translateX(-100%);
+      transition: transform 0.35s cubic-bezier(0.4,0,0.2,1);
+      display: flex; flex-direction: column;
+      box-shadow: 8px 0 40px rgba(0,0,0,0.6);
+    }
+    #sideDrawer.open { transform: translateX(0); }
+
+    .drawer-head {
+      padding: 28px 20px 20px;
+      background: linear-gradient(135deg, #0d1a2e 0%, #0a1220 100%);
+      border-bottom: 1px solid var(--border);
+    }
+    .drawer-head h2 {
+      font-family: var(--font-head);
+      font-size: 1.2rem; font-weight: 800;
+      background: linear-gradient(125deg, #00ccff, #4d9eff);
+      -webkit-background-clip: text; background-clip: text; color: transparent;
+    }
+    .drawer-head p { font-size: 0.72rem; color: var(--muted); margin-top: 4px; }
+
+    .drawer-nav { flex: 1; overflow-y: auto; padding: 12px 0; }
+    .drawer-section-label {
+      font-size: 0.62rem; font-weight: 700; color: var(--muted);
+      letter-spacing: 1.5px; text-transform: uppercase;
+      padding: 14px 20px 6px;
+    }
+    .drawer-item {
+      display: flex; align-items: center; gap: 12px;
+      padding: 12px 20px; cursor: pointer;
+      font-size: 0.88rem; font-weight: 500; color: #b0c4e8;
+      border-left: 3px solid transparent;
+      transition: all 0.2s;
+      user-select: none;
+    }
+    .drawer-item:hover, .drawer-item.active {
+      background: rgba(0,180,255,0.08);
+      border-left-color: var(--accent);
+      color: #fff;
+    }
+    .drawer-item .d-icon {
+      width: 32px; height: 32px; border-radius: 8px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 15px; flex-shrink: 0;
+    }
+    .di-blue { background: rgba(0,180,255,0.15); }
+    .di-gold { background: rgba(255,170,51,0.15); }
+    .di-green { background: rgba(46,204,113,0.15); }
+    .di-red { background: rgba(227,77,77,0.15); }
+    .di-purple { background: rgba(150,100,255,0.15); }
+
+    .cat-chip-list { padding: 4px 14px 8px; display: flex; flex-direction: column; gap: 2px; }
+    .cat-chip {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 8px 12px; border-radius: 8px; cursor: pointer;
+      font-size: 0.8rem; color: #aac; transition: background 0.15s;
+    }
+    .cat-chip:hover { background: rgba(255,255,255,0.05); }
+    .cat-chip .cc-left { display: flex; align-items: center; gap: 8px; }
+    .cat-chip .cc-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--accent); flex-shrink: 0; }
+    .cat-chip .cc-count { font-size: 0.65rem; color: var(--muted); background: #1e2a3a; padding: 1px 7px; border-radius: 20px; }
+    .cat-chip .cc-del { background: none; border: none; color: var(--red); font-size: 14px; cursor: pointer; padding: 2px 4px; border-radius: 4px; opacity: 0; transition: opacity 0.15s; }
+    .cat-chip:hover .cc-del { opacity: 1; }
+
+    .add-cat-row {
+      display: flex; gap: 6px; padding: 8px 14px 14px;
+    }
+    .add-cat-row input {
+      flex: 1; background: #0a1020; border: 1px solid #2c3e62;
+      border-radius: 30px; color: white; font-size: 0.8rem;
+      padding: 7px 14px; outline: none; font-family: var(--font-body);
+    }
+    .add-cat-row input:focus { border-color: var(--accent); }
+    .add-cat-row button {
+      background: var(--accent); border: none; border-radius: 30px;
+      color: #000; font-weight: 700; font-size: 0.75rem;
+      padding: 7px 14px; cursor: pointer; transition: 0.2s; white-space: nowrap;
+    }
+    .add-cat-row button:hover { background: #2ad4ff; }
+
+    .drawer-footer {
+      padding: 14px 20px;
+      border-top: 1px solid var(--border);
+      font-size: 0.7rem; color: var(--muted); text-align: center;
+    }
+
+    /* ── MAIN LAYOUT ── */
+    .main-wrap { padding: 14px 12px 60px; max-width: 1600px; margin: 0 auto; }
+
+    /* ── HEADER ── */
+    .admin-header {
+      display: flex; align-items: center; gap: 12px;
+      background: rgba(12,20,32,0.92); backdrop-filter: blur(14px);
+      padding: 10px 16px; border-radius: 50px;
+      border: 1px solid var(--border);
+      box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+      margin-bottom: 24px; position: sticky; top: 8px; z-index: 200;
+    }
+    .hamburger-btn {
+      width: 40px; height: 40px; border-radius: 12px;
+      background: rgba(0,180,255,0.12); border: 1px solid rgba(0,180,255,0.25);
+      color: var(--accent); font-size: 18px; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      transition: 0.2s; flex-shrink: 0;
+    }
+    .hamburger-btn:hover { background: rgba(0,180,255,0.22); }
+    .logo-area { flex: 1; }
+    .logo-area h2 {
+      font-family: var(--font-head);
+      font-size: clamp(0.95rem, 4vw, 1.4rem); font-weight: 800;
+      background: linear-gradient(125deg, #00ccff, #4d9eff);
+      -webkit-background-clip: text; background-clip: text; color: transparent;
+    }
+    .header-actions { display: flex; gap: 8px; }
+    .add-global-btn {
+      background: linear-gradient(95deg, var(--accent), var(--accent2));
+      border: none; width: 40px; height: 40px; border-radius: 40px;
+      font-size: 22px; font-weight: bold; color: white; cursor: pointer;
+      transition: 0.2s; box-shadow: 0 4px 14px rgba(0,180,255,0.35);
+      display: flex; align-items: center; justify-content: center;
+    }
+    .add-global-btn:hover { transform: scale(1.06); }
+
+    /* ── CATEGORY CARDS ── */
+    .category-card {
+      background: var(--card); border-radius: 12px;
+      padding: 6px 0 10px; margin-bottom: 16px;
+      border: 1px solid rgba(255,255,255,0.05);
+      box-shadow: 0 6px 20px rgba(0,0,0,0.4);
+    }
+    .category-header {
+      display: flex; align-items: center; justify-content: space-between;
+      flex-wrap: wrap; gap: 10px; padding: 0 18px 12px;
+      border-bottom: 1px solid rgba(0,180,255,0.2); margin-bottom: 14px;
+    }
+    .cat-title-group { display: flex; align-items: center; gap: 10px; }
+    .category-title {
+      font-family: var(--font-head);
+      font-size: clamp(1rem, 4vw, 1.4rem); font-weight: 700;
+      background: linear-gradient(130deg, #f0f9ff, #9acdff);
+      -webkit-background-clip: text; background-clip: text; color: transparent;
+    }
+    .category-badge {
+      background: var(--gold); padding: 3px 10px; border-radius: 30px;
+      font-size: 0.65rem; font-weight: 700; color: #000;
+    }
+    .cat-actions { display: flex; gap: 6px; }
+    .cat-action-btn {
+      background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 8px; padding: 5px 10px; font-size: 0.7rem;
+      color: #99b; cursor: pointer; transition: 0.15s;
+    }
+    .cat-action-btn:hover { background: rgba(255,255,255,0.12); color: #fff; }
+    .cat-action-btn.del-cat { color: var(--red); border-color: rgba(227,77,77,0.25); }
+    .cat-action-btn.del-cat:hover { background: rgba(227,77,77,0.15); }
+
+    .horizontal-scroll {
+      display: flex; overflow-x: auto; gap: 14px; padding: 6px 18px 18px;
+      scrollbar-width: thin; scrollbar-color: var(--accent) #1e2a3a;
+      -webkit-overflow-scrolling: touch;
+    }
+    .horizontal-scroll::-webkit-scrollbar { height: 4px; }
+    .horizontal-scroll::-webkit-scrollbar-track { background: #1a2235; border-radius: 12px; }
+    .horizontal-scroll::-webkit-scrollbar-thumb { background: var(--accent); border-radius: 12px; }
+
+    .video-card {
+      min-width: 220px; width: 220px; background: #0b1120;
+      border-radius: 10px; overflow: hidden;
+      transition: transform 0.2s, box-shadow 0.2s;
+      border: 1px solid #1e2a40; flex-shrink: 0; cursor: pointer;
+    }
+    @media (max-width: 550px) { .video-card { min-width: 180px; width: 180px; } .thumb-wrapper { height: 110px; } }
+    @media (max-width: 420px) { .video-card { min-width: 160px; width: 160px; } .thumb-wrapper { height: 96px; } }
+    .video-card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 16px 28px -10px rgba(0,180,255,0.2);
+      border-color: rgba(0,180,255,0.5);
+    }
+    .thumb-wrapper {
+      width: 100%; height: 125px; background: #05080f;
+      display: flex; align-items: center; justify-content: center; overflow: hidden;
+    }
+    .thumb-wrapper img { width: 100%; height: 100%; object-fit: cover; transition: 0.25s; }
+    .video-info { padding: 9px 10px 11px; }
+    .video-name { font-weight: 700; font-size: 0.85rem; margin-bottom: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .video-url { font-size: 0.58rem; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-bottom: 7px; }
+    .video-actions { display: flex; gap: 6px; margin-top: 4px; }
+    .small-edit, .small-delete {
+      font-size: 0.65rem; padding: 4px 10px; border-radius: 30px;
+      border: none; font-weight: 700; cursor: pointer; transition: 0.1s;
+    }
+    .small-edit { background: var(--gold); color: #101010; }
+    .small-delete { background: var(--red); color: white; }
+    .empty-cat-msg {
+      color: var(--muted); font-style: italic; padding: 16px;
+      background: #0c1120; border-radius: 30px; text-align: center;
+      margin: 0 4px; font-size: 0.78rem;
+    }
+
+    /* ── MODAL ── */
+    .modal-overlay {
+      display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(0,0,0,0.92); backdrop-filter: blur(14px);
+      justify-content: center; align-items: center; z-index: 2000; padding: 14px;
+    }
+    .modal-panel {
+      background: linear-gradient(145deg, #0e1928, #0b1420);
+      max-width: 500px; width: 100%; border-radius: 22px;
+      padding: 22px 20px 28px;
+      border: 1px solid rgba(0,180,255,0.25);
+      box-shadow: 0 30px 60px rgba(0,0,0,0.6);
+    }
+    .modal-panel h3 {
+      font-family: var(--font-head);
+      font-size: 1.3rem; margin-bottom: 16px; color: #2fd0ff;
+    }
+    .modal-panel input, .modal-panel select {
+      width: 100%; padding: 11px 16px; margin: 8px 0;
+      background: #0a1020; border: 1px solid #2c3e62; border-radius: 50px;
+      color: white; font-size: 0.88rem; outline: none; font-family: var(--font-body);
+      transition: border-color 0.2s;
+    }
+    .modal-panel input:focus, .modal-panel select:focus { border-color: var(--accent); }
+    .current-thumb-row {
+      display: none; align-items: center; gap: 10px;
+      background: #0d1a10; border: 1px solid #1e4a2a;
+      border-radius: 14px; padding: 8px 14px; margin: 8px 0;
+    }
+    .current-thumb-row img { width: 60px; height: 40px; object-fit: cover; border-radius: 7px; border: 1px solid #2a5535; flex-shrink: 0; }
+    .current-thumb-row .ctr-text { font-size: 0.7rem; color: #66cc88; line-height: 1.5; }
+    .current-thumb-row .ctr-text strong { display: block; color: #99ffcc; }
+    .thumb-label-row { display: flex; align-items: center; gap: 8px; font-size: 0.73rem; color: #8ea8d0; padding: 4px 2px 5px; }
+    .badge-opt { background: #1a3a20; color: #44dd88; border-radius: 20px; padding: 2px 9px; font-size: 0.62rem; font-weight: 700; }
+    .badge-req { background: #3a1a1a; color: #ff6666; border-radius: 20px; padding: 2px 9px; font-size: 0.62rem; font-weight: 700; }
+    .img-edit-row { display: flex; gap: 10px; align-items: center; background: #0a1020; padding: 4px 12px; border-radius: 50px; margin: 4px 0; }
+    .icon-edit-btn { background: #28a87a; border: none; border-radius: 40px; width: 40px; height: 40px; font-size: 16px; cursor: pointer; flex-shrink: 0; }
+    .replace-cb-wrap {
+      display: none; align-items: center; gap: 6px;
+      background: rgba(255,100,100,0.12); border: 1px solid rgba(255,100,100,0.3);
+      border-radius: 40px; padding: 0 10px 0 8px; cursor: pointer; flex-shrink: 0; height: 40px;
+    }
+    .replace-cb-wrap input[type="checkbox"] { width: 14px; height: 14px; accent-color: #ff6666; cursor: pointer; padding: 0; margin: 0; border: none; background: transparent; }
+    .replace-cb-wrap label { font-size: 0.6rem; color: #ffaaaa; font-weight: 700; cursor: pointer; white-space: nowrap; }
+    .modal-buttons { display: flex; gap: 10px; margin-top: 18px; flex-wrap: wrap; }
+    .modal-buttons button { flex: 1; padding: 11px; border-radius: 50px; font-weight: 700; border: none; cursor: pointer; font-family: var(--font-body); font-size: 0.9rem; }
+    .btn-save-item { background: var(--accent); color: white; }
+    .btn-cancel-modal { background: var(--red); color: white; }
+
+    /* ── SETTINGS PANEL ── */
+    #settingsPanel {
+      display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(0,0,0,0.92); backdrop-filter: blur(14px);
+      justify-content: center; align-items: center; z-index: 2000; padding: 14px;
+    }
+    .settings-box {
+      background: linear-gradient(145deg, #0e1928, #0b1420);
+      max-width: 480px; width: 100%; border-radius: 22px;
+      padding: 22px 20px 28px;
+      border: 1px solid rgba(255,170,51,0.25);
+      box-shadow: 0 30px 60px rgba(0,0,0,0.6);
+      max-height: 90vh; overflow-y: auto;
+    }
+    .settings-box h3 { font-family: var(--font-head); font-size: 1.3rem; color: var(--gold); margin-bottom: 18px; }
+    .settings-row { margin-bottom: 16px; }
+    .settings-row label { display: block; font-size: 0.75rem; color: var(--muted); margin-bottom: 6px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.8px; }
+    .settings-row input, .settings-row select {
+      width: 100%; padding: 10px 16px;
+      background: #0a1020; border: 1px solid #2c3e62; border-radius: 50px;
+      color: white; font-size: 0.85rem; outline: none; font-family: var(--font-body);
+    }
+    .settings-row input:focus { border-color: var(--gold); }
+    .settings-save-btn {
+      background: var(--gold); border: none; border-radius: 50px;
+      color: #000; font-weight: 700; padding: 11px 28px;
+      cursor: pointer; font-size: 0.9rem; width: 100%; margin-top: 8px;
+    }
+    .settings-close-btn {
+      background: #2a3452; border: none; border-radius: 50px;
+      color: #aaa; font-weight: 600; padding: 10px 28px;
+      cursor: pointer; font-size: 0.88rem; width: 100%; margin-top: 8px;
+    }
+    .settings-divider { height: 1px; background: rgba(255,255,255,0.07); margin: 16px 0; }
+
+    /* ── NEW SHEET PANEL ── */
+    #newSheetPanel {
+      display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(0,0,0,0.93); backdrop-filter: blur(14px);
+      justify-content: center; align-items: center; z-index: 2000; padding: 14px;
+    }
+    .sheet-box {
+      background: linear-gradient(145deg, #0c1a10, #091209);
+      max-width: 540px; width: 100%; border-radius: 22px;
+      padding: 22px 20px 28px;
+      border: 1px solid rgba(46,204,113,0.3);
+      box-shadow: 0 30px 60px rgba(0,0,0,0.6);
+      max-height: 90vh; overflow-y: auto;
+    }
+    .sheet-box h3 { font-family: var(--font-head); font-size: 1.3rem; color: var(--green); margin-bottom: 6px; }
+    .sheet-box p { font-size: 0.78rem; color: var(--muted); margin-bottom: 16px; line-height: 1.6; }
+    .code-block {
+      background: #020509; border: 1px solid #1e3a28;
+      border-radius: 12px; padding: 14px;
+      font-family: 'Courier New', monospace; font-size: 0.7rem;
+      color: #7dffa0; line-height: 1.7; overflow-x: auto;
+      white-space: pre; margin: 12px 0;
+      max-height: 280px; overflow-y: auto;
+    }
+    .copy-code-btn {
+      background: var(--green); border: none; border-radius: 30px;
+      color: #000; font-weight: 700; padding: 9px 22px;
+      cursor: pointer; font-size: 0.82rem; width: 100%; margin-bottom: 8px;
+    }
+    .sheet-step {
+      display: flex; gap: 12px; align-items: flex-start;
+      background: rgba(46,204,113,0.06); border: 1px solid rgba(46,204,113,0.15);
+      border-radius: 12px; padding: 12px; margin-bottom: 8px;
+    }
+    .step-num {
+      width: 26px; height: 26px; border-radius: 50%;
+      background: var(--green); color: #000;
+      font-weight: 800; font-size: 0.75rem;
+      display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+    }
+    .step-text { font-size: 0.78rem; color: #aaccbb; line-height: 1.6; }
+    .step-text strong { color: #ccffdd; }
+    .sheet-close-btn {
+      background: #1a2a1a; border: 1px solid rgba(46,204,113,0.2);
+      border-radius: 50px; color: #aaa; font-weight: 600;
+      padding: 10px 28px; cursor: pointer; font-size: 0.88rem;
+      width: 100%; margin-top: 10px;
+    }
+
+    /* ── RENAME CAT MODAL ── */
+    #renameCatModal {
+      display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(0,0,0,0.9); backdrop-filter: blur(10px);
+      justify-content: center; align-items: center; z-index: 3000; padding: 14px;
+    }
+    .rename-box {
+      background: #0e1928; max-width: 360px; width: 100%;
+      border-radius: 20px; padding: 22px 20px;
+      border: 1px solid rgba(0,180,255,0.3);
+    }
+    .rename-box h3 { font-family: var(--font-head); color: var(--accent); margin-bottom: 14px; }
+    .rename-box input {
+      width: 100%; padding: 11px 16px;
+      background: #0a1020; border: 1px solid #2c3e62; border-radius: 50px;
+      color: white; font-size: 0.88rem; outline: none; font-family: var(--font-body);
+    }
+    .rename-box input:focus { border-color: var(--accent); }
+    .rename-btns { display: flex; gap: 10px; margin-top: 14px; }
+    .rename-btns button { flex: 1; padding: 10px; border-radius: 50px; border: none; font-weight: 700; cursor: pointer; font-family: var(--font-body); }
+
+    /* ── PROGRESS ── */
+    .progress-overlay {
+      display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(0,0,0,0.9); backdrop-filter: blur(10px);
+      justify-content: center; align-items: center; z-index: 3000; flex-direction: column;
+    }
+    .progress-card {
+      background: #101a28; padding: 16px 20px; border-radius: 20px;
+      text-align: center; min-width: 260px; width: 80%; max-width: 320px;
+      border: 1px solid rgba(0,180,255,0.3);
+    }
+    .progress-bar-container { width: 100%; height: 22px; background: #1e2a3a; border-radius: 40px; overflow: hidden; margin: 12px 0; }
+    .progress-fill { width: 0%; height: 100%; background: linear-gradient(90deg, var(--accent), #2ad4ff); transition: width 0.25s ease; display: flex; align-items: center; justify-content: center; color: white; font-size: 11px; font-weight: 700; }
+    #progressStatusText { color: #bbd4ff; font-weight: 500; font-size: 0.82rem; }
+
+    /* ── TOAST ── */
+    .toast-msg {
+      position: fixed; bottom: 20px; right: 20px; left: auto;
+      background: #1f2a44; padding: 10px 20px; border-radius: 50px;
+      backdrop-filter: blur(12px); border-left: 5px solid var(--green);
+      z-index: 4500; display: none; font-weight: 500; font-size: 0.82rem;
+      box-shadow: 0 6px 20px black;
+    }
+    @media (max-width: 550px) { .toast-msg { left: 16px; right: 16px; text-align: center; } }
+
+    /* ── CROP MODAL ── */
+    .crop-modal-container {
+      display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(0,0,0,0.98); backdrop-filter: blur(10px);
+      z-index: 4000; justify-content: center; align-items: center; padding: 12px;
+    }
+    .crop-inner {
+      background: #0f1725; width: 96%; max-width: 1000px; border-radius: 28px;
+      padding: 16px; display: flex; flex-direction: column; max-height: 92vh;
+    }
+    .crop-canvas-area { background: #03060c; border-radius: 20px; padding: 10px; display: flex; justify-content: center; min-height: 200px; max-height: 40vh; overflow: hidden; }
+    .canvas-relative { position: relative; display: inline-block; }
+    #cropCanvas { display: block; border-radius: 14px; background: #1a1f30; max-width: 100%; height: auto; }
+    #cropSelectionBox { position: absolute; border: 3px solid #ffaa44; background: rgba(255,170,68,0.18); pointer-events: none; box-sizing: border-box; }
+    .scroll-controls-area { flex: 1; overflow-y: auto; margin-top: 14px; padding-right: 4px; max-height: 36vh; }
+    .control-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px; }
+    @media (max-width: 580px) { .control-grid { grid-template-columns: 1fr; } }
+    .ctrl-group label { font-size: 11px; font-weight: 600; color: #9bb5ff; }
+    .ctrl-group input { width: 100%; margin: 5px 0; }
+    .crop-buttons { display: flex; gap: 12px; justify-content: center; margin-top: 14px; flex-wrap: wrap; }
+    .crop-buttons button { padding: 8px 20px; border-radius: 40px; border: none; font-weight: 700; cursor: pointer; font-family: var(--font-body); }
+  </style>
+</head>
+<body>
+
+<div id="drawerOverlay" onclick="closeDrawer()"></div>
+
+<div id="sideDrawer">
+  <div class="drawer-head">
+    <h2>🎬 Admin Hub</h2>
+    <p>Content Management System</p>
+  </div>
+  <nav class="drawer-nav">
+    <div class="drawer-section-label">Navigation</div>
+    <div class="drawer-item active" onclick="scrollToTop(); closeDrawer()">
+      <div class="d-icon di-blue">🏠</div> Dashboard
+    </div>
+    <div class="drawer-item" onclick="openAddModal(); closeDrawer()">
+      <div class="d-icon di-green">➕</div> Add New Video
+    </div>
+
+    <div class="drawer-section-label">Categories</div>
+    <div class="cat-chip-list" id="drawerCatList">
+      </div>
+    <div class="add-cat-row">
+      <input type="text" id="newCatIconInput" placeholder="Icon 📁" style="max-width:64px;text-align:center;">
+      <input type="text" id="newCatNameInput" placeholder="New category..." onkeydown="if(event.key==='Enter')addCategoryFromDrawer()">
+      <button onclick="addCategoryFromDrawer()">+ Add</button>
+    </div>
+
+    <div class="drawer-section-label">Tools</div>
+    <div class="drawer-item" onclick="openSettings(); closeDrawer()">
+      <div class="d-icon di-gold">⚙️</div> Settings
+    </div>
+    <div class="drawer-item" onclick="openNewSheetPanel(); closeDrawer()">
+      <div class="d-icon di-green">📄</div> New Google Sheet
+    </div>
+  </nav>
+  <div class="drawer-footer">
+    Admin Hub v2.1<br>
+    <span style="font-size:0.65rem;">📂 Cat Sheet: <span id="catSheetStatusText" style="color:#ffaa33;">URL set nahi</span></span>
+  </div>
+</div>
+
+<div class="main-wrap">
+  <div class="admin-header">
+    <button class="hamburger-btn" onclick="toggleDrawer()">☰</button>
+    <div class="logo-area"><h2>🎬 ADMIN DASHBOARD</h2></div>
+    <div class="header-actions">
+      <button class="add-global-btn" onclick="openAddModal()" title="Add new video">+</button>
+    </div>
+  </div>
+  <div id="categoriesContainer"></div>
+</div>
+
+<div id="globalModal" class="modal-overlay">
+  <div class="modal-panel">
+    <h3 id="modalTitle">➕ Add Video</h3>
+    <input type="text" id="videoName" placeholder="Video title *">
+    <select id="videoCategorySelect">
+      <option value="">-- Select Category --</option>
+    </select>
+    <input type="text" id="videoUrl" placeholder="Video URL *">
+    <div class="thumb-label-row">
+      🖼️ Thumbnail &nbsp;<span id="thumbBadge" class="badge-req">Required</span>
+    </div>
+    <div class="current-thumb-row" id="currentThumbRow">
+      <img id="currentThumbImg" src="" alt="current thumb">
+      <div class="ctr-text">
+        <strong>✅ Current Image Safe Hai</strong>
+        Nai image select nahi ki to yeh image waise hi rahegi
+      </div>
+    </div>
+    <div class="img-edit-row">
+      <div class="replace-cb-wrap" id="replaceCbWrap">
+        <input type="checkbox" id="replaceOldCb">
+        <label for="replaceOldCb">🔄 Replace</label>
+      </div>
+      <button type="button" id="openMiniImageBtn" class="icon-edit-btn">✂️</button>
+      <input type="file" id="thumbFile" accept="image/*" style="flex:1; background:transparent; border:none; padding:8px 0; color:#aac4ff;">
+    </div>
+    <div class="modal-buttons">
+      <button id="modalSubmitBtn" class="btn-save-item">Save</button>
+      <button id="closeModalBtn" class="btn-cancel-modal">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<div id="settingsPanel">
+  <div class="settings-box">
+    <h3>⚙️ Settings</h3>
+    <div class="settings-row">
+      <label>📺 Videos Sheet — API URL</label>
+      <input type="text" id="settingsApiUrl" placeholder="https://script.google.com/macros/s/...">
+    </div>
+    <div class="settings-divider"></div>
+    <div class="settings-row">
+      <label>📂 Category Sheet — API URL <span style="color:#ffaa33;font-size:0.65rem;font-weight:700;background:rgba(255,170,51,0.15);padding:2px 8px;border-radius:20px;margin-left:4px;">NEW</span></label>
+      <input type="text" id="settingsCatApiUrl" placeholder="https://script.google.com/macros/s/...">
+      <div style="font-size:0.65rem;color:#6c7aa3;margin-top:4px;padding:0 6px;">
+        ⚠️ Alag sheet ka alag deployment URL — neeche Apps Script code mein Category Sheet ka code bhi hai
+      </div>
+    </div>
+    <div class="settings-divider"></div>
+    <div class="settings-row">
+      <label>Dashboard Title</label>
+      <input type="text" id="settingsDashTitle" placeholder="Admin Hub">
+    </div>
+    <button class="settings-save-btn" onclick="saveSettings()">💾 Save Settings</button>
+    <button class="settings-close-btn" onclick="document.getElementById('settingsPanel').style.display='none'">Close</button>
+  </div>
+</div>
+
+<div id="newSheetPanel">
+  <div class="sheet-box">
+    <h3>📄 New Google Sheet Setup</h3>
+    <p>Yeh Apps Script code copy karke Google Sheets mein paste karo taake nai sheet + API ready ho jaye.</p>
+
+    <div class="sheet-step">
+      <div class="step-num">1</div>
+      <div class="step-text">Naya <strong>Google Sheet</strong> kholo → Tools → <strong>Apps Script</strong></div>
+    </div>
+    <div class="sheet-step">
+      <div class="step-num">2</div>
+      <div class="step-text">Pura purana code delete karo aur neeche diya hua <strong>code paste karo</strong></div>
+    </div>
+    <div class="sheet-step">
+      <div class="step-num">3</div>
+      <div class="step-text"><strong>Save → Deploy → New Deployment → Web App</strong> → "Anyone" select karo → Copy URL</div>
+    </div>
+    <div class="sheet-step">
+      <div class="step-num">4</div>
+      <div class="step-text">Dashboard mein jaake <strong>Settings</strong> kholo aur dono URLs save karo</div>
+    </div>
+
+    <button class="copy-code-btn" onclick="copyAppsScriptCode()">📋 Copy Apps Script Code</button>
+
+    <div class="code-block" id="appsScriptCodeBlock">// ── GOOGLE APPS SCRIPT CODE (Paste in Extensions -> Apps Script) ──
+var SHEET_NAME = "Sheet1";
+var CAT_SHEET_NAME = "CategorySheet";
+var DRIVE_FOLDER_ID = "ROOT"; // Ya specific folder ID
+
+function doGet(e) {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var sheet = ss.getSheetByName(SHEET_NAME);
+  if (!sheet) {
+    sheet = ss.insertSheet(SHEET_NAME);
+    sheet.appendRow(["Unique_Id", "File_Id", "Name", "Category", "URL", "Thumbnail"]);
+  }
+  
+  if (e.parameter.action === "getCats") {
+    return getCategoriesResponse();
+  }
+
+  var data = sheet.getDataRange().getValues();
+  var result = [];
+  for (var i = 1; i < data.length; i++) {
+    result.push({
+      rowNumber: i - 1,
+      Name: data[i][2],
+      Category: data[i][3],
+      URL: data[i][4],
+      Thumbnail: data[i][5]
+    });
+  }
+  return jsonOut(result);
+}
+
+function getCategoriesResponse() {
+  var sheet = getOrCreateCatSheet();
+  var data = sheet.getDataRange().getValues();
+  var result = [];
+  for (var i = 1; i < data.length; i++) {
+    if (!data[i][0]) continue;
+    result.push({
+      rowNumber: i + 1, // 1-based actual row number
+      Category: data[i][0] || "",
+      Icon: data[i][1] || "📁",
+      Status: data[i][2] || "Active",
+      VideoCount: data[i][3] || 0,
+      LastUpdated: data[i][4] || "",
+      Timestamp: data[i][5] || ""
+    });
+  }
+  return jsonOut(result);
+}
+
+function doPost(request) {
+  try {
+    var data = JSON.parse(request.postData.contents);
+    
+    if (data.action === "ADD_CAT") {
+      var catSheet = getOrCreateCatSheet();
+      var now = new Date().toISOString();
+      catSheet.appendRow([
+        data.category || "",
+        data.icon || "📁",
+        data.status || "Active",
+        data.videoCount || 0,
+        now,
+        data.timestamp || Date.now()
+      ]);
+      var newRow = catSheet.getLastRow();
+      return jsonOut({ status: "OK", rowNumber: newRow });
+    }
+    
+    if (data.action === "RENAME_CAT") {
+      var catSheet = getOrCreateCatSheet();
+      catSheet.getRange(data.rowNumber, 1).setValue(data.newCategory);
+      catSheet.getRange(data.rowNumber, 5).setValue(data.lastUpdated || new Date().toISOString());
+      // Sheet1 mein bhi saare videos ka category rename karo
+      var ss = SpreadsheetApp.getActiveSpreadsheet();
+      var vidSheet = ss.getSheetByName(SHEET_NAME);
+      if (vidSheet && data.oldCategory) {
+        var vData = vidSheet.getDataRange().getValues();
+        for (var vi = 1; vi < vData.length; vi++) {
+          if (String(vData[vi][3]).trim().toLowerCase() === String(data.oldCategory).trim().toLowerCase()) {
+            vidSheet.getRange(vi + 1, 4).setValue(data.newCategory);
+          }
+        }
+      }
+      return jsonOut({ status: "UPDATED" });
+    }
+    
+    if (data.action === "DELETE_CAT") {
+      var catSheet = getOrCreateCatSheet();
+      catSheet.deleteRow(data.rowNumber);
+      return jsonOut({ status: "DELETED" });
+    }
+    
+    if (data.action === "UPDATE_COUNT") {
+      var catSheet = getOrCreateCatSheet();
+      catSheet.getRange(data.rowNumber, 4).setValue(data.videoCount || 0);
+      catSheet.getRange(data.rowNumber, 5).setValue(data.lastUpdated || new Date().toISOString());
+      return jsonOut({ status: "UPDATED" });
+    }
+
+    var sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_NAME);
+    
+    if (data.action === undefined) {
+      var timestamp = new Date().getTime();
+      var uniqueId = "vid_" + timestamp;
+      var fileId = "";
+      var thumbUrl = "https://placehold.co/600x400/2a3555/white?text=No+Image";
+      
+      if (data.thumbnail && data.thumbnail.includes("base64")) {
+        var folder = DRIVE_FOLDER_ID === "ROOT" ? DriveApp.getRootFolder() : DriveApp.getFolderById(DRIVE_FOLDER_ID);
+        var imageData = data.thumbnail.split(",")[1];
+        var blob = Utilities.newBlob(Utilities.base64Decode(imageData), "image/png", "thumb_" + timestamp + ".png");
+        var file = folder.createFile(blob);
+        fileId = file.getId();
+        thumbUrl = "https://drive.google.com/thumbnail?id=" + fileId + "&sz=w500";
+      } else if (data.existingThumbUrl) {
+        thumbUrl = data.existingThumbUrl;
+        fileId = data.existingFileId || "";
+      }
+      
+      sheet.appendRow([uniqueId, fileId, data.name, data.category, data.url, thumbUrl]);
+      updateVideoCountForCat(data.category);
+      return jsonOut({ status: "OK", uniqueId: uniqueId });
+    }
+    
+    if (data.action === "DELETE") {
+      var row = Number(data.rowNumber) + 2;
+      var cat = sheet.getRange(row, 4).getValue();
+      if (!data.keepImage) {
+        var oldFileId = sheet.getRange(row, 2).getValue();
+        if (oldFileId) {
+          try { DriveApp.getFileById(oldFileId).setTrashed(true); } catch(e) {}
+        }
+      }
+      sheet.deleteRow(row);
+      updateVideoCountForCat(cat);
+      return jsonOut({ status: "DELETED" });
+    }
+    
+    if (data.action === "EDIT") {
+      var row = Number(data.rowNumber) + 2;
+      var oldCat = sheet.getRange(row, 4).getValue();
+      sheet.getRange(row, 3).setValue(data.name);
+      sheet.getRange(row, 4).setValue(data.category);
+      sheet.getRange(row, 5).setValue(data.url);
+      
+      if (data.thumbnail && data.thumbnail.includes("base64")) {
+        var oldFid = sheet.getRange(row, 2).getValue();
+        if (oldFid) {
+          try { DriveApp.getFileById(oldFid).setTrashed(true); } catch(e) {}
+        }
+        var folder = DRIVE_FOLDER_ID === "ROOT" ? DriveApp.getRootFolder() : DriveApp.getFolderById(DRIVE_FOLDER_ID);
+        var imageData = data.thumbnail.split(",")[1];
+        var blob = Utilities.newBlob(Utilities.base64Decode(imageData), "image/png", "thumb_" + new Date().getTime() + ".png");
+        var file = folder.createFile(blob);
+        sheet.getRange(row, 2).setValue(file.getId());
+        sheet.getRange(row, 6).setValue("https://drive.google.com/thumbnail?id=" + file.getId() + "&sz=w500");
+      }
+      
+      if (oldCat !== data.category) updateVideoCountForCat(oldCat);
+      updateVideoCountForCat(data.category);
+      return jsonOut({ status: "UPDATED" });
+    }
+  } catch(e) {
+    return jsonOut({ status: "ERROR", message: e.toString() });
+  }
+}
+
+function getOrCreateCatSheet() {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var sheet = ss.getSheetByName(CAT_SHEET_NAME);
+  if (!sheet) {
+    sheet = ss.insertSheet(CAT_SHEET_NAME);
+    sheet.appendRow(["Category","Icon","Status","VideoCount","LastUpdated","Timestamp"]);
+    sheet.getRange(1,1,1,6).setFontWeight("bold").setBackground("#1a1a2e").setFontColor("#ffffff");
+  }
+  return sheet;
+}
+
+function updateVideoCountForCat(catName) {
+  if (!catName) return;
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var sheet = ss.getSheetByName(SHEET_NAME);
+  var catSheet = getOrCreateCatSheet();
+  if (!sheet) return;
+  var vData = sheet.getDataRange().getValues();
+  var count = 0;
+  for (var i = 1; i < vData.length; i++) {
+    if (vData[i][3] === catName) count++;
+  }
+  var cData = catSheet.getDataRange().getValues();
+  for (var j = 1; j < cData.length; j++) {
+    if (cData[j][0] === catName) {
+      catSheet.getRange(j + 1, 4).setValue(count);
+      catSheet.getRange(j + 1, 5).setValue(new Date().toISOString());
+      return;
+    }
+  }
+}
+
+function jsonOut(obj) {
+  return ContentService.createTextOutput(JSON.stringify(obj)).setMimeType(ContentService.MimeType.JSON);
+}</div>
+    <button class="sheet-close-btn" onclick="document.getElementById('newSheetPanel').style.display='none'">Close</button>
+  </div>
+</div>
+
+<div id="renameCatModal">
+  <div class="rename-box">
+    <h3>✏️ Rename Category</h3>
+    <input type="text" id="renameCatInput" placeholder="New category name..." onkeydown="if(event.key==='Enter')confirmRenameCategory()">
+    <div class="rename-btns">
+      <button onclick="confirmRenameCategory()" style="background:var(--accent); color:black;">Update</button>
+      <button onclick="document.getElementById('renameCatModal').style.display='none'" style="background:#334155; color:white;">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<div id="progressOverlay" class="progress-overlay">
+  <div class="progress-card">
+    <h4 style="color:#00ccff;font-family:var(--font-head);font-size:1rem;" id="progressActionTitle">Please wait</h4>
+    <div class="progress-bar-container">
+      <div id="progressFillBar" class="progress-fill">0%</div>
+    </div>
+    <p id="progressStatusText">Processing...</p>
+  </div>
+</div>
+
+<div id="cropToolModal" class="crop-modal-container">
+  <div class="crop-inner">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+      <h4 style="color:var(--accent); font-family:var(--font-head);">✂️ Image Editor</h4>
+      <button id="closeCropModalBtn" style="background:#ff5555; border:none; padding:5px 14px; border-radius:30px; color:white; cursor:pointer;">✖️</button>
+    </div>
+    <div class="crop-canvas-area">
+      <div class="canvas-relative">
+        <canvas id="cropCanvas" width="450" height="280"></canvas>
+        <div id="cropSelectionBox"></div>
+      </div>
+    </div>
+    <div class="scroll-controls-area">
+      <div class="control-grid">
+        <div class="ctrl-group"><label>⬅️ X Position</label><input type="range" id="cropXSlider" min="0" max="100" step="1"><span id="xPosVal" style="font-size:11px;">0px</span></div>
+        <div class="ctrl-group"><label>⬆️ Y Position</label><input type="range" id="cropYSlider" min="0" max="100" step="1"><span id="yPosVal" style="font-size:11px;">0px</span></div>
+        <div class="ctrl-group"><label>📏 Crop Width</label><input type="range" id="cropWidthSlider" min="30" max="800" step="5"><span id="widthVal">240px</span></div>
+        <div class="ctrl-group"><label>📐 Crop Height</label><input type="range" id="cropHeightSlider" min="30" max="800" step="5"><span id="heightVal">180px</span></div>
+        <div class="ctrl-group"><label>🔍 Zoom</label><input type="range" id="zoomScaleSlider" min="10" max="250" step="5"><span id="zoomPercent">40%</span></div>
+      </div>
+    </div>
+    <div class="crop-buttons">
+      <button id="applyCropSaveBtn" style="background:var(--green); color:#000;">💾 Save Cropped</button>
+      <button id="cancelCropToolBtn" style="background:#555; color:white;">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<div id="toastMessage" class="toast-msg"></div>
+
+<script>
+  // ── CONFIG ──
+  let API_URL = localStorage.getItem("adminApiUrl") || "https://script.google.com/macros/s/AKfycbzL5P8Y6Lsc49_p_D2B60707_DefaultAPI/exec";
+  let CAT_API_URL = localStorage.getItem("adminCatApiUrl") || "";
+  let allVideos = [];
+  let customCategories = JSON.parse(localStorage.getItem("adminCustomCats")) || [];
+  let allCatSheetData = [];
+  let isEditMode = false;
+  let currentEditRow = null;
+  let currentEditFile = "";
+  let currentEditThumb = "";
+  let renameCatOldName = "";
+
+  document.addEventListener("DOMContentLoaded", () => {
+    const savedApi = localStorage.getItem("adminApiUrl");
+    const savedCatApi = localStorage.getItem("adminCatApiUrl");
+    if (savedApi) {
+      API_URL = savedApi;
+      document.getElementById("settingsApiUrl").value = savedApi;
+    }
+    if (savedCatApi) {
+      CAT_API_URL = savedCatApi;
+      document.getElementById("settingsCatApiUrl").value = savedCatApi;
+    }
+    const st = localStorage.getItem("adminDashTitle");
+    if (st) document.getElementById("settingsDashTitle").value = st;
+
+    updateCatSheetStatus();
+    loadData();
+    
+    // Wire crop inputs
+    ["cropXSlider","cropYSlider","cropWidthSlider","cropHeightSlider","zoomScaleSlider"].forEach(id => {
+      document.getElementById(id).addEventListener("input", drawCropCanvas);
+    });
+    document.getElementById("thumbFile").addEventListener("change", e => {
+      if (e.target.files?.[0]) openCropper(e.target.files[0]);
+    });
+  });
+
+  // ── CATEGORY STORAGE ──
+  function saveCustomCats() {
+    localStorage.setItem("adminCustomCats", JSON.stringify(customCategories));
+  }
+
+  function getAllCategories() {
+    return [...new Set([...customCategories])].sort((a,b) => a.localeCompare(b));
+  }
+
+  // ── LOAD CATEGORIES FROM SHEET ──
+  async function loadCategorySheet() {
+    if (!CAT_API_URL) return;
+    try {
+      const res = await fetch(CAT_API_URL + (CAT_API_URL.includes("?") ? "&" : "?") + "action=getCats");
+      const data = await res.json();
+      if (Array.isArray(data)) {
+        allCatSheetData = data;
+        data.forEach(item => {
+          if (item.Category && !customCategories.includes(item.Category)) {
+            customCategories.push(item.Category);
+          }
+        });
+        saveCustomCats();
+        updateCategoryDropdown();
+        renderDrawerCats();
+      }
+    } catch(e) {
+      console.warn("Category sheet load error:", e);
+    }
+  }
+
+  // Add category to Sheet
+  async function addCatToSheet(name, icon = "📁") {
+    if (!CAT_API_URL) return true;
+    try {
+      const res = await fetch(CAT_API_URL, {
+        method: "POST",
+        body: JSON.stringify({ action: "ADD_CAT", category: name, icon: icon, status: "Active", videoCount: 0, timestamp: Date.now() })
+      });
+      const result = await res.json();
+      if (result.status === "OK") {
+        allCatSheetData.push({ rowNumber: result.rowNumber, Category: name, Icon: icon, Status: "Active", VideoCount: 0 });
+        return true;
+      }
+      return false;
+    } catch(e) {
+      console.warn("Cat add error:", e);
+      return false;
+    }
+  }
+
+  // Rename category in Sheet
+  async function renameCatInSheet(oldName, newName) {
+    if (!CAT_API_URL) return true;
+    const found = allCatSheetData.find(c => c.Category === oldName);
+    if (!found) return true;
+    try {
+      const res = await fetch(CAT_API_URL, {
+        method: "POST",
+        body: JSON.stringify({ action: "RENAME_CAT", rowNumber: found.rowNumber, oldCategory: oldName, newCategory: newName, lastUpdated: new Date().toISOString() })
+      });
+      const result = await res.json();
+      if (result.status === "UPDATED") {
+        found.Category = newName;
+        return true;
+      }
+      return false;
+    } catch(e) {
+      console.warn("Cat rename error:", e);
+      return false;
+    }
+  }
+
+  // Delete category from Sheet
+  async function deleteCatFromSheet(catName) {
+    if (!CAT_API_URL) return true;
+    const found = allCatSheetData.find(c => c.Category === catName);
+    if (!found) return true;
+    try {
+      const res = await fetch(CAT_API_URL, {
+        method: "POST",
+        body: JSON.stringify({ action: "DELETE_CAT", rowNumber: found.rowNumber })
+      });
+      const result = await res.json();
+      if (result.status === "DELETED") {
+        allCatSheetData = allCatSheetData.filter(c => c.Category !== catName);
+        return true;
+      }
+      return false;
+    } catch(e) {
+      console.warn("Cat del error:", e);
+      return false;
+    }
+  }
+
+  // ── CATEGORY CRUD FOR UI ──
+  async function addCategoryFromDrawer() {
+    const inp = document.getElementById("newCatNameInput");
+    const name = inp.value.trim();
+    const icon = document.getElementById("newCatIconInput")?.value.trim() || "📁";
+
+    if (!name) {
+      showToast("Category name likhna zaroori hai!", "error");
+      return;
+    }
+    if (getAllCategories().map(c=>c.toLowerCase()).includes(name.toLowerCase())) {
+      showToast("Yeh category pehle se exist karti hai", "error");
+      return;
+    }
+
+    const btn = document.querySelector(".add-cat-row button");
+    const orig = btn.innerHTML;
+    btn.innerHTML = "⏳";
+    btn.disabled = true;
+
+    const sheetOk = await addCatToSheet(name, icon);
+    customCategories.push(name);
+    saveCustomCats();
+
+    inp.value = "";
+    if (document.getElementById("newCatIconInput")) document.getElementById("newCatIconInput").value = "";
+
+    btn.innerHTML = orig;
+    btn.disabled = false;
+
+    // Direct and instant data re-render on additions
+    renderDrawerCats();
+    updateCategoryDropdown();
+    renderCategories();
+
+    if (sheetOk && CAT_API_URL) showToast("✅ Category add ho gayi Sheet mein: " + name);
+    else if (!CAT_API_URL) showToast("✅ Category add: " + name + " (Sheet URL nahi)");
+    else showToast("⚠️ Category add hui lekin Sheet mein error", "error");
+  }
+
+  async function deleteCategoryChip(catName) {
+    if (!confirm(`"${catName}" category delete karein? (Videos delete nahi honge)`)) return;
+    showProgress(true, 30, "Category delete ho rahi hai...");
+    const sheetOk = await deleteCatFromSheet(catName);
+    customCategories = customCategories.filter(c => c !== catName);
+    saveCustomCats();
+
+    renderDrawerCats();
+    updateCategoryDropdown();
+    renderCategories();
+    showProgress(false);
+
+    if (sheetOk && CAT_API_URL) showToast("🗑️ Category Sheet se bhi delete ho gayi");
+    else showToast("🗑️ Category removed");
+  }
+
+  function openRenameCat(oldName) {
+    renameCatOldName = oldName;
+    document.getElementById("renameCatInput").value = oldName;
+    document.getElementById("renameCatModal").style.display = "flex";
+  }
+
+  async function confirmRenameCategory() {
+    const newName = document.getElementById("renameCatInput").value.trim();
+    if (!newName || newName === renameCatOldName) {
+      document.getElementById("renameCatModal").style.display = "none";
+      return;
+    }
+    document.getElementById("renameCatModal").style.display = "none";
+    showProgress(true, 40, "Category rename ho rahi hai...");
+
+    const sheetOk = await renameCatInSheet(renameCatOldName, newName);
+
+    // allVideos memory mein bhi category rename karo - taake UI instantly correct rahe
+    allVideos.forEach(v => {
+      if (v.Category && v.Category.trim().toLowerCase() === renameCatOldName.trim().toLowerCase()) {
+        v.Category = newName;
+      }
+    });
+
+    const idx = customCategories.indexOf(renameCatOldName);
+    if (idx !== -1) customCategories[idx] = newName;
+    else customCategories.push(newName);
+    saveCustomCats();
+
+    renderCategories();
+    renderDrawerCats();
+    updateCategoryDropdown();
+    // Background mein bhi fresh data load karo
+    await loadData();
+    renderDrawerCats();
+    updateCategoryDropdown();
+
+    showProgress(false);
+    if (sheetOk && CAT_API_URL) showToast("✏️ Renamed in Sheet: " + newName);
+    else showToast("✏️ Category renamed: " + newName);
+  }
+
+  function renderDrawerCats() {
+    const list = document.getElementById("drawerCatList");
+    if (!list) return;
+    const cats = getAllCategories();
+    list.innerHTML = cats.map(c => {
+      const count = allVideos.filter(v => (v.Category || '').trim().toLowerCase() === c.trim().toLowerCase()).length;
+      return `<div class="cat-chip" onclick="scrollToCategory('${esc(c)}')">
+        <div class="cc-left">
+          <div class="cc-dot"></div>
+          <span style="display:flex;align-items:center;gap:4px;" onclick="event.stopPropagation(); openRenameCat('${esc(c)}')">
+            ${esc(c)} ✏️
+          </span>
+        </div>
+        <div style="display:flex;align-items:center;gap:6px;">
+          <span class="cc-count">${count}</span>
+          <button class="cc-del" onclick="event.stopPropagation(); deleteCategoryChip('${esc(c)}')">🗑️</button>
+        </div>
+      </div>`;
+    }).join('');
+  }
+
+  function updateCategoryDropdown() {
+    const sel = document.getElementById("videoCategorySelect");
+    if (!sel) return;
+    const cats = getAllCategories();
+    sel.innerHTML = `<option value="">-- Select Category --</option>` + 
+      cats.map(c => `<option value="${esc(c)}">${esc(c)}</option>`).join('');
+  }
+
+  function scrollToCategory(catId) {
+    const el = document.getElementById("cat-sec-" + catId);
+    if (el) {
+      el.scrollIntoView({ behavior: "smooth", block: "start" });
+      closeDrawer();
+    }
+  }
+
+  function scrollToTop() {
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
+  function toggleDrawer() {
+    document.getElementById("sideDrawer").classList.toggle("open");
+    document.getElementById("drawerOverlay").classList.toggle("open");
+  }
+
+  function closeDrawer() {
+    document.getElementById("sideDrawer").classList.remove("open");
+    document.getElementById("drawerOverlay").classList.remove("open");
+  }
+
+  // ── PROGRESS ──
+  function showProgress(show, percent = 0, msg = "Processing...") {
+    document.getElementById("progressOverlay").style.display = show ? "flex" : "none";
+    if (show) updateProgress(percent, msg);
+  }
+
+  function updateProgress(percent, msg) {
+    const fill = document.getElementById("progressFillBar");
+    fill.style.width = percent + "%";
+    fill.innerText = Math.floor(percent) + "%";
+    document.getElementById("progressStatusText").innerText = msg;
+  }
+
+  function showToast(text, type = "success") {
+    const t = document.getElementById("toastMessage");
+    t.innerText = text;
+    t.style.borderLeftColor = type === "error" ? "#ff4444" : "#00ffaa";
+    t.style.background = type === "error" ? "#2a1010" : "#1a2a1a";
+    t.style.display = "block";
+    setTimeout(() => { t.style.display = "none"; }, 3000);
+  }
+
+  // ── LOAD DATA ──
+  async function loadData() {
+    try {
+      showProgress(true, 10, "Fetching videos...");
+      const res = await fetch(API_URL);
+      const data = await res.json();
+      allVideos = Array.isArray(data) ? data.map(item => ({
+        rowNumber: item.rowNumber,
+        Name: item.Name || "",
+        Category: item.Category || "",
+        URL: item.URL || "#",
+        Thumbnail: item.Thumbnail || "",
+        FileId: item.FileId || ""
+      })) : [];
+
+      updateProgress(60, "Loading categories...");
+      await loadCategorySheet();
+      updateProgress(100, "Rendering...");
+      setTimeout(() => showProgress(false), 300);
+
+      renderCategories();
+      updateCategoryDropdown();
+    } catch (e) {
+      showProgress(false);
+      showToast("Load error: " + e.message, "error");
+      allVideos = [];
+      renderCategories();
+      updateCategoryDropdown();
+    }
+  }
+
+  // ── RENDER ──
+  // Rule fixed: Removed hardcoded default order. Just custom user categories now.
+  function getActiveCats() {
+    return getAllCategories();
+  }
+
+  function esc(str) {
+    if (!str) return '';
+    return String(str).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[m]);
+  }
+
+  function renderCategories() {
+    const container = document.getElementById("categoriesContainer");
+    const categories = getActiveCats();
+    
+    if (!categories.length) {
+      container.innerHTML = `<div style="background:#0f1624;border-radius:28px;padding:32px;text-align:center;border:1px dashed #1e3a5f;color:var(--muted);font-size:0.9rem;">
+        Pehle menu se <strong>Category add karo</strong> ya naya video insert karo!
+      </div>`;
+      return;
+    }
+
+    let html = "";
+    for (const cat of categories) {
+      const vids = allVideos.filter(v => (v.Category || '').trim().toLowerCase() === cat.trim().toLowerCase());
+      html += `<div class="category-card" id="cat-sec-${esc(cat)}">
+        <div class="category-header">
+          <div class="cat-title-group">
+            <h2 class="category-title">${esc(cat)}</h2>
+            <span class="category-badge">${vids.length} videos</span>
+          </div>
+          <div class="cat-actions">
+            <button class="cat-action-btn" onclick="openAddModal('${esc(cat)}')">➕ Add Video</button>
+            <button class="cat-action-btn" onclick="openRenameCat('${esc(cat)}')">✏️ Rename</button>
+            <button class="cat-action-btn del-cat" onclick="deleteCategoryChip('${esc(cat)}')">🗑️ Delete</button>
+          </div>
+        </div>
+        <div class="horizontal-scroll">`;
+      
+      if (!vids.length) {
+        html += `<div class="empty-cat-msg">No videos found in this category</div>`;
+      } else {
+        for (const v of vids) {
+          const thumb = v.Thumbnail || 'https://placehold.co/300x180/2a3555/white?text=No+Image';
+          html += `<div class="video-card" data-url="${esc(v.URL)}">
+            <div class="thumb-wrapper">
+              <img src="${esc(thumb)}" loading="lazy" onerror="this.src='https://placehold.co/300x180/2a3555/white?text=Err'">
+            </div>
+            <div class="video-info">
+              <div class="video-name">${esc(v.Name)}</div>
+              <div class="video-url">${v.URL.length>42 ? esc(v.URL.substring(0,40))+'...' : esc(v.URL)}</div>
+              <div class="video-actions">
+                <button class="small-edit" data-row="${v.rowNumber}" data-name="${esc(v.Name)}" data-cat="${esc(v.Category)}" data-url="${esc(v.URL)}" data-thumb="${esc(v.Thumbnail)}" data-fileid="${esc(v.FileId)}">✏️ Edit</button>
+                <button class="small-delete" data-row="${v.rowNumber}" data-name="${esc(v.Name)}">🗑️ Del</button>
+              </div>
+            </div>
+          </div>`;
+        }
+      }
+      html += `</div></div>`;
+    }
+    container.innerHTML = html;
+    attachEvents();
+    renderDrawerCats();
+  }
+
+  function attachEvents() {
+    document.querySelectorAll(".small-edit").forEach(btn => {
+      btn.addEventListener("click", e => {
+        e.stopPropagation();
+        openEditModal(parseInt(btn.dataset.row), btn.dataset.name, btn.dataset.cat, btn.dataset.url, btn.dataset.thumb, btn.dataset.fileid);
+      });
+    });
+
+    document.querySelectorAll(".small-delete").forEach(btn => {
+      btn.addEventListener("click", e => {
+        e.stopPropagation();
+        if (confirm(`Delete "${btn.dataset.name}"?`)) deleteVideo(parseInt(btn.dataset.row));
+      });
+    });
+
+    document.querySelectorAll(".video-card").forEach(card => {
+      card.addEventListener("click", e => {
+        if (e.target.classList.contains("small-edit") || e.target.classList.contains("small-delete")) return;
+        const url = card.dataset.url;
+        if (url) window.open(url, "_blank");
+      });
+    });
+  }
+
+  // ── DELETE ──
+  async function deleteVideo(rowNumber) {
+    showProgress(true, 30, "Deleting...");
+    try {
+      const res = await fetch(API_URL, {
+        method: "POST",
+        body: JSON.stringify({ action: "DELETE", rowNumber })
+      });
+      const result = await res.json();
+      if (result.status === "DELETED") {
+        showToast("🗑️ Deleted!");
+        await loadData();
+      } else showToast("Delete failed: " + (result.message || ""), "error");
+    } catch (e) {
+      showToast("Error: " + e.message, "error");
+    } finally {
+      showProgress(false);
+    }
+  }
+
+  // ── MODAL OPEN ──
+  function openAddModal(prefillCat = "") {
+    isEditMode = false;
+    currentEditRow = null;
+    document.getElementById("modalTitle").innerText = "➕ Add Video";
+    document.getElementById("videoName").value = "";
+    document.getElementById("videoUrl").value = "";
+    document.getElementById("thumbFile").value = "";
+    document.getElementById("videoCategorySelect").value = prefillCat || "";
+    document.getElementById("thumbBadge").className = "badge-req";
+    document.getElementById("thumbBadge").innerText = "Required";
+    document.getElementById("currentThumbRow").style.display = "none";
+    document.getElementById("replaceCbWrap").style.display = "none";
+    document.getElementById("globalModal").style.display = "flex";
+  }
+
+  function openEditModal(row, name, cat, url, thumb, fileid) {
+    isEditMode = true;
+    currentEditRow = row;
+    currentEditThumb = thumb;
+    currentEditFile = fileid || "";
+
+    document.getElementById("modalTitle").innerText = "✏️ Edit Video";
+    document.getElementById("videoName").value = name;
+    document.getElementById("videoUrl").value = url;
+    document.getElementById("videoCategorySelect").value = cat || "";
+    document.getElementById("thumbFile").value = "";
+    
+    document.getElementById("thumbBadge").className = "badge-opt";
+    document.getElementById("thumbBadge").innerText = "Optional";
+
+    if (thumb) {
+      document.getElementById("currentThumbImg").src = thumb;
+      document.getElementById("currentThumbRow").style.display = "flex";
+      document.getElementById("replaceCbWrap").style.display = "flex";
+      document.getElementById("replaceOldCb").checked = false;
+    } else {
+      document.getElementById("currentThumbRow").style.display = "none";
+      document.getElementById("replaceCbWrap").style.display = "none";
+    }
+
+    document.getElementById("globalModal").style.display = "flex";
+  }
+
+  // ── SAVE / UPDATE VIDEO ──
+  async function submitVideo() {
+    const name = document.getElementById("videoName").value.trim();
+    const category = document.getElementById("videoCategorySelect").value;
+    const url = document.getElementById("videoUrl").value.trim();
+    const fileInp = document.getElementById("thumbFile");
+    const file = fileInp.files?.[0];
+    const replaceMode = document.getElementById("replaceOldCb").checked;
+
+    if (!name || !category || !url) {
+      showToast("❌ Name, Category aur URL bharo", "error");
+      return;
+    }
+
+    document.getElementById("globalModal").style.display = "none";
+    showProgress(true, 10, "Preparing...");
+
+    let base64Thumb = null;
+    if (file) {
+      base64Thumb = await new Promise(resolve => {
+        const rd = new FileReader();
+        rd.onload = () => resolve(rd.result);
+        rd.readAsDataURL(file);
+      });
+    }
+
+    if (isEditMode && currentEditRow !== null) {
+      if (replaceMode) {
+        updateProgress(25, "Purani entry delete ho rahi hai...");
+        try {
+          const delRes = await fetch(API_URL, {
+            method: "POST",
+            body: JSON.stringify({ action: "DELETE", rowNumber: currentEditRow, keepImage: true })
+          });
+          const delResult = await delRes.json();
+          if (delResult.status !== "DELETED") {
+            showToast("Delete failed: " + (delResult.message||""), "error");
+            showProgress(false);
+            return;
+          }
+        } catch(e) {
+          showToast("Delete error: " + e.message, "error");
+          showProgress(false);
+          return;
+        }
+
+        updateProgress(65, "Nai entry add ho rahi hai...");
+        try {
+          const payload = base64Thumb ? { name, category, url, thumbnail: base64Thumb } : { name, category, url, existingThumbUrl: currentEditThumb, existingFileId: currentEditFile };
+          const res = await fetch(API_URL, {
+            method: "POST",
+            body: JSON.stringify(payload)
+          });
+          const result = await res.json();
+          if (result.status === "OK") {
+            showToast("✅ Entry replace ho gayi!");
+            await loadData();
+          } else showToast("Add failed: " + (result.message||""), "error");
+        } catch(e) {
+          showToast("Error: " + e.message, "error");
+        } finally {
+          showProgress(false);
+        }
+        return;
+      }
+
+      updateProgress(30, "Updating record...");
+      try {
+        const payload = { action: "EDIT", rowNumber: currentEditRow, name, category, url };
+        if (base64Thumb) payload.thumbnail = base64Thumb;
+
+        const res = await fetch(API_URL, {
+          method: "POST",
+          body: JSON.stringify(payload)
+        });
+        const result = await res.json();
+        if (result.status === "UPDATED") {
+          showToast("✅ Video updated!");
+          await loadData();
+        } else showToast("Update failed: " + (result.message || ""), "error");
+      } catch (e) {
+        showToast("Error: " + e.message, "error");
+      } finally {
+        showProgress(false);
+      }
+    } else {
+      if (!base64Thumb) {
+        showToast("❌ Thumbnail picture choose karo", "error");
+        showProgress(false);
+        document.getElementById("globalModal").style.display = "flex";
+        return;
+      }
+      updateProgress(40, "Saving video to sheet...");
+      try {
+        const res = await fetch(API_URL, {
+          method: "POST",
+          body: JSON.stringify({ name, category, url, thumbnail: base64Thumb })
+        });
+        const result = await res.json();
+        if (result.status === "OK") {
+          showToast("✅ Video added successfully!");
+          await loadData();
+        } else showToast("Add failed: " + (result.message || ""), "error");
+      } catch (e) {
+        showToast("Error: " + e.message, "error");
+      } finally {
+        showProgress(false);
+      }
+    }
+  }
+
+  // ── SETTINGS ──
+  function openSettings() {
+    document.getElementById("settingsPanel").style.display = "flex";
+  }
+
+  function saveSettings() {
+    const newUrl = document.getElementById("settingsApiUrl").value.trim();
+    const newCatUrl = document.getElementById("settingsCatApiUrl").value.trim();
+    const newTitle = document.getElementById("settingsDashTitle").value.trim();
+
+    if (newUrl) { API_URL = newUrl; localStorage.setItem("adminApiUrl", newUrl); }
+    if (newCatUrl) { CAT_API_URL = newCatUrl; localStorage.setItem("adminCatApiUrl", newCatUrl); }
+    if (newTitle) {
+      localStorage.setItem("adminDashTitle", newTitle);
+      document.querySelector(".logo-area h2").innerText = "🎬 " + newTitle;
+    }
+
+    document.getElementById("settingsPanel").style.display = "none";
+    showToast("✅ Settings saved!");
+    updateCatSheetStatus();
+    loadData();
+  }
+
+  // ── NEW SHEET ──
+  function openNewSheetPanel() {
+    document.getElementById("newSheetPanel").style.display = "flex";
+  }
+
+  function copyAppsScriptCode() {
+    const code = document.getElementById("appsScriptCodeBlock").innerText;
+    navigator.clipboard.writeText(code).then(() => showToast("✅ Code copied!")).catch(() => {
+      const ta = document.createElement("textarea");
+      ta.value = code; document.body.appendChild(ta); ta.select();
+      document.execCommand("copy"); document.body.removeChild(ta);
+      showToast("✅ Code copied!");
+    });
+  }
+
+  // ── CROPPER ──
+  let cropImg = new Image();
+  let naturalW = 1, naturalH = 1;
+  let zoomVal = 0.45, cropW = 240, cropH = 180, cropX = 0, cropY = 0;
+
+  function openCropper(file) {
+    const reader = new FileReader();
+    reader.onload = e => {
+      cropImg = new Image();
+      cropImg.onload = () => {
+        naturalW = cropImg.width; naturalH = cropImg.height;
+        zoomVal = 0.45; cropW = Math.min(380, naturalW); cropH = Math.min(260, naturalH); cropX = 0; cropY = 0;
+        
+        document.getElementById("cropXSlider").max = naturalW - cropW;
+        document.getElementById("cropYSlider").max = naturalH - cropH;
+        document.getElementById("cropWidthSlider").max = naturalW;
+        document.getElementById("cropHeightSlider").max = naturalH;
+
+        document.getElementById("cropXSlider").value = 0;
+        document.getElementById("cropYSlider").value = 0;
+        document.getElementById("cropWidthSlider").value = cropW;
+        document.getElementById("cropHeightSlider").value = cropH;
+        document.getElementById("zoomScaleSlider").value = 45;
+
+        document.getElementById("cropToolModal").style.display = "flex";
+        drawCropCanvas();
+      };
+      cropImg.src = e.target.result;
+    };
+    reader.readAsDataURL(file);
+  }
+
+  function drawCropCanvas() {
+    const cvs = document.getElementById("cropCanvas");
+    const ctx = cvs.getContext("2d");
+
+    const cv = parseFloat(document.getElementById("zoomScaleSlider").value);
+    zoomVal = cv / 100;
+    cropW = parseInt(document.getElementById("cropWidthSlider").value);
+    cropH = parseInt(document.getElementById("cropHeightSlider").value);
+
+    document.getElementById("cropXSlider").max = Math.max(0, naturalW - cropW);
+    document.getElementById("cropYSlider").max = Math.max(0, naturalH - cropH);
+    cropX = parseInt(document.getElementById("cropXSlider").value);
+    cropY = parseInt(document.getElementById("cropYSlider").value);
+
+    cvs.width = Math.min(600, naturalW * zoomVal);
+    cvs.height = Math.min(450, naturalH * zoomVal);
+
+    ctx.clearRect(0,0,cvs.width,cvs.height);
+    ctx.drawImage(cropImg, 0, 0, naturalW, naturalH, 0, 0, cvs.width, cvs.height);
+
+    document.getElementById("xPosVal").innerText = cropX + "px";
+    document.getElementById("yPosVal").innerText = cropY + "px";
+    document.getElementById("widthVal").innerText = cropW + "px";
+    document.getElementById("heightVal").innerText = cropH + "px";
+    document.getElementById("zoomPercent").innerText = Math.floor(zoomVal*100) + "%";
+
+    const sBox = document.getElementById("cropSelectionBox");
+    sBox.style.left = (cropX * zoomVal) + "px";
+    sBox.style.top = (cropY * zoomVal) + "px";
+    sBox.style.width = (cropW * zoomVal) + "px";
+    sBox.style.height = (cropH * zoomVal) + "px";
+  }
+
+  function applyCrop() {
+    const fx = parseInt(document.getElementById("cropXSlider").value);
+    const fy = parseInt(document.getElementById("cropYSlider").value);
+    const fw = Math.min(cropW, naturalW - fx);
+    const fh = Math.min(cropH, naturalH - fy);
+
+    if (fw <= 0 || fh <= 0) {
+      showToast("Invalid crop area", "error");
+      return;
+    }
+
+    const tmp = document.createElement("canvas");
+    tmp.width = fw; tmp.height = fh;
+    tmp.getContext("2d").drawImage(cropImg, fx, fy, fw, fh, 0, 0, fw, fh);
+
+    tmp.toBlob(blob => {
+      const f = new File([blob], "cropped.jpg", { type: "image/jpeg" });
+      const dt = new DataTransfer();
+      dt.items.add(f);
+      document.getElementById("thumbFile").files = dt.files;
+      showToast("✅ Crop applied!");
+      document.getElementById("cropToolModal").style.display = "none";
+    }, "image/jpeg", 0.9);
+  }
+
+  // ── BUTTON WIRING ──
+  document.getElementById("openMiniImageBtn").addEventListener("click", () => {
+    const inp = document.getElementById("thumbFile");
+    if (inp.files?.[0]) openCropper(inp.files[0]);
+    else showToast("Pehle image select karo", "error");
+  });
+  document.getElementById("applyCropSaveBtn").addEventListener("click", applyCrop);
+  document.getElementById("cancelCropToolBtn").addEventListener("click", () => document.getElementById("cropToolModal").style.display = "none");
+  document.getElementById("closeCropModalBtn").addEventListener("click", () => document.getElementById("cropToolModal").style.display = "none");
+  document.getElementById("closeModalBtn").onclick = () => document.getElementById("globalModal").style.display = "none";
+  document.getElementById("modalSubmitBtn").onclick = submitVideo;
+
+  // ── APPLY SAVED TITLE ──
+  const savedTitle = localStorage.getItem("adminDashTitle");
+  if (savedTitle) document.querySelector(".logo-area h2").innerText = "🎬 " + savedTitle;
+
+  // ── CAT SHEET STATUS ──
+  function updateCatSheetStatus() {
+    const el = document.getElementById("catSheetStatusText");
+    if (!el) return;
+    if (CAT_API_URL) {
+      el.style.color = "#2ecc71";
+      el.innerText = "✅ Connected";
+    } else {
+      el.style.color = "#ffaa33";
+      el.innerText = "URL set nahi";
+    }
+  }
+</script>
+</body>
+</html>
