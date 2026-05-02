@@ -652,6 +652,17 @@ function doPost(request) {
       var catSheet = getOrCreateCatSheet();
       catSheet.getRange(data.rowNumber, 1).setValue(data.newCategory);
       catSheet.getRange(data.rowNumber, 5).setValue(data.lastUpdated || new Date().toISOString());
+      // Sheet1 mein bhi saare videos ka category rename karo
+      var ss = SpreadsheetApp.getActiveSpreadsheet();
+      var vidSheet = ss.getSheetByName(SHEET_NAME);
+      if (vidSheet && data.oldCategory) {
+        var vData = vidSheet.getDataRange().getValues();
+        for (var vi = 1; vi < vData.length; vi++) {
+          if (String(vData[vi][3]).trim().toLowerCase() === String(data.oldCategory).trim().toLowerCase()) {
+            vidSheet.getRange(vi + 1, 4).setValue(data.newCategory);
+          }
+        }
+      }
       return jsonOut({ status: "UPDATED" });
     }
     
@@ -924,7 +935,7 @@ function jsonOut(obj) {
     try {
       const res = await fetch(CAT_API_URL, {
         method: "POST",
-        body: JSON.stringify({ action: "RENAME_CAT", rowNumber: found.rowNumber, newCategory: newName, lastUpdated: new Date().toISOString() })
+        body: JSON.stringify({ action: "RENAME_CAT", rowNumber: found.rowNumber, oldCategory: oldName, newCategory: newName, lastUpdated: new Date().toISOString() })
       });
       const result = await res.json();
       if (result.status === "UPDATED") {
@@ -1033,12 +1044,22 @@ function jsonOut(obj) {
 
     const sheetOk = await renameCatInSheet(renameCatOldName, newName);
 
+    // allVideos memory mein bhi category rename karo - taake UI instantly correct rahe
+    allVideos.forEach(v => {
+      if (v.Category && v.Category.trim().toLowerCase() === renameCatOldName.trim().toLowerCase()) {
+        v.Category = newName;
+      }
+    });
+
     const idx = customCategories.indexOf(renameCatOldName);
     if (idx !== -1) customCategories[idx] = newName;
     else customCategories.push(newName);
     saveCustomCats();
 
-    // Fix refresh issue: Instant refresh UI and re-fetch data for consistent view
+    renderCategories();
+    renderDrawerCats();
+    updateCategoryDropdown();
+    // Background mein bhi fresh data load karo
     await loadData();
     renderDrawerCats();
     updateCategoryDropdown();
@@ -1053,7 +1074,7 @@ function jsonOut(obj) {
     if (!list) return;
     const cats = getAllCategories();
     list.innerHTML = cats.map(c => {
-      const count = allVideos.filter(v => v.Category === c).length;
+      const count = allVideos.filter(v => (v.Category || '').trim().toLowerCase() === c.trim().toLowerCase()).length;
       return `<div class="cat-chip" onclick="scrollToCategory('${esc(c)}')">
         <div class="cc-left">
           <div class="cc-dot"></div>
@@ -1176,7 +1197,7 @@ function jsonOut(obj) {
 
     let html = "";
     for (const cat of categories) {
-      const vids = allVideos.filter(v => v.Category === cat);
+      const vids = allVideos.filter(v => (v.Category || '').trim().toLowerCase() === cat.trim().toLowerCase());
       html += `<div class="category-card" id="cat-sec-${esc(cat)}">
         <div class="category-header">
           <div class="cat-title-group">
