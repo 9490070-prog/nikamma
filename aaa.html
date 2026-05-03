@@ -631,8 +631,10 @@ function doGet(e) {
   var data = sheet.getDataRange().getValues();
   var result = [];
   for (var i = 1; i < data.length; i++) {
+    if (!data[i][2] && !data[i][4]) continue; // empty rows skip
     result.push({
       rowNumber: i - 1,
+      FileID: data[i][1] || "",
       Name: data[i][2],
       Category: data[i][3],
       URL: data[i][4],
@@ -683,7 +685,6 @@ function doPost(request) {
     if (data.action === "RENAME_CAT") {
       var catSheet = getOrCreateCatSheet();
       catSheet.getRange(data.rowNumber, 1).setValue(data.newCategory);
-      if (data.newIcon) catSheet.getRange(data.rowNumber, 2).setValue(data.newIcon);
       catSheet.getRange(data.rowNumber, 5).setValue(data.lastUpdated || new Date().toISOString());
       // Sheet1 mein bhi saare videos ka category rename karo
       var ss = SpreadsheetApp.getActiveSpreadsheet();
@@ -822,15 +823,7 @@ function jsonOut(obj) {
 <div id="renameCatModal">
   <div class="rename-box">
     <h3>✏️ Rename Category</h3>
-    <input type="text" id="renameCatInput" placeholder="New category name..." onkeydown="if(event.key==='Enter')confirmRenameCategory()" style="margin-bottom:10px;">
-    <input type="text" id="renameCatIconInput" placeholder="Icon (e.g. 🎬)" style="margin-bottom:12px;">
-    <label style="display:flex;align-items:center;gap:10px;background:rgba(255,170,0,0.08);border:1px solid rgba(255,170,0,0.25);border-radius:12px;padding:10px 14px;cursor:pointer;margin-bottom:4px;">
-      <input type="checkbox" id="renameCatReplace" style="width:18px;height:18px;accent-color:var(--gold);cursor:pointer;flex-shrink:0;">
-      <span style="font-size:0.78rem;color:#e8d090;line-height:1.5;">
-        <strong>Replace Mode</strong> — Old row delete ho k naya add hoga<br>
-        <span style="color:#8a9ab0;font-size:0.7rem;">(Sirf naam/icon badle to yeh off rakho)</span>
-      </span>
-    </label>
+    <input type="text" id="renameCatInput" placeholder="New category name..." onkeydown="if(event.key==='Enter')confirmRenameCategory()">
     <div class="rename-btns">
       <button onclick="confirmRenameCategory()" style="background:var(--accent); color:black;">Update</button>
       <button onclick="document.getElementById('renameCatModal').style.display='none'" style="background:#334155; color:white;">Cancel</button>
@@ -968,27 +961,19 @@ function jsonOut(obj) {
     }
   }
 
-  // Rename category in Sheet (normal mode — row wahi rahe)
-  async function renameCatInSheet(oldName, newName, newIcon) {
+  // Rename category in Sheet
+  async function renameCatInSheet(oldName, newName) {
     if (!CAT_API_URL) return true;
     const found = allCatSheetData.find(c => c.Category === oldName);
     if (!found) return true;
     try {
       const res = await fetch(CAT_API_URL, {
         method: "POST",
-        body: JSON.stringify({
-          action      : "RENAME_CAT",
-          rowNumber   : found.rowNumber,
-          oldCategory : oldName,
-          newCategory : newName,
-          newIcon     : newIcon || found.Icon || "📁",
-          lastUpdated : new Date().toISOString()
-        })
+        body: JSON.stringify({ action: "RENAME_CAT", rowNumber: found.rowNumber, oldCategory: oldName, newCategory: newName, lastUpdated: new Date().toISOString() })
       });
       const result = await res.json();
       if (result.status === "UPDATED") {
         found.Category = newName;
-        found.Icon     = newIcon || found.Icon;
         return true;
       }
       return false;
@@ -1079,44 +1064,21 @@ function jsonOut(obj) {
   function openRenameCat(oldName) {
     renameCatOldName = oldName;
     document.getElementById("renameCatInput").value = oldName;
-    // Existing icon prefill karo
-    const found = allCatSheetData.find(c => c.Category === oldName);
-    document.getElementById("renameCatIconInput").value = (found && found.Icon) ? found.Icon : "📁";
-    // Replace checkbox hamesha off se shuru karo
-    document.getElementById("renameCatReplace").checked = false;
     document.getElementById("renameCatModal").style.display = "flex";
   }
 
   async function confirmRenameCategory() {
-    const newName    = document.getElementById("renameCatInput").value.trim();
-    const newIcon    = document.getElementById("renameCatIconInput").value.trim() || "📁";
-    const replaceMode = document.getElementById("renameCatReplace").checked;
-
-    if (!newName || (newName === renameCatOldName && !replaceMode)) {
+    const newName = document.getElementById("renameCatInput").value.trim();
+    if (!newName || newName === renameCatOldName) {
       document.getElementById("renameCatModal").style.display = "none";
       return;
     }
     document.getElementById("renameCatModal").style.display = "none";
-    showProgress(true, 30, "Category update ho rahi hai...");
+    showProgress(true, 40, "Category rename ho rahi hai...");
 
-    let sheetOk = false;
+    const sheetOk = await renameCatInSheet(renameCatOldName, newName);
 
-    if (replaceMode) {
-      // Replace Mode: old row delete → new row add (jaise Edit mode mein)
-      updateProgress(40, "Old row delete ho rahi hai...");
-      const delOk = await deleteCatFromSheet(renameCatOldName);
-      updateProgress(65, "Naya row add ho raha hai...");
-      const addOk = await addCatToSheet(newName, newIcon);
-      sheetOk = delOk && addOk;
-    } else {
-      // Normal Mode: sirf naam/icon update (row wahi rahe)
-      updateProgress(50, "Sheet update ho rahi hai...");
-      sheetOk = await renameCatInSheet(renameCatOldName, newName, newIcon);
-    }
-
-    updateProgress(80, "UI update ho rahi hai...");
-
-    // Memory mein bhi category rename karo
+    // allVideos memory mein bhi category rename karo - taake UI instantly correct rahe
     allVideos.forEach(v => {
       if (v.Category && v.Category.trim().toLowerCase() === renameCatOldName.trim().toLowerCase()) {
         v.Category = newName;
@@ -1131,14 +1093,14 @@ function jsonOut(obj) {
     renderCategories();
     renderDrawerCats();
     updateCategoryDropdown();
+    // Background mein bhi fresh data load karo
     await loadData();
     renderDrawerCats();
     updateCategoryDropdown();
 
     showProgress(false);
-    const modeLabel = replaceMode ? "🔄 Replace" : "✏️ Rename";
-    if (sheetOk && CAT_API_URL) showToast(modeLabel + " done: " + newName);
-    else showToast(modeLabel + " (local): " + newName);
+    if (sheetOk && CAT_API_URL) showToast("✏️ Renamed in Sheet: " + newName);
+    else showToast("✏️ Category renamed: " + newName);
   }
 
   function renderDrawerCats() {
@@ -1467,7 +1429,7 @@ function jsonOut(obj) {
 
       updateProgress(30, "Updating record...");
       try {
-        const payload = { action: "EDIT", rowNumber: currentEditRow, name, category, url };
+        const payload = { action: "EDIT", rowNumber: currentEditRow, name, category, url, existingFileId: currentEditFile };
         if (base64Thumb) payload.thumbnail = base64Thumb;
 
         const res = await fetch(API_URL, {
