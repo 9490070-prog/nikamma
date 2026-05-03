@@ -822,6 +822,7 @@ function jsonOut(obj) {
   <div class="rename-box">
     <h3>✏️ Rename Category</h3>
     <input type="text" id="renameCatInput" placeholder="New category name..." onkeydown="if(event.key==='Enter')confirmRenameCategory()">
+    <input type="text" id="renameCatIcon" placeholder="Icon (e.g. 🎬)" style="margin-top:8px;">
     <label style="display:flex;align-items:center;gap:10px;background:rgba(255,170,0,0.08);border:1px solid rgba(255,170,0,0.25);border-radius:12px;padding:10px 14px;cursor:pointer;margin-top:10px;">
       <input type="checkbox" id="renameCatReplace" style="width:18px;height:18px;accent-color:var(--gold);cursor:pointer;flex-shrink:0;">
       <span style="font-size:0.78rem;color:#e8d090;line-height:1.5;">
@@ -966,6 +967,7 @@ function jsonOut(obj) {
     }
   }
 
+  // Rename category in Sheet
   async function renameCatInSheet(oldName, newName, newIcon) {
     if (!CAT_API_URL) return true;
     const found = allCatSheetData.find(c => c.Category === oldName);
@@ -1076,20 +1078,22 @@ function jsonOut(obj) {
   function openRenameCat(oldName) {
     renameCatOldName = oldName;
     document.getElementById("renameCatInput").value = oldName;
+    const found = allCatSheetData.find(c => c.Category === oldName);
+    document.getElementById("renameCatIcon").value = (found && found.Icon) ? found.Icon : "📁";
     document.getElementById("renameCatReplace").checked = false;
     document.getElementById("renameCatModal").style.display = "flex";
   }
 
   async function confirmRenameCategory() {
     const newName     = document.getElementById("renameCatInput").value.trim();
-    const newIcon     = document.getElementById("renameCatIcon") ? document.getElementById("renameCatIcon").value.trim() || "📁" : "📁";
+    const newIcon     = document.getElementById("renameCatIcon").value.trim() || "📁";
     const replaceMode = document.getElementById("renameCatReplace").checked;
 
     if (!newName) {
       document.getElementById("renameCatModal").style.display = "none";
       return;
     }
-    // Agar naam bhi same ho AUR replace bhi off ho to kuch karne ki zaroorat nahi
+    // Kuch bhi same ho — replace off ho aur naam bhi same ho to kuch karne ki zaroorat nahi
     if (newName === renameCatOldName && !replaceMode) {
       document.getElementById("renameCatModal").style.display = "none";
       return;
@@ -1102,13 +1106,10 @@ function jsonOut(obj) {
     if (replaceMode) {
       updateProgress(35, "Old row delete ho rahi hai...");
       await deleteCatFromSheet(renameCatOldName);
-
       updateProgress(55, "Naya row add ho raha hai...");
       await addCatToSheet(newName, newIcon);
-
       updateProgress(75, "Sheet1 videos update ho rahe hain...");
       sheetOk = await renameCatInSheet(renameCatOldName, newName, newIcon);
-
     } else {
       updateProgress(50, "Sheet update ho rahi hai...");
       sheetOk = await renameCatInSheet(renameCatOldName, newName, newIcon);
@@ -1116,7 +1117,6 @@ function jsonOut(obj) {
 
     updateProgress(90, "UI update ho rahi hai...");
 
-    // Memory mein bhi update karo
     allVideos.forEach(v => {
       if (v.Category && v.Category.trim().toLowerCase() === renameCatOldName.trim().toLowerCase()) {
         v.Category = newName;
@@ -1136,8 +1136,7 @@ function jsonOut(obj) {
     updateCategoryDropdown();
 
     showProgress(false);
-    const label = replaceMode ? "🔄 Replace" : "✏️ Rename";
-    showToast(label + " done: " + newName);
+    showToast((replaceMode ? "🔄 Replace" : "✏️ Rename") + " done: " + newName);
   }
 
   function renderDrawerCats() {
@@ -1595,11 +1594,25 @@ function jsonOut(obj) {
 
   function cmDeleteCol(i) {
     const col = cmCols[cmActiveTab][i];
-    if (!confirm(`"${col}" column delete karo?`)) return;
+    if (!confirm(`"${col}" column sheet se delete karo?`)) return;
+    if (API_URL) {
+      fetch(API_URL, {
+        method: "POST",
+        body: JSON.stringify({
+          action    : "DELETE_COLUMN",
+          sheetType : cmActiveTab === "sheet1" ? "SHEET1" : "CAT",
+          colName   : col
+        })
+      }).then(r => r.json())
+        .then(result => {
+          if (result.status === "DELETED") showToast("🗑️ Column sheet se delete ho gaya: " + col);
+          else showToast("Sheet error: " + (result.message || result.status || ""), "error");
+        })
+        .catch(() => showToast("⚠️ Sheet se delete fail", "error"));
+    }
     cmCols[cmActiveTab].splice(i, 1);
     cmSaveCols();
     cmRender();
-    showToast("🗑️ Column removed — Apply dabao sheet sync ke liye");
   }
 
   async function cmApply() {
