@@ -631,10 +631,8 @@ function doGet(e) {
   var data = sheet.getDataRange().getValues();
   var result = [];
   for (var i = 1; i < data.length; i++) {
-    if (!data[i][2] && !data[i][4]) continue;
     result.push({
       rowNumber: i - 1,
-      FileID: data[i][1] || "",
       Name: data[i][2],
       Category: data[i][3],
       URL: data[i][4],
@@ -1588,11 +1586,28 @@ function jsonOut(obj) {
 
   function cmDeleteCol(i) {
     const col = cmCols[cmActiveTab][i];
-    if (!confirm(`"${col}" column delete karo?`)) return;
+    if (!confirm(`"${col}" column sheet se delete karo?`)) return;
+
+    // Pehle sheet se delete karo
+    if (API_URL) {
+      fetch(API_URL, {
+        method: "POST",
+        body: JSON.stringify({
+          action    : "DELETE_COLUMN",
+          sheetType : cmActiveTab === "sheet1" ? "SHEET1" : "CAT",
+          colName   : col
+        })
+      }).then(r => r.json()).then(result => {
+        if (result.status === "DELETED") showToast("🗑️ Sheet se delete ho gaya: " + col);
+        else if (result.status === "NOT_FOUND") showToast("⚠️ Sheet mein column nahi mila (local se hata diya)", "error");
+        else showToast("Sheet error: " + (result.message || ""), "error");
+      }).catch(() => showToast("⚠️ Sheet delete fail — local se hata diya", "error"));
+    }
+
+    // Local list se bhi hata do
     cmCols[cmActiveTab].splice(i, 1);
     cmSaveCols();
     cmRender();
-    showToast("🗑️ Column removed — Apply dabao sheet sync ke liye");
   }
 
   async function cmApply() {
