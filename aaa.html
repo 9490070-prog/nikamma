@@ -822,7 +822,6 @@ function jsonOut(obj) {
   <div class="rename-box">
     <h3>✏️ Rename Category</h3>
     <input type="text" id="renameCatInput" placeholder="New category name..." onkeydown="if(event.key==='Enter')confirmRenameCategory()">
-    <input type="text" id="renameCatIcon" placeholder="Icon (e.g. 🎬)" style="margin-top:8px;">
     <label style="display:flex;align-items:center;gap:10px;background:rgba(255,170,0,0.08);border:1px solid rgba(255,170,0,0.25);border-radius:12px;padding:10px 14px;cursor:pointer;margin-top:10px;">
       <input type="checkbox" id="renameCatReplace" style="width:18px;height:18px;accent-color:var(--gold);cursor:pointer;flex-shrink:0;">
       <span style="font-size:0.78rem;color:#e8d090;line-height:1.5;">
@@ -1077,18 +1076,21 @@ function jsonOut(obj) {
   function openRenameCat(oldName) {
     renameCatOldName = oldName;
     document.getElementById("renameCatInput").value = oldName;
-    const found = allCatSheetData.find(c => c.Category === oldName);
-    document.getElementById("renameCatIcon").value = (found && found.Icon) ? found.Icon : "📁";
     document.getElementById("renameCatReplace").checked = false;
     document.getElementById("renameCatModal").style.display = "flex";
   }
 
   async function confirmRenameCategory() {
     const newName     = document.getElementById("renameCatInput").value.trim();
-    const newIcon     = document.getElementById("renameCatIcon").value.trim() || "📁";
+    const newIcon     = document.getElementById("renameCatIcon") ? document.getElementById("renameCatIcon").value.trim() || "📁" : "📁";
     const replaceMode = document.getElementById("renameCatReplace").checked;
 
-    if (!newName || newName === renameCatOldName) {
+    if (!newName) {
+      document.getElementById("renameCatModal").style.display = "none";
+      return;
+    }
+    // Agar naam bhi same ho AUR replace bhi off ho to kuch karne ki zaroorat nahi
+    if (newName === renameCatOldName && !replaceMode) {
       document.getElementById("renameCatModal").style.display = "none";
       return;
     }
@@ -1102,7 +1104,7 @@ function jsonOut(obj) {
       await deleteCatFromSheet(renameCatOldName);
 
       updateProgress(55, "Naya row add ho raha hai...");
-      await addCatToSheet(newName, newIcon);   // ← icon pass ho raha hai
+      await addCatToSheet(newName, newIcon);
 
       updateProgress(75, "Sheet1 videos update ho rahe hain...");
       sheetOk = await renameCatInSheet(renameCatOldName, newName, newIcon);
