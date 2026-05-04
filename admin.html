@@ -1,1415 +1,1792 @@
 <!DOCTYPE html>
-<html lang="ur">
+<html lang="en">
 <head>
-    <meta name="theme-color" content="#121212">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="msapplication-navbutton-color" content="#121212">
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Nikamma 4k v3.9 | Ultimate HD</title>
-    
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;800&display=swap" rel="stylesheet">
-    <link href="https://vjs.zencdn.net/8.10.0/video-js.css" rel="stylesheet" />
-    <script src="https://vjs.zencdn.net/8.10.0/video.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/mpegts.js@1.7.3/dist/mpegts.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
-    <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    
-    <style>
-        :root { 
-            --main-color: #00bcd4; 
-            --dark-bg: #0b0b0b; 
-            --card-bg: #1a1a1a; 
-            --header-bg: #121212;
-            --splash-bg: radial-gradient(circle, #1a1a1a 0%, #0b0b0b 100%);
-            --max-width: 1200px;
-            --main-font: 'Poppins', sans-serif;
-            --primary: #007aff; 
-            --panel: rgba(15, 15, 15, 0.85);
-        }
-        
-        body { 
-            background: var(--dark-bg); color: white; 
-            font-family: var(--main-font); 
-            margin: 0; padding-bottom: 80px; overflow-x: hidden;
-            user-select: none; -webkit-tap-highlight-color: transparent;
-            transition: background 0.3s ease;
-        }
-        .container { max-width: var(--max-width); margin: 0 auto; width: 100%; }
-        
-        .exo-container { 
-            position: relative; 
-            width: 100%; 
-            background: #000; 
-            overflow: hidden; 
-            aspect-ratio: 16/9;
-        }
-        .exo-container video { 
-            width: 100%; 
-            height: 100%; 
-            transition: object-fit 0.3s ease, filter 0.1s ease; 
-            display: block;
-        }
-        .fit-contain { object-fit: contain; }
-        .fit-cover { object-fit: cover; }
-        .fit-fill { object-fit: fill; }
-        .exo-loader { 
-            position: absolute; 
-            inset: 0; 
-            display: flex; 
-            justify-content: center; 
-            align-items: center; 
-            z-index: 20; 
-            background: rgba(0,0,0,0.5); 
-        }
-        .spinner { 
-            width: 40px; 
-            height: 40px; 
-            border: 3px solid rgba(255,255,255,0.1); 
-            border-top-color: var(--primary); 
-            border-radius: 50%; 
-            animation: spin 0.8s linear infinite; 
-        }
-        .exo-overlay { 
-            position: absolute; 
-            inset: 0; 
-            background: linear-gradient(to top, rgba(0,0,0,0.8) 0%, transparent 50%, rgba(0,0,0,0.6) 100%); 
-            display: flex; 
-            flex-direction: column; 
-            justify-content: space-between; 
-            padding: 15px; 
-            opacity: 0; 
-            transition: opacity 0.3s ease; 
-            z-index: 10; 
-            pointer-events: none;
-        }
-        .exo-overlay.visible {
-            opacity: 1;
-            pointer-events: auto;
-        }
-        .top-bar { 
-            display: flex; 
-            justify-content: space-between; 
-            align-items: center; 
-            width: 100%;
-        }
-        .live-tag { 
-            background: #ff3b30; 
-            color: white; 
-            padding: 4px 12px; 
-            border-radius: 30px; 
-            font-size: 11px; 
-            font-weight: bold; 
-            letter-spacing: 1px;
-            box-shadow: 0 2px 6px rgba(0,0,0,0.3);
-        }
-        .menu-bar { 
-            display: flex; 
-            align-items: center; 
-            gap: 10px; 
-            background: var(--panel); 
-            padding: 8px 15px; 
-            border-radius: 12px; 
-            backdrop-filter: blur(10px); 
-            border: 1px solid rgba(255,255,255,0.1); 
-        }
-        .icon-btn { 
-            background: none; 
-            border: none; 
-            color: white; 
-            cursor: pointer; 
-            display: flex; 
-            align-items: center; 
-            transition: 0.2s; 
-            padding: 8px;
-            border-radius: 40px;
-        }
-        .icon-btn:active { transform: scale(0.95); background: rgba(255,255,255,0.1);}
-        .material-icons-round { font-size: 26px; }
-        .spacer { flex-grow: 1; }
-        .fit-mode-badge {
-            background: rgba(0,0,0,0.6);
-            padding: 4px 10px;
-            border-radius: 20px;
-            font-size: 11px;
-            font-weight: 500;
-            letter-spacing: 0.5px;
-            color: #ddd;
-        }
-        @keyframes spin { to { transform: rotate(360deg); } }
-        
-        .gesture-indicator {
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            background: rgba(0,0,0,0.7);
-            backdrop-filter: blur(10px);
-            border-radius: 40px;
-            padding: 12px 24px;
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            z-index: 10000;
-            opacity: 0;
-            transition: opacity 0.2s;
-            pointer-events: none;
-            font-size: 18px;
-            font-weight: bold;
-            color: white;
-            border: 1px solid rgba(255,255,255,0.2);
-        }
-        .gesture-indicator i { font-size: 24px; }
-        
-        #splash-screen {
-            position: fixed; top:0; left:0; width:100%; height:100%;
-            background: var(--splash-bg); z-index: 9999;
-            display: flex; flex-direction: column; align-items: center; justify-content: center;
-            transition: opacity 0.5s ease-out;
-        }
-        .splash-logo { width: 100px; height: 100px; border-radius: 20px; margin-bottom: 5px; box-shadow: 0 10px 30px rgba(0,0,0,0.6); animation: pulse 2s infinite; object-fit: cover; }
-        #splash-screen h2 { margin: 0; padding: 0; color: var(--main-color); font-weight: 800; text-transform: uppercase; letter-spacing: 2px; font-size: 24px; }
-        .splash-loader { margin-top: 10px !important; color: #444; font-size: 20px; }
-        @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.05); } 100% { transform: scale(1); } }
-        
-        header { background: var(--header-bg); padding: 12px 15px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 1000; border-bottom: 1px solid #222; height: 60px; box-sizing: border-box; }
-        .menu-icon-btn { font-size: 24px; cursor: pointer; color: var(--main-color); width: 36px; text-align: center; transition: transform 0.2s ease; }
-        .menu-icon-btn:active { transform: scale(0.9); }
-        .app-name { font-weight: 800; font-size: 18px; color: var(--main-color); letter-spacing: 0.5px; text-transform: uppercase; margin-left: 8px; }
-        
-        .category-section { margin-bottom: 25px; padding: 0 10px; }
-        .category-header { display: flex; justify-content: space-between; align-items: center; padding: 10px 5px; }
-        .category-title { display: flex; align-items: center; gap: 8px; font-weight: 600; color: #fff; font-size: 14px; text-transform: uppercase; letter-spacing: 0.5px; }
-        .category-title i { color: var(--main-color); font-size: 16px; }
-        .read-more-btn { background: rgba(0, 188, 212, 0.15); color: var(--main-color); border: 1px solid rgba(0, 188, 212, 0.3); padding: 4px 12px; border-radius: 20px; font-size: 11px; cursor: pointer; font-weight: 600; text-transform: uppercase; transition: 0.2s; }
-        .read-more-btn:active { transform: scale(0.95); background: var(--main-color); color: #000; }
-        
-        .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; padding: 5px 0; }
-        .card { background: var(--card-bg); border-radius: 10px; overflow: hidden; border: 1px solid #282828; cursor: pointer; transition: 0.3s; position: relative; }
-        .card img { width: 100%; aspect-ratio: 1/1; object-fit: cover; display: block; background: var(--card-bg); transition: filter 0.4s ease-out, opacity 0.3s ease; }
-        .card-title { font-size: 11px; padding: 6px 3px; text-align: center; color: #efefef; font-weight: 400; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; background: rgba(0,0,0,0.3); }
-        .card.playing { background: var(--main-color) !important; border-color: #fff; transform: scale(0.95); }
-        .card.playing .card-title { color: #000 !important; font-weight: 800; }
-        
-        .fav-badge { position: absolute; top: 5px; right: 5px; background: rgba(0,0,0,0.6); color: #fff; width: 26px; height: 26px; border-radius: 50%; display: flex; align-items: center; justify-content: center; z-index: 5; font-size: 12px; cursor: pointer; transition: 0.2s; border: 1px solid rgba(255,255,255,0.1); }
-        .fav-badge.active { color: #ff3b30; background: rgba(255,255,255,0.9); }
-        
-        .empty-state { text-align: center; padding: 60px 20px; color: #666; }
-        .empty-state i { font-size: 64px; margin-bottom: 20px; opacity: 0.5; }
-        .empty-state h3 { font-size: 18px; margin-bottom: 10px; color: #888; }
-        .empty-state p { font-size: 13px; color: #555; }
-        
-        .sidenav { 
-            height: 100%; width: 60%; max-width: 320px; position: fixed; z-index: 2005; top: 0; left: 0;
-            background: #111; overflow-x: hidden; transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1); 
-            transform: translateX(-100%); padding-top: 0; box-shadow: 10px 0 30px rgba(0,0,0,0.5);
-        }
-        .sidenav.open { transform: translateX(0); }
-        .nav-header { width: 100%; height: 160px; background: #000; position: relative; overflow: hidden; border-bottom: 2px solid var(--main-color); }
-        .nav-header img { width: 100%; height: 100%; object-fit: cover; }
-        .sidenav a { padding: 15px 25px; text-decoration: none; font-size: 15px; font-weight: 400; color: #bbb; display: flex; align-items: center; gap: 15px; border-bottom: 1px solid #1a1a1a; transition: 0.2s; }
-        .sidenav a:active { background: #222; color: var(--main-color); }
-        #menu-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 2004; opacity: 0; transition: opacity 0.4s ease; }
-        #menu-overlay.visible { display: block; opacity: 1; }
-        
-        .ptr-container {
-            position: fixed; top: 0; left: 0; right: 0; z-index: 9998; height: 70px;
-            transform: translateY(-70px); transition: transform 0.3s ease; background: #00bcd4;
-            display: flex; align-items: center; justify-content: center; gap: 12px;
-        }
-        .ptr-container span { color: white; font-weight: 700; font-size: 13px; letter-spacing: 1px; text-transform: uppercase; }
-        .ptr-container i { color: white; font-size: 20px; }
-        @keyframes ptrSpin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-        .ptr-spinner {
-            display: inline-block !important; width: 26px !important; height: 26px !important;
-            border: 3px solid rgba(255,255,255,0.35) !important; border-top: 3px solid #ffffff !important;
-            border-radius: 50% !important; animation: ptrSpin 0.7s linear infinite !important;
-            box-sizing: border-box !important; flex-shrink: 0 !important;
-        }
-        
-        .header-content { display: flex; width: 100%; max-width: var(--max-width); margin: 0 auto; align-items: center; justify-content: space-between; }
-        .header-left, .header-right { display: flex; align-items: center; gap: 12px; font-size: 18px; cursor: pointer; }
-        
-        #search-container { display: none; flex: 1; align-items: center; gap: 10px; margin: 0 20px; width: 100%; min-width: 0; }
-        #searchBar { 
-            flex: 1; min-width: 0; background: #222; border: 1px solid #333; color: white; 
-            padding: 8px 15px; border-radius: 20px; outline: none; font-size: 14px; 
-            font-family: var(--main-font); height: 38px; box-sizing: border-box; width: 100%;
-        }
-        
-        .search-close {
-            display: flex; align-items: center; justify-content: center; width: 38px; height: 38px;
-            background: rgba(255,255,255,0.1); border-radius: 50%; cursor: pointer; transition: 0.2s;
-            flex-shrink: 0; line-height: 1;
-        }
-        .search-close i { font-size: 18px; color: var(--main-color); }
-        .search-close:active { background: rgba(0,188,212,0.3); transform: scale(0.95); }
-        
-        #videoBox { display: none; width: 100%; background: #000; position: sticky; top: 60px; z-index: 1001; }
-        .slider { width: 100%; height: 200px; overflow: hidden; position: relative; background: #000; margin-bottom: 5px; }
-        .slides-track { display: flex; transition: 0.7s cubic-bezier(0.25, 1, 0.5, 1); height: 100%; }
-        .slide-item { min-width: 100%; height: 100%; }
-        .slide-item img { width: 100%; height: 100%; object-fit: cover; background: #000; transition: filter 0.4s ease-out; }
-        
-        /* Bottom Navigation Bar */
-        .bottom-nav { position: fixed; bottom: 0; width: 100%; background: rgba(18,18,18,0.95); display: flex; justify-content: space-around; padding: 10px 0; backdrop-filter: blur(10px); border-top: 1px solid #222; z-index: 1000; }
-        .nav-btn { text-align: center; font-size: 10px; color: #888; flex: 1; cursor: pointer; font-weight: 600; letter-spacing: 0.5px; text-transform: uppercase; }
-        .nav-btn i { font-size: 18px; margin-bottom: 2px; display: block; }
-        .nav-btn.active { color: var(--main-color); }
-        
-        /* More Section Styles */
-        .profile-container { padding: 20px; max-width: 600px; margin: 0 auto; }
-        .profile-card { background: var(--card-bg); border-radius: 15px; border: 1px solid #282828; padding: 20px; margin-bottom: 20px; text-align: center; }
-        .profile-pic { width: 80px; height: 80px; border-radius: 50%; object-fit: cover; border: 2px solid var(--main-color); margin-bottom: 10px; }
-        .profile-form input { width: 100%; background: #222; border: 1px solid #333; color: white; padding: 10px 15px; border-radius: 10px; outline: none; margin-bottom: 10px; font-family: var(--main-font); box-sizing: border-box; }
-        .profile-btn { background: var(--main-color); color: black; border: none; padding: 10px 20px; border-radius: 20px; font-weight: 600; cursor: pointer; width: 100%; margin-top: 5px; transition: 0.2s; }
-        .profile-btn:active { transform: scale(0.98); }
-        
-        .theme-selector { display: flex; justify-content: center; gap: 15px; margin: 15px 0; }
-        .theme-dot { width: 35px; height: 35px; border-radius: 50%; cursor: pointer; border: 2px solid white; transition: 0.2s; }
-        .theme-dot:active { transform: scale(0.9); }
-        
-        #update-overlay { display: none; position: fixed; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.9); z-index: 10000; flex-direction: column; align-items: center; justify-content: center; }
-        .update-box { background: var(--card-bg); padding: 30px; border-radius: 15px; border: 1px solid var(--main-color); text-align: center; width: 80%; max-width: 400px; }
-        .skeleton-card { background: linear-gradient(90deg, #1a1a1a 25%, #2a2a2a 50%, #1a1a1a 75%); background-size: 200% 100%; animation: loading 1.5s infinite; border-radius: 10px; aspect-ratio: 1/1; }
-        @keyframes loading { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
-        .data-save-badge { position: fixed; bottom: 70px; right: 10px; background: rgba(0,188,212,0.9); color: white; padding: 5px 10px; border-radius: 20px; font-size: 10px; font-weight: 600; z-index: 999; opacity: 0; transition: opacity 0.3s ease; pointer-events: none; }
-        .data-save-badge.show { opacity: 1; }
-        .no-update-badge { position: fixed; bottom: 70px; left: 10px; background: rgba(76, 175, 80, 0.9); color: white; padding: 5px 10px; border-radius: 20px; font-size: 10px; font-weight: 600; z-index: 999; opacity: 0; transition: opacity 0.3s ease; pointer-events: none; }
-        .no-update-badge.show { opacity: 1; }
-        .img-loading { filter: blur(8px); transform: scale(1.02); transition: filter 0.5s ease-out, transform 0.3s ease; }
-        .img-loaded { filter: blur(0); transform: scale(1); }
-        
-        .internet-checker { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(145deg, #0a0a0a 0%, #161616 100%); z-index: 30000; display: none; flex-direction: column; align-items: center; justify-content: center; text-align: center; backdrop-filter: blur(2px); }
-        .internet-checker .icon-wrapper { width: 120px; height: 120px; background: rgba(0,188,212,0.1); border-radius: 60px; display: flex; align-items: center; justify-content: center; margin-bottom: 25px; animation: pulseGlow 2s infinite; }
-        @keyframes pulseGlow { 0% { box-shadow: 0 0 0 0 rgba(0,188,212,0.4); } 70% { box-shadow: 0 0 0 15px rgba(0,188,212,0); } 100% { box-shadow: 0 0 0 0 rgba(0,188,212,0); } }
-        .internet-checker i { font-size: 65px; color: var(--main-color); }
-        .internet-checker h2 { font-size: 28px; font-weight: 800; margin: 15px 0 10px; color: #ffffff; letter-spacing: 0.5px; }
-        .internet-checker p { font-size: 16px; color: #aaaaaa; max-width: 290px; margin: 10px auto; line-height: 1.5; }
-        .internet-checker .detail-text { font-size: 13px; color: #666666; margin-top: 15px; padding: 8px 18px; background: rgba(255,255,255,0.05); border-radius: 40px; display: inline-block; }
-        .internet-checker .retry-btn { margin-top: 40px; background: linear-gradient(135deg, var(--main-color) 0%, #008c9e 100%); color: #ffffff; padding: 14px 42px; border: none; border-radius: 50px; font-weight: 700; font-size: 16px; cursor: pointer; display: flex; align-items: center; gap: 12px; transition: all 0.3s ease; box-shadow: 0 8px 20px rgba(0,188,212,0.25); }
-        .internet-checker .retry-btn:active { transform: scale(0.96); }
-        
-        .exo-container:fullscreen video, .exo-container:-webkit-full-screen video { width: 100%; height: 100%; }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=yes">
+  <title>Admin Hub</title>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #07080f;
+      --bg2: #0d1120;
+      --bg3: #131929;
+      --card: #111827;
+      --border: rgba(0,180,255,0.15);
+      --accent: #00b4ff;
+      --accent2: #0066cc;
+      --gold: #ffaa33;
+      --red: #e34d4d;
+      --green: #2ecc71;
+      --text: #e8f0ff;
+      --muted: #6c7aa3;
+      --drawer-w: 280px;
+      --font-head: 'Syne', sans-serif;
+      --font-body: 'DM Sans', sans-serif;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      background: var(--bg);
+      font-family: var(--font-body);
+      color: var(--text);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* ── DRAWER ── */
+    #drawerOverlay {
+      position: fixed; inset: 0; background: rgba(0,0,0,0.75);
+      backdrop-filter: blur(6px); z-index: 900;
+      opacity: 0; pointer-events: none;
+      transition: opacity 0.3s ease;
+    }
+    #drawerOverlay.open { opacity: 1; pointer-events: all; }
+
+    #sideDrawer {
+      position: fixed; top: 0; left: 0; height: 100%;
+      width: var(--drawer-w); background: var(--bg2);
+      border-right: 1px solid var(--border);
+      z-index: 1000; transform: translateX(-100%);
+      transition: transform 0.35s cubic-bezier(0.4,0,0.2,1);
+      display: flex; flex-direction: column;
+      box-shadow: 8px 0 40px rgba(0,0,0,0.6);
+    }
+    #sideDrawer.open { transform: translateX(0); }
+
+    .drawer-head {
+      padding: 28px 20px 20px;
+      background: linear-gradient(135deg, #0d1a2e 0%, #0a1220 100%);
+      border-bottom: 1px solid var(--border);
+    }
+    .drawer-head h2 {
+      font-family: var(--font-head);
+      font-size: 1.2rem; font-weight: 800;
+      background: linear-gradient(125deg, #00ccff, #4d9eff);
+      -webkit-background-clip: text; background-clip: text; color: transparent;
+    }
+    .drawer-head p { font-size: 0.72rem; color: var(--muted); margin-top: 4px; }
+
+    .drawer-nav { flex: 1; overflow-y: auto; padding: 12px 0; }
+    .drawer-section-label {
+      font-size: 0.62rem; font-weight: 700; color: var(--muted);
+      letter-spacing: 1.5px; text-transform: uppercase;
+      padding: 14px 20px 6px;
+    }
+    .drawer-item {
+      display: flex; align-items: center; gap: 12px;
+      padding: 12px 20px; cursor: pointer;
+      font-size: 0.88rem; font-weight: 500; color: #b0c4e8;
+      border-left: 3px solid transparent;
+      transition: all 0.2s;
+      user-select: none;
+    }
+    .drawer-item:hover, .drawer-item.active {
+      background: rgba(0,180,255,0.08);
+      border-left-color: var(--accent);
+      color: #fff;
+    }
+    .drawer-item .d-icon {
+      width: 32px; height: 32px; border-radius: 8px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 15px; flex-shrink: 0;
+    }
+    .di-blue { background: rgba(0,180,255,0.15); }
+    .di-gold { background: rgba(255,170,51,0.15); }
+    .di-green { background: rgba(46,204,113,0.15); }
+    .di-red { background: rgba(227,77,77,0.15); }
+    .di-purple { background: rgba(150,100,255,0.15); }
+
+    .cat-chip-list { padding: 4px 14px 8px; display: flex; flex-direction: column; gap: 2px; }
+    .cat-chip {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 8px 12px; border-radius: 8px; cursor: pointer;
+      font-size: 0.8rem; color: #aac; transition: background 0.15s;
+    }
+    .cat-chip:hover { background: rgba(255,255,255,0.05); }
+    .cat-chip .cc-left { display: flex; align-items: center; gap: 8px; }
+    .cat-chip .cc-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--accent); flex-shrink: 0; }
+    .cat-chip .cc-count { font-size: 0.65rem; color: var(--muted); background: #1e2a3a; padding: 1px 7px; border-radius: 20px; }
+    .cat-chip .cc-del { background: none; border: none; color: var(--red); font-size: 14px; cursor: pointer; padding: 2px 4px; border-radius: 4px; opacity: 0; transition: opacity 0.15s; }
+    .cat-chip:hover .cc-del { opacity: 1; }
+
+    .add-cat-row {
+      display: flex; gap: 6px; padding: 8px 14px 14px;
+    }
+    .add-cat-row input {
+      flex: 1; background: #0a1020; border: 1px solid #2c3e62;
+      border-radius: 30px; color: white; font-size: 0.8rem;
+      padding: 7px 14px; outline: none; font-family: var(--font-body);
+    }
+    .add-cat-row input:focus { border-color: var(--accent); }
+    .add-cat-row button {
+      background: var(--accent); border: none; border-radius: 30px;
+      color: #000; font-weight: 700; font-size: 0.75rem;
+      padding: 7px 14px; cursor: pointer; transition: 0.2s; white-space: nowrap;
+    }
+    .add-cat-row button:hover { background: #2ad4ff; }
+
+    .drawer-footer {
+      padding: 14px 20px;
+      border-top: 1px solid var(--border);
+      font-size: 0.7rem; color: var(--muted); text-align: center;
+    }
+
+    /* ── MAIN LAYOUT ── */
+    .main-wrap { padding: 14px 12px 60px; max-width: 1600px; margin: 0 auto; }
+
+    /* ── HEADER ── */
+    .admin-header {
+      display: flex; align-items: center; gap: 12px;
+      background: rgba(12,20,32,0.92); backdrop-filter: blur(14px);
+      padding: 10px 16px; border-radius: 50px;
+      border: 1px solid var(--border);
+      box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+      margin-bottom: 24px; position: sticky; top: 8px; z-index: 200;
+    }
+    .hamburger-btn {
+      width: 40px; height: 40px; border-radius: 12px;
+      background: rgba(0,180,255,0.12); border: 1px solid rgba(0,180,255,0.25);
+      color: var(--accent); font-size: 18px; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      transition: 0.2s; flex-shrink: 0;
+    }
+    .hamburger-btn:hover { background: rgba(0,180,255,0.22); }
+    .logo-area { flex: 1; }
+    .logo-area h2 {
+      font-family: var(--font-head);
+      font-size: clamp(0.95rem, 4vw, 1.4rem); font-weight: 800;
+      background: linear-gradient(125deg, #00ccff, #4d9eff);
+      -webkit-background-clip: text; background-clip: text; color: transparent;
+    }
+    .header-actions { display: flex; gap: 8px; }
+    .add-global-btn {
+      background: linear-gradient(95deg, var(--accent), var(--accent2));
+      border: none; width: 40px; height: 40px; border-radius: 40px;
+      font-size: 22px; font-weight: bold; color: white; cursor: pointer;
+      transition: 0.2s; box-shadow: 0 4px 14px rgba(0,180,255,0.35);
+      display: flex; align-items: center; justify-content: center;
+    }
+    .add-global-btn:hover { transform: scale(1.06); }
+
+    /* ── CATEGORY CARDS ── */
+    .category-card {
+      background: var(--card); border-radius: 12px;
+      padding: 6px 0 10px; margin-bottom: 16px;
+      border: 1px solid rgba(255,255,255,0.05);
+      box-shadow: 0 6px 20px rgba(0,0,0,0.4);
+    }
+    .category-header {
+      display: flex; align-items: center; justify-content: space-between;
+      flex-wrap: wrap; gap: 10px; padding: 0 18px 12px;
+      border-bottom: 1px solid rgba(0,180,255,0.2); margin-bottom: 14px;
+    }
+    .cat-title-group { display: flex; align-items: center; gap: 10px; }
+    .category-title {
+      font-family: var(--font-head);
+      font-size: clamp(1rem, 4vw, 1.4rem); font-weight: 700;
+      background: linear-gradient(130deg, #f0f9ff, #9acdff);
+      -webkit-background-clip: text; background-clip: text; color: transparent;
+    }
+    .category-badge {
+      background: var(--gold); padding: 3px 10px; border-radius: 30px;
+      font-size: 0.65rem; font-weight: 700; color: #000;
+    }
+    .cat-actions { display: flex; gap: 6px; }
+    .cat-action-btn {
+      background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 8px; padding: 5px 10px; font-size: 0.7rem;
+      color: #99b; cursor: pointer; transition: 0.15s;
+    }
+    .cat-action-btn:hover { background: rgba(255,255,255,0.12); color: #fff; }
+    .cat-action-btn.del-cat { color: var(--red); border-color: rgba(227,77,77,0.25); }
+    .cat-action-btn.del-cat:hover { background: rgba(227,77,77,0.15); }
+
+    .horizontal-scroll {
+      display: flex; overflow-x: auto; gap: 14px; padding: 6px 18px 18px;
+      scrollbar-width: thin; scrollbar-color: var(--accent) #1e2a3a;
+      -webkit-overflow-scrolling: touch;
+    }
+    .horizontal-scroll::-webkit-scrollbar { height: 4px; }
+    .horizontal-scroll::-webkit-scrollbar-track { background: #1a2235; border-radius: 12px; }
+    .horizontal-scroll::-webkit-scrollbar-thumb { background: var(--accent); border-radius: 12px; }
+
+    .video-card {
+      min-width: 220px; width: 220px; background: #0b1120;
+      border-radius: 10px; overflow: hidden;
+      transition: transform 0.2s, box-shadow 0.2s;
+      border: 1px solid #1e2a40; flex-shrink: 0; cursor: pointer;
+    }
+    @media (max-width: 550px) { .video-card { min-width: 180px; width: 180px; } .thumb-wrapper { height: 110px; } }
+    @media (max-width: 420px) { .video-card { min-width: 160px; width: 160px; } .thumb-wrapper { height: 96px; } }
+    .video-card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 16px 28px -10px rgba(0,180,255,0.2);
+      border-color: rgba(0,180,255,0.5);
+    }
+    .thumb-wrapper {
+      width: 100%; height: 125px; background: #05080f;
+      display: flex; align-items: center; justify-content: center; overflow: hidden;
+    }
+    .thumb-wrapper img { width: 100%; height: 100%; object-fit: cover; transition: 0.25s; }
+    .video-info { padding: 9px 10px 11px; }
+    .video-name { font-weight: 700; font-size: 0.85rem; margin-bottom: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .video-url { font-size: 0.58rem; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-bottom: 7px; }
+    .video-actions { display: flex; gap: 6px; margin-top: 4px; }
+    .small-edit, .small-delete {
+      font-size: 0.65rem; padding: 4px 10px; border-radius: 30px;
+      border: none; font-weight: 700; cursor: pointer; transition: 0.1s;
+    }
+    .small-edit { background: var(--gold); color: #101010; }
+    .small-delete { background: var(--red); color: white; }
+    .empty-cat-msg {
+      color: var(--muted); font-style: italic; padding: 16px;
+      background: #0c1120; border-radius: 30px; text-align: center;
+      margin: 0 4px; font-size: 0.78rem;
+    }
+
+    /* ── MODAL ── */
+    .modal-overlay {
+      display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(0,0,0,0.92); backdrop-filter: blur(14px);
+      justify-content: center; align-items: center; z-index: 2000; padding: 14px;
+    }
+    .modal-panel {
+      background: linear-gradient(145deg, #0e1928, #0b1420);
+      max-width: 500px; width: 100%; border-radius: 22px;
+      padding: 22px 20px 28px;
+      border: 1px solid rgba(0,180,255,0.25);
+      box-shadow: 0 30px 60px rgba(0,0,0,0.6);
+    }
+    .modal-panel h3 {
+      font-family: var(--font-head);
+      font-size: 1.3rem; margin-bottom: 16px; color: #2fd0ff;
+    }
+    .modal-panel input, .modal-panel select {
+      width: 100%; padding: 11px 16px; margin: 8px 0;
+      background: #0a1020; border: 1px solid #2c3e62; border-radius: 50px;
+      color: white; font-size: 0.88rem; outline: none; font-family: var(--font-body);
+      transition: border-color 0.2s;
+    }
+    .modal-panel input:focus, .modal-panel select:focus { border-color: var(--accent); }
+    .current-thumb-row {
+      display: none; align-items: center; gap: 10px;
+      background: #0d1a10; border: 1px solid #1e4a2a;
+      border-radius: 14px; padding: 8px 14px; margin: 8px 0;
+    }
+    .current-thumb-row img { width: 60px; height: 40px; object-fit: cover; border-radius: 7px; border: 1px solid #2a5535; flex-shrink: 0; }
+    .current-thumb-row .ctr-text { font-size: 0.7rem; color: #66cc88; line-height: 1.5; }
+    .current-thumb-row .ctr-text strong { display: block; color: #99ffcc; }
+    .thumb-label-row { display: flex; align-items: center; gap: 8px; font-size: 0.73rem; color: #8ea8d0; padding: 4px 2px 5px; }
+    .badge-opt { background: #1a3a20; color: #44dd88; border-radius: 20px; padding: 2px 9px; font-size: 0.62rem; font-weight: 700; }
+    .badge-req { background: #3a1a1a; color: #ff6666; border-radius: 20px; padding: 2px 9px; font-size: 0.62rem; font-weight: 700; }
+    .img-edit-row { display: flex; gap: 10px; align-items: center; background: #0a1020; padding: 4px 12px; border-radius: 50px; margin: 4px 0; }
+    .icon-edit-btn { background: #28a87a; border: none; border-radius: 40px; width: 40px; height: 40px; font-size: 16px; cursor: pointer; flex-shrink: 0; }
+    .replace-cb-wrap {
+      display: none; align-items: center; gap: 6px;
+      background: rgba(255,100,100,0.12); border: 1px solid rgba(255,100,100,0.3);
+      border-radius: 40px; padding: 0 10px 0 8px; cursor: pointer; flex-shrink: 0; height: 40px;
+    }
+    .replace-cb-wrap input[type="checkbox"] { width: 14px; height: 14px; accent-color: #ff6666; cursor: pointer; padding: 0; margin: 0; border: none; background: transparent; }
+    .replace-cb-wrap label { font-size: 0.6rem; color: #ffaaaa; font-weight: 700; cursor: pointer; white-space: nowrap; }
+    .modal-buttons { display: flex; gap: 10px; margin-top: 18px; flex-wrap: wrap; }
+    .modal-buttons button { flex: 1; padding: 11px; border-radius: 50px; font-weight: 700; border: none; cursor: pointer; font-family: var(--font-body); font-size: 0.9rem; }
+    .btn-save-item { background: var(--accent); color: white; }
+    .btn-cancel-modal { background: var(--red); color: white; }
+
+    /* ── SETTINGS PANEL ── */
+    #settingsPanel {
+      display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(0,0,0,0.92); backdrop-filter: blur(14px);
+      justify-content: center; align-items: center; z-index: 2000; padding: 14px;
+    }
+    .settings-box {
+      background: linear-gradient(145deg, #0e1928, #0b1420);
+      max-width: 480px; width: 100%; border-radius: 22px;
+      padding: 22px 20px 28px;
+      border: 1px solid rgba(255,170,51,0.25);
+      box-shadow: 0 30px 60px rgba(0,0,0,0.6);
+      max-height: 90vh; overflow-y: auto;
+    }
+    .settings-box h3 { font-family: var(--font-head); font-size: 1.3rem; color: var(--gold); margin-bottom: 18px; }
+    .settings-row { margin-bottom: 16px; }
+    .settings-row label { display: block; font-size: 0.75rem; color: var(--muted); margin-bottom: 6px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.8px; }
+    .settings-row input, .settings-row select {
+      width: 100%; padding: 10px 16px;
+      background: #0a1020; border: 1px solid #2c3e62; border-radius: 50px;
+      color: white; font-size: 0.85rem; outline: none; font-family: var(--font-body);
+    }
+    .settings-row input:focus { border-color: var(--gold); }
+    .settings-save-btn {
+      background: var(--gold); border: none; border-radius: 50px;
+      color: #000; font-weight: 700; padding: 11px 28px;
+      cursor: pointer; font-size: 0.9rem; width: 100%; margin-top: 8px;
+    }
+    .settings-close-btn {
+      background: #2a3452; border: none; border-radius: 50px;
+      color: #aaa; font-weight: 600; padding: 10px 28px;
+      cursor: pointer; font-size: 0.88rem; width: 100%; margin-top: 8px;
+    }
+    .settings-divider { height: 1px; background: rgba(255,255,255,0.07); margin: 16px 0; }
+
+    /* ── SHEET COLUMN MANAGER ── */
+    .col-mgr-tabs { display: flex; gap: 6px; margin-bottom: 12px; }
+    .col-mgr-tab { flex:1; padding:7px; border-radius:30px; border:1px solid #2c3e62; background:#0a1020; color:#8ea8d0; font-size:0.75rem; font-weight:600; cursor:pointer; text-align:center; transition:0.2s; }
+    .col-mgr-tab.active { background:var(--gold); color:#000; border-color:var(--gold); }
+    .col-mgr-list { display:flex; flex-direction:column; gap:5px; max-height:200px; overflow-y:auto; margin-bottom:10px; padding-right:2px; }
+    .col-mgr-item { display:flex; align-items:center; gap:8px; background:#0a1020; border:1px solid #1e2e4a; border-radius:10px; padding:6px 10px; }
+    .col-mgr-inp { flex:1; background:transparent; border:none; border-bottom:1px solid transparent; color:#e8f0ff; font-size:0.8rem; font-family:var(--font-body); outline:none; padding:1px 0; min-width:0; }
+    .col-mgr-inp:focus { border-bottom-color:var(--gold); }
+    .col-mgr-del { background:none; border:none; color:var(--red); font-size:15px; cursor:pointer; padding:2px 4px; border-radius:4px; flex-shrink:0; opacity:0.65; transition:opacity 0.15s; }
+    .col-mgr-del:hover { opacity:1; }
+    .col-mgr-add-row { display:flex; gap:6px; margin-bottom:10px; }
+    .col-mgr-add-row input { flex:1; background:#0a1020; border:1px solid #2c3e62; border-radius:30px; color:#fff; font-size:0.78rem; padding:7px 14px; outline:none; font-family:var(--font-body); }
+    .col-mgr-add-row input:focus { border-color:var(--gold); }
+    .col-mgr-add-row button { background:var(--gold); border:none; border-radius:30px; color:#000; font-weight:700; font-size:0.72rem; padding:7px 14px; cursor:pointer; white-space:nowrap; }
+    .col-mgr-apply { width:100%; background:linear-gradient(95deg,#00aa44,#007733); border:none; border-radius:30px; color:#fff; font-weight:700; font-size:0.82rem; padding:10px; cursor:pointer; transition:0.2s; }
+    .col-mgr-apply:hover { background:linear-gradient(95deg,#00cc55,#009933); }
+    .col-mgr-note { font-size:0.63rem; color:#5a7aa3; background:rgba(0,180,255,0.05); border:1px solid rgba(0,180,255,0.1); border-radius:8px; padding:6px 10px; margin-bottom:10px; line-height:1.6; }
+
+    /* ── NEW SHEET PANEL ── */
+    #newSheetPanel {
+      display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(0,0,0,0.93); backdrop-filter: blur(14px);
+      justify-content: center; align-items: center; z-index: 2000; padding: 14px;
+    }
+    .sheet-box {
+      background: linear-gradient(145deg, #0c1a10, #091209);
+      max-width: 540px; width: 100%; border-radius: 22px;
+      padding: 22px 20px 28px;
+      border: 1px solid rgba(46,204,113,0.3);
+      box-shadow: 0 30px 60px rgba(0,0,0,0.6);
+      max-height: 90vh; overflow-y: auto;
+    }
+    .sheet-box h3 { font-family: var(--font-head); font-size: 1.3rem; color: var(--green); margin-bottom: 6px; }
+    .sheet-box p { font-size: 0.78rem; color: var(--muted); margin-bottom: 16px; line-height: 1.6; }
+    .code-block {
+      background: #020509; border: 1px solid #1e3a28;
+      border-radius: 12px; padding: 14px;
+      font-family: 'Courier New', monospace; font-size: 0.7rem;
+      color: #7dffa0; line-height: 1.7; overflow-x: auto;
+      white-space: pre; margin: 12px 0;
+      max-height: 280px; overflow-y: auto;
+    }
+    .copy-code-btn {
+      background: var(--green); border: none; border-radius: 30px;
+      color: #000; font-weight: 700; padding: 9px 22px;
+      cursor: pointer; font-size: 0.82rem; width: 100%; margin-bottom: 8px;
+    }
+    .sheet-step {
+      display: flex; gap: 12px; align-items: flex-start;
+      background: rgba(46,204,113,0.06); border: 1px solid rgba(46,204,113,0.15);
+      border-radius: 12px; padding: 12px; margin-bottom: 8px;
+    }
+    .step-num {
+      width: 26px; height: 26px; border-radius: 50%;
+      background: var(--green); color: #000;
+      font-weight: 800; font-size: 0.75rem;
+      display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+    }
+    .step-text { font-size: 0.78rem; color: #aaccbb; line-height: 1.6; }
+    .step-text strong { color: #ccffdd; }
+    .sheet-close-btn {
+      background: #1a2a1a; border: 1px solid rgba(46,204,113,0.2);
+      border-radius: 50px; color: #aaa; font-weight: 600;
+      padding: 10px 28px; cursor: pointer; font-size: 0.88rem;
+      width: 100%; margin-top: 10px;
+    }
+
+    /* ── RENAME CAT MODAL ── */
+    #renameCatModal {
+      display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(0,0,0,0.9); backdrop-filter: blur(10px);
+      justify-content: center; align-items: center; z-index: 3000; padding: 14px;
+    }
+    .rename-box {
+      background: #0e1928; max-width: 360px; width: 100%;
+      border-radius: 20px; padding: 22px 20px;
+      border: 1px solid rgba(0,180,255,0.3);
+    }
+    .rename-box h3 { font-family: var(--font-head); color: var(--accent); margin-bottom: 14px; }
+    .rename-box input {
+      width: 100%; padding: 11px 16px;
+      background: #0a1020; border: 1px solid #2c3e62; border-radius: 50px;
+      color: white; font-size: 0.88rem; outline: none; font-family: var(--font-body);
+    }
+    .rename-box input:focus { border-color: var(--accent); }
+    .rename-btns { display: flex; gap: 10px; margin-top: 14px; }
+    .rename-btns button { flex: 1; padding: 10px; border-radius: 50px; border: none; font-weight: 700; cursor: pointer; font-family: var(--font-body); }
+
+    /* ── PROGRESS ── */
+    .progress-overlay {
+      display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(0,0,0,0.9); backdrop-filter: blur(10px);
+      justify-content: center; align-items: center; z-index: 3000; flex-direction: column;
+    }
+    .progress-card {
+      background: #101a28; padding: 16px 20px; border-radius: 20px;
+      text-align: center; min-width: 260px; width: 80%; max-width: 320px;
+      border: 1px solid rgba(0,180,255,0.3);
+    }
+    .progress-bar-container { width: 100%; height: 22px; background: #1e2a3a; border-radius: 40px; overflow: hidden; margin: 12px 0; }
+    .progress-fill { width: 0%; height: 100%; background: linear-gradient(90deg, var(--accent), #2ad4ff); transition: width 0.25s ease; display: flex; align-items: center; justify-content: center; color: white; font-size: 11px; font-weight: 700; }
+    #progressStatusText { color: #bbd4ff; font-weight: 500; font-size: 0.82rem; }
+
+    /* ── TOAST ── */
+    .toast-msg {
+      position: fixed; bottom: 20px; right: 20px; left: auto;
+      background: #1f2a44; padding: 10px 20px; border-radius: 50px;
+      backdrop-filter: blur(12px); border-left: 5px solid var(--green);
+      z-index: 4500; display: none; font-weight: 500; font-size: 0.82rem;
+      box-shadow: 0 6px 20px black;
+    }
+    @media (max-width: 550px) { .toast-msg { left: 16px; right: 16px; text-align: center; } }
+
+    /* ── CROP MODAL ── */
+    .crop-modal-container {
+      display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(0,0,0,0.98); backdrop-filter: blur(10px);
+      z-index: 4000; justify-content: center; align-items: center; padding: 12px;
+    }
+    .crop-inner {
+      background: #0f1725; width: 96%; max-width: 1000px; border-radius: 28px;
+      padding: 16px; display: flex; flex-direction: column; max-height: 92vh;
+    }
+    .crop-canvas-area { background: #03060c; border-radius: 20px; padding: 10px; display: flex; justify-content: center; min-height: 200px; max-height: 40vh; overflow: hidden; }
+    .canvas-relative { position: relative; display: inline-block; }
+    #cropCanvas { display: block; border-radius: 14px; background: #1a1f30; max-width: 100%; height: auto; }
+    #cropSelectionBox { position: absolute; border: 3px solid #ffaa44; background: rgba(255,170,68,0.18); pointer-events: none; box-sizing: border-box; }
+    .scroll-controls-area { flex: 1; overflow-y: auto; margin-top: 14px; padding-right: 4px; max-height: 36vh; }
+    .control-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px; }
+    @media (max-width: 580px) { .control-grid { grid-template-columns: 1fr; } }
+    .ctrl-group label { font-size: 11px; font-weight: 600; color: #9bb5ff; }
+    .ctrl-group input { width: 100%; margin: 5px 0; }
+    .crop-buttons { display: flex; gap: 12px; justify-content: center; margin-top: 14px; flex-wrap: wrap; }
+    .crop-buttons button { padding: 8px 20px; border-radius: 40px; border: none; font-weight: 700; cursor: pointer; font-family: var(--font-body); }
+  </style>
 </head>
-<body id="swipe-area">
+<body>
 
-<div id="internetChecker" class="internet-checker">
-    <div class="icon-wrapper"><i class="fa fa-wifi" id="internetIcon"></i></div>
-    <h2 id="internetTitle">Internet connected nahi</h2>
-    <p id="internetMessage">Please check your internet connection</p>
-    <div class="detail-text" id="internetDetail"><i class="fa fa-info-circle"></i> Mobile data or Wi-Fi on karein</div>
-    <button class="retry-btn" onclick="checkInternetAgain()"><i class="fa fa-arrow-rotate-right"></i> Check Again</button>
-</div>
+<div id="drawerOverlay" onclick="closeDrawer()"></div>
 
-<div id="splash-screen" style="display: none;">
-    <img id="splash-logo-img" src="" class="splash-logo" onerror="this.src=MASTER_LOGO">
-    <h2>Nikamma 4k</h2>
-    <div class="splash-loader"><i class="fa fa-circle-notch fa-spin"></i> Loading...</div>
-</div>
-
-<div id="ptr-container" class="ptr-container"><i id="ptr-icon" class="fa fa-arrow-down"></i><span id="ptr-text">Pull to refresh</span></div>
-<div id="menu-overlay" onclick="closeNav()"></div>
-
-<div id="mySidenav" class="sidenav">
-  <div class="nav-header"><img id="nav-header-static-img" src="" onerror="this.src=MASTER_LOGO"></div>
-  <div id="sideNavDynamicLinks"></div>
-  <a href="#" id="rating-link" target="_blank"><i class="fa fa-star"></i> Rate Us</a>
-  <a href="#" id="privacy-link" target="_blank"><i class="fa fa-user-shield"></i> Privacy Policy</a>
-  <a href="#" id="share-link" onclick="shareApp(event)"><i class="fa fa-share-alt"></i> Share App</a>
-  <a href="#" onclick="forceRefreshData()"><i class="fa fa-sync"></i> Force Refresh</a>
-</div>
-
-<header><div class="header-content"><div class="header-left" id="header-main"><div class="menu-icon-btn" onclick="openNav()"><i class="fa fa-bars"></i></div><div class="app-name">Nikamma 4k</div></div><div id="search-container"><input type="text" id="searchBar" placeholder="Search movies, shows, sports..." onkeyup="search()"><div class="search-close" onclick="toggleSearch(false)"><i class="fas fa-times"></i></div></div><div class="header-right" id="header-icons"><div onclick="toggleSearch(true)"><i class="fa fa-search"></i></div></div></div></header>
-
-<div id="videoBox">
-    <div class="exo-container" id="advancedPlayerContainer">
-        <div class="exo-loader" id="exoLoader"><div class="spinner"></div></div>
-        <video id="advancedVideo" class="fit-fill" muted autoplay playsinline></video>
-        <div class="exo-overlay" id="exoOverlay">
-            <div class="top-bar">
-                <button class="icon-btn" id="exoTopCloseBtn" title="Close"><span class="material-icons-round">close</span></button>
-                <div class="live-tag">LIVE</div>
-            </div>
-            <div class="menu-bar">
-                <button class="icon-btn" id="exoPlayBtn"><span class="material-icons-round">pause</span></button>
-                <button class="icon-btn" id="exoMuteBtn"><span class="material-icons-round">volume_off</span></button>
-                <div class="spacer"></div>
-                <span id="mode-text" class="fit-mode-badge">FILL</span>
-                <button class="icon-btn" id="exoScreenSetBtn" title="Screen Fit"><span class="material-icons-round">aspect_ratio</span></button>
-                <button class="icon-btn" id="exoFullBtn" title="Fullscreen"><span class="material-icons-round">fullscreen</span></button>
-            </div>
-        </div>
+<div id="sideDrawer">
+  <div class="drawer-head">
+    <h2>🎬 Admin Hub</h2>
+    <p>Content Management System</p>
+  </div>
+  <nav class="drawer-nav">
+    <div class="drawer-section-label">Navigation</div>
+    <div class="drawer-item active" onclick="scrollToTop(); closeDrawer()">
+      <div class="d-icon di-blue">🏠</div> Dashboard
     </div>
-    <div id="iframePlayerBox" style="display:none; position:relative; width:100%; aspect-ratio:16/9; background:#000;">
-        <iframe id="iframePlayer" src="about:blank" style="width:100%;height:100%;border:none;display:block;" allowfullscreen allow="autoplay; fullscreen; encrypted-media; picture-in-picture" scrolling="no"></iframe>
-        <div style="position:absolute;top:8px;left:8px;z-index:10;">
-            <button onclick="stopVideo()" style="background:rgba(0,0,0,0.7);border:none;color:white;width:36px;height:36px;border-radius:50%;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;"><i class="fa fa-times"></i></button>
-        </div>
-        <div style="position:absolute;top:8px;right:8px;z-index:10;">
-            <button onclick="iframeFullscreen()" style="background:rgba(0,0,0,0.7);border:none;color:white;width:36px;height:36px;border-radius:50%;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;"><i class="fa fa-expand"></i></button>
-        </div>
-        <div style="position:absolute;bottom:8px;center:0;width:100%;text-align:center;z-index:10;pointer-events:none;">
-            <span style="background:rgba(255,0,0,0.8);color:white;padding:3px 10px;border-radius:20px;font-size:10px;font-weight:bold;letter-spacing:1px;">LIVE</span>
-        </div>
+    <div class="drawer-item" onclick="openAddModal(); closeDrawer()">
+      <div class="d-icon di-green">➕</div> Add New Video
     </div>
-    <div style="padding:10px; display:flex; justify-content:space-between; background:#121212; align-items:center;">
-        <span id="videoTitle" style="font-size:13px; color:var(--main-color); font-weight:bold;"></span>
-        <button onclick="stopVideo()" style="background:#f44336; border:none; color:white; padding:5px 10px; border-radius:4px; font-size:11px; margin-right:5px;">CLOSE</button>
+
+    <div class="drawer-section-label">Categories</div>
+    <div class="cat-chip-list" id="drawerCatList">
+      </div>
+    <div class="add-cat-row">
+      <input type="text" id="newCatIconInput" placeholder="Icon 📁" style="max-width:64px;text-align:center;">
+      <input type="text" id="newCatNameInput" placeholder="New category..." onkeydown="if(event.key==='Enter')addCategoryFromDrawer()">
+      <button onclick="addCategoryFromDrawer()">+ Add</button>
     </div>
+
+    <div class="drawer-section-label">Tools</div>
+    <div class="drawer-item" onclick="openSettings(); closeDrawer()">
+      <div class="d-icon di-gold">⚙️</div> Settings
+    </div>
+    <div class="drawer-item" onclick="openNewSheetPanel(); closeDrawer()">
+      <div class="d-icon di-green">📄</div> New Google Sheet
+    </div>
+  </nav>
+  <div class="drawer-footer">
+    Admin Hub v2.1<br>
+    <span style="font-size:0.65rem;">📂 Cat Sheet: <span id="catSheetStatusText" style="color:#ffaa33;">URL set nahi</span></span>
+  </div>
 </div>
 
-<div class="container">
-    <div class="slider" id="mainSlider" style="display:none;"><div class="slides-track" id="sliderTrack"></div></div>
+<div class="main-wrap">
+  <div class="admin-header">
+    <button class="hamburger-btn" onclick="toggleDrawer()">☰</button>
+    <div class="logo-area"><h2>🎬 ADMIN DASHBOARD</h2></div>
+    <div class="header-actions">
+      <button class="add-global-btn" onclick="openAddModal()" title="Add new video">+</button>
+    </div>
+  </div>
+  <div id="categoriesContainer"></div>
+</div>
+
+<div id="globalModal" class="modal-overlay">
+  <div class="modal-panel">
+    <h3 id="modalTitle">➕ Add Video</h3>
+    <input type="text" id="videoName" placeholder="Video title *">
+    <select id="videoCategorySelect">
+      <option value="">-- Select Category --</option>
+    </select>
+    <input type="text" id="videoUrl" placeholder="Video URL *">
+    <div class="thumb-label-row">
+      🖼️ Thumbnail &nbsp;<span id="thumbBadge" class="badge-req">Required</span>
+    </div>
+    <div class="current-thumb-row" id="currentThumbRow">
+      <img id="currentThumbImg" src="" alt="current thumb">
+      <div class="ctr-text">
+        <strong>✅ Current Image Safe Hai</strong>
+        Nai image select nahi ki to yeh image waise hi rahegi
+      </div>
+    </div>
+    <div class="img-edit-row">
+      <div class="replace-cb-wrap" id="replaceCbWrap">
+        <input type="checkbox" id="replaceOldCb">
+        <label for="replaceOldCb">🔄 Replace</label>
+      </div>
+      <button type="button" id="openMiniImageBtn" class="icon-edit-btn">✂️</button>
+      <input type="file" id="thumbFile" accept="image/*" style="flex:1; background:transparent; border:none; padding:8px 0; color:#aac4ff;">
+    </div>
+    <div class="modal-buttons">
+      <button id="modalSubmitBtn" class="btn-save-item">Save</button>
+      <button id="closeModalBtn" class="btn-cancel-modal">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<div id="settingsPanel">
+  <div class="settings-box">
+    <h3>⚙️ Settings</h3>
+    <div class="settings-row">
+      <label>📺 Videos Sheet — API URL</label>
+      <input type="text" id="settingsApiUrl" placeholder="https://script.google.com/macros/s/...">
+    </div>
+    <div class="settings-divider"></div>
+    <div class="settings-row">
+      <label>📂 Category Sheet — API URL <span style="color:#ffaa33;font-size:0.65rem;font-weight:700;background:rgba(255,170,51,0.15);padding:2px 8px;border-radius:20px;margin-left:4px;">NEW</span></label>
+      <input type="text" id="settingsCatApiUrl" placeholder="https://script.google.com/macros/s/...">
+      <div style="font-size:0.65rem;color:#6c7aa3;margin-top:4px;padding:0 6px;">
+        ⚠️ Alag sheet ka alag deployment URL — neeche Apps Script code mein Category Sheet ka code bhi hai
+      </div>
+    </div>
+    <div class="settings-divider"></div>
+    <div class="settings-row">
+      <label>Dashboard Title</label>
+      <input type="text" id="settingsDashTitle" placeholder="Admin Hub">
+    </div>
+    <button class="settings-save-btn" onclick="saveSettings()">💾 Save Settings</button>
+    <button class="settings-close-btn" onclick="document.getElementById('settingsPanel').style.display='none'">Close</button>
+
+    <div class="settings-divider"></div>
+    <div style="font-family:var(--font-head);font-size:1rem;font-weight:700;color:#fff;margin-bottom:8px;">🗂️ Sheet Columns Manager</div>
+    <div class="col-mgr-note">Columns add, rename ya delete karo — phir <strong>Apply</strong> dabao taake Google Sheet update ho.</div>
+    <div class="col-mgr-tabs">
+      <div class="col-mgr-tab active" id="cmTab1" onclick="cmSwitchTab('sheet1')">📺 Sheet1 (Videos)</div>
+      <div class="col-mgr-tab" id="cmTabC" onclick="cmSwitchTab('cat')">📂 Category Sheet</div>
+    </div>
+    <div class="col-mgr-list" id="cmList"></div>
+    <div class="col-mgr-add-row">
+      <input type="text" id="cmNewCol" placeholder="Naya column naam...">
+      <button onclick="cmAddCol()">➕ Add</button>
+    </div>
+    <button class="col-mgr-apply" onclick="cmApply()">✅ Apply Changes to Sheet</button>
+  </div>
+</div>
+
+<div id="newSheetPanel">
+  <div class="sheet-box">
+    <h3>📄 New Google Sheet Setup</h3>
+    <p>Yeh Apps Script code copy karke Google Sheets mein paste karo taake nai sheet + API ready ho jaye.</p>
+
+    <div class="sheet-step">
+      <div class="step-num">1</div>
+      <div class="step-text">Naya <strong>Google Sheet</strong> kholo → Tools → <strong>Apps Script</strong></div>
+    </div>
+    <div class="sheet-step">
+      <div class="step-num">2</div>
+      <div class="step-text">Pura purana code delete karo aur neeche diya hua <strong>code paste karo</strong></div>
+    </div>
+    <div class="sheet-step">
+      <div class="step-num">3</div>
+      <div class="step-text"><strong>Save → Deploy → New Deployment → Web App</strong> → "Anyone" select karo → Copy URL</div>
+    </div>
+    <div class="sheet-step">
+      <div class="step-num">4</div>
+      <div class="step-text">Dashboard mein jaake <strong>Settings</strong> kholo aur dono URLs save karo</div>
+    </div>
+
+    <button class="copy-code-btn" onclick="copyAppsScriptCode()">📋 Copy Apps Script Code</button>
+
+    <div class="code-block" id="appsScriptCodeBlock">// ── GOOGLE APPS SCRIPT CODE (Paste in Extensions -> Apps Script) ──
+var SHEET_NAME = "Sheet1";
+var CAT_SHEET_NAME = "CategorySheet";
+var DRIVE_FOLDER_ID = "ROOT"; // Ya specific folder ID
+
+function doGet(e) {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var sheet = ss.getSheetByName(SHEET_NAME);
+  if (!sheet) {
+    sheet = ss.insertSheet(SHEET_NAME);
+    sheet.appendRow(["Unique_Id", "File_Id", "Name", "Category", "URL", "Thumbnail"]);
+  }
+  
+  if (e.parameter.action === "getCats") {
+    return getCategoriesResponse();
+  }
+
+  var data = sheet.getDataRange().getValues();
+  var result = [];
+  for (var i = 1; i < data.length; i++) {
+    if (!data[i][2] && !data[i][4]) continue;
+    result.push({
+      rowNumber: i - 1,
+      FileID: data[i][1] || "",
+      Name: data[i][2],
+      Category: data[i][3],
+      URL: data[i][4],
+      Thumbnail: data[i][5]
+    });
+  }
+  return jsonOut(result);
+}
+
+function getCategoriesResponse() {
+  var sheet = getOrCreateCatSheet();
+  var data = sheet.getDataRange().getValues();
+  var result = [];
+  for (var i = 1; i < data.length; i++) {
+    if (!data[i][0]) continue;
+    result.push({
+      rowNumber: i + 1, // 1-based actual row number
+      Category: data[i][0] || "",
+      Icon: data[i][1] || "📁",
+      Status: data[i][2] || "Active",
+      VideoCount: data[i][3] || 0,
+      LastUpdated: data[i][4] || "",
+      Timestamp: data[i][5] || ""
+    });
+  }
+  return jsonOut(result);
+}
+
+function doPost(request) {
+  try {
+    var data = JSON.parse(request.postData.contents);
     
-    <div id="mainCategoryView" style="display: none; padding: 10px 0;">
-        <div class="category-header" style="padding: 10px 15px;">
-            <div class="category-title" id="specificCategoryTitle"><i class="fa fa-folder"></i> CATEGORY</div>
-        </div>
-        <div class="grid" id="specificGrid"></div>
-    </div>
+    if (data.action === "ADD_CAT") {
+      var catSheet = getOrCreateCatSheet();
+      var now = new Date().toISOString();
+      catSheet.appendRow([
+        data.category || "",
+        data.icon || "📁",
+        data.status || "Active",
+        data.videoCount || 0,
+        now,
+        data.timestamp || Date.now()
+      ]);
+      var newRow = catSheet.getLastRow();
+      return jsonOut({ status: "OK", rowNumber: newRow });
+    }
     
-    <div id="homeCategoriesContainer">
-        <div class="grid" id="mainGrid">
-            <div class="skeleton-card"></div>
-            <div class="skeleton-card"></div>
-            <div class="skeleton-card"></div>
-        </div>
+    if (data.action === "RENAME_CAT") {
+      var catSheet = getOrCreateCatSheet();
+      catSheet.getRange(data.rowNumber, 1).setValue(data.newCategory);
+      catSheet.getRange(data.rowNumber, 5).setValue(data.lastUpdated || new Date().toISOString());
+      // Sheet1 mein bhi saare videos ka category rename karo
+      var ss = SpreadsheetApp.getActiveSpreadsheet();
+      var vidSheet = ss.getSheetByName(SHEET_NAME);
+      if (vidSheet && data.oldCategory) {
+        var vData = vidSheet.getDataRange().getValues();
+        for (var vi = 1; vi < vData.length; vi++) {
+          if (String(vData[vi][3]).trim().toLowerCase() === String(data.oldCategory).trim().toLowerCase()) {
+            vidSheet.getRange(vi + 1, 4).setValue(data.newCategory);
+          }
+        }
+      }
+      return jsonOut({ status: "UPDATED" });
+    }
+    
+    if (data.action === "DELETE_CAT") {
+      var catSheet = getOrCreateCatSheet();
+      catSheet.deleteRow(data.rowNumber);
+      return jsonOut({ status: "DELETED" });
+    }
+    
+    if (data.action === "UPDATE_COUNT") {
+      var catSheet = getOrCreateCatSheet();
+      catSheet.getRange(data.rowNumber, 4).setValue(data.videoCount || 0);
+      catSheet.getRange(data.rowNumber, 5).setValue(data.lastUpdated || new Date().toISOString());
+      return jsonOut({ status: "UPDATED" });
+    }
+
+    var sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_NAME);
+    
+    if (data.action === undefined) {
+      var timestamp = new Date().getTime();
+      var uniqueId = "vid_" + timestamp;
+      var fileId = "";
+      var thumbUrl = "https://placehold.co/600x400/2a3555/white?text=No+Image";
+      
+      if (data.thumbnail && data.thumbnail.includes("base64")) {
+        var folder = DRIVE_FOLDER_ID === "ROOT" ? DriveApp.getRootFolder() : DriveApp.getFolderById(DRIVE_FOLDER_ID);
+        var imageData = data.thumbnail.split(",")[1];
+        var blob = Utilities.newBlob(Utilities.base64Decode(imageData), "image/png", "thumb_" + timestamp + ".png");
+        var file = folder.createFile(blob);
+        fileId = file.getId();
+        thumbUrl = "https://drive.google.com/thumbnail?id=" + fileId + "&sz=w500";
+      } else if (data.existingThumbUrl) {
+        thumbUrl = data.existingThumbUrl;
+        fileId = data.existingFileId || "";
+      }
+      
+      sheet.appendRow([uniqueId, fileId, data.name, data.category, data.url, thumbUrl]);
+      updateVideoCountForCat(data.category);
+      return jsonOut({ status: "OK", uniqueId: uniqueId });
+    }
+    
+    if (data.action === "DELETE") {
+      var row = Number(data.rowNumber) + 2;
+      var cat = sheet.getRange(row, 4).getValue();
+      if (!data.keepImage) {
+        var oldFileId = sheet.getRange(row, 2).getValue();
+        if (oldFileId) {
+          try { DriveApp.getFileById(oldFileId).setTrashed(true); } catch(e) {}
+        }
+      }
+      sheet.deleteRow(row);
+      updateVideoCountForCat(cat);
+      return jsonOut({ status: "DELETED" });
+    }
+    
+    if (data.action === "EDIT") {
+      var row = Number(data.rowNumber) + 2;
+      var oldCat = sheet.getRange(row, 4).getValue();
+      sheet.getRange(row, 3).setValue(data.name);
+      sheet.getRange(row, 4).setValue(data.category);
+      sheet.getRange(row, 5).setValue(data.url);
+      
+      if (data.thumbnail && data.thumbnail.includes("base64")) {
+        var oldFid = sheet.getRange(row, 2).getValue();
+        if (oldFid) {
+          try { DriveApp.getFileById(oldFid).setTrashed(true); } catch(e) {}
+        }
+        var folder = DRIVE_FOLDER_ID === "ROOT" ? DriveApp.getRootFolder() : DriveApp.getFolderById(DRIVE_FOLDER_ID);
+        var imageData = data.thumbnail.split(",")[1];
+        var blob = Utilities.newBlob(Utilities.base64Decode(imageData), "image/png", "thumb_" + new Date().getTime() + ".png");
+        var file = folder.createFile(blob);
+        sheet.getRange(row, 2).setValue(file.getId());
+        sheet.getRange(row, 6).setValue("https://drive.google.com/thumbnail?id=" + file.getId() + "&sz=w500");
+      }
+      
+      if (oldCat !== data.category) updateVideoCountForCat(oldCat);
+      updateVideoCountForCat(data.category);
+      return jsonOut({ status: "UPDATED" });
+    }
+  } catch(e) {
+    return jsonOut({ status: "ERROR", message: e.toString() });
+  }
+}
+
+function getOrCreateCatSheet() {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var sheet = ss.getSheetByName(CAT_SHEET_NAME);
+  if (!sheet) {
+    sheet = ss.insertSheet(CAT_SHEET_NAME);
+    sheet.appendRow(["Category","Icon","Status","VideoCount","LastUpdated","Timestamp"]);
+    sheet.getRange(1,1,1,6).setFontWeight("bold").setBackground("#1a1a2e").setFontColor("#ffffff");
+  }
+  return sheet;
+}
+
+function updateVideoCountForCat(catName) {
+  if (!catName) return;
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var sheet = ss.getSheetByName(SHEET_NAME);
+  var catSheet = getOrCreateCatSheet();
+  if (!sheet) return;
+  var vData = sheet.getDataRange().getValues();
+  var count = 0;
+  for (var i = 1; i < vData.length; i++) {
+    if (vData[i][3] === catName) count++;
+  }
+  var cData = catSheet.getDataRange().getValues();
+  for (var j = 1; j < cData.length; j++) {
+    if (cData[j][0] === catName) {
+      catSheet.getRange(j + 1, 4).setValue(count);
+      catSheet.getRange(j + 1, 5).setValue(new Date().toISOString());
+      return;
+    }
+  }
+}
+
+function jsonOut(obj) {
+  return ContentService.createTextOutput(JSON.stringify(obj)).setMimeType(ContentService.MimeType.JSON);
+}</div>
+    <button class="sheet-close-btn" onclick="document.getElementById('newSheetPanel').style.display='none'">Close</button>
+  </div>
+</div>
+
+<div id="renameCatModal">
+  <div class="rename-box">
+    <h3>✏️ Rename Category</h3>
+    <input type="text" id="renameCatInput" placeholder="New category name..." onkeydown="if(event.key==='Enter')confirmRenameCategory()">
+    <input type="text" id="renameCatIcon" placeholder="Icon (e.g. 🎬)" style="margin-top:8px;">
+    <label style="display:flex;align-items:center;gap:10px;background:rgba(255,170,0,0.08);border:1px solid rgba(255,170,0,0.25);border-radius:12px;padding:10px 14px;cursor:pointer;margin-top:10px;">
+      <input type="checkbox" id="renameCatReplace" style="width:18px;height:18px;accent-color:var(--gold);cursor:pointer;flex-shrink:0;">
+      <span style="font-size:0.78rem;color:#e8d090;line-height:1.5;">
+        <strong>Replace Mode</strong><br>
+        <span style="color:#8a9ab0;font-size:0.7rem;">Old row delete ho k naya add hoga — Sheet1 videos bhi update honge</span>
+      </span>
+    </label>
+    <div class="rename-btns">
+      <button onclick="confirmRenameCategory()" style="background:var(--accent); color:black;">Update</button>
+      <button onclick="document.getElementById('renameCatModal').style.display='none'" style="background:#334155; color:white;">Cancel</button>
     </div>
+  </div>
+</div>
 
-    <div id="moreSectionView" style="display: none;">
-        <div class="profile-container">
-            <div class="profile-card" id="profileContent">
-                <div id="loggedOutView">
-                    <i class="fa fa-user-circle" style="font-size: 60px; color: #444; margin-bottom: 15px;"></i>
-                    <h3 style="margin:0 0 10px;">Guest User</h3>
-                    <div class="profile-form">
-                        <input type="text" id="loginUsername" placeholder="Enter Username">
-                        <button class="profile-btn" onclick="userLogin()">LOGIN</button>
-                    </div>
-                </div>
-                <div id="loggedInView" style="display:none;">
-                    <img id="userPic" src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR6A63t7tXh8Gj7956mGq4n8-yK9vT-w_S46A&s" class="profile-pic">
-                    <h3 style="margin:0 0 5px;" id="welcomeUser">Hi, User!</h3>
-                    <p style="color:#777; font-size:12px; margin:0 0 15px;">Authenticated Member</p>
-                    <button class="profile-btn" style="background:#ff3b30; color:white;" onclick="userLogout()">LOGOUT</button>
-                </div>
-            </div>
-
-            <div class="profile-card">
-                <h4 style="margin: 0 0 10px; font-size: 14px; text-transform: uppercase; color: var(--main-color);">Select App Theme</h4>
-                <div class="theme-selector">
-                    <div class="theme-dot" style="background: #00bcd4;" onclick="changeTheme('#00bcd4')"></div>
-                    <div class="theme-dot" style="background: #ff9800;" onclick="changeTheme('#ff9800')"></div>
-                    <div class="theme-dot" style="background: #e91e63;" onclick="changeTheme('#e91e63')"></div>
-                    <div class="theme-dot" style="background: #4caf50;" onclick="changeTheme('#4caf50')"></div>
-                </div>
-            </div>
-
-            <div class="profile-card">
-                <h4 style="margin: 0 0 10px; font-size: 14px; text-transform: uppercase; color: var(--main-color);">About App</h4>
-                <p style="font-size: 12px; color: #aaa; line-height: 1.6; margin:0;">
-                    Nikamma 4k is a high-performance web media streaming application. Enjoy premium movies, live TV, and your personal favorites seamlessly on any modern device.
-                </p>
-                <p style="font-size: 11px; color: #555; margin-top: 10px;">Version 3.9 | All rights reserved.</p>
-            </div>
-        </div>
+<div id="progressOverlay" class="progress-overlay">
+  <div class="progress-card">
+    <h4 style="color:#00ccff;font-family:var(--font-head);font-size:1rem;" id="progressActionTitle">Please wait</h4>
+    <div class="progress-bar-container">
+      <div id="progressFillBar" class="progress-fill">0%</div>
     </div>
+    <p id="progressStatusText">Processing...</p>
+  </div>
 </div>
 
-<div class="bottom-nav" id="bottomNav">
-    <div class="nav-btn active" id="home-nav-btn" onclick="filterData('All', this)"><i class="fa fa-house"></i>HOME</div>
-    <div class="nav-btn" id="live-nav-btn" style="display:none;" onclick="filterData('Live', this)"><i class="fa fa-circle-play"></i>LIVE</div>
-    <div class="nav-btn" id="fav-nav-btn" onclick="showFavorites(this)"><i class="fa fa-heart"></i>FAVOURITE</div>
-    <div class="nav-btn" id="more-nav-btn" onclick="showMoreSection(this)"><i class="fa fa-ellipsis"></i>MORE</div>
+<div id="cropToolModal" class="crop-modal-container">
+  <div class="crop-inner">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+      <h4 style="color:var(--accent); font-family:var(--font-head);">✂️ Image Editor</h4>
+      <button id="closeCropModalBtn" style="background:#ff5555; border:none; padding:5px 14px; border-radius:30px; color:white; cursor:pointer;">✖️</button>
+    </div>
+    <div class="crop-canvas-area">
+      <div class="canvas-relative">
+        <canvas id="cropCanvas" width="450" height="280"></canvas>
+        <div id="cropSelectionBox"></div>
+      </div>
+    </div>
+    <div class="scroll-controls-area">
+      <div class="control-grid">
+        <div class="ctrl-group"><label>⬅️ X Position</label><input type="range" id="cropXSlider" min="0" max="100" step="1"><span id="xPosVal" style="font-size:11px;">0px</span></div>
+        <div class="ctrl-group"><label>⬆️ Y Position</label><input type="range" id="cropYSlider" min="0" max="100" step="1"><span id="yPosVal" style="font-size:11px;">0px</span></div>
+        <div class="ctrl-group"><label>📏 Crop Width</label><input type="range" id="cropWidthSlider" min="30" max="800" step="5"><span id="widthVal">240px</span></div>
+        <div class="ctrl-group"><label>📐 Crop Height</label><input type="range" id="cropHeightSlider" min="30" max="800" step="5"><span id="heightVal">180px</span></div>
+        <div class="ctrl-group"><label>🔍 Zoom</label><input type="range" id="zoomScaleSlider" min="10" max="250" step="5"><span id="zoomPercent">40%</span></div>
+      </div>
+    </div>
+    <div class="crop-buttons">
+      <button id="applyCropSaveBtn" style="background:var(--green); color:#000;">💾 Save Cropped</button>
+      <button id="cancelCropToolBtn" style="background:#555; color:white;">Cancel</button>
+    </div>
+  </div>
 </div>
 
-<div id="update-overlay"><div class="update-box"><h2 style="color: var(--main-color); font-weight:800;">Update Available!</h2><p>Please update to the latest version.</p><button id="update-btn" style="background:var(--main-color); border:none; padding:12px 25px; border-radius:25px; font-weight:bold; cursor:pointer;">UPDATE NOW</button></div></div>
-<div id="data-save-badge" class="data-save-badge"><i class="fa fa-database"></i> Using cached data</div>
-<div id="no-update-badge" class="no-update-badge"><i class="fa fa-check-circle"></i> Data is up to date</div>
-
-<div id="gestureIndicator" class="gesture-indicator" style="opacity:0;">
-    <i id="gestureIcon" class="fa fa-volume-up"></i>
-    <span id="gestureValue">50%</span>
-</div>
+<div id="toastMessage" class="toast-msg"></div>
 
 <script>
-    const MASTER_LOGO = 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTf7ax2YDbvMh3IxQPzSyY1YIewn8Q_1bDgR04kRJT5-A&s=10';
-    const NAV_HEADER_IMAGE = 'https://drive.google.com/thumbnail?id=1DXQpAofda-bZPS20Q-bqo6neUDznYqW9&sz=w1000';
-    const STORAGE_KEY_DATA = 'nikamma_cached_data';
-    const STORAGE_KEY_HASH = 'nikamma_data_hash';
-    const SPLASH_SEEN_KEY = 'nikamma_splash_seen';
-    const FAV_KEY_STORAGE = 'nikamma_fav_list';
-    
-    let isFullscreen = false;
-    let gestureActive = false;
-    let gestureStartY = 0, gestureStartX = 0;
-    let gestureStartValue = 0;
-    let gestureSide = null;
-    let gesturePrevented = false;
-    let activeTouchId = null;
-    const gestureIndicator = document.getElementById('gestureIndicator');
-    const gestureIcon = document.getElementById('gestureIcon');
-    const gestureValueSpan = document.getElementById('gestureValue');
-    
-    let currentBrightness = 1.0;
-    function setVideoBrightness(value) {
-        currentBrightness = Math.min(2.0, Math.max(0.2, value));
-        advVideo.style.filter = `brightness(${currentBrightness})`;
+  // ── CONFIG ──
+  let API_URL = localStorage.getItem("adminApiUrl") || "https://script.google.com/macros/s/AKfycbzL5P8Y6Lsc49_p_D2B60707_DefaultAPI/exec";
+  let CAT_API_URL = localStorage.getItem("adminCatApiUrl") || "";
+  let allVideos = [];
+  let customCategories = JSON.parse(localStorage.getItem("adminCustomCats")) || [];
+  let allCatSheetData = [];
+  let isEditMode = false;
+  let currentEditRow = null;
+  let currentEditFile = "";
+  let currentEditThumb = "";
+  let renameCatOldName = "";
+
+  document.addEventListener("DOMContentLoaded", () => {
+    const savedApi = localStorage.getItem("adminApiUrl");
+    const savedCatApi = localStorage.getItem("adminCatApiUrl");
+    if (savedApi) {
+      API_URL = savedApi;
+      document.getElementById("settingsApiUrl").value = savedApi;
     }
-    
-    function showGestureIndicator(iconClass, percent) {
-        gestureIcon.className = iconClass;
-        gestureValueSpan.innerText = Math.round(percent) + '%';
-        gestureIndicator.style.opacity = '1';
-        if (window.gestureTimeout) clearTimeout(window.gestureTimeout);
-        window.gestureTimeout = setTimeout(() => { gestureIndicator.style.opacity = '0'; }, 800);
+    if (savedCatApi) {
+      CAT_API_URL = savedCatApi;
+      document.getElementById("settingsCatApiUrl").value = savedCatApi;
     }
+    const st = localStorage.getItem("adminDashTitle");
+    if (st) document.getElementById("settingsDashTitle").value = st;
+
+    updateCatSheetStatus();
+    loadData();
     
-    function handleTouchStart(e) {
-        if (!isFullscreen) return;
-        let target = e.target;
-        if(target.closest && (target.closest('.icon-btn') || target.closest('.menu-bar') || target.closest('.top-bar'))) return;
-        
-        const touch = e.touches[0];
-        activeTouchId = touch.identifier;
-        gestureStartX = touch.clientX;
-        gestureStartY = touch.clientY;
-        gesturePrevented = false;
-        
-        const screenWidth = window.innerWidth;
-        gestureSide = gestureStartX < screenWidth / 2 ? 'left' : 'right';
-        if (gestureSide === 'right') {
-            gestureStartValue = advVideo.volume;
-        } else {
-            gestureStartValue = currentBrightness;
-        }
-        gestureActive = true;
-    }
-    
-    function handleTouchMove(e) {
-        if (!gestureActive || !isFullscreen) return;
-        let touch = null;
-        for (let i = 0; i < e.touches.length; i++) {
-            if (e.touches[i].identifier === activeTouchId) {
-                touch = e.touches[i];
-                break;
-            }
-        }
-        if (!touch) return;
-        
-        const deltaY = gestureStartY - touch.clientY;
-        const deltaX = Math.abs(touch.clientX - gestureStartX);
-        if (!gesturePrevented && Math.abs(deltaY) > 12 && Math.abs(deltaY) > deltaX * 1.2) {
-            gesturePrevented = true;
-            e.preventDefault();
-        }
-        
-        if (gesturePrevented) {
-            e.preventDefault();
-            let newValue = gestureStartValue + (deltaY / 200) * (gestureSide === 'right' ? 1.0 : 1.8);
-            if (gestureSide === 'right') {
-                newValue = Math.min(1.0, Math.max(0.0, newValue));
-                advVideo.volume = newValue;
-                if (advVideo.muted && newValue > 0) advVideo.muted = false;
-                if (newValue === 0) advVideo.muted = true;
-                exoMuteBtn.innerHTML = `<span class="material-icons-round">${advVideo.muted || advVideo.volume === 0 ? 'volume_off' : 'volume_up'}</span>`;
-                showGestureIndicator('fa fa-volume-up', newValue * 100);
-            } else {
-                newValue = Math.min(2.0, Math.max(0.2, newValue));
-                setVideoBrightness(newValue);
-                const percent = ((newValue - 0.2) / 1.8) * 100;
-                showGestureIndicator('fa fa-sun', percent);
-            }
-        }
-    }
-    
-    function handleTouchEnd(e) { gestureActive = false; gestureSide = null; gesturePrevented = false; activeTouchId = null; }
-    
-    function attachGestureListeners() {
-        const container = document.getElementById('advancedPlayerContainer');
-        if (!container) return;
-        container.removeEventListener('touchstart', handleTouchStart);
-        container.removeEventListener('touchmove', handleTouchMove);
-        container.removeEventListener('touchend', handleTouchEnd);
-        container.addEventListener('touchstart', handleTouchStart, { passive: true });
-        container.addEventListener('touchmove', handleTouchMove, { passive: false });
-        container.addEventListener('touchend', handleTouchEnd);
-    }
-    
-    let currentMpegtsPlayer = null, currentHlsPlayer = null, currentSourceUrl = null, bufferingTimeout = null, reloadAttempts = 0;
-    const MAX_RELOAD_ATTEMPTS = 2;
-    
-    const advVideo = document.getElementById('advancedVideo');
-    const exoLoader = document.getElementById('exoLoader');
-    const exoPlayBtn = document.getElementById('exoPlayBtn');
-    const exoMuteBtn = document.getElementById('exoMuteBtn');
-    const exoScreenSetBtn = document.getElementById('exoScreenSetBtn');
-    const exoFullBtn = document.getElementById('exoFullBtn');
-    const modeTextSpan = document.getElementById('mode-text');
-    const exoOverlay = document.getElementById('exoOverlay');
-    
-    let controlsTimeout = null;
-    let currentFitMode = 2;
-    const fitModes = ['contain', 'cover', 'fill'];
-    
-    function setVideoFitMode() {
-        const mode = fitModes[currentFitMode];
-        advVideo.classList.remove('fit-contain', 'fit-cover', 'fit-fill');
-        advVideo.classList.add('fit-' + mode);
-        advVideo.style.objectFit = mode;
-        modeTextSpan.innerText = mode.toUpperCase();
-    }
-    
-    function showControls() {
-        if (exoOverlay && !exoOverlay.classList.contains('visible')) {
-            exoOverlay.classList.add('visible');
-            clearTimeout(controlsTimeout);
-            if (!advVideo.paused) {
-                controlsTimeout = setTimeout(() => {
-                    if (exoOverlay && !advVideo.paused) exoOverlay.classList.remove('visible');
-                }, 5000);
-            }
-        }
-    }
-    
-    function hideControls() { if (exoOverlay && exoOverlay.classList.contains('visible')) { exoOverlay.classList.remove('visible'); clearTimeout(controlsTimeout); } }
-    function toggleControls() { if (exoOverlay.classList.contains('visible')) hideControls(); else showControls(); }
-    
-    function attachToggleControls() {
-        const container = document.getElementById('advancedPlayerContainer');
-        if (!container) return;
-        const handleToggle = (e) => {
-            if (e.target.closest && (e.target.closest('.icon-btn') || e.target.closest('.menu-bar') || e.target.closest('.top-bar'))) return;
-            toggleControls();
-        };
-        container.addEventListener('click', handleToggle);
-        advVideo.addEventListener('click', (e) => { e.stopPropagation(); toggleControls(); });
-        advVideo.addEventListener('pause', () => showControls());
-        advVideo.addEventListener('play', () => {
-            if (exoOverlay.classList.contains('visible')) {
-                clearTimeout(controlsTimeout);
-                controlsTimeout = setTimeout(() => { if (exoOverlay && !advVideo.paused) exoOverlay.classList.remove('visible'); }, 5000);
-            }
+    // Wire crop inputs
+    ["cropXSlider","cropYSlider","cropWidthSlider","cropHeightSlider","zoomScaleSlider"].forEach(id => {
+      document.getElementById(id).addEventListener("input", drawCropCanvas);
+    });
+    document.getElementById("thumbFile").addEventListener("change", e => {
+      if (e.target.files?.[0]) openCropper(e.target.files[0]);
+    });
+  });
+
+  // ── CATEGORY STORAGE ──
+  function saveCustomCats() {
+    localStorage.setItem("adminCustomCats", JSON.stringify(customCategories));
+  }
+
+  function getAllCategories() {
+    return [...new Set([...customCategories])].sort((a,b) => a.localeCompare(b));
+  }
+
+  // ── LOAD CATEGORIES FROM SHEET ──
+  async function loadCategorySheet() {
+    if (!CAT_API_URL) return;
+    try {
+      const res = await fetch(CAT_API_URL + (CAT_API_URL.includes("?") ? "&" : "?") + "action=getCats");
+      const data = await res.json();
+      if (Array.isArray(data)) {
+        allCatSheetData = data;
+        data.forEach(item => {
+          if (item.Category && !customCategories.includes(item.Category)) {
+            customCategories.push(item.Category);
+          }
         });
+        saveCustomCats();
+        updateCategoryDropdown();
+        renderDrawerCats();
+      }
+    } catch(e) {
+      console.warn("Category sheet load error:", e);
     }
-    
-    function clearBufferingTimeout() { if (bufferingTimeout) { clearTimeout(bufferingTimeout); bufferingTimeout = null; } }
-    
-    function attemptResume() {
-        if (!currentSourceUrl) return;
-        if (advVideo.readyState >= 2) {
-            advVideo.play().catch(e => console.warn("Resume play failed", e));
-        } else {
-            const currentTime = advVideo.currentTime;
-            const wasPlaying = !advVideo.paused;
-            const url = currentSourceUrl;
-            if (currentMpegtsPlayer) {
-                try { currentMpegtsPlayer.unload(); currentMpegtsPlayer.destroy(); } catch(e) {}
-                currentMpegtsPlayer = null;
-            }
-            if (currentHlsPlayer) {
-                try { currentHlsPlayer.destroy(); } catch(e) {}
-                currentHlsPlayer = null;
-            }
-            advVideo.pause();
-            advVideo.removeAttribute('src');
-            advVideo.load();
-            const isLive = url.includes('.m3u8') || url.includes('.ts') || url.includes('live');
-            loadIntoAdvancedPlayer(url, document.getElementById('videoTitle').innerText, null, wasPlaying);
-            if (!isLive && currentTime > 0 && currentTime < advVideo.duration) {
-                advVideo.addEventListener('loadedmetadata', function seekHandler() {
-                    advVideo.currentTime = currentTime;
-                    advVideo.removeEventListener('loadedmetadata', seekHandler);
-                });
-            }
-        }
-    }
-    
-    function handleWaiting() {
-        if (!currentSourceUrl) return;
-        clearBufferingTimeout();
-        bufferingTimeout = setTimeout(() => {
-            if (advVideo.readyState < 2 || advVideo.networkState === 2 || advVideo.buffered.length === 0) {
-                attemptResume();
-            }
-        }, 4000);
-    }
-    
-    function handlePlaying() { clearBufferingTimeout(); reloadAttempts = 0; }
-    function handleStalled() { if (!currentSourceUrl) return; attemptResume(); }
-    function handleError(e) { if (currentSourceUrl && reloadAttempts < MAX_RELOAD_ATTEMPTS) { reloadAttempts++; attemptResume(); } }
-    
-    function destroyAdvancedPlayer() {
-        clearBufferingTimeout();
-        if (currentMpegtsPlayer) { try { currentMpegtsPlayer.unload(); currentMpegtsPlayer.destroy(); } catch(e) {} currentMpegtsPlayer = null; }
-        if (currentHlsPlayer) { try { currentHlsPlayer.destroy(); } catch(e) {} currentHlsPlayer = null; }
-        advVideo.pause();
-        advVideo.removeAttribute('src');
-        advVideo.load();
-        advVideo.removeEventListener('waiting', handleWaiting);
-        advVideo.removeEventListener('playing', handlePlaying);
-        advVideo.removeEventListener('stalled', handleStalled);
-        advVideo.removeEventListener('error', handleError);
-    }
-    
-    function loadIntoAdvancedPlayer(url, title, cardElement, autoPlay = true) {
-        if (url === currentSourceUrl && advVideo.src) return;
-        destroyAdvancedPlayer();
-        currentSourceUrl = url;
-        reloadAttempts = 0;
-        exoLoader.style.display = 'flex';
-        advVideo.muted = true;
-        
-        advVideo.addEventListener('waiting', handleWaiting);
-        advVideo.addEventListener('playing', handlePlaying);
-        advVideo.addEventListener('stalled', handleStalled);
-        advVideo.addEventListener('error', handleError);
-        
-        const isTs = url.includes('.ts') || url.includes('transportstream');
-        const isM3u8 = url.includes('.m3u8') || url.includes('m3u8');
-        
-        if (isTs && typeof mpegts !== 'undefined') {
-            try {
-                currentMpegtsPlayer = mpegts.createPlayer({ type: 'mse', isLive: true, url: url, enableStashBuffer: false });
-                currentMpegtsPlayer.attachMediaElement(advVideo);
-                currentMpegtsPlayer.load();
-                if (autoPlay) currentMpegtsPlayer.play().catch(e => console.warn);
-            } catch(e) { fallbackNative(url, autoPlay); }
-        } 
-        else if (isM3u8 && window.Hls && Hls.isSupported()) {
-            try {
-                currentHlsPlayer = new Hls({ lowLatencyMode: true });
-                currentHlsPlayer.loadSource(url);
-                currentHlsPlayer.attachMedia(advVideo);
-                currentHlsPlayer.on(Hls.Events.MANIFEST_PARSED, () => {
-                    if (autoPlay) advVideo.play().catch(e=>console.warn);
-                });
-                currentHlsPlayer.on(Hls.Events.ERROR, (evt, data) => { if (data.fatal) attemptResume(); });
-            } catch(e) { fallbackNative(url, autoPlay); }
-        }
-        else { fallbackNative(url, autoPlay); }
-        
-        advVideo.onplaying = () => { exoLoader.style.display = 'none'; showControls(); };
-        advVideo.onwaiting = () => { exoLoader.style.display = 'flex'; };
-        advVideo.onerror = () => { exoLoader.style.display = 'none'; };
-        setTimeout(() => { if(advVideo.readyState > 0) exoLoader.style.display = 'none'; }, 1500);
-    }
-    
-    function toggleFullscreen() {
-        const container = document.getElementById('advancedPlayerContainer');
-        const isCurrentlyFull = !!(document.fullscreenElement || document.webkitFullscreenElement);
-        if (!isCurrentlyFull) {
-            const requestMethod = container.requestFullscreen || container.webkitRequestFullscreen;
-            if (requestMethod) requestMethod.call(container).catch(err => console.warn(err));
-        } else {
-            const exitMethod = document.exitFullscreen || document.webkitExitFullscreen;
-            if (exitMethod) exitMethod.call(document).catch(err => console.warn(err));
-        }
-    }
-    
-    function updateFullscreenIcon() {
-        const isFs = !!(document.fullscreenElement || document.webkitFullscreenElement);
-        isFullscreen = isFs;
-        exoFullBtn.innerHTML = `<span class="material-icons-round">${isFs ? 'fullscreen_exit' : 'fullscreen'}</span>`;
-        if (!isFs) { setVideoFitMode(); } else { setTimeout(() => { if (exoOverlay && !advVideo.paused) showControls(); }, 100); }
-    }
-    
-    document.addEventListener('fullscreenchange', updateFullscreenIcon);
-    document.addEventListener('webkitfullscreenchange', updateFullscreenIcon);
-    
-    function attachPlayerControls() {
-        const exoTopCloseBtn = document.getElementById('exoTopCloseBtn');
-        if (exoTopCloseBtn) { exoTopCloseBtn.onclick = (e) => { e.stopPropagation(); stopVideo(); }; }
-        
-        exoPlayBtn.onclick = (e) => {
-            e.stopPropagation();
-            if (advVideo.paused) { advVideo.play(); exoPlayBtn.innerHTML = '<span class="material-icons-round">pause</span>'; } 
-            else { advVideo.pause(); exoPlayBtn.innerHTML = '<span class="material-icons-round">play_arrow</span>'; }
-            showControls();
-        };
-        exoMuteBtn.onclick = (e) => {
-            e.stopPropagation();
-            advVideo.muted = !advVideo.muted;
-            exoMuteBtn.innerHTML = `<span class="material-icons-round">${advVideo.muted ? 'volume_off' : 'volume_up'}</span>`;
-            showControls();
-        };
-        exoScreenSetBtn.onclick = (e) => {
-            e.stopPropagation();
-            currentFitMode = (currentFitMode + 1) % fitModes.length;
-            setVideoFitMode();
-            showControls();
-        };
-        exoFullBtn.onclick = (e) => { e.stopPropagation(); toggleFullscreen(); showControls(); };
-        advVideo.onplay = () => { exoPlayBtn.innerHTML = '<span class="material-icons-round">pause</span>'; };
-        advVideo.onpause = () => { exoPlayBtn.innerHTML = '<span class="material-icons-round">play_arrow</span>'; };
-        advVideo.onvolumechange = () => {
-            exoMuteBtn.innerHTML = `<span class="material-icons-round">${advVideo.muted ? 'volume_off' : 'volume_up'}</span>`;
-        };
-        setVideoFitMode();
-        attachToggleControls();
-        attachGestureListeners();
-        updateFullscreenIcon();
-    }
-    
-    function isWebpageUrl(url) {
-        if (!url || url === '#') return false;
-        if (/\.(m3u8|ts|mp4|mkv|avi|flv|webm|mpd)(\?|$)/i.test(url)) return false;
-        if (/\/(stream|live|hls|dash|playlist|channel)\//i.test(url)) return false;
-        if (/\.(m3u8|ts|mp4)/.test(url)) return false;
-        if (/\.(php|html|htm|asp|aspx|jsp)([\?#]|$)/i.test(url)) return true;
-        if (/executeandship\.com|dailymotion\.com|streamtp\.com|embedstream|player\.|embed\./i.test(url)) return true;
-        if (url.includes('?') && !/\.(m3u8|ts|mp4|mpd)/i.test(url)) return true;
-        return false;
-    }
+  }
 
-    window.iframeFullscreen = function() {
-        var ifr = document.getElementById('iframePlayer');
-        var box = document.getElementById('iframePlayerBox');
-        var req = box.requestFullscreen || box.webkitRequestFullscreen;
-        if (req) req.call(box);
-    };
-
-    window.play = function(url, title, cardElement) {
-        if(!url || url === '#') return;
-        document.querySelectorAll('.card').forEach(c => c.classList.remove('playing'));
-        if(cardElement) cardElement.classList.add('playing');
-        document.getElementById('videoBox').style.display = 'block';
-        document.getElementById('mainSlider').style.display = 'none';
-        document.getElementById('videoTitle').innerText = title;
-        window.scrollTo({top: 0, behavior: 'smooth'});
-
-        if (isWebpageUrl(url)) {
-            destroyAdvancedPlayer();
-            currentSourceUrl = url;
-            document.getElementById('advancedPlayerContainer').style.display = 'none';
-            var iframeBox = document.getElementById('iframePlayerBox');
-            var iframe = document.getElementById('iframePlayer');
-            iframeBox.style.display = 'block';
-            iframe.src = url;
-        } else {
-            document.getElementById('iframePlayerBox').style.display = 'none';
-            document.getElementById('iframePlayer').src = 'about:blank';
-            document.getElementById('advancedPlayerContainer').style.display = '';
-            loadIntoAdvancedPlayer(url, title, cardElement, true);
-        }
-    };
-    
-    window.stopVideo = function() {
-        destroyAdvancedPlayer();
-        currentSourceUrl = null;
-        var iframe = document.getElementById('iframePlayer');
-        if (iframe) iframe.src = 'about:blank';
-        document.getElementById('iframePlayerBox').style.display = 'none';
-        document.getElementById('advancedPlayerContainer').style.display = '';
-        document.getElementById('videoBox').style.display = 'none';
-        document.querySelectorAll('.card').forEach(c => c.classList.remove('playing'));
-        const sliders = rawData.filter(d => (d.Category || d.category || "").toLowerCase() === 'slider');
-        if(currentCategory === 'All' && sliders.length > 0) document.getElementById('mainSlider').style.display = 'block';
-        if (controlsTimeout) clearTimeout(controlsTimeout);
-        hideControls();
-        setVideoBrightness(1.0);
-    };
-    
-    async function checkInternetBeforeStart() {
-        const checker = document.getElementById('internetChecker');
-        if (!navigator.onLine) { checker.style.display = 'flex'; return false; }
-        checker.style.display = 'none';
+  // Add category to Sheet
+  async function addCatToSheet(name, icon = "📁") {
+    if (!CAT_API_URL) return true;
+    try {
+      const res = await fetch(CAT_API_URL, {
+        method: "POST",
+        body: JSON.stringify({ action: "ADD_CAT", category: name, icon: icon, status: "Active", videoCount: 0, timestamp: Date.now() })
+      });
+      const result = await res.json();
+      if (result.status === "OK") {
+        allCatSheetData.push({ rowNumber: result.rowNumber, Category: name, Icon: icon, Status: "Active", VideoCount: 0 });
         return true;
+      }
+      return false;
+    } catch(e) {
+      console.warn("Cat add error:", e);
+      return false;
     }
-    
-    window.checkInternetAgain = async function() {
-        const btn = document.querySelector('#internetChecker .retry-btn');
-        btn.innerHTML = '<i class="fa fa-spinner fa-spin"></i> Checking...';
-        btn.disabled = true;
-        const hasInternet = await checkInternetBeforeStart();
-        if (hasInternet) window.location.reload();
-        else { btn.innerHTML = '<i class="fa fa-arrow-rotate-right"></i> Try Again'; btn.disabled = false; }
-    };
-    
-    let rawData = [], settingsData = {}, currentCategory = 'All';
-    let isRefreshing = false, currentDataHash = '';
-    let availableCategories = []; 
-    let favorites = JSON.parse(localStorage.getItem(FAV_KEY_STORAGE) || '[]');
-    
-    function generateDataHash(data) { try { const importantFields = data.map(item => ({ name: item.name || item.Name || '', url: item.URL || item.url || '', category: item.Category || item.category || '', thumbnail: item.Thumbnail || item.thumbnail || '' })); return btoa(unescape(encodeURIComponent(JSON.stringify(importantFields)))); } catch(e) { return Date.now().toString(); } }
-    function isDataSame(newData, oldData) { if(newData.length !== oldData.length) return false; return generateDataHash(newData) === generateDataHash(oldData); }
-    function saveDataToCache(data, settings) { try { const dataHash = generateDataHash(data); currentDataHash = dataHash; localStorage.setItem(STORAGE_KEY_DATA, JSON.stringify({ rawData: data, settingsData: settings, timestamp: Date.now(), dataHash })); localStorage.setItem(STORAGE_KEY_HASH, dataHash); } catch(e) {} }
-    
-    function loadDataFromCache() { 
-        try { 
-            const cached = localStorage.getItem(STORAGE_KEY_DATA); 
-            if(cached) { 
-                const cacheData = JSON.parse(cached); 
-                if(cacheData.rawData && cacheData.rawData.length) { 
-                    rawData = cacheData.rawData; 
-                    currentDataHash = cacheData.dataHash || ''; 
-                    if(cacheData.settingsData) settingsData = cacheData.settingsData; 
-                    applySettings(); 
-                    return true; 
-                } 
-            } 
-        } catch(e) {} 
-        return false; 
+  }
+
+  // Rename category in Sheet
+  async function renameCatInSheet(oldName, newName, newIcon) {
+    if (!CAT_API_URL) return true;
+    const found = allCatSheetData.find(c => c.Category === oldName);
+    if (!found) return true;
+    try {
+      const res = await fetch(CAT_API_URL, {
+        method: "POST",
+        body: JSON.stringify({
+          action      : "RENAME_CAT",
+          rowNumber   : found.rowNumber,
+          oldCategory : oldName,
+          newCategory : newName,
+          newIcon     : newIcon || found.Icon || "📁",
+          lastUpdated : new Date().toISOString()
+        })
+      });
+      const result = await res.json();
+      if (result.status === "UPDATED") {
+        found.Category = newName;
+        if (newIcon) found.Icon = newIcon;
+        return true;
+      }
+      return false;
+    } catch(e) {
+      console.warn("Cat rename error:", e);
+      return false;
     }
-    
-    function showCachedDataBadge() { const badge = document.getElementById('data-save-badge'); badge.classList.add('show'); setTimeout(() => badge.classList.remove('show'), 2000); }
-    function showNoUpdateBadge() { const badge = document.getElementById('no-update-badge'); badge.classList.add('show'); setTimeout(() => badge.classList.remove('show'), 2000); }
-    function updateUIAfterDataLoad() { 
-        updateSlider(); 
-        buildDynamicCategoryMenu(); 
-        currentCategory = 'All';
-        filterData('All', document.getElementById('home-nav-btn'), false); 
-        const splash = document.getElementById('splash-screen'); 
-        if(splash && splash.style.display !== 'none') { 
-            splash.style.opacity = '0'; 
-            setTimeout(() => splash.style.display = 'none', 500); 
-        } 
+  }
+
+  // Delete category from Sheet
+  async function deleteCatFromSheet(catName) {
+    if (!CAT_API_URL) return true;
+    const found = allCatSheetData.find(c => c.Category === catName);
+    if (!found) return true;
+    try {
+      const res = await fetch(CAT_API_URL, {
+        method: "POST",
+        body: JSON.stringify({ action: "DELETE_CAT", rowNumber: found.rowNumber })
+      });
+      const result = await res.json();
+      if (result.status === "DELETED") {
+        allCatSheetData = allCatSheetData.filter(c => c.Category !== catName);
+        return true;
+      }
+      return false;
+    } catch(e) {
+      console.warn("Cat del error:", e);
+      return false;
     }
-    function applySettings() { if(settingsData.ratingUrl) document.getElementById('rating-link').href = settingsData.ratingUrl; if(settingsData.privacyUrl) document.getElementById('privacy-link').href = settingsData.privacyUrl; if(settingsData.version && parseFloat(settingsData.version) > 3.9) { document.getElementById('update-overlay').style.display = 'flex'; document.getElementById('update-btn').onclick = () => window.location.href = settingsData.updateUrl; } }
+  }
+
+  // ── CATEGORY CRUD FOR UI ──
+  async function addCategoryFromDrawer() {
+    const inp = document.getElementById("newCatNameInput");
+    const name = inp.value.trim();
+    const icon = document.getElementById("newCatIconInput")?.value.trim() || "📁";
+
+    if (!name) {
+      showToast("Category name likhna zaroori hai!", "error");
+      return;
+    }
+    if (getAllCategories().map(c=>c.toLowerCase()).includes(name.toLowerCase())) {
+      showToast("Yeh category pehle se exist karti hai", "error");
+      return;
+    }
+
+    const btn = document.querySelector(".add-cat-row button");
+    const orig = btn.innerHTML;
+    btn.innerHTML = "⏳";
+    btn.disabled = true;
+
+    const sheetOk = await addCatToSheet(name, icon);
+    customCategories.push(name);
+    saveCustomCats();
+
+    inp.value = "";
+    if (document.getElementById("newCatIconInput")) document.getElementById("newCatIconInput").value = "";
+
+    btn.innerHTML = orig;
+    btn.disabled = false;
+
+    // Direct and instant data re-render on additions
+    renderDrawerCats();
+    updateCategoryDropdown();
+    renderCategories();
+
+    if (sheetOk && CAT_API_URL) showToast("✅ Category add ho gayi Sheet mein: " + name);
+    else if (!CAT_API_URL) showToast("✅ Category add: " + name + " (Sheet URL nahi)");
+    else showToast("⚠️ Category add hui lekin Sheet mein error", "error");
+  }
+
+  async function deleteCategoryChip(catName) {
+    if (!confirm(`"${catName}" category delete karein? (Videos delete nahi honge)`)) return;
+    showProgress(true, 30, "Category delete ho rahi hai...");
+    const sheetOk = await deleteCatFromSheet(catName);
+    customCategories = customCategories.filter(c => c !== catName);
+    saveCustomCats();
+
+    renderDrawerCats();
+    updateCategoryDropdown();
+    renderCategories();
+    showProgress(false);
+
+    if (sheetOk && CAT_API_URL) showToast("🗑️ Category Sheet se bhi delete ho gayi");
+    else showToast("🗑️ Category removed");
+  }
+
+  function openRenameCat(oldName) {
+    renameCatOldName = oldName;
+    document.getElementById("renameCatInput").value = oldName;
+    const found = allCatSheetData.find(c => c.Category === oldName);
+    document.getElementById("renameCatIcon").value = (found && found.Icon) ? found.Icon : "📁";
+    document.getElementById("renameCatReplace").checked = false;
+    document.getElementById("renameCatModal").style.display = "flex";
+  }
+
+  async function confirmRenameCategory() {
+    const newName     = document.getElementById("renameCatInput").value.trim();
+    const newIcon     = document.getElementById("renameCatIcon").value.trim() || "📁";
+    const replaceMode = document.getElementById("renameCatReplace").checked;
+
+    if (!newName) {
+      document.getElementById("renameCatModal").style.display = "none";
+      return;
+    }
+    // Naam same ho AUR replace bhi off ho — kuch karne ki zaroorat nahi
+    if (newName === renameCatOldName && !replaceMode) {
+      document.getElementById("renameCatModal").style.display = "none";
+      return;
+    }
+    document.getElementById("renameCatModal").style.display = "none";
+    showProgress(true, 20, "Category update ho rahi hai...");
+
+    if (replaceMode) {
+      updateProgress(35, "Old row delete ho rahi hai...");
+      await deleteCatFromSheet(renameCatOldName);
+
+      updateProgress(55, "Naya row add ho raha hai...");
+      await addCatToSheet(newName, newIcon);
+
+      updateProgress(75, "Sheet1 videos update ho rahe hain...");
+      await renameCatInSheet(renameCatOldName, newName, newIcon);
+
+    } else {
+      updateProgress(50, "Sheet update ho rahi hai...");
+      await renameCatInSheet(renameCatOldName, newName, newIcon);
+    }
+
+    updateProgress(90, "UI update ho rahi hai...");
+
+    allVideos.forEach(v => {
+      if (v.Category && v.Category.trim().toLowerCase() === renameCatOldName.trim().toLowerCase()) {
+        v.Category = newName;
+      }
+    });
+
+    const idx = customCategories.indexOf(renameCatOldName);
+    if (idx !== -1) customCategories[idx] = newName;
+    else customCategories.push(newName);
+    saveCustomCats();
+
+    renderCategories();
+    renderDrawerCats();
+    updateCategoryDropdown();
+    await loadData();
+    renderDrawerCats();
+    updateCategoryDropdown();
+
+    showProgress(false);
+    showToast((replaceMode ? "🔄 Replace" : "✏️ Rename") + " done: " + newName);
+  }
+
+  function renderDrawerCats() {
+    const list = document.getElementById("drawerCatList");
+    if (!list) return;
+    const cats = getAllCategories();
+    list.innerHTML = cats.map(c => {
+      const count = allVideos.filter(v => (v.Category || '').trim().toLowerCase() === c.trim().toLowerCase()).length;
+      return `<div class="cat-chip" onclick="scrollToCategory('${esc(c)}')">
+        <div class="cc-left">
+          <div class="cc-dot"></div>
+          <span style="display:flex;align-items:center;gap:4px;" onclick="event.stopPropagation(); openRenameCat('${esc(c)}')">
+            ${esc(c)} ✏️
+          </span>
+        </div>
+        <div style="display:flex;align-items:center;gap:6px;">
+          <span class="cc-count">${count}</span>
+          <button class="cc-del" onclick="event.stopPropagation(); deleteCategoryChip('${esc(c)}')">🗑️</button>
+        </div>
+      </div>`;
+    }).join('');
+  }
+
+  function updateCategoryDropdown() {
+    const sel = document.getElementById("videoCategorySelect");
+    if (!sel) return;
+    const cats = getAllCategories();
+    sel.innerHTML = `<option value="">-- Select Category --</option>` + 
+      cats.map(c => `<option value="${esc(c)}">${esc(c)}</option>`).join('');
+  }
+
+  function scrollToCategory(catId) {
+    const el = document.getElementById("cat-sec-" + catId);
+    if (el) {
+      el.scrollIntoView({ behavior: "smooth", block: "start" });
+      closeDrawer();
+    }
+  }
+
+  function scrollToTop() {
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
+  function toggleDrawer() {
+    document.getElementById("sideDrawer").classList.toggle("open");
+    document.getElementById("drawerOverlay").classList.toggle("open");
+  }
+
+  function closeDrawer() {
+    document.getElementById("sideDrawer").classList.remove("open");
+    document.getElementById("drawerOverlay").classList.remove("open");
+  }
+
+  // ── PROGRESS ──
+  function showProgress(show, percent = 0, msg = "Processing...") {
+    document.getElementById("progressOverlay").style.display = show ? "flex" : "none";
+    if (show) updateProgress(percent, msg);
+  }
+
+  function updateProgress(percent, msg) {
+    const fill = document.getElementById("progressFillBar");
+    fill.style.width = percent + "%";
+    fill.innerText = Math.floor(percent) + "%";
+    document.getElementById("progressStatusText").innerText = msg;
+  }
+
+  function showToast(text, type = "success") {
+    const t = document.getElementById("toastMessage");
+    t.innerText = text;
+    t.style.borderLeftColor = type === "error" ? "#ff4444" : "#00ffaa";
+    t.style.background = type === "error" ? "#2a1010" : "#1a2a1a";
+    t.style.display = "block";
+    setTimeout(() => { t.style.display = "none"; }, 3000);
+  }
+
+  // ── LOAD DATA ──
+  async function loadData() {
+    try {
+      showProgress(true, 10, "Fetching videos...");
+      const res = await fetch(API_URL);
+      const data = await res.json();
+      allVideos = Array.isArray(data) ? data.map(item => ({
+        rowNumber: item.rowNumber,
+        Name: item.Name || "",
+        Category: item.Category || "",
+        URL: item.URL || "#",
+        Thumbnail: item.Thumbnail || "",
+        FileId: item.FileID || item.FileId || ""
+      })) : [];
+
+      updateProgress(60, "Loading categories...");
+      await loadCategorySheet();
+      updateProgress(100, "Rendering...");
+      setTimeout(() => showProgress(false), 300);
+
+      renderCategories();
+      updateCategoryDropdown();
+    } catch (e) {
+      showProgress(false);
+      showToast("Load error: " + e.message, "error");
+      allVideos = [];
+      renderCategories();
+      updateCategoryDropdown();
+    }
+  }
+
+  // ── RENDER ──
+  // Rule fixed: Removed hardcoded default order. Just custom user categories now.
+  function getActiveCats() {
+    return getAllCategories();
+  }
+
+  function esc(str) {
+    if (!str) return '';
+    return String(str).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[m]);
+  }
+
+  function renderCategories() {
+    const container = document.getElementById("categoriesContainer");
+    const categories = getActiveCats();
     
-    function showNoContentScreen() {
-        const homeCategoriesContainer = document.getElementById('homeCategoriesContainer');
-        const mainCategoryView = document.getElementById('mainCategoryView');
-        if(mainCategoryView) mainCategoryView.style.display = 'none';
-        if(homeCategoriesContainer) {
-            homeCategoriesContainer.style.display = 'block';
-            homeCategoriesContainer.innerHTML = `
-            <div class="empty-state">
-                <i class="fa fa-folder-open"></i>
-                <h3>No Content Available</h3>
-                <p>Category sheet mein koi active category nahi mili.</p>
-            </div>`;
+    if (!categories.length) {
+      container.innerHTML = `<div style="background:#0f1624;border-radius:28px;padding:32px;text-align:center;border:1px dashed #1e3a5f;color:var(--muted);font-size:0.9rem;">
+        Pehle menu se <strong>Category add karo</strong> ya naya video insert karo!
+      </div>`;
+      return;
+    }
+
+    let html = "";
+    for (const cat of categories) {
+      const vids = allVideos.filter(v => (v.Category || '').trim().toLowerCase() === cat.trim().toLowerCase());
+      html += `<div class="category-card" id="cat-sec-${esc(cat)}">
+        <div class="category-header">
+          <div class="cat-title-group">
+            <h2 class="category-title">${esc(cat)}</h2>
+            <span class="category-badge">${vids.length} videos</span>
+          </div>
+          <div class="cat-actions">
+            <button class="cat-action-btn" onclick="openAddModal('${esc(cat)}')">➕ Add Video</button>
+            <button class="cat-action-btn" onclick="openRenameCat('${esc(cat)}')">✏️ Rename</button>
+            <button class="cat-action-btn del-cat" onclick="deleteCategoryChip('${esc(cat)}')">🗑️ Delete</button>
+          </div>
+        </div>
+        <div class="horizontal-scroll">`;
+      
+      if (!vids.length) {
+        html += `<div class="empty-cat-msg">No videos found in this category</div>`;
+      } else {
+        for (const v of vids) {
+          const thumb = v.Thumbnail || 'https://placehold.co/300x180/2a3555/white?text=No+Image';
+          html += `<div class="video-card" data-url="${esc(v.URL)}">
+            <div class="thumb-wrapper">
+              <img src="${esc(thumb)}" loading="lazy" onerror="this.src='https://placehold.co/300x180/2a3555/white?text=Err'">
+            </div>
+            <div class="video-info">
+              <div class="video-name">${esc(v.Name)}</div>
+              <div class="video-url">${v.URL.length>42 ? esc(v.URL.substring(0,40))+'...' : esc(v.URL)}</div>
+              <div class="video-actions">
+                <button class="small-edit" data-row="${v.rowNumber}" data-name="${esc(v.Name)}" data-cat="${esc(v.Category)}" data-url="${esc(v.URL)}" data-thumb="${esc(v.Thumbnail)}" data-fileid="${esc(v.FileId)}">✏️ Edit</button>
+                <button class="small-delete" data-row="${v.rowNumber}" data-name="${esc(v.Name)}">🗑️ Del</button>
+              </div>
+            </div>
+          </div>`;
         }
-        const splash = document.getElementById('splash-screen');
-        if(splash && splash.style.display !== 'none') {
-            splash.style.opacity = '0';
-            setTimeout(() => splash.style.display = 'none', 500);
-        }
+      }
+      html += `</div></div>`;
+    }
+    container.innerHTML = html;
+    attachEvents();
+    renderDrawerCats();
+  }
+
+  function attachEvents() {
+    document.querySelectorAll(".small-edit").forEach(btn => {
+      btn.addEventListener("click", e => {
+        e.stopPropagation();
+        openEditModal(parseInt(btn.dataset.row), btn.dataset.name, btn.dataset.cat, btn.dataset.url, btn.dataset.thumb, btn.dataset.fileid);
+      });
+    });
+
+    document.querySelectorAll(".small-delete").forEach(btn => {
+      btn.addEventListener("click", e => {
+        e.stopPropagation();
+        if (confirm(`Delete "${btn.dataset.name}"?`)) deleteVideo(parseInt(btn.dataset.row));
+      });
+    });
+
+    document.querySelectorAll(".video-card").forEach(card => {
+      card.addEventListener("click", e => {
+        if (e.target.classList.contains("small-edit") || e.target.classList.contains("small-delete")) return;
+        const url = card.dataset.url;
+        if (url) window.open(url, "_blank");
+      });
+    });
+  }
+
+  // ── DELETE ──
+  async function deleteVideo(rowNumber) {
+    showProgress(true, 30, "Deleting...");
+    try {
+      const res = await fetch(API_URL, {
+        method: "POST",
+        body: JSON.stringify({ action: "DELETE", rowNumber })
+      });
+      const result = await res.json();
+      if (result.status === "DELETED") {
+        showToast("🗑️ Deleted!");
+        await loadData();
+      } else showToast("Delete failed: " + (result.message || ""), "error");
+    } catch (e) {
+      showToast("Error: " + e.message, "error");
+    } finally {
+      showProgress(false);
+    }
+  }
+
+  // ── MODAL OPEN ──
+  function openAddModal(prefillCat = "") {
+    isEditMode = false;
+    currentEditRow = null;
+    document.getElementById("modalTitle").innerText = "➕ Add Video";
+    document.getElementById("videoName").value = "";
+    document.getElementById("videoUrl").value = "";
+    document.getElementById("thumbFile").value = "";
+    document.getElementById("videoCategorySelect").value = prefillCat || "";
+    document.getElementById("thumbBadge").className = "badge-req";
+    document.getElementById("thumbBadge").innerText = "Required";
+    document.getElementById("currentThumbRow").style.display = "none";
+    document.getElementById("replaceCbWrap").style.display = "none";
+    document.getElementById("globalModal").style.display = "flex";
+  }
+
+  function openEditModal(row, name, cat, url, thumb, fileid) {
+    isEditMode = true;
+    currentEditRow = row;
+    currentEditThumb = thumb;
+    currentEditFile = fileid || "";
+
+    document.getElementById("modalTitle").innerText = "✏️ Edit Video";
+    document.getElementById("videoName").value = name;
+    document.getElementById("videoUrl").value = url;
+    document.getElementById("videoCategorySelect").value = cat || "";
+    document.getElementById("thumbFile").value = "";
+    
+    document.getElementById("thumbBadge").className = "badge-opt";
+    document.getElementById("thumbBadge").innerText = "Optional";
+
+    if (thumb) {
+      document.getElementById("currentThumbImg").src = thumb;
+      document.getElementById("currentThumbRow").style.display = "flex";
+      document.getElementById("replaceCbWrap").style.display = "flex";
+      document.getElementById("replaceOldCb").checked = false;
+    } else {
+      document.getElementById("currentThumbRow").style.display = "none";
+      document.getElementById("replaceCbWrap").style.display = "none";
     }
 
-    async function fetchFreshData() {
-        return new Promise((resolve) => {
+    document.getElementById("globalModal").style.display = "flex";
+  }
 
-            // STEP 1: Pehle Category Sheet check karo
-            Papa.parse('https://docs.google.com/spreadsheets/d/e/2PACX-1vQJM1FvOsBuKL_Al7PpwYerGDVFhs5tLF4PaVs3_TOLX-TFLW-iF3B6qLLLeuuBmjfZFGe3CFxJA-TR/pub?gid=1155331852&single=true&output=csv', {
-                download: true, header: true, skipEmptyLines: true,
-                complete: function(catResults) {
-                    
-                    // Category sheet se active categories filter karo
-                    var loadedCategories = catResults.data.filter(function(row){
-                        return (row.Category||row.category||'').trim() && (row.Status||'').toLowerCase() !== 'inactive';
-                    }).map(function(row){
-                        var ic = (row.Icon||row.icon||'folder').trim();
-                        var resolved = ic.includes(' ') ? ic : ic.startsWith('fa-') ? 'fa '+ic : 'fa fa-'+ic;
-                        return { name: (row.Category||row.category||'').trim(), icon: resolved };
-                    });
+  // ── SAVE / UPDATE VIDEO ──
+  async function submitVideo() {
+    const name = document.getElementById("videoName").value.trim();
+    const category = document.getElementById("videoCategorySelect").value;
+    const url = document.getElementById("videoUrl").value.trim();
+    const fileInp = document.getElementById("thumbFile");
+    const file = fileInp.files?.[0];
+    const replaceMode = document.getElementById("replaceOldCb").checked;
 
-                    // STEP 2: Agar category sheet mein koi category nahi hai to No Content dikhao
-                    if(!loadedCategories.length) {
-                        availableCategories = [];
-                        rawData = [];
-                        showNoContentScreen();
-                        resolve(false);
-                        return;
-                    }
+    if (!name || !category || !url) {
+      showToast("❌ Name, Category aur URL bharo", "error");
+      return;
+    }
 
-                    // Categories mil gayi - ab availableCategories set karo
-                    availableCategories = loadedCategories;
+    document.getElementById("globalModal").style.display = "none";
+    showProgress(true, 10, "Preparing...");
 
-                    // STEP 3: Ab Sheet1 (main data) load karo
-                    Papa.parse('https://docs.google.com/spreadsheets/d/e/2PACX-1vQJM1FvOsBuKL_Al7PpwYerGDVFhs5tLF4PaVs3_TOLX-TFLW-iF3B6qLLLeuuBmjfZFGe3CFxJA-TR/pub?output=csv', {
-                        download: true, header: true, skipEmptyLines: true,
-                        complete: function(results) {
-                            let newRawData = results.data
-                                .filter(item => item && (item.name || item.Name || item.URL || item.url))
-                                .map(item => {
-                                    let cat = (item.Category || item.category || "").trim();
-                                    if(cat.toLowerCase() === "tv shows" || cat.toLowerCase() === "tvshow") item.Category = "TV Shows";
-                                    return item;
-                                });
+    let base64Thumb = null;
+    if (file) {
+      base64Thumb = await new Promise(resolve => {
+        const rd = new FileReader();
+        rd.onload = () => resolve(rd.result);
+        rd.readAsDataURL(file);
+      });
+    }
 
-                            // STEP 4: Sheet1 data ko category se match karo - sirf matching items rakhein
-                            let categoryNames = availableCategories.map(c => c.name.toLowerCase());
-                            let matchedData = newRawData.filter(item => {
-                                let itemCat = (item.Category || item.category || "").trim().toLowerCase();
-                                return itemCat === 'slider' || categoryNames.includes(itemCat);
-                            });
+    if (isEditMode && currentEditRow !== null) {
+      if (replaceMode) {
+        updateProgress(25, "Purani entry delete ho rahi hai...");
+        try {
+          const delRes = await fetch(API_URL, {
+            method: "POST",
+            body: JSON.stringify({ action: "DELETE", rowNumber: currentEditRow, keepImage: true })
+          });
+          const delResult = await delRes.json();
+          if (delResult.status !== "DELETED") {
+            showToast("Delete failed: " + (delResult.message||""), "error");
+            showProgress(false);
+            return;
+          }
+        } catch(e) {
+          showToast("Delete error: " + e.message, "error");
+          showProgress(false);
+          return;
+        }
 
-                            // STEP 5: Settings bhi load karo
-                            Papa.parse('https://docs.google.com/spreadsheets/d/e/2PACX-1vQD2lHL-u6zHPZKdYIVD4eXp98XipkVP4jKfxLDoNje9DeZ1726o0zFZf-gAR2kZj0ls7VhceXbbKih/pub?gid=1123743396&single=true&output=csv', {
-                                download: true, header: true, skipEmptyLines: true,
-                                complete: function(settingsResults) {
-                                    settingsData = settingsResults.data[0] || {};
+        updateProgress(65, "Nai entry add ho rahi hai...");
+        try {
+          const payload = base64Thumb ? { name, category, url, thumbnail: base64Thumb } : { name, category, url, existingThumbUrl: currentEditThumb, existingFileId: currentEditFile };
+          const res = await fetch(API_URL, {
+            method: "POST",
+            body: JSON.stringify(payload)
+          });
+          const result = await res.json();
+          if (result.status === "OK") {
+            showToast("✅ Entry replace ho gayi!");
+            await loadData();
+          } else showToast("Add failed: " + (result.message||""), "error");
+        } catch(e) {
+          showToast("Error: " + e.message, "error");
+        } finally {
+          showProgress(false);
+        }
+        return;
+      }
 
-                                    // STEP 6: Matched data hai to show karo, warna No Content
-                                    if(matchedData.length) {
-                                        if(!isDataSame(matchedData, rawData) || rawData.length === 0) {
-                                            rawData = matchedData;
-                                            applySettings();
-                                            saveDataToCache(rawData, settingsData);
-                                            updateUIAfterDataLoad();
-                                            resolve(true);
-                                        } else {
-                                            updateUIAfterDataLoad();
-                                            resolve(false);
-                                        }
-                                    } else {
-                                        // Sheet1 mein koi bhi category ka data nahi mila
-                                        rawData = [];
-                                        showNoContentScreen();
-                                        resolve(false);
-                                    }
-                                },
-                                error: function() {
-                                    // Settings na aaye tab bhi data dikhao agar hai
-                                    if(matchedData.length) {
-                                        if(!isDataSame(matchedData, rawData) || rawData.length === 0) {
-                                            rawData = matchedData;
-                                            saveDataToCache(rawData, settingsData);
-                                            updateUIAfterDataLoad();
-                                            resolve(true);
-                                        } else {
-                                            updateUIAfterDataLoad();
-                                            resolve(false);
-                                        }
-                                    } else {
-                                        rawData = [];
-                                        showNoContentScreen();
-                                        resolve(false);
-                                    }
-                                }
-                            });
-                        },
-                        error: function() {
-                            // Sheet1 load na ho to No Content
-                            rawData = [];
-                            showNoContentScreen();
-                            resolve(false);
-                        }
-                    });
-                },
-                error: function() {
-                    // Category sheet load na ho to No Content
-                    availableCategories = [];
-                    rawData = [];
-                    showNoContentScreen();
-                    resolve(false);
-                }
-            });
+      updateProgress(30, "Updating record...");
+      try {
+        const payload = { action: "EDIT", rowNumber: currentEditRow, name, category, url };
+        if (base64Thumb) payload.thumbnail = base64Thumb;
+
+        const res = await fetch(API_URL, {
+          method: "POST",
+          body: JSON.stringify(payload)
         });
-    }
-    
-    function updateSlider() { const sliders = rawData.filter(d => (d.Category || d.category || "").toLowerCase() === 'slider'); const track = document.getElementById('sliderTrack'); if(sliders.length && track) { track.innerHTML = sliders.map(s => `<div class="slide-item"><img src="${s.Thumbnail || s.thumbnail || s.URL || s.url || MASTER_LOGO}" loading="lazy" onerror="handleImageError(this)" onload="handleImageLoad(this)" class="img-loading"></div>`).join(''); const videoBoxDisplay = document.getElementById('videoBox').style.display; document.getElementById('mainSlider').style.display = (currentCategory === 'All' && videoBoxDisplay !== 'block') ? 'block' : 'none'; } else document.getElementById('mainSlider').style.display = 'none'; }
-
-    function buildDynamicCategoryMenu() {
-        const liveBtn = document.getElementById('live-nav-btn');
-        const sideNavDynamicLinks = document.getElementById('sideNavDynamicLinks');
-        
-        // Live/Life category dhundo rawData mein
-        let hasLiveCategory = rawData.some(d => {
-            let c = (d.Category || d.category || '').trim().toLowerCase();
-            return c === 'live' || c === 'life';
+        const result = await res.json();
+        if (result.status === "UPDATED") {
+          showToast("✅ Video updated!");
+          await loadData();
+        } else showToast("Update failed: " + (result.message || ""), "error");
+      } catch (e) {
+        showToast("Error: " + e.message, "error");
+      } finally {
+        showProgress(false);
+      }
+    } else {
+      if (!base64Thumb) {
+        showToast("❌ Thumbnail picture choose karo", "error");
+        showProgress(false);
+        document.getElementById("globalModal").style.display = "flex";
+        return;
+      }
+      updateProgress(40, "Saving video to sheet...");
+      try {
+        const res = await fetch(API_URL, {
+          method: "POST",
+          body: JSON.stringify({ name, category, url, thumbnail: base64Thumb })
         });
+        const result = await res.json();
+        if (result.status === "OK") {
+          showToast("✅ Video added successfully!");
+          await loadData();
+        } else showToast("Add failed: " + (result.message || ""), "error");
+      } catch (e) {
+        showToast("Error: " + e.message, "error");
+      } finally {
+        showProgress(false);
+      }
+    }
+  }
 
-        if (hasLiveCategory) {
-            liveBtn.style.display = 'block';
-            // Category sheet se Live/Life category ka icon lo
-            let liveCatObj = availableCategories.find(function(c) {
-                return c.name.toLowerCase() === 'live' || c.name.toLowerCase() === 'life';
-            });
-            if(liveCatObj && liveCatObj.icon) {
-                // icon already resolved at fetch time (e.g. "fa fa-circle-play")
-                var liveBtnIcon = liveBtn.querySelector('i');
-                if(liveBtnIcon) liveBtnIcon.className = liveCatObj.icon;
-            }
-        } else {
-            liveBtn.style.display = 'none';
-        }
+  // ── SETTINGS ──
+  function openSettings() {
+    document.getElementById("settingsPanel").style.display = "flex";
+    cmInit();
+  }
 
-        sideNavDynamicLinks.innerHTML = `<a href="#" onclick="filterData('All', document.getElementById('home-nav-btn'), true)"><i class="fa fa-home"></i> Home</a>`;
+  function saveSettings() {
+    const newUrl = document.getElementById("settingsApiUrl").value.trim();
+    const newCatUrl = document.getElementById("settingsCatApiUrl").value.trim();
+    const newTitle = document.getElementById("settingsDashTitle").value.trim();
+
+    if (newUrl) { API_URL = newUrl; localStorage.setItem("adminApiUrl", newUrl); }
+    if (newCatUrl) { CAT_API_URL = newCatUrl; localStorage.setItem("adminCatApiUrl", newCatUrl); }
+    if (newTitle) {
+      localStorage.setItem("adminDashTitle", newTitle);
+      document.querySelector(".logo-area h2").innerText = "🎬 " + newTitle;
     }
 
-    window.filterData = function(cat, btn, shouldClose = true) { 
-        currentCategory = cat; 
-        if(shouldClose) closeNav(); 
+    document.getElementById("settingsPanel").style.display = "none";
+    showToast("✅ Settings saved!");
+    updateCatSheetStatus();
+    loadData();
+  }
+
+  // ── COLUMN MANAGER ──
+  // Default columns jo sheet mein pehle se hain
+  const CM_DEFAULT_SHEET1 = ["Timestamp","FileID","Name","Category","URL","Thumbnail"];
+  const CM_DEFAULT_CAT    = ["Category","Icon","Status","VideoCount","LastUpdated","Timestamp","Folder ID"];
+
+  let cmActiveTab = "sheet1";
+  // localStorage se columns load karo (ya default use karo)
+  let cmCols = {
+    sheet1: JSON.parse(localStorage.getItem("cmCols_sheet1") || "null") || [...CM_DEFAULT_SHEET1],
+    cat:    JSON.parse(localStorage.getItem("cmCols_cat")    || "null") || [...CM_DEFAULT_CAT]
+  };
+
+  function cmSaveCols() {
+    localStorage.setItem("cmCols_sheet1", JSON.stringify(cmCols.sheet1));
+    localStorage.setItem("cmCols_cat",    JSON.stringify(cmCols.cat));
+  }
+
+  function cmInit() {
+    cmActiveTab = "sheet1";
+    document.getElementById("cmTab1").classList.add("active");
+    document.getElementById("cmTabC").classList.remove("active");
+    cmRender();
+  }
+
+  function cmSwitchTab(tab) {
+    cmActiveTab = tab;
+    document.getElementById("cmTab1").classList.toggle("active", tab === "sheet1");
+    document.getElementById("cmTabC").classList.toggle("active", tab === "cat");
+    cmRender();
+  }
+
+  function cmRender() {
+    const cols = cmCols[cmActiveTab];
+    const list = document.getElementById("cmList");
+    if (!cols.length) {
+      list.innerHTML = `<div style="color:var(--muted);font-size:0.75rem;text-align:center;padding:10px;">Koi column nahi</div>`;
+      return;
+    }
+    list.innerHTML = cols.map((col, i) =>
+      `<div class="col-mgr-item">
+        <span style="font-size:13px;color:var(--muted);flex-shrink:0;">${i+1}</span>
+        <input class="col-mgr-inp" data-ci="${i}" value="${esc(col)}" placeholder="Column naam...">
+        <button class="col-mgr-del" onclick="cmDeleteCol(${i})" title="Delete">🗑️</button>
+      </div>`
+    ).join("");
+  }
+
+  function cmAddCol() {
+    const inp  = document.getElementById("cmNewCol");
+    const name = inp.value.trim();
+    if (!name) { showToast("Column naam likhna zaroori hai!", "error"); return; }
+    const existing = cmCols[cmActiveTab].map(c => c.toLowerCase());
+    if (existing.includes(name.toLowerCase())) { showToast("Yeh column pehle se hai!", "error"); return; }
+    cmCols[cmActiveTab].push(name);
+    cmSaveCols();
+    inp.value = "";
+    cmRender();
+    showToast("✅ Column add ho gaya — Apply dabao sheet sync ke liye");
+  }
+
+  function cmDeleteCol(i) {
+    const col = cmCols[cmActiveTab][i];
+    if (!confirm(`"${col}" column sheet se delete karo?`)) return;
+    if (API_URL) {
+      fetch(API_URL, {
+        method: "POST",
+        body: JSON.stringify({
+          action    : "DELETE_COLUMN",
+          sheetType : cmActiveTab === "sheet1" ? "SHEET1" : "CAT",
+          colName   : col
+        })
+      }).then(r => r.json())
+        .then(res => {
+          if (res.status === "DELETED") showToast("🗑️ Sheet se delete ho gaya: " + col);
+          else showToast("Sheet error: " + (res.message || res.status), "error");
+        })
+        .catch(() => showToast("⚠️ Sheet se delete fail", "error"));
+    }
+    cmCols[cmActiveTab].splice(i, 1);
+    cmSaveCols();
+    cmRender();
+  }
+
+  async function cmApply() {
+    // Input fields se latest renamed values collect karo
+    document.querySelectorAll("#cmList .col-mgr-inp").forEach(inp => {
+      const ci = parseInt(inp.dataset.ci);
+      const v  = inp.value.trim();
+      if (v) cmCols[cmActiveTab][ci] = v;
+    });
+    cmSaveCols();
+    cmRender();
+
+    if (!API_URL) { showToast("❌ API URL set nahi — Settings mein URL save karo", "error"); return; }
+
+    showProgress(true, 20, "Sheet columns update ho rahi hain...");
+    try {
+      const res = await fetch(API_URL, {
+        method: "POST",
+        body: JSON.stringify({
+          action    : "UPDATE_COLUMNS",
+          sheetType : cmActiveTab === "sheet1" ? "SHEET1" : "CAT",
+          allCols   : cmCols[cmActiveTab]
+        })
+      });
+      const result = await res.json();
+      updateProgress(100, "Done!");
+      setTimeout(() => showProgress(false), 400);
+      if (result.status === "UPDATED" || result.status === "OK") {
+        showToast("✅ Sheet columns update ho gayi!");
+      } else {
+        showToast("Failed: " + (result.message || ""), "error");
+      }
+    } catch (e) {
+      showProgress(false);
+      showToast("Error: " + e.message, "error");
+    }
+  }
+
+  // ── NEW SHEET ──
+  function openNewSheetPanel() {
+    document.getElementById("newSheetPanel").style.display = "flex";
+  }
+
+  function copyAppsScriptCode() {
+    const code = document.getElementById("appsScriptCodeBlock").innerText;
+    navigator.clipboard.writeText(code).then(() => showToast("✅ Code copied!")).catch(() => {
+      const ta = document.createElement("textarea");
+      ta.value = code; document.body.appendChild(ta); ta.select();
+      document.execCommand("copy"); document.body.removeChild(ta);
+      showToast("✅ Code copied!");
+    });
+  }
+
+  // ── CROPPER ──
+  let cropImg = new Image();
+  let naturalW = 1, naturalH = 1;
+  let zoomVal = 0.45, cropW = 240, cropH = 180, cropX = 0, cropY = 0;
+
+  function openCropper(file) {
+    const reader = new FileReader();
+    reader.onload = e => {
+      cropImg = new Image();
+      cropImg.onload = () => {
+        naturalW = cropImg.width; naturalH = cropImg.height;
+        zoomVal = 0.45; cropW = Math.min(380, naturalW); cropH = Math.min(260, naturalH); cropX = 0; cropY = 0;
         
-        const sliderDiv = document.getElementById('mainSlider');
-        const videoBox = document.getElementById('videoBox'); 
-        const sliders = rawData.filter(d => (d.Category || d.category || "").toLowerCase() === 'slider'); 
-        
-        sliderDiv.style.display = (cat === 'All' && videoBox.style.display !== 'block' && sliders.length) ? 'block' : 'none'; 
-        
-        document.querySelectorAll('.nav-btn').forEach(b => { 
-            if(b === btn) b.classList.add('active'); 
-            else if(!btn && (b.getAttribute('data-cat') === cat || (cat === 'All' && b.id === 'home-nav-btn'))) b.classList.add('active');
-            else b.classList.remove('active'); 
-        }); 
+        document.getElementById("cropXSlider").max = naturalW - cropW;
+        document.getElementById("cropYSlider").max = naturalH - cropH;
+        document.getElementById("cropWidthSlider").max = naturalW;
+        document.getElementById("cropHeightSlider").max = naturalH;
 
-        const homeCategoriesContainer = document.getElementById('homeCategoriesContainer');
-        const mainCategoryView = document.getElementById('mainCategoryView');
-        const moreSectionView = document.getElementById('moreSectionView');
-        const specificGrid = document.getElementById('specificGrid');
-        const specificCategoryTitle = document.getElementById('specificCategoryTitle');
+        document.getElementById("cropXSlider").value = 0;
+        document.getElementById("cropYSlider").value = 0;
+        document.getElementById("cropWidthSlider").value = cropW;
+        document.getElementById("cropHeightSlider").value = cropH;
+        document.getElementById("zoomScaleSlider").value = 45;
 
-        moreSectionView.style.display = 'none';
-
-        if (cat === 'All') {
-            mainCategoryView.style.display = 'none';
-            homeCategoriesContainer.style.display = 'block';
-            
-            let categoriesToDisplay = availableCategories;
-            if(!categoriesToDisplay.length) {
-                const uniqueCategories = [...new Set(rawData.map(item => (item.Category || item.category || "").trim()))].filter(Boolean);
-                categoriesToDisplay = uniqueCategories.map(c => ({ name: c, icon: 'fa-folder' }));
-            }
-            
-            let finalHtml = '';
-            categoriesToDisplay.forEach(catObj => {
-                const catName = catObj.name;
-                const lowerCatName = catName.toLowerCase();
-                
-                if(lowerCatName === 'slider' || lowerCatName === 'live' || lowerCatName === 'life') return;
-                
-                let filteredItems = rawData.filter(d => (d.Category || d.category || "").trim().toLowerCase() === lowerCatName);
-                if (!filteredItems.length) return;
-                
-                filteredItems = filteredItems.slice().reverse();
-                const hasMore = filteredItems.length > 5;
-                const itemsToShow = filteredItems.slice(0, 5);
-                
-                let cleanIcon = catObj.icon; // already resolved at fetch time
-
-                finalHtml += `
-                <div class="category-section">
-                    <div class="category-header">
-                        <div class="category-title"><i class="${cleanIcon}"></i> ${catName}</div>
-                        ${hasMore ? `<div class="read-more-btn" onclick="filterData('${catName}', null, false)">Read More</div>` : ''}
-                    </div>
-                    <div class="grid">
-                        ${itemsToShow.map(item => {
-                            let thumb = item.Thumbnail || item.thumbnail || MASTER_LOGO;
-                            let itemName = item.name || item.Name || "Untitled";
-                            let url = item.URL || item.url || "#";
-                            let isFav = favorites.includes(url);
-                            return `
-                            <div class="card" data-url="${escapeHtml(url)}" data-title="${escapeHtml(itemName)}">
-                                <div class="fav-badge ${isFav ? 'active' : ''}" onclick="toggleFav(event, '${escapeHtml(url)}')"><i class="fa fa-heart"></i></div>
-                                <div style="width:100%; height:100%;" onclick="play('${escapeHtml(url)}', '${escapeHtml(itemName)}', this.parentElement)">
-                                    <img src="${thumb}" loading="lazy" onerror="handleImageError(this)" onload="handleImageLoad(this)" class="img-loading">
-                                    <div class="card-title">${itemName}</div>
-                                </div>
-                            </div>`;
-                        }).join('')}
-                    </div>
-                </div>`;
-            });
-            
-            if(!finalHtml) {
-                homeCategoriesContainer.innerHTML = `
-                <div class="empty-state">
-                    <i class="fa fa-folder-open"></i>
-                    <h3>No content available</h3>
-                </div>`;
-            } else {
-                homeCategoriesContainer.innerHTML = finalHtml;
-            }
-            
-        } else {
-            homeCategoriesContainer.style.display = 'none';
-            mainCategoryView.style.display = 'block';
-            
-            let matchedCategory = availableCategories.find(c => c.name.toLowerCase() === cat.toLowerCase());
-            let currentIconClass = matchedCategory ? matchedCategory.icon : "fa-folder";
-            
-            if(cat.toLowerCase() === 'live' || cat.toLowerCase() === 'life') {
-                // Category sheet se icon lo agar available ho, warna fallback
-                let liveCatInSheet = availableCategories.find(function(c){
-                    return c.name.toLowerCase() === 'live' || c.name.toLowerCase() === 'life';
-                });
-                if(liveCatInSheet && liveCatInSheet.icon) {
-                    currentIconClass = liveCatInSheet.icon; // already fully resolved
-                } else {
-                    currentIconClass = "fa fa-circle-play";
-                }
-            }
-            let cleanIcon = currentIconClass.includes(' ') ? currentIconClass : currentIconClass.startsWith('fa-') ? 'fa ' + currentIconClass : 'fa fa-' + currentIconClass;
-            specificCategoryTitle.innerHTML = `<i class="${cleanIcon}"></i> ${cat.toUpperCase()}`;
-            
-            let filtered = rawData.filter(d => {
-                let c = (d.Category || d.category || "").trim().toLowerCase();
-                if (cat.toLowerCase() === 'live') {
-                    return c === 'live' || c === 'life';
-                }
-                return c === cat.toLowerCase();
-            });
-            
-            filtered = filtered.slice().reverse();
-            
-            if(!filtered.length) {
-                specificGrid.innerHTML = `
-                <div style="grid-column:1/-1" class="empty-state">
-                    <i class="fa fa-folder-open"></i>
-                    <h3>No content found</h3>
-                </div>`;
-            } else {
-                specificGrid.innerHTML = filtered.map(item => {
-                    let thumb = item.Thumbnail || item.thumbnail || MASTER_LOGO, itemName = item.name || item.Name || "Untitled", url = item.URL || item.url || "#";
-                    let isFav = favorites.includes(url);
-                    return `
-                    <div class="card" data-url="${escapeHtml(url)}" data-title="${escapeHtml(itemName)}">
-                        <div class="fav-badge ${isFav ? 'active' : ''}" onclick="toggleFav(event, '${escapeHtml(url)}')"><i class="fa fa-heart"></i></div>
-                        <div style="width:100%; height:100%;" onclick="play('${escapeHtml(url)}', '${escapeHtml(itemName)}', this.parentElement)">
-                            <img src="${thumb}" loading="lazy" onerror="handleImageError(this)" onload="handleImageLoad(this)" class="img-loading">
-                            <div class="card-title">${itemName}</div>
-                        </div>
-                    </div>`;
-                }).join('');
-            }
-        }
+        document.getElementById("cropToolModal").style.display = "flex";
+        drawCropCanvas();
+      };
+      cropImg.src = e.target.result;
     };
+    reader.readAsDataURL(file);
+  }
 
-    window.toggleFav = function(e, url) {
-        if(e) e.stopPropagation();
-        let idx = favorites.indexOf(url);
-        if (idx > -1) { favorites.splice(idx, 1); } else { favorites.push(url); }
-        localStorage.setItem(FAV_KEY_STORAGE, JSON.stringify(favorites));
-        
-        document.querySelectorAll(`.card[data-url="${url}"] .fav-badge`).forEach(badge => {
-            if (favorites.includes(url)) badge.classList.add('active');
-            else badge.classList.remove('active');
-        });
+  function drawCropCanvas() {
+    const cvs = document.getElementById("cropCanvas");
+    const ctx = cvs.getContext("2d");
 
-        if (currentCategory === 'favorites_view') { showFavorites(document.getElementById('fav-nav-btn')); }
-    };
+    const cv = parseFloat(document.getElementById("zoomScaleSlider").value);
+    zoomVal = cv / 100;
+    cropW = parseInt(document.getElementById("cropWidthSlider").value);
+    cropH = parseInt(document.getElementById("cropHeightSlider").value);
 
-    window.showFavorites = function(btn) {
-        closeNav();
-        currentCategory = 'favorites_view';
-        document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
-        if(btn) btn.classList.add('active');
+    document.getElementById("cropXSlider").max = Math.max(0, naturalW - cropW);
+    document.getElementById("cropYSlider").max = Math.max(0, naturalH - cropH);
+    cropX = parseInt(document.getElementById("cropXSlider").value);
+    cropY = parseInt(document.getElementById("cropYSlider").value);
 
-        document.getElementById('mainSlider').style.display = 'none';
-        document.getElementById('homeCategoriesContainer').style.display = 'none';
-        document.getElementById('moreSectionView').style.display = 'none';
-        
-        const mainCategoryView = document.getElementById('mainCategoryView');
-        const specificGrid = document.getElementById('specificGrid');
-        const specificCategoryTitle = document.getElementById('specificCategoryTitle');
-        
-        mainCategoryView.style.display = 'block';
-        specificCategoryTitle.innerHTML = `<i class="fa fa-heart" style="color:#ff3b30;"></i> MY FAVORITES`;
+    cvs.width = Math.min(600, naturalW * zoomVal);
+    cvs.height = Math.min(450, naturalH * zoomVal);
 
-        let filtered = rawData.filter(d => favorites.includes(d.URL || d.url));
-        filtered = filtered.slice().reverse();
+    ctx.clearRect(0,0,cvs.width,cvs.height);
+    ctx.drawImage(cropImg, 0, 0, naturalW, naturalH, 0, 0, cvs.width, cvs.height);
 
-        if(!filtered.length) {
-            specificGrid.innerHTML = `
-            <div style="grid-column:1/-1" class="empty-state">
-                <i class="fa fa-heart-broken" style="color:#555;"></i>
-                <h3>No favorites yet</h3>
-                <p>Click on the heart icon to add items</p>
-            </div>`;
-        } else {
-            specificGrid.innerHTML = filtered.map(item => {
-                let thumb = item.Thumbnail || item.thumbnail || MASTER_LOGO, itemName = item.name || item.Name || "Untitled", url = item.URL || item.url || "#";
-                return `
-                <div class="card" data-url="${escapeHtml(url)}" data-title="${escapeHtml(itemName)}">
-                    <div class="fav-badge active" onclick="toggleFav(event, '${escapeHtml(url)}')"><i class="fa fa-heart"></i></div>
-                    <div style="width:100%; height:100%;" onclick="play('${escapeHtml(url)}', '${escapeHtml(itemName)}', this.parentElement)">
-                        <img src="${thumb}" loading="lazy" onerror="handleImageError(this)" onload="handleImageLoad(this)" class="img-loading">
-                        <div class="card-title">${itemName}</div>
-                    </div>
-                </div>`;
-            }).join('');
-        }
-    };
+    document.getElementById("xPosVal").innerText = cropX + "px";
+    document.getElementById("yPosVal").innerText = cropY + "px";
+    document.getElementById("widthVal").innerText = cropW + "px";
+    document.getElementById("heightVal").innerText = cropH + "px";
+    document.getElementById("zoomPercent").innerText = Math.floor(zoomVal*100) + "%";
 
-    window.showMoreSection = function(btn) {
-        closeNav();
-        currentCategory = 'more_section';
-        document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
-        if(btn) btn.classList.add('active');
+    const sBox = document.getElementById("cropSelectionBox");
+    sBox.style.left = (cropX * zoomVal) + "px";
+    sBox.style.top = (cropY * zoomVal) + "px";
+    sBox.style.width = (cropW * zoomVal) + "px";
+    sBox.style.height = (cropH * zoomVal) + "px";
+  }
 
-        document.getElementById('mainSlider').style.display = 'none';
-        document.getElementById('homeCategoriesContainer').style.display = 'none';
-        document.getElementById('mainCategoryView').style.display = 'none';
-        document.getElementById('moreSectionView').style.display = 'block';
+  function applyCrop() {
+    const fx = parseInt(document.getElementById("cropXSlider").value);
+    const fy = parseInt(document.getElementById("cropYSlider").value);
+    const fw = Math.min(cropW, naturalW - fx);
+    const fh = Math.min(cropH, naturalH - fy);
 
-        let user = localStorage.getItem('nikamma_user');
-        if(user) {
-            document.getElementById('loggedOutView').style.display = 'none';
-            document.getElementById('loggedInView').style.display = 'block';
-            document.getElementById('welcomeUser').innerText = `Hi, ${user}!`;
-        } else {
-            document.getElementById('loggedOutView').style.display = 'block';
-            document.getElementById('loggedInView').style.display = 'none';
-        }
-    };
-
-    window.userLogin = function() {
-        let u = document.getElementById('loginUsername').value.trim();
-        if(u) { localStorage.setItem('nikamma_user', u); showMoreSection(document.getElementById('more-nav-btn')); }
-    };
-
-    window.userLogout = function() { localStorage.removeItem('nikamma_user'); showMoreSection(document.getElementById('more-nav-btn')); };
-
-    window.changeTheme = function(color) {
-        document.documentElement.style.setProperty('--main-color', color);
-        localStorage.setItem('nikamma_theme_color', color);
-        document.querySelectorAll('.category-title i').forEach(el => el.style.color = color);
-    };
-
-    function escapeHtml(str) { if(!str) return ''; return String(str).replace(/[&<>]/g, function(m) { if(m === '&') return '&amp;'; if(m === '<') return '&lt;'; if(m === '>') return '&gt;'; return m; }); }
-    function handleImageError(img) { if(img && img.src !== MASTER_LOGO) { img.src = MASTER_LOGO; img.classList.add('img-loading'); img.onerror = null; } }
-    function handleImageLoad(img) { if(img) { img.classList.remove('img-loading'); img.classList.add('img-loaded'); } }
-    function shareApp(e) { if(e) e.preventDefault(); const shareURL = settingsData.shareUrl || window.location.href; if(navigator.share) navigator.share({ title: 'Nikamma 4k', url: shareURL }); else window.open(shareURL, '_blank'); }
-    
-    function openNav() { const sideNav = document.getElementById("mySidenav"), overlay = document.getElementById("menu-overlay"); overlay.style.display = "block"; setTimeout(() => { sideNav.classList.add("open"); overlay.classList.add("visible"); }, 10); }
-    function closeNav() { const sideNav = document.getElementById("mySidenav"), overlay = document.getElementById("menu-overlay"); sideNav.classList.remove("open"); overlay.classList.remove("visible"); setTimeout(() => { if(!sideNav.classList.contains('open')) overlay.style.display = "none"; }, 400); }
-    (function(){ var sx=0,sy=0,sa=false; document.addEventListener('touchstart',function(e){ if(e.touches[0].clientX<window.innerWidth*0.8){sx=e.touches[0].clientX;sy=e.touches[0].clientY;sa=true;} },{passive:true}); document.addEventListener('touchmove',function(e){ if(!sa)return; var dx=e.touches[0].clientX-sx,dy=Math.abs(e.touches[0].clientY-sy); if(dx>45&&dy<60){openNav();sa=false;} else if(dx<-10||dy>60)sa=false; },{passive:true}); document.addEventListener('touchend',function(){sa=false;},{passive:true}); })();
-    function toggleSearch(show) { document.getElementById('header-main').style.display = show ? 'none' : 'flex'; document.getElementById('header-icons').style.display = show ? 'none' : 'flex'; document.getElementById('search-container').style.display = show ? 'flex' : 'none'; if(show) document.getElementById('searchBar').focus(); }
-    
-    window.search = function() { 
-        let term = document.getElementById('searchBar').value.toLowerCase().trim(); 
-        const homeCategoriesContainer = document.getElementById('homeCategoriesContainer');
-        const mainCategoryView = document.getElementById('mainCategoryView');
-        const specificGrid = document.getElementById('specificGrid');
-        const specificCategoryTitle = document.getElementById('specificCategoryTitle');
-
-        if(term === '') { filterData(currentCategory, null, false); return; } 
-        
-        homeCategoriesContainer.style.display = 'none';
-        mainCategoryView.style.display = 'block';
-        specificCategoryTitle.innerHTML = `<i class="fa fa-search"></i> SEARCH RESULTS`;
-        
-        const filtered = rawData.filter(d => (d.name || d.Name || "").toLowerCase().includes(term) && (d.Category || d.category || "").toLowerCase() !== 'slider').slice().reverse(); 
-        if(!filtered.length) { 
-            specificGrid.innerHTML = `<div style="grid-column:1/-1" class="empty-state"><i class="fa fa-search"></i><h3>No results for "${term}"</h3></div>`; 
-            return; 
-        } 
-        
-        specificGrid.innerHTML = filtered.map(item => `
-        <div class="card" onclick="play('${escapeHtml(item.URL || item.url || "#")}', '${escapeHtml(item.name || item.Name)}', this)">
-            <img src="${item.Thumbnail || item.thumbnail || MASTER_LOGO}" loading="lazy" onerror="handleImageError(this)" onload="handleImageLoad(this)" class="img-loading">
-            <div class="card-title">${item.name || item.Name}</div>
-        </div>`).join(''); 
-    };
-
-    window.forceRefreshData = async function() {
-        if(isRefreshing) return;
-        isRefreshing = true;
-        updatePTR('release');
-        // Cache clear karo taake fresh data force load ho
-        try { localStorage.removeItem(STORAGE_KEY_DATA); localStorage.removeItem(STORAGE_KEY_HASH); } catch(e) {}
-        rawData = [];
-        currentDataHash = '';
-        const updated = await fetchFreshData();
-        updatePTR('complete');
-        if(updated) showCachedDataBadge();
-        else showNoUpdateBadge();
-        setTimeout(() => isRefreshing = false, 500);
-        closeNav();
-    };
-    
-    let ptrStartY = 0, ptrActive = false, ptrHeight = 0, isTouching = false;
-
-    function updatePTR(status, pullDistance = 0) {
-        var pc = document.getElementById('ptr-container');
-        var pt = document.getElementById('ptr-text');
-        var pi = document.getElementById('ptr-icon');
-        if (status === 'pull') {
-            var show = Math.min(pullDistance, 70);
-            var ty = -70 + show;
-            pc.style.transition = 'none';
-            pc.style.transform = 'translateY(' + ty + 'px)';
-            if (pullDistance > 50) { pt.innerText = 'Release to refresh'; pi.className = 'fa fa-rotate'; } 
-            else { pt.innerText = 'Pull to refresh'; pi.className = 'fa fa-arrow-down'; }
-        } else if (status === 'release') {
-            pc.style.transition = 'transform 0.3s ease'; pc.style.transform = 'translateY(0px)'; pt.innerText = 'Refreshing...';
-            pi.className = 'ptr-spinner';
-        } else if (status === 'complete') {
-            pc.style.transition = 'transform 0.3s ease'; pc.style.transform = 'translateY(-70px)';
-            setTimeout(function() { pt.innerText = 'Pull to refresh'; pi.className = 'fa fa-arrow-down'; }, 400);
-        }
+    if (fw <= 0 || fh <= 0) {
+      showToast("Invalid crop area", "error");
+      return;
     }
 
-    document.addEventListener('touchstart', function(e) { if(window.pageYOffset === 0 && !isRefreshing) { ptrStartY = e.touches[0].pageY; isTouching = true; } }, {passive: true});
-    document.addEventListener('touchmove', function(e) { if(window.pageYOffset === 0 && isTouching && !isRefreshing) { const diffY = e.touches[0].pageY - ptrStartY; if(diffY > 0) { ptrActive = true; ptrHeight = Math.min(diffY, 70); updatePTR('pull', ptrHeight); } } }, {passive: false});
-    document.addEventListener('touchend', function() { if(ptrActive && ptrHeight > 50 && !isRefreshing) forceRefreshData(); else if(ptrActive) updatePTR('complete'); isTouching = false; ptrActive = false; ptrHeight = 0; });
-    
-    let sliderInterval, slideIndex = 0;
-    function startSlider() { if(sliderInterval) clearInterval(sliderInterval); sliderInterval = setInterval(() => { const track = document.getElementById('sliderTrack'); if(track && track.children.length) { slideIndex = (slideIndex + 1) % track.children.length; track.style.transform = `translateX(-${slideIndex * 100}%)`; } }, 3000); }
-    setInterval(() => { const track = document.getElementById('sliderTrack'); if(track && track.children.length && !sliderInterval) startSlider(); }, 1000);
-    
-    async function init() { 
-        let cachedColor = localStorage.getItem('nikamma_theme_color');
-        if(cachedColor) { document.documentElement.style.setProperty('--main-color', cachedColor); }
-        attachPlayerControls(); 
-        const hasInternet = await checkInternetBeforeStart(); 
-        if(hasInternet) fetchData(); 
+    const tmp = document.createElement("canvas");
+    tmp.width = fw; tmp.height = fh;
+    tmp.getContext("2d").drawImage(cropImg, fx, fy, fw, fh, 0, 0, fw, fh);
+
+    tmp.toBlob(blob => {
+      const f = new File([blob], "cropped.jpg", { type: "image/jpeg" });
+      const dt = new DataTransfer();
+      dt.items.add(f);
+      document.getElementById("thumbFile").files = dt.files;
+      showToast("✅ Crop applied!");
+      document.getElementById("cropToolModal").style.display = "none";
+    }, "image/jpeg", 0.9);
+  }
+
+  // ── BUTTON WIRING ──
+  document.getElementById("openMiniImageBtn").addEventListener("click", () => {
+    const inp = document.getElementById("thumbFile");
+    if (inp.files?.[0]) openCropper(inp.files[0]);
+    else showToast("Pehle image select karo", "error");
+  });
+  document.getElementById("applyCropSaveBtn").addEventListener("click", applyCrop);
+  document.getElementById("cancelCropToolBtn").addEventListener("click", () => document.getElementById("cropToolModal").style.display = "none");
+  document.getElementById("closeCropModalBtn").addEventListener("click", () => document.getElementById("cropToolModal").style.display = "none");
+  document.getElementById("closeModalBtn").onclick = () => document.getElementById("globalModal").style.display = "none";
+  document.getElementById("modalSubmitBtn").onclick = submitVideo;
+
+  // ── APPLY SAVED TITLE ──
+  const savedTitle = localStorage.getItem("adminDashTitle");
+  if (savedTitle) document.querySelector(".logo-area h2").innerText = "🎬 " + savedTitle;
+
+  // ── CAT SHEET STATUS ──
+  function updateCatSheetStatus() {
+    const el = document.getElementById("catSheetStatusText");
+    if (!el) return;
+    if (CAT_API_URL) {
+      el.style.color = "#2ecc71";
+      el.innerText = "✅ Connected";
+    } else {
+      el.style.color = "#ffaa33";
+      el.innerText = "URL set nahi";
     }
-    
-    async function fetchData() { 
-        const hasCache = loadDataFromCache(); 
-        if(!hasCache || rawData.length === 0) { 
-            document.getElementById('splash-screen').style.display = 'flex'; 
-            localStorage.setItem(SPLASH_SEEN_KEY, 'true'); 
-            await fetchFreshData(); 
-        } else { 
-            document.getElementById('splash-screen').style.display = 'none';
-            // Cached data hai - pehle category check karo phir UI update karo
-            Papa.parse('https://docs.google.com/spreadsheets/d/e/2PACX-1vQJM1FvOsBuKL_Al7PpwYerGDVFhs5tLF4PaVs3_TOLX-TFLW-iF3B6qLLLeuuBmjfZFGe3CFxJA-TR/pub?gid=1155331852&single=true&output=csv', {
-                download: true, header: true, skipEmptyLines: true,
-                complete: function(catResults) {
-                    var loadedCats = catResults.data.filter(function(row){
-                        return (row.Category||row.category||'').trim() && (row.Status||'').toLowerCase() !== 'inactive';
-                    }).map(function(row){
-                        var ic = (row.Icon||row.icon||'folder').trim();
-                        var resolved = ic.includes(' ') ? ic : ic.startsWith('fa-') ? 'fa '+ic : 'fa fa-'+ic;
-                        return { name: (row.Category||row.category||'').trim(), icon: resolved };
-                    });
-                    if(!loadedCats.length) {
-                        availableCategories = [];
-                        rawData = [];
-                        showNoContentScreen();
-                    } else {
-                        availableCategories = loadedCats;
-                        var categoryNames = availableCategories.map(function(c){ return c.name.toLowerCase(); });
-                        rawData = rawData.filter(function(item){
-                            var itemCat = (item.Category || item.category || "").trim().toLowerCase();
-                            return itemCat === 'slider' || categoryNames.includes(itemCat);
-                        });
-                        if(!rawData.length) {
-                            showNoContentScreen();
-                        } else {
-                            updateSlider();
-                            buildDynamicCategoryMenu();
-                            currentCategory = 'All';
-                            filterData('All', document.getElementById('home-nav-btn'), false);
-                            showCachedDataBadge();
-                        }
-                    }
-                    fetchFreshData().then(function(updated){ if(updated) console.log("Data updated"); });
-                },
-                error: function() {
-                    updateSlider();
-                    buildDynamicCategoryMenu();
-                    currentCategory = 'All';
-                    filterData('All', document.getElementById('home-nav-btn'), false);
-                    showCachedDataBadge();
-                    fetchFreshData().then(function(updated){ if(updated) console.log("Data updated"); });
-                }
-            });
-        } 
-    }
-    
-    document.getElementById('nav-header-static-img').src = NAV_HEADER_IMAGE;
-    document.getElementById('splash-logo-img').src = MASTER_LOGO;
-    init();
+  }
 </script>
 </body>
 </html>
