@@ -631,8 +631,10 @@ function doGet(e) {
   var data = sheet.getDataRange().getValues();
   var result = [];
   for (var i = 1; i < data.length; i++) {
+    if (!data[i][2] && !data[i][4]) continue;
     result.push({
       rowNumber: i - 1,
+      FileID: data[i][1] || "",
       Name: data[i][2],
       Category: data[i][3],
       URL: data[i][4],
@@ -1093,7 +1095,7 @@ function jsonOut(obj) {
       document.getElementById("renameCatModal").style.display = "none";
       return;
     }
-    // Kuch bhi same ho — replace off ho aur naam bhi same ho to kuch karne ki zaroorat nahi
+    // Naam same ho AUR replace bhi off ho — kuch karne ki zaroorat nahi
     if (newName === renameCatOldName && !replaceMode) {
       document.getElementById("renameCatModal").style.display = "none";
       return;
@@ -1101,18 +1103,19 @@ function jsonOut(obj) {
     document.getElementById("renameCatModal").style.display = "none";
     showProgress(true, 20, "Category update ho rahi hai...");
 
-    let sheetOk = false;
-
     if (replaceMode) {
       updateProgress(35, "Old row delete ho rahi hai...");
       await deleteCatFromSheet(renameCatOldName);
+
       updateProgress(55, "Naya row add ho raha hai...");
       await addCatToSheet(newName, newIcon);
+
       updateProgress(75, "Sheet1 videos update ho rahe hain...");
-      sheetOk = await renameCatInSheet(renameCatOldName, newName, newIcon);
+      await renameCatInSheet(renameCatOldName, newName, newIcon);
+
     } else {
       updateProgress(50, "Sheet update ho rahi hai...");
-      sheetOk = await renameCatInSheet(renameCatOldName, newName, newIcon);
+      await renameCatInSheet(renameCatOldName, newName, newIcon);
     }
 
     updateProgress(90, "UI update ho rahi hai...");
@@ -1604,9 +1607,9 @@ function jsonOut(obj) {
           colName   : col
         })
       }).then(r => r.json())
-        .then(result => {
-          if (result.status === "DELETED") showToast("🗑️ Column sheet se delete ho gaya: " + col);
-          else showToast("Sheet error: " + (result.message || result.status || ""), "error");
+        .then(res => {
+          if (res.status === "DELETED") showToast("🗑️ Sheet se delete ho gaya: " + col);
+          else showToast("Sheet error: " + (res.message || res.status), "error");
         })
         .catch(() => showToast("⚠️ Sheet se delete fail", "error"));
     }
