@@ -271,7 +271,7 @@
         .slider { width: 100%; height: 200px; overflow: hidden; position: relative; background: #000; margin-bottom: 5px; }
         .slides-track { display: flex; transition: 0.7s cubic-bezier(0.25, 1, 0.5, 1); height: 100%; }
         .slide-item { min-width: 100%; height: 100%; }
-        .slide-item img { width: 100%; height: 100%; object-fit: cover; background: #000; transition: filter 0.4s ease-out; }
+        .slide-item img { width: 100%; height: 100%; object-fit: contain; background: #000; transition: filter 0.4s ease-out; }
         
         /* Bottom Navigation Bar */
         .bottom-nav { position: fixed; bottom: 0; width: 100%; background: rgba(18,18,18,0.95); display: flex; justify-content: space-around; padding: 10px 0; backdrop-filter: blur(10px); border-top: 1px solid #222; z-index: 1000; }
@@ -1535,7 +1535,7 @@
         if(window.innerWidth >= 1025) return; // PC par sidebar hamesha open rehta hai
         const sideNav = document.getElementById("mySidenav"), overlay = document.getElementById("menu-overlay"); sideNav.classList.remove("open"); overlay.classList.remove("visible"); setTimeout(() => { if(!sideNav.classList.contains('open')) overlay.style.display = "none"; }, 400); 
     }
-    (function(){ var sx=0,sy=0,sa=false; document.addEventListener('touchstart',function(e){ if(e.touches[0].clientX<window.innerWidth*0.8){sx=e.touches[0].clientX;sy=e.touches[0].clientY;sa=true;} },{passive:true}); document.addEventListener('touchmove',function(e){ if(!sa)return; var dx=e.touches[0].clientX-sx,dy=Math.abs(e.touches[0].clientY-sy); if(dx>45&&dy<60){openNav();sa=false;} else if(dx<-10||dy>60)sa=false; },{passive:true}); document.addEventListener('touchend',function(){sa=false;},{passive:true}); })();
+    (function(){ var sx=0,sy=0,sa=false; document.addEventListener('touchstart',function(e){ var t=e.target; var inScroll=t.closest('.h-scroll-row,.h-scroll-card,.card,.specific-grid,.grid'); if(inScroll) { sa=false; return; } if(e.touches[0].clientX<window.innerWidth*0.8){sx=e.touches[0].clientX;sy=e.touches[0].clientY;sa=true;} },{passive:true}); document.addEventListener('touchmove',function(e){ if(!sa)return; var dx=e.touches[0].clientX-sx,dy=Math.abs(e.touches[0].clientY-sy); if(dx>45&&dy<60){openNav();sa=false;} else if(dx<-10||dy>60)sa=false; },{passive:true}); document.addEventListener('touchend',function(){sa=false;},{passive:true}); })();
     function toggleSearch(show) { document.getElementById('header-main').style.display = show ? 'none' : 'flex'; document.getElementById('header-icons').style.display = show ? 'none' : 'flex'; document.getElementById('search-container').style.display = show ? 'flex' : 'none'; if(show) document.getElementById('searchBar').focus(); }
     
     window.search = function() { 
@@ -1601,7 +1601,7 @@
         }
     }
 
-    document.addEventListener('touchstart', function(e) { if(window.pageYOffset === 0 && !isRefreshing) { ptrStartY = e.touches[0].pageY; isTouching = true; } }, {passive: true});
+    document.addEventListener('touchstart', function(e) { var t=e.target; var inScroll=t.closest('.h-scroll-row,.h-scroll-card,.card,.specific-grid,.grid'); if(inScroll){ isTouching=false; return; } if(window.pageYOffset === 0 && !isRefreshing) { ptrStartY = e.touches[0].pageY; isTouching = true; } }, {passive: true});
     document.addEventListener('touchmove', function(e) { if(window.pageYOffset === 0 && isTouching && !isRefreshing) { const diffY = e.touches[0].pageY - ptrStartY; if(diffY > 0) { ptrActive = true; ptrHeight = Math.min(diffY, 70); updatePTR('pull', ptrHeight); } } }, {passive: false});
     document.addEventListener('touchend', function() { if(ptrActive && ptrHeight > 50 && !isRefreshing) forceRefreshData(); else if(ptrActive) updatePTR('complete'); isTouching = false; ptrActive = false; ptrHeight = 0; });
     
