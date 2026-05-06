@@ -5,7 +5,7 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="msapplication-navbutton-color" content="#121212">
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>Nikamma 4k v3.9 | Ultimate HD</title>
     
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;800&display=swap" rel="stylesheet">
@@ -24,12 +24,16 @@
             --card-bg: #1a1a1a; 
             --header-bg: #121212;
             --splash-bg: radial-gradient(circle, #1a1a1a 0%, #0b0b0b 100%);
-            --max-width: 1200px;
+            --max-width: 1400px;
             --main-font: 'Poppins', sans-serif;
             --primary: #007aff; 
             --panel: rgba(15, 15, 15, 0.85);
         }
         
+        * {
+            box-sizing: border-box;
+        }
+
         body { 
             background: var(--dark-bg); color: white; 
             font-family: var(--main-font); 
@@ -85,1545 +89,279 @@
             z-index: 10; 
             pointer-events: none;
         }
-        .exo-overlay.visible {
-            opacity: 1;
-            pointer-events: auto;
-        }
-        .top-bar { 
-            display: flex; 
-            justify-content: space-between; 
-            align-items: center; 
-            width: 100%;
-        }
-        .live-tag { 
-            background: #ff3b30; 
-            color: white; 
-            padding: 4px 12px; 
-            border-radius: 30px; 
-            font-size: 11px; 
-            font-weight: bold; 
-            letter-spacing: 1px;
-            box-shadow: 0 2px 6px rgba(0,0,0,0.3);
-        }
-        .menu-bar { 
-            display: flex; 
-            align-items: center; 
-            gap: 10px; 
-            background: var(--panel); 
-            padding: 8px 15px; 
-            border-radius: 12px; 
-            backdrop-filter: blur(10px); 
-            border: 1px solid rgba(255,255,255,0.1); 
-        }
-        .icon-btn { 
-            background: none; 
-            border: none; 
-            color: white; 
-            cursor: pointer; 
-            display: flex; 
-            align-items: center; 
-            transition: 0.2s; 
-            padding: 8px;
-            border-radius: 40px;
-        }
+        .exo-overlay.visible { opacity: 1; pointer-events: auto; }
+        .top-bar { display: flex; justify-content: space-between; align-items: center; width: 100%;}
+        .live-tag { background: #ff3b30; color: white; padding: 4px 12px; border-radius: 30px; font-size: 11px; font-weight: bold; }
+        .menu-bar { display: flex; align-items: center; gap: 10px; background: var(--panel); padding: 8px 15px; border-radius: 12px; backdrop-filter: blur(10px); }
+        .icon-btn { background: none; border: none; color: white; cursor: pointer; padding: 8px; border-radius: 40px; transition: 0.2s; }
         .icon-btn:active { transform: scale(0.95); background: rgba(255,255,255,0.1);}
         .material-icons-round { font-size: 26px; }
         .spacer { flex-grow: 1; }
-        .fit-mode-badge {
-            background: rgba(0,0,0,0.6);
-            padding: 4px 10px;
-            border-radius: 20px;
-            font-size: 11px;
-            font-weight: 500;
-            letter-spacing: 0.5px;
-            color: #ddd;
-        }
+        .fit-mode-badge { background: rgba(0,0,0,0.6); padding: 4px 10px; border-radius: 20px; font-size: 11px; }
         @keyframes spin { to { transform: rotate(360deg); } }
         
-        .gesture-indicator {
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            background: rgba(0,0,0,0.7);
-            backdrop-filter: blur(10px);
-            border-radius: 40px;
-            padding: 12px 24px;
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            z-index: 10000;
-            opacity: 0;
-            transition: opacity 0.2s;
-            pointer-events: none;
-            font-size: 18px;
-            font-weight: bold;
-            color: white;
-            border: 1px solid rgba(255,255,255,0.2);
-        }
+        /* GESTURE INDICATOR */
+        .gesture-indicator { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(0,0,0,0.7); backdrop-filter: blur(10px); border-radius: 40px; padding: 12px 24px; display: flex; align-items: center; gap: 12px; z-index: 10000; opacity: 0; transition: opacity 0.2s; pointer-events: none; font-size: 18px; color: white; }
         .gesture-indicator i { font-size: 24px; }
         
-        #splash-screen {
-            position: fixed; top:0; left:0; width:100%; height:100%;
-            background: var(--splash-bg); z-index: 9999;
-            display: flex; flex-direction: column; align-items: center; justify-content: center;
-            transition: opacity 0.5s ease-out;
-        }
-        .splash-logo { width: 100px; height: 100px; border-radius: 20px; margin-bottom: 5px; box-shadow: 0 10px 30px rgba(0,0,0,0.6); animation: pulse 2s infinite; object-fit: cover; }
-        #splash-screen h2 { margin: 0; padding: 0; color: var(--main-color); font-weight: 800; text-transform: uppercase; letter-spacing: 2px; font-size: 24px; }
-        .splash-loader { margin-top: 10px !important; color: #444; font-size: 20px; }
+        /* SPLASH */
+        #splash-screen { position: fixed; top:0; left:0; width:100%; height:100%; background: var(--splash-bg); z-index: 9999; display: flex; flex-direction: column; align-items: center; justify-content: center; transition: opacity 0.5s ease-out; }
+        .splash-logo { width: 100px; height: 100px; border-radius: 20px; margin-bottom: 5px; animation: pulse 2s infinite; object-fit: cover; }
+        #splash-screen h2 { margin: 0; color: var(--main-color); font-weight: 800; letter-spacing: 2px; font-size: 24px; }
+        .splash-loader { margin-top: 10px; color: #444; font-size: 20px; }
         @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.05); } 100% { transform: scale(1); } }
         
-        header { background: var(--header-bg); padding: 12px 15px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 1000; border-bottom: 1px solid #222; height: 60px; box-sizing: border-box; }
-        .menu-icon-btn { font-size: 24px; cursor: pointer; color: var(--main-color); width: 36px; text-align: center; transition: transform 0.2s ease; }
-        .menu-icon-btn:active { transform: scale(0.9); }
+        /* HEADER */
+        header { background: var(--header-bg); padding: 12px 15px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 1000; border-bottom: 1px solid #222; height: 60px; }
+        .header-content { display: flex; width: 100%; max-width: var(--max-width); margin: 0 auto; align-items: center; justify-content: space-between; }
+        .menu-icon-btn { font-size: 24px; cursor: pointer; color: var(--main-color); width: 36px; text-align: center; }
         .app-name { font-weight: 800; font-size: 18px; color: var(--main-color); letter-spacing: 0.5px; text-transform: uppercase; margin-left: 8px; }
+        .header-right { display: flex; align-items: center; gap: 12px; cursor: pointer; }
+        #search-container { display: none; flex: 1; align-items: center; gap: 10px; margin: 0 20px; width: 100%; }
+        #searchBar { flex: 1; background: #222; border: 1px solid #333; color: white; padding: 8px 15px; border-radius: 20px; outline: none; font-size: 14px; font-family: var(--main-font); height: 38px; }
+        .search-close { display: flex; align-items: center; justify-content: center; width: 38px; height: 38px; background: rgba(255,255,255,0.1); border-radius: 50%; cursor: pointer; }
         
-        .category-section { margin-bottom: 25px; padding: 0 10px; }
-        .category-header { display: flex; justify-content: space-between; align-items: center; padding: 10px 5px; }
-        .category-title { display: flex; align-items: center; gap: 8px; font-weight: 600; color: #fff; font-size: 14px; text-transform: uppercase; letter-spacing: 0.5px; }
-        .category-title i { color: var(--main-color); font-size: 16px; }
-        .read-more-btn { background: rgba(0, 188, 212, 0.15); color: var(--main-color); border: 1px solid rgba(0, 188, 212, 0.3); padding: 4px 12px; border-radius: 20px; font-size: 11px; cursor: pointer; font-weight: 600; text-transform: uppercase; transition: 0.2s; }
-        .read-more-btn:active { transform: scale(0.95); background: var(--main-color); color: #000; }
+        /* HORIZONTAL SCROLL CATEGORY - MOBILE FRIENDLY 5 CARDS */
+        .category-section { margin-bottom: 28px; padding: 0 12px; }
+        .category-header { display: flex; justify-content: space-between; align-items: baseline; padding: 6px 4px 12px 4px; flex-wrap: wrap; }
+        .category-title { display: flex; align-items: center; gap: 8px; font-weight: 700; font-size: 16px; color: #fff; text-transform: uppercase; letter-spacing: 0.5px; }
+        .category-title i { color: var(--main-color); font-size: 18px; }
+        .read-more-btn { background: rgba(0, 188, 212, 0.15); color: var(--main-color); border: 1px solid rgba(0, 188, 212, 0.3); padding: 5px 14px; border-radius: 30px; font-size: 11px; font-weight: 700; cursor: pointer; transition: 0.2s; }
+        .read-more-btn:active { transform: scale(0.96); background: var(--main-color); color: #000; }
         
-        .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; padding: 5px 0; }
-        .card { background: var(--card-bg); border-radius: 10px; overflow: hidden; border: 1px solid #282828; cursor: pointer; transition: 0.3s; position: relative; }
-        .card img { width: 100%; aspect-ratio: 1/1; object-fit: cover; display: block; background: var(--card-bg); transition: filter 0.4s ease-out, opacity 0.3s ease; }
-        .card-title { font-size: 11px; padding: 6px 3px; text-align: center; color: #efefef; font-weight: 400; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; background: rgba(0,0,0,0.3); }
-        .card.playing { background: var(--main-color) !important; border-color: #fff; transform: scale(0.95); }
-        .card.playing .card-title { color: #000 !important; font-weight: 800; }
+        /* HORIZONTAL SCROLLING GRID -> row nowrap, snaps */
+        .horizontal-scroll {
+            display: flex;
+            flex-wrap: nowrap;
+            overflow-x: auto;
+            scroll-snap-type: x mandatory;
+            gap: 12px;
+            padding: 4px 2px 12px 2px;
+            scrollbar-width: thin;
+            -webkit-overflow-scrolling: touch;
+        }
+        .horizontal-scroll::-webkit-scrollbar { height: 4px; }
+        .horizontal-scroll::-webkit-scrollbar-track { background: #222; border-radius: 4px; }
+        .horizontal-scroll::-webkit-scrollbar-thumb { background: var(--main-color); border-radius: 4px; }
         
-        .fav-badge { position: absolute; top: 5px; right: 5px; background: rgba(0,0,0,0.6); color: #fff; width: 26px; height: 26px; border-radius: 50%; display: flex; align-items: center; justify-content: center; z-index: 5; font-size: 12px; cursor: pointer; transition: 0.2s; border: 1px solid rgba(255,255,255,0.1); }
+        .card {
+            flex: 0 0 auto;
+            width: 130px;
+            background: var(--card-bg);
+            border-radius: 14px;
+            overflow: hidden;
+            border: 1px solid #282828;
+            cursor: pointer;
+            transition: 0.2s ease;
+            scroll-snap-align: start;
+            position: relative;
+        }
+        /* tablet+ 5 cards visible konsept: width increase */
+        @media (min-width: 600px) { .card { width: 160px; } }
+        @media (min-width: 900px) { .card { width: 190px; } }
+        @media (min-width: 1200px) { .card { width: 220px; } }
+        
+        .card img { width: 100%; aspect-ratio: 1/1; object-fit: cover; display: block; background: var(--card-bg); transition: filter 0.3s; }
+        .card-title { font-size: 12px; padding: 8px 6px; text-align: center; color: #efefef; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; background: rgba(0,0,0,0.3); }
+        .card.playing { border: 2px solid var(--main-color); transform: scale(0.98); background: var(--main-color); }
+        .card.playing .card-title { color: #000; font-weight: 800; }
+        
+        .fav-badge { position: absolute; top: 6px; right: 6px; background: rgba(0,0,0,0.6); color: white; width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; z-index: 5; font-size: 12px; cursor: pointer; backdrop-filter: blur(4px); }
         .fav-badge.active { color: #ff3b30; background: rgba(255,255,255,0.9); }
         
+        /* Empty state */
         .empty-state { text-align: center; padding: 60px 20px; color: #666; }
-        .empty-state i { font-size: 64px; margin-bottom: 20px; opacity: 0.5; }
-        .empty-state h3 { font-size: 18px; margin-bottom: 10px; color: #888; }
-        .empty-state p { font-size: 13px; color: #555; }
+        .empty-state i { font-size: 64px; opacity: 0.5; margin-bottom: 20px; }
         
-        .sidenav { 
-            height: 100%; width: 60%; max-width: 320px; position: fixed; z-index: 2005; top: 0; left: 0;
-            background: #111; overflow-x: hidden; transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1); 
-            transform: translateX(-100%); padding-top: 0; box-shadow: 10px 0 30px rgba(0,0,0,0.5);
-        }
+        /* Sidenav */
+        .sidenav { height: 100%; width: 70%; max-width: 320px; position: fixed; z-index: 2005; top: 0; left: 0; background: #111; overflow-x: hidden; transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1); transform: translateX(-100%); padding-top: 0; box-shadow: 10px 0 30px rgba(0,0,0,0.5); }
         .sidenav.open { transform: translateX(0); }
-        .nav-header { width: 100%; height: 160px; background: #000; position: relative; overflow: hidden; border-bottom: 2px solid var(--main-color); }
+        .nav-header { width: 100%; height: 140px; background: #000; border-bottom: 2px solid var(--main-color); }
         .nav-header img { width: 100%; height: 100%; object-fit: cover; }
-        .sidenav a { padding: 15px 25px; text-decoration: none; font-size: 15px; font-weight: 400; color: #bbb; display: flex; align-items: center; gap: 15px; border-bottom: 1px solid #1a1a1a; transition: 0.2s; }
-        .sidenav a:active { background: #222; color: var(--main-color); }
+        .sidenav a { padding: 14px 25px; text-decoration: none; font-size: 15px; color: #bbb; display: flex; align-items: center; gap: 15px; border-bottom: 1px solid #1a1a1a; transition: 0.2s; }
         #menu-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 2004; opacity: 0; transition: opacity 0.4s ease; }
         #menu-overlay.visible { display: block; opacity: 1; }
         
-        .ptr-container {
-            position: fixed; top: 0; left: 0; right: 0; z-index: 9998; height: 70px;
-            transform: translateY(-70px); transition: transform 0.3s ease; background: #00bcd4;
-            display: flex; align-items: center; justify-content: center; gap: 12px;
-        }
-        .ptr-container span { color: white; font-weight: 700; font-size: 13px; letter-spacing: 1px; text-transform: uppercase; }
-        .ptr-container i { color: white; font-size: 20px; }
-        @keyframes ptrSpin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-        .ptr-spinner {
-            display: inline-block !important; width: 26px !important; height: 26px !important;
-            border: 3px solid rgba(255,255,255,0.35) !important; border-top: 3px solid #ffffff !important;
-            border-radius: 50% !important; animation: ptrSpin 0.7s linear infinite !important;
-            box-sizing: border-box !important; flex-shrink: 0 !important;
-        }
-        
-        .header-content { display: flex; width: 100%; max-width: var(--max-width); margin: 0 auto; align-items: center; justify-content: space-between; }
-        .header-left, .header-right { display: flex; align-items: center; gap: 12px; font-size: 18px; cursor: pointer; }
-        
-        #search-container { display: none; flex: 1; align-items: center; gap: 10px; margin: 0 20px; width: 100%; min-width: 0; }
-        #searchBar { 
-            flex: 1; min-width: 0; background: #222; border: 1px solid #333; color: white; 
-            padding: 8px 15px; border-radius: 20px; outline: none; font-size: 14px; 
-            font-family: var(--main-font); height: 38px; box-sizing: border-box; width: 100%;
-        }
-        
-        .search-close {
-            display: flex; align-items: center; justify-content: center; width: 38px; height: 38px;
-            background: rgba(255,255,255,0.1); border-radius: 50%; cursor: pointer; transition: 0.2s;
-            flex-shrink: 0; line-height: 1;
-        }
-        .search-close i { font-size: 18px; color: var(--main-color); }
-        .search-close:active { background: rgba(0,188,212,0.3); transform: scale(0.95); }
-        
+        /* Video Box */
         #videoBox { display: none; width: 100%; background: #000; position: sticky; top: 60px; z-index: 1001; }
         .slider { width: 100%; height: 200px; overflow: hidden; position: relative; background: #000; margin-bottom: 5px; }
         .slides-track { display: flex; transition: 0.7s cubic-bezier(0.25, 1, 0.5, 1); height: 100%; }
         .slide-item { min-width: 100%; height: 100%; }
-        .slide-item img { width: 100%; height: 100%; object-fit: cover; background: #000; transition: filter 0.4s ease-out; }
+        .slide-item img { width: 100%; height: 100%; object-fit: cover; }
         
-        /* Bottom Navigation Bar */
-        .bottom-nav { position: fixed; bottom: 0; width: 100%; background: rgba(18,18,18,0.95); display: flex; justify-content: space-around; padding: 10px 0; backdrop-filter: blur(10px); border-top: 1px solid #222; z-index: 1000; }
-        .nav-btn { text-align: center; font-size: 10px; color: #888; flex: 1; cursor: pointer; font-weight: 600; letter-spacing: 0.5px; text-transform: uppercase; }
-        .nav-btn i { font-size: 18px; margin-bottom: 2px; display: block; }
+        /* Bottom Nav */
+        .bottom-nav { position: fixed; bottom: 0; width: 100%; background: rgba(18,18,18,0.96); display: flex; justify-content: space-around; padding: 10px 0; backdrop-filter: blur(10px); border-top: 1px solid #222; z-index: 1000; }
+        .nav-btn { text-align: center; font-size: 10px; color: #888; flex: 1; cursor: pointer; font-weight: 600; text-transform: uppercase; }
+        .nav-btn i { font-size: 20px; margin-bottom: 2px; display: block; }
         .nav-btn.active { color: var(--main-color); }
         
-        /* More Section Styles */
+        /* Profile & More */
         .profile-container { padding: 20px; max-width: 600px; margin: 0 auto; }
         .profile-card { background: var(--card-bg); border-radius: 15px; border: 1px solid #282828; padding: 20px; margin-bottom: 20px; text-align: center; }
         .profile-pic { width: 80px; height: 80px; border-radius: 50%; object-fit: cover; border: 2px solid var(--main-color); margin-bottom: 10px; }
-        .profile-form input { width: 100%; background: #222; border: 1px solid #333; color: white; padding: 10px 15px; border-radius: 10px; outline: none; margin-bottom: 10px; font-family: var(--main-font); box-sizing: border-box; }
-        .profile-btn { background: var(--main-color); color: black; border: none; padding: 10px 20px; border-radius: 20px; font-weight: 600; cursor: pointer; width: 100%; margin-top: 5px; transition: 0.2s; }
-        .profile-btn:active { transform: scale(0.98); }
-        
+        .profile-btn { background: var(--main-color); color: black; border: none; padding: 10px 20px; border-radius: 20px; font-weight: 600; cursor: pointer; width: 100%; }
         .theme-selector { display: flex; justify-content: center; gap: 15px; margin: 15px 0; }
-        .theme-dot { width: 35px; height: 35px; border-radius: 50%; cursor: pointer; border: 2px solid white; transition: 0.2s; }
-        .theme-dot:active { transform: scale(0.9); }
+        .theme-dot { width: 35px; height: 35px; border-radius: 50%; cursor: pointer; border: 2px solid white; }
         
-        #update-overlay { display: none; position: fixed; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.9); z-index: 10000; flex-direction: column; align-items: center; justify-content: center; }
-        .update-box { background: var(--card-bg); padding: 30px; border-radius: 15px; border: 1px solid var(--main-color); text-align: center; width: 80%; max-width: 400px; }
-        .skeleton-card { background: linear-gradient(90deg, #1a1a1a 25%, #2a2a2a 50%, #1a1a1a 75%); background-size: 200% 100%; animation: loading 1.5s infinite; border-radius: 10px; aspect-ratio: 1/1; }
-        @keyframes loading { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
-        .data-save-badge { position: fixed; bottom: 70px; right: 10px; background: rgba(0,188,212,0.9); color: white; padding: 5px 10px; border-radius: 20px; font-size: 10px; font-weight: 600; z-index: 999; opacity: 0; transition: opacity 0.3s ease; pointer-events: none; }
-        .data-save-badge.show { opacity: 1; }
-        .no-update-badge { position: fixed; bottom: 70px; left: 10px; background: rgba(76, 175, 80, 0.9); color: white; padding: 5px 10px; border-radius: 20px; font-size: 10px; font-weight: 600; z-index: 999; opacity: 0; transition: opacity 0.3s ease; pointer-events: none; }
-        .no-update-badge.show { opacity: 1; }
-        .img-loading { filter: blur(8px); transform: scale(1.02); transition: filter 0.5s ease-out, transform 0.3s ease; }
-        .img-loaded { filter: blur(0); transform: scale(1); }
+        .internet-checker { position: fixed; inset: 0; background: #0a0a0a; z-index: 30000; display: none; flex-direction: column; align-items: center; justify-content: center; text-align: center; }
+        .internet-checker .retry-btn { margin-top: 30px; background: var(--main-color); padding: 12px 35px; border-radius: 50px; font-weight: bold; border: none; }
         
-        .internet-checker { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(145deg, #0a0a0a 0%, #161616 100%); z-index: 30000; display: none; flex-direction: column; align-items: center; justify-content: center; text-align: center; backdrop-filter: blur(2px); }
-        .internet-checker .icon-wrapper { width: 120px; height: 120px; background: rgba(0,188,212,0.1); border-radius: 60px; display: flex; align-items: center; justify-content: center; margin-bottom: 25px; animation: pulseGlow 2s infinite; }
-        @keyframes pulseGlow { 0% { box-shadow: 0 0 0 0 rgba(0,188,212,0.4); } 70% { box-shadow: 0 0 0 15px rgba(0,188,212,0); } 100% { box-shadow: 0 0 0 0 rgba(0,188,212,0); } }
-        .internet-checker i { font-size: 65px; color: var(--main-color); }
-        .internet-checker h2 { font-size: 28px; font-weight: 800; margin: 15px 0 10px; color: #ffffff; letter-spacing: 0.5px; }
-        .internet-checker p { font-size: 16px; color: #aaaaaa; max-width: 290px; margin: 10px auto; line-height: 1.5; }
-        .internet-checker .detail-text { font-size: 13px; color: #666666; margin-top: 15px; padding: 8px 18px; background: rgba(255,255,255,0.05); border-radius: 40px; display: inline-block; }
-        .internet-checker .retry-btn { margin-top: 40px; background: linear-gradient(135deg, var(--main-color) 0%, #008c9e 100%); color: #ffffff; padding: 14px 42px; border: none; border-radius: 50px; font-weight: 700; font-size: 16px; cursor: pointer; display: flex; align-items: center; gap: 12px; transition: all 0.3s ease; box-shadow: 0 8px 20px rgba(0,188,212,0.25); }
-        .internet-checker .retry-btn:active { transform: scale(0.96); }
-        
-        .exo-container:fullscreen video, .exo-container:-webkit-full-screen video { width: 100%; height: 100%; }
-
-        /* ============================================================
-           RESPONSIVE CSS - PC & DESKTOP FIXES (NEW - kuch remove nahi)
-           ============================================================ */
-
-        /* Tablet: 600px - 1024px */
-        @media (min-width: 600px) {
-            .grid {
-                grid-template-columns: repeat(4, 1fr);
-                gap: 10px;
-            }
-            .category-section {
-                padding: 0 15px;
-            }
-            .card-title {
-                font-size: 12px;
-                padding: 8px 5px;
-            }
-            .slider {
-                height: 280px;
-            }
-            .sidenav {
-                width: 40%;
-                max-width: 300px;
-            }
-            .bottom-nav {
-                padding: 12px 0;
-            }
-            .nav-btn {
-                font-size: 11px;
-            }
-            .nav-btn i {
-                font-size: 20px;
-            }
-            .fav-badge {
-                width: 30px;
-                height: 30px;
-                font-size: 14px;
-            }
-        }
-
-        /* Desktop/PC: 1025px+ */
-        @media (min-width: 1025px) {
-            body {
-                padding-bottom: 0;
-            }
-
-            /* Header PC layout */
-            header {
-                padding: 0 30px;
-                height: 70px;
-            }
-            .app-name {
-                font-size: 22px;
-            }
-            .menu-icon-btn {
-                font-size: 28px;
-            }
-
-            /* Sidenav PC style - always visible sidebar */
-            .sidenav {
-                width: 260px;
-                max-width: 260px;
-                transform: translateX(0);
-                position: fixed;
-                top: 70px;
-                height: calc(100% - 70px);
-                border-right: 1px solid #222;
-                box-shadow: none;
-                z-index: 900;
-            }
-            .sidenav .nav-header {
-                height: 120px;
-            }
-            #menu-overlay {
-                display: none !important;
-            }
-
-            /* Main content shifted right for sidebar */
-            .container {
-                margin-left: 260px;
-                max-width: calc(var(--max-width) - 260px);
-                padding: 0 20px;
-            }
-            #videoBox {
-                margin-left: 260px;
-                width: calc(100% - 260px);
-                max-width: 900px;
-            }
-
-            /* Grid - more columns on PC */
-            .grid {
-                grid-template-columns: repeat(5, 1fr);
-                gap: 14px;
-            }
-
-            /* Slider taller on PC */
-            .slider {
-                height: 320px;
-                border-radius: 12px;
-                overflow: hidden;
-                margin: 10px 0 15px;
-            }
-
-            /* Bottom nav hidden on PC - replaced by sidebar */
-            .bottom-nav {
-                display: none;
-            }
-
-            /* Hover effects for PC */
-            .card:hover {
-                transform: translateY(-4px) scale(1.03);
-                border-color: var(--main-color);
-                box-shadow: 0 8px 24px rgba(0,188,212,0.25);
-            }
-            .card.playing {
-                transform: scale(0.97);
-            }
-            .read-more-btn:hover {
-                background: var(--main-color);
-                color: #000;
-            }
-            .sidenav a:hover {
-                background: #1a1a1a;
-                color: var(--main-color);
-                padding-left: 30px;
-            }
-            .theme-dot:hover {
-                transform: scale(1.15);
-                box-shadow: 0 0 10px currentColor;
-            }
-            .icon-btn:hover {
-                background: rgba(255,255,255,0.15);
-            }
-
-            /* PC player controls bigger */
-            .material-icons-round {
-                font-size: 30px;
-            }
-            .menu-bar {
-                padding: 10px 20px;
-                gap: 14px;
-            }
-
-            /* Card title bigger on PC */
-            .card-title {
-                font-size: 13px;
-                padding: 8px 6px;
-            }
-
-            /* Category title bigger */
-            .category-title {
-                font-size: 16px;
-            }
-
-            /* Profile section wider */
-            .profile-container {
-                max-width: 700px;
-            }
-
-            /* Video box sticky adjustment */
-            #videoBox {
-                top: 70px;
-            }
-
-            /* Search bar wider on PC */
-            #searchBar {
-                font-size: 15px;
-                height: 42px;
-                padding: 10px 20px;
-            }
-        }
-
-        /* Large Desktop: 1400px+ */
-        @media (min-width: 1400px) {
-            .grid {
-                grid-template-columns: repeat(6, 1fr);
-                gap: 16px;
-            }
-            .container {
-                max-width: 1400px;
-            }
-            #videoBox {
-                max-width: 1000px;
-            }
-        }
-
-        /* PC menu icon hide - hamburger not needed when sidebar always visible */
-        @media (min-width: 1025px) {
-            .menu-icon-btn {
-                display: none;
-            }
-        }
-
-        /* Mobile Small: max 380px */
-        @media (max-width: 380px) {
-            .grid {
-                grid-template-columns: repeat(2, 1fr);
-                gap: 6px;
-            }
-            .card-title {
-                font-size: 10px;
-            }
-            .app-name {
-                font-size: 15px;
-            }
-            .nav-btn {
-                font-size: 9px;
-            }
-            .nav-btn i {
-                font-size: 16px;
-            }
-        }
-
-        /* Safe area for notch phones */
-        @supports (padding-bottom: env(safe-area-inset-bottom)) {
-            .bottom-nav {
-                padding-bottom: calc(10px + env(safe-area-inset-bottom));
-            }
-            body {
-                padding-bottom: calc(80px + env(safe-area-inset-bottom));
-            }
-        }
-
-        /* PC scrollbar style */
-        @media (min-width: 1025px) {
-            ::-webkit-scrollbar {
-                width: 6px;
-            }
-            ::-webkit-scrollbar-track {
-                background: #111;
-            }
-            ::-webkit-scrollbar-thumb {
-                background: #333;
-                border-radius: 3px;
-            }
-            ::-webkit-scrollbar-thumb:hover {
-                background: var(--main-color);
-            }
-        }
+        .img-loading { filter: blur(6px); transition: filter 0.4s; }
+        .img-loaded { filter: blur(0); }
+        @media (min-width: 1025px) { .bottom-nav { display: none; } .sidenav { width: 260px; transform: translateX(0); top: 60px; height: calc(100% - 60px); } .container { margin-left: 270px; } #videoBox { margin-left: 260px; width: calc(100% - 260px); } .menu-icon-btn { display: none; } }
     </style>
 </head>
 <body id="swipe-area">
 
-<div id="internetChecker" class="internet-checker">
-    <div class="icon-wrapper"><i class="fa fa-wifi" id="internetIcon"></i></div>
-    <h2 id="internetTitle">Internet connected nahi</h2>
-    <p id="internetMessage">Please check your internet connection</p>
-    <div class="detail-text" id="internetDetail"><i class="fa fa-info-circle"></i> Mobile data or Wi-Fi on karein</div>
-    <button class="retry-btn" onclick="checkInternetAgain()"><i class="fa fa-arrow-rotate-right"></i> Check Again</button>
-</div>
-
-<div id="splash-screen" style="display: none;">
-    <img id="splash-logo-img" src="" class="splash-logo" onerror="this.src=MASTER_LOGO">
-    <h2>Nikamma 4k</h2>
-    <div class="splash-loader"><i class="fa fa-circle-notch fa-spin"></i> Loading...</div>
-</div>
-
-<div id="ptr-container" class="ptr-container"><i id="ptr-icon" class="fa fa-arrow-down"></i><span id="ptr-text">Pull to refresh</span></div>
+<div id="internetChecker" class="internet-checker"><div><i class="fa fa-wifi" style="font-size: 60px; color:var(--main-color);"></i><h2>No Internet</h2><button class="retry-btn" onclick="checkInternetAgain()">Retry</button></div></div>
+<div id="splash-screen" style="display: flex;"><img id="splash-logo-img" src="" class="splash-logo"><h2>Nikamma 4k</h2><div class="splash-loader"><i class="fa fa-circle-notch fa-spin"></i> Loading...</div></div>
+<div id="ptr-container" style="position:fixed;top:0;left:0;right:0;height:70px;transform:translateY(-70px);background:#00bcd4;z-index:9998;display:flex;align-items:center;justify-content:center;gap:10px;"><span>Pull to refresh</span></div>
 <div id="menu-overlay" onclick="closeNav()"></div>
+<div id="mySidenav" class="sidenav"><div class="nav-header"><img id="nav-header-static-img" src=""></div><div id="sideNavDynamicLinks"></div><a href="#" id="rating-link"><i class="fa fa-star"></i> Rate Us</a><a href="#" id="privacy-link"><i class="fa fa-user-shield"></i> Privacy</a><a href="#" onclick="shareApp(event)"><i class="fa fa-share-alt"></i> Share</a><a href="#" onclick="forceRefreshData()"><i class="fa fa-sync"></i> Force Refresh</a></div>
 
-<div id="mySidenav" class="sidenav">
-  <div class="nav-header"><img id="nav-header-static-img" src="" onerror="this.src=MASTER_LOGO"></div>
-  <div id="sideNavDynamicLinks"></div>
-  <a href="#" id="rating-link" target="_blank"><i class="fa fa-star"></i> Rate Us</a>
-  <a href="#" id="privacy-link" target="_blank"><i class="fa fa-user-shield"></i> Privacy Policy</a>
-  <a href="#" id="share-link" onclick="shareApp(event)"><i class="fa fa-share-alt"></i> Share App</a>
-  <a href="#" onclick="forceRefreshData()"><i class="fa fa-sync"></i> Force Refresh</a>
-</div>
+<header><div class="header-content"><div class="header-left" id="header-main"><div class="menu-icon-btn" onclick="openNav()"><i class="fa fa-bars"></i></div><div class="app-name">Nikamma 4k</div></div><div id="search-container"><input type="text" id="searchBar" placeholder="Search..." onkeyup="search()"><div class="search-close" onclick="toggleSearch(false)"><i class="fas fa-times"></i></div></div><div class="header-right" id="header-icons"><div onclick="toggleSearch(true)"><i class="fa fa-search"></i></div></div></div></header>
 
-<header><div class="header-content"><div class="header-left" id="header-main"><div class="menu-icon-btn" onclick="openNav()"><i class="fa fa-bars"></i></div><div class="app-name">Nikamma 4k</div></div><div id="search-container"><input type="text" id="searchBar" placeholder="Search movies, shows, sports..." onkeyup="search()"><div class="search-close" onclick="toggleSearch(false)"><i class="fas fa-times"></i></div></div><div class="header-right" id="header-icons"><div onclick="toggleSearch(true)"><i class="fa fa-search"></i></div></div></div></header>
-
-<div id="videoBox">
-    <div class="exo-container" id="advancedPlayerContainer">
-        <div class="exo-loader" id="exoLoader"><div class="spinner"></div></div>
-        <video id="advancedVideo" class="fit-fill" muted autoplay playsinline></video>
-        <div class="exo-overlay" id="exoOverlay">
-            <div class="top-bar">
-                <button class="icon-btn" id="exoTopCloseBtn" title="Close"><span class="material-icons-round">close</span></button>
-                <div class="live-tag">LIVE</div>
-            </div>
-            <div class="menu-bar">
-                <button class="icon-btn" id="exoPlayBtn"><span class="material-icons-round">pause</span></button>
-                <button class="icon-btn" id="exoMuteBtn"><span class="material-icons-round">volume_off</span></button>
-                <div class="spacer"></div>
-                <span id="mode-text" class="fit-mode-badge">FILL</span>
-                <button class="icon-btn" id="exoScreenSetBtn" title="Screen Fit"><span class="material-icons-round">aspect_ratio</span></button>
-                <button class="icon-btn" id="exoFullBtn" title="Fullscreen"><span class="material-icons-round">fullscreen</span></button>
-            </div>
-        </div>
-    </div>
-    <div id="iframePlayerBox" style="display:none; position:relative; width:100%; aspect-ratio:16/9; background:#000;">
-        <iframe id="iframePlayer" src="about:blank" style="width:100%;height:100%;border:none;display:block;" allowfullscreen allow="autoplay; fullscreen; encrypted-media; picture-in-picture" scrolling="no"></iframe>
-        <div style="position:absolute;top:8px;left:8px;z-index:10;">
-            <button onclick="stopVideo()" style="background:rgba(0,0,0,0.7);border:none;color:white;width:36px;height:36px;border-radius:50%;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;"><i class="fa fa-times"></i></button>
-        </div>
-        <div style="position:absolute;top:8px;right:8px;z-index:10;">
-            <button onclick="iframeFullscreen()" style="background:rgba(0,0,0,0.7);border:none;color:white;width:36px;height:36px;border-radius:50%;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;"><i class="fa fa-expand"></i></button>
-        </div>
-        <div style="position:absolute;bottom:8px;center:0;width:100%;text-align:center;z-index:10;pointer-events:none;">
-            <span style="background:rgba(255,0,0,0.8);color:white;padding:3px 10px;border-radius:20px;font-size:10px;font-weight:bold;letter-spacing:1px;">LIVE</span>
-        </div>
-    </div>
-    <div style="padding:10px; display:flex; justify-content:space-between; background:#121212; align-items:center;">
-        <span id="videoTitle" style="font-size:13px; color:var(--main-color); font-weight:bold;"></span>
-        <button onclick="stopVideo()" style="background:#f44336; border:none; color:white; padding:5px 10px; border-radius:4px; font-size:11px; margin-right:5px;">CLOSE</button>
-    </div>
-</div>
+<div id="videoBox"><div class="exo-container" id="advancedPlayerContainer"><div class="exo-loader" id="exoLoader"><div class="spinner"></div></div><video id="advancedVideo" class="fit-fill" muted autoplay playsinline></video><div class="exo-overlay" id="exoOverlay"><div class="top-bar"><button class="icon-btn" id="exoTopCloseBtn"><span class="material-icons-round">close</span></button><div class="live-tag">LIVE</div></div><div class="menu-bar"><button class="icon-btn" id="exoPlayBtn"><span class="material-icons-round">pause</span></button><button class="icon-btn" id="exoMuteBtn"><span class="material-icons-round">volume_off</span></button><div class="spacer"></div><span id="mode-text" class="fit-mode-badge">FILL</span><button class="icon-btn" id="exoScreenSetBtn"><span class="material-icons-round">aspect_ratio</span></button><button class="icon-btn" id="exoFullBtn"><span class="material-icons-round">fullscreen</span></button></div></div></div><div id="iframePlayerBox" style="display:none; aspect-ratio:16/9;"><iframe id="iframePlayer" style="width:100%;height:100%;border:none;"></iframe><div style="position:absolute;top:8px;left:8px;"><button onclick="stopVideo()" style="background:rgba(0,0,0,0.7);border:none;color:white;width:36px;border-radius:50%;">✕</button></div></div><div style="padding:10px; display:flex; justify-content:space-between;"><span id="videoTitle" style="color:var(--main-color);font-weight:bold;"></span><button onclick="stopVideo()" style="background:#f44336; border:none; color:white; padding:5px 12px;">CLOSE</button></div></div>
 
 <div class="container">
     <div class="slider" id="mainSlider" style="display:none;"><div class="slides-track" id="sliderTrack"></div></div>
-    
-    <div id="mainCategoryView" style="display: none; padding: 10px 0;">
-        <div class="category-header" style="padding: 10px 15px;">
-            <div class="category-title" id="specificCategoryTitle"><i class="fa fa-folder"></i> CATEGORY</div>
-        </div>
-        <div class="grid" id="specificGrid"></div>
-    </div>
-    
-    <div id="homeCategoriesContainer">
-        <div class="grid" id="mainGrid">
-            <div class="skeleton-card"></div>
-            <div class="skeleton-card"></div>
-            <div class="skeleton-card"></div>
-        </div>
-    </div>
-
-    <div id="moreSectionView" style="display: none;">
-        <div class="profile-container">
-            <div class="profile-card" id="profileContent">
-                <div id="loggedOutView">
-                    <i class="fa fa-user-circle" style="font-size: 60px; color: #444; margin-bottom: 15px;"></i>
-                    <h3 style="margin:0 0 10px;">Guest User</h3>
-                    <div class="profile-form">
-                        <input type="text" id="loginUsername" placeholder="Enter Username">
-                        <button class="profile-btn" onclick="userLogin()">LOGIN</button>
-                    </div>
-                </div>
-                <div id="loggedInView" style="display:none;">
-                    <img id="userPic" src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR6A63t7tXh8Gj7956mGq4n8-yK9vT-w_S46A&s" class="profile-pic">
-                    <h3 style="margin:0 0 5px;" id="welcomeUser">Hi, User!</h3>
-                    <p style="color:#777; font-size:12px; margin:0 0 15px;">Authenticated Member</p>
-                    <button class="profile-btn" style="background:#ff3b30; color:white;" onclick="userLogout()">LOGOUT</button>
-                </div>
-            </div>
-
-            <div class="profile-card">
-                <h4 style="margin: 0 0 10px; font-size: 14px; text-transform: uppercase; color: var(--main-color);">Select App Theme</h4>
-                <div class="theme-selector">
-                    <div class="theme-dot" style="background: #00bcd4;" onclick="changeTheme('#00bcd4')"></div>
-                    <div class="theme-dot" style="background: #ff9800;" onclick="changeTheme('#ff9800')"></div>
-                    <div class="theme-dot" style="background: #e91e63;" onclick="changeTheme('#e91e63')"></div>
-                    <div class="theme-dot" style="background: #4caf50;" onclick="changeTheme('#4caf50')"></div>
-                </div>
-            </div>
-
-            <div class="profile-card">
-                <h4 style="margin: 0 0 10px; font-size: 14px; text-transform: uppercase; color: var(--main-color);">About App</h4>
-                <p style="font-size: 12px; color: #aaa; line-height: 1.6; margin:0;">
-                    Nikamma 4k is a high-performance web media streaming application. Enjoy premium movies, live TV, and your personal favorites seamlessly on any modern device.
-                </p>
-                <p style="font-size: 11px; color: #555; margin-top: 10px;">Version 3.9 | All rights reserved.</p>
-            </div>
-        </div>
-    </div>
+    <div id="homeCategoriesContainer"></div>
+    <div id="mainCategoryView" style="display: none;"><div class="category-header" style="padding:10px 15px;"><div class="category-title" id="specificCategoryTitle"><i class="fa fa-folder"></i> CATEGORY</div></div><div class="horizontal-scroll" id="specificGrid"></div></div>
+    <div id="moreSectionView" style="display: none;"><div class="profile-container"><div class="profile-card" id="profileContent"><div id="loggedOutView"><i class="fa fa-user-circle" style="font-size:60px;color:#444;"></i><h3>Guest User</h3><input type="text" id="loginUsername" placeholder="Username"><button class="profile-btn" onclick="userLogin()">LOGIN</button></div><div id="loggedInView" style="display:none;"><img id="userPic" src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR6A63t7tXh8Gj7956mGq4n8-yK9vT-w_S46A&s" class="profile-pic"><h3 id="welcomeUser">Hi!</h3><button class="profile-btn" style="background:#ff3b30;" onclick="userLogout()">LOGOUT</button></div></div><div class="profile-card"><h4>Theme</h4><div class="theme-selector"><div class="theme-dot" style="background:#00bcd4;" onclick="changeTheme('#00bcd4')"></div><div class="theme-dot" style="background:#ff9800;"></div><div class="theme-dot" style="background:#e91e63;"></div><div class="theme-dot" style="background:#4caf50;"></div></div></div></div></div>
 </div>
 
-<div class="bottom-nav" id="bottomNav">
-    <div class="nav-btn active" id="home-nav-btn" onclick="filterData('All', this)"><i class="fa fa-house"></i>HOME</div>
-    <div class="nav-btn" id="live-nav-btn" style="display:none;" onclick="filterData('Live', this)"><i class="fa fa-circle-play"></i>LIVE</div>
-    <div class="nav-btn" id="fav-nav-btn" onclick="showFavorites(this)"><i class="fa fa-heart"></i>FAVOURITE</div>
-    <div class="nav-btn" id="more-nav-btn" onclick="showMoreSection(this)"><i class="fa fa-ellipsis"></i>MORE</div>
-</div>
-
-<div id="update-overlay"><div class="update-box"><h2 style="color: var(--main-color); font-weight:800;">Update Available!</h2><p>Please update to the latest version.</p><button id="update-btn" style="background:var(--main-color); border:none; padding:12px 25px; border-radius:25px; font-weight:bold; cursor:pointer;">UPDATE NOW</button></div></div>
-<div id="data-save-badge" class="data-save-badge"><i class="fa fa-database"></i> Using cached data</div>
-<div id="no-update-badge" class="no-update-badge"><i class="fa fa-check-circle"></i> Data is up to date</div>
-
-<div id="gestureIndicator" class="gesture-indicator" style="opacity:0;">
-    <i id="gestureIcon" class="fa fa-volume-up"></i>
-    <span id="gestureValue">50%</span>
-</div>
+<div class="bottom-nav"><div class="nav-btn active" id="home-nav-btn" onclick="filterData('All', this)"><i class="fa fa-house"></i>HOME</div><div class="nav-btn" id="live-nav-btn" style="display:none;" onclick="filterData('Live', this)"><i class="fa fa-circle-play"></i>LIVE</div><div class="nav-btn" id="fav-nav-btn" onclick="showFavorites(this)"><i class="fa fa-heart"></i>FAV</div><div class="nav-btn" id="more-nav-btn" onclick="showMoreSection(this)"><i class="fa fa-ellipsis"></i>MORE</div></div>
+<div id="gestureIndicator" class="gesture-indicator"><i id="gestureIcon"></i><span id="gestureValue"></span></div>
 
 <script>
     const MASTER_LOGO = 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTf7ax2YDbvMh3IxQPzSyY1YIewn8Q_1bDgR04kRJT5-A&s=10';
     const NAV_HEADER_IMAGE = 'https://drive.google.com/thumbnail?id=1DXQpAofda-bZPS20Q-bqo6neUDznYqW9&sz=w1000';
-    const STORAGE_KEY_DATA = 'nikamma_cached_data';
-    const STORAGE_KEY_HASH = 'nikamma_data_hash';
-    const SPLASH_SEEN_KEY = 'nikamma_splash_seen';
-    const FAV_KEY_STORAGE = 'nikamma_fav_list';
-    
-    let isFullscreen = false;
-    let gestureActive = false;
-    let gestureStartY = 0, gestureStartX = 0;
-    let gestureStartValue = 0;
-    let gestureSide = null;
-    let gesturePrevented = false;
-    let activeTouchId = null;
-    const gestureIndicator = document.getElementById('gestureIndicator');
-    const gestureIcon = document.getElementById('gestureIcon');
-    const gestureValueSpan = document.getElementById('gestureValue');
-    
-    let currentBrightness = 1.0;
-    function setVideoBrightness(value) {
-        currentBrightness = Math.min(2.0, Math.max(0.2, value));
-        advVideo.style.filter = `brightness(${currentBrightness})`;
-    }
-    
-    function showGestureIndicator(iconClass, percent) {
-        gestureIcon.className = iconClass;
-        gestureValueSpan.innerText = Math.round(percent) + '%';
-        gestureIndicator.style.opacity = '1';
-        if (window.gestureTimeout) clearTimeout(window.gestureTimeout);
-        window.gestureTimeout = setTimeout(() => { gestureIndicator.style.opacity = '0'; }, 800);
-    }
-    
-    function handleTouchStart(e) {
-        if (!isFullscreen) return;
-        let target = e.target;
-        if(target.closest && (target.closest('.icon-btn') || target.closest('.menu-bar') || target.closest('.top-bar'))) return;
-        
-        const touch = e.touches[0];
-        activeTouchId = touch.identifier;
-        gestureStartX = touch.clientX;
-        gestureStartY = touch.clientY;
-        gesturePrevented = false;
-        
-        const screenWidth = window.innerWidth;
-        gestureSide = gestureStartX < screenWidth / 2 ? 'left' : 'right';
-        if (gestureSide === 'right') {
-            gestureStartValue = advVideo.volume;
-        } else {
-            gestureStartValue = currentBrightness;
-        }
-        gestureActive = true;
-    }
-    
-    function handleTouchMove(e) {
-        if (!gestureActive || !isFullscreen) return;
-        let touch = null;
-        for (let i = 0; i < e.touches.length; i++) {
-            if (e.touches[i].identifier === activeTouchId) {
-                touch = e.touches[i];
-                break;
-            }
-        }
-        if (!touch) return;
-        
-        const deltaY = gestureStartY - touch.clientY;
-        const deltaX = Math.abs(touch.clientX - gestureStartX);
-        if (!gesturePrevented && Math.abs(deltaY) > 12 && Math.abs(deltaY) > deltaX * 1.2) {
-            gesturePrevented = true;
-            e.preventDefault();
-        }
-        
-        if (gesturePrevented) {
-            e.preventDefault();
-            let newValue = gestureStartValue + (deltaY / 200) * (gestureSide === 'right' ? 1.0 : 1.8);
-            if (gestureSide === 'right') {
-                newValue = Math.min(1.0, Math.max(0.0, newValue));
-                advVideo.volume = newValue;
-                if (advVideo.muted && newValue > 0) advVideo.muted = false;
-                if (newValue === 0) advVideo.muted = true;
-                exoMuteBtn.innerHTML = `<span class="material-icons-round">${advVideo.muted || advVideo.volume === 0 ? 'volume_off' : 'volume_up'}</span>`;
-                showGestureIndicator('fa fa-volume-up', newValue * 100);
-            } else {
-                newValue = Math.min(2.0, Math.max(0.2, newValue));
-                setVideoBrightness(newValue);
-                const percent = ((newValue - 0.2) / 1.8) * 100;
-                showGestureIndicator('fa fa-sun', percent);
-            }
-        }
-    }
-    
-    function handleTouchEnd(e) { gestureActive = false; gestureSide = null; gesturePrevented = false; activeTouchId = null; }
-    
-    function attachGestureListeners() {
-        const container = document.getElementById('advancedPlayerContainer');
-        if (!container) return;
-        container.removeEventListener('touchstart', handleTouchStart);
-        container.removeEventListener('touchmove', handleTouchMove);
-        container.removeEventListener('touchend', handleTouchEnd);
-        container.addEventListener('touchstart', handleTouchStart, { passive: true });
-        container.addEventListener('touchmove', handleTouchMove, { passive: false });
-        container.addEventListener('touchend', handleTouchEnd);
-    }
-    
-    let currentMpegtsPlayer = null, currentHlsPlayer = null, currentSourceUrl = null, bufferingTimeout = null, reloadAttempts = 0;
-    const MAX_RELOAD_ATTEMPTS = 2;
-    
+    let rawData = [], availableCategories = [], favorites = JSON.parse(localStorage.getItem('nikamma_fav_list') || '[]');
+    let currentCategory = 'All';
+    let currentMpegtsPlayer = null, currentHlsPlayer = null, currentSourceUrl = null;
     const advVideo = document.getElementById('advancedVideo');
-    const exoLoader = document.getElementById('exoLoader');
-    const exoPlayBtn = document.getElementById('exoPlayBtn');
-    const exoMuteBtn = document.getElementById('exoMuteBtn');
-    const exoScreenSetBtn = document.getElementById('exoScreenSetBtn');
-    const exoFullBtn = document.getElementById('exoFullBtn');
-    const modeTextSpan = document.getElementById('mode-text');
-    const exoOverlay = document.getElementById('exoOverlay');
     
-    let controlsTimeout = null;
-    let currentFitMode = 2;
-    const fitModes = ['contain', 'cover', 'fill'];
+    // ---------- Helper functions ----------
+    function saveFavs() { localStorage.setItem('nikamma_fav_list', JSON.stringify(favorites)); }
+    function escapeHtml(str) { if(!str) return ''; return String(str).replace(/[&<>]/g, function(m){if(m==='&') return '&amp;'; if(m==='<') return '&lt;'; if(m==='>') return '&gt;'; return m;}); }
+    function handleImageError(img) { if(img && img.src !== MASTER_LOGO) img.src = MASTER_LOGO; }
+    function handleImageLoad(img) { img.classList.remove('img-loading'); img.classList.add('img-loaded'); }
     
-    function setVideoFitMode() {
-        const mode = fitModes[currentFitMode];
-        advVideo.classList.remove('fit-contain', 'fit-cover', 'fit-fill');
-        advVideo.classList.add('fit-' + mode);
-        advVideo.style.objectFit = mode;
-        modeTextSpan.innerText = mode.toUpperCase();
-    }
+    window.toggleFav = function(e, url) { e.stopPropagation(); let idx = favorites.indexOf(url); if(idx > -1) favorites.splice(idx,1); else favorites.push(url); saveFavs(); document.querySelectorAll(`.fav-badge[data-url="${url}"]`).forEach(b => { if(favorites.includes(url)) b.classList.add('active'); else b.classList.remove('active'); }); if(currentCategory === 'favorites_view') showFavorites(document.getElementById('fav-nav-btn')); };
     
-    function showControls() {
-        if (exoOverlay && !exoOverlay.classList.contains('visible')) {
-            exoOverlay.classList.add('visible');
-            clearTimeout(controlsTimeout);
-            if (!advVideo.paused) {
-                controlsTimeout = setTimeout(() => {
-                    if (exoOverlay && !advVideo.paused) exoOverlay.classList.remove('visible');
-                }, 5000);
-            }
-        }
-    }
-    
-    function hideControls() { if (exoOverlay && exoOverlay.classList.contains('visible')) { exoOverlay.classList.remove('visible'); clearTimeout(controlsTimeout); } }
-    function toggleControls() { if (exoOverlay.classList.contains('visible')) hideControls(); else showControls(); }
-    
-    function attachToggleControls() {
-        const container = document.getElementById('advancedPlayerContainer');
-        if (!container) return;
-        const handleToggle = (e) => {
-            if (e.target.closest && (e.target.closest('.icon-btn') || e.target.closest('.menu-bar') || e.target.closest('.top-bar'))) return;
-            toggleControls();
-        };
-        container.addEventListener('click', handleToggle);
-        advVideo.addEventListener('click', (e) => { e.stopPropagation(); toggleControls(); });
-        advVideo.addEventListener('pause', () => showControls());
-        advVideo.addEventListener('play', () => {
-            if (exoOverlay.classList.contains('visible')) {
-                clearTimeout(controlsTimeout);
-                controlsTimeout = setTimeout(() => { if (exoOverlay && !advVideo.paused) exoOverlay.classList.remove('visible'); }, 5000);
-            }
-        });
-    }
-    
-    function clearBufferingTimeout() { if (bufferingTimeout) { clearTimeout(bufferingTimeout); bufferingTimeout = null; } }
-    
-    function attemptResume() {
-        if (!currentSourceUrl) return;
-        if (advVideo.readyState >= 2) {
-            advVideo.play().catch(e => console.warn("Resume play failed", e));
-        } else {
-            const currentTime = advVideo.currentTime;
-            const wasPlaying = !advVideo.paused;
-            const url = currentSourceUrl;
-            if (currentMpegtsPlayer) {
-                try { currentMpegtsPlayer.unload(); currentMpegtsPlayer.destroy(); } catch(e) {}
-                currentMpegtsPlayer = null;
-            }
-            if (currentHlsPlayer) {
-                try { currentHlsPlayer.destroy(); } catch(e) {}
-                currentHlsPlayer = null;
-            }
-            advVideo.pause();
-            advVideo.removeAttribute('src');
-            advVideo.load();
-            const isLive = url.includes('.m3u8') || url.includes('.ts') || url.includes('live');
-            loadIntoAdvancedPlayer(url, document.getElementById('videoTitle').innerText, null, wasPlaying);
-            if (!isLive && currentTime > 0 && currentTime < advVideo.duration) {
-                advVideo.addEventListener('loadedmetadata', function seekHandler() {
-                    advVideo.currentTime = currentTime;
-                    advVideo.removeEventListener('loadedmetadata', seekHandler);
-                });
-            }
-        }
-    }
-    
-    function handleWaiting() {
-        if (!currentSourceUrl) return;
-        clearBufferingTimeout();
-        bufferingTimeout = setTimeout(() => {
-            if (advVideo.readyState < 2 || advVideo.networkState === 2 || advVideo.buffered.length === 0) {
-                attemptResume();
-            }
-        }, 4000);
-    }
-    
-    function handlePlaying() { clearBufferingTimeout(); reloadAttempts = 0; }
-    function handleStalled() { if (!currentSourceUrl) return; attemptResume(); }
-    function handleError(e) { if (currentSourceUrl && reloadAttempts < MAX_RELOAD_ATTEMPTS) { reloadAttempts++; attemptResume(); } }
-    
-    function destroyAdvancedPlayer() {
-        clearBufferingTimeout();
-        if (currentMpegtsPlayer) { try { currentMpegtsPlayer.unload(); currentMpegtsPlayer.destroy(); } catch(e) {} currentMpegtsPlayer = null; }
-        if (currentHlsPlayer) { try { currentHlsPlayer.destroy(); } catch(e) {} currentHlsPlayer = null; }
-        advVideo.pause();
-        advVideo.removeAttribute('src');
-        advVideo.load();
-        advVideo.removeEventListener('waiting', handleWaiting);
-        advVideo.removeEventListener('playing', handlePlaying);
-        advVideo.removeEventListener('stalled', handleStalled);
-        advVideo.removeEventListener('error', handleError);
-    }
-    
-    function loadIntoAdvancedPlayer(url, title, cardElement, autoPlay = true) {
-        if (url === currentSourceUrl && advVideo.src) return;
-        destroyAdvancedPlayer();
-        currentSourceUrl = url;
-        reloadAttempts = 0;
-        exoLoader.style.display = 'flex';
-        advVideo.muted = true;
-        
-        advVideo.addEventListener('waiting', handleWaiting);
-        advVideo.addEventListener('playing', handlePlaying);
-        advVideo.addEventListener('stalled', handleStalled);
-        advVideo.addEventListener('error', handleError);
-        
-        const isTs = url.includes('.ts') || url.includes('transportstream');
-        const isM3u8 = url.includes('.m3u8') || url.includes('m3u8');
-        
-        if (isTs && typeof mpegts !== 'undefined') {
-            try {
-                currentMpegtsPlayer = mpegts.createPlayer({ type: 'mse', isLive: true, url: url, enableStashBuffer: false });
-                currentMpegtsPlayer.attachMediaElement(advVideo);
-                currentMpegtsPlayer.load();
-                if (autoPlay) currentMpegtsPlayer.play().catch(e => console.warn);
-            } catch(e) { fallbackNative(url, autoPlay); }
-        } 
-        else if (isM3u8 && window.Hls && Hls.isSupported()) {
-            try {
-                currentHlsPlayer = new Hls({ lowLatencyMode: true });
-                currentHlsPlayer.loadSource(url);
-                currentHlsPlayer.attachMedia(advVideo);
-                currentHlsPlayer.on(Hls.Events.MANIFEST_PARSED, () => {
-                    if (autoPlay) advVideo.play().catch(e=>console.warn);
-                });
-                currentHlsPlayer.on(Hls.Events.ERROR, (evt, data) => { if (data.fatal) attemptResume(); });
-            } catch(e) { fallbackNative(url, autoPlay); }
-        }
-        else { fallbackNative(url, autoPlay); }
-        
-        advVideo.onplaying = () => { exoLoader.style.display = 'none'; showControls(); };
-        advVideo.onwaiting = () => { exoLoader.style.display = 'flex'; };
-        advVideo.onerror = () => { exoLoader.style.display = 'none'; };
-        setTimeout(() => { if(advVideo.readyState > 0) exoLoader.style.display = 'none'; }, 1500);
-    }
-    
-    function toggleFullscreen() {
-        const container = document.getElementById('advancedPlayerContainer');
-        const isCurrentlyFull = !!(document.fullscreenElement || document.webkitFullscreenElement);
-        if (!isCurrentlyFull) {
-            const requestMethod = container.requestFullscreen || container.webkitRequestFullscreen;
-            if (requestMethod) requestMethod.call(container).catch(err => console.warn(err));
-        } else {
-            const exitMethod = document.exitFullscreen || document.webkitExitFullscreen;
-            if (exitMethod) exitMethod.call(document).catch(err => console.warn(err));
-        }
-    }
-    
-    function updateFullscreenIcon() {
-        const isFs = !!(document.fullscreenElement || document.webkitFullscreenElement);
-        isFullscreen = isFs;
-        exoFullBtn.innerHTML = `<span class="material-icons-round">${isFs ? 'fullscreen_exit' : 'fullscreen'}</span>`;
-        if (!isFs) { setVideoFitMode(); } else { setTimeout(() => { if (exoOverlay && !advVideo.paused) showControls(); }, 100); }
-    }
-    
-    document.addEventListener('fullscreenchange', updateFullscreenIcon);
-    document.addEventListener('webkitfullscreenchange', updateFullscreenIcon);
-    
-    function attachPlayerControls() {
-        const exoTopCloseBtn = document.getElementById('exoTopCloseBtn');
-        if (exoTopCloseBtn) { exoTopCloseBtn.onclick = (e) => { e.stopPropagation(); stopVideo(); }; }
-        
-        exoPlayBtn.onclick = (e) => {
-            e.stopPropagation();
-            if (advVideo.paused) { advVideo.play(); exoPlayBtn.innerHTML = '<span class="material-icons-round">pause</span>'; } 
-            else { advVideo.pause(); exoPlayBtn.innerHTML = '<span class="material-icons-round">play_arrow</span>'; }
-            showControls();
-        };
-        exoMuteBtn.onclick = (e) => {
-            e.stopPropagation();
-            advVideo.muted = !advVideo.muted;
-            exoMuteBtn.innerHTML = `<span class="material-icons-round">${advVideo.muted ? 'volume_off' : 'volume_up'}</span>`;
-            showControls();
-        };
-        exoScreenSetBtn.onclick = (e) => {
-            e.stopPropagation();
-            currentFitMode = (currentFitMode + 1) % fitModes.length;
-            setVideoFitMode();
-            showControls();
-        };
-        exoFullBtn.onclick = (e) => { e.stopPropagation(); toggleFullscreen(); showControls(); };
-        advVideo.onplay = () => { exoPlayBtn.innerHTML = '<span class="material-icons-round">pause</span>'; };
-        advVideo.onpause = () => { exoPlayBtn.innerHTML = '<span class="material-icons-round">play_arrow</span>'; };
-        advVideo.onvolumechange = () => {
-            exoMuteBtn.innerHTML = `<span class="material-icons-round">${advVideo.muted ? 'volume_off' : 'volume_up'}</span>`;
-        };
-        setVideoFitMode();
-        attachToggleControls();
-        attachGestureListeners();
-        updateFullscreenIcon();
-    }
-    
-    function isWebpageUrl(url) {
-        if (!url || url === '#') return false;
-        if (/\.(m3u8|ts|mp4|mkv|avi|flv|webm|mpd)(\?|$)/i.test(url)) return false;
-        if (/\/(stream|live|hls|dash|playlist|channel)\//i.test(url)) return false;
-        if (/\.(m3u8|ts|mp4)/.test(url)) return false;
-        if (/\.(php|html|htm|asp|aspx|jsp)([\?#]|$)/i.test(url)) return true;
-        if (/executeandship\.com|dailymotion\.com|streamtp\.com|embedstream|player\.|embed\./i.test(url)) return true;
-        if (url.includes('?') && !/\.(m3u8|ts|mp4|mpd)/i.test(url)) return true;
-        return false;
-    }
-
-    window.iframeFullscreen = function() {
-        var ifr = document.getElementById('iframePlayer');
-        var box = document.getElementById('iframePlayerBox');
-        var req = box.requestFullscreen || box.webkitRequestFullscreen;
-        if (req) req.call(box);
-    };
-
-    window.play = function(url, title, cardElement) {
-        if(!url || url === '#') return;
-        document.querySelectorAll('.card').forEach(c => c.classList.remove('playing'));
-        if(cardElement) cardElement.classList.add('playing');
-        document.getElementById('videoBox').style.display = 'block';
-        document.getElementById('mainSlider').style.display = 'none';
-        document.getElementById('videoTitle').innerText = title;
-        window.scrollTo({top: 0, behavior: 'smooth'});
-
-        if (isWebpageUrl(url)) {
-            destroyAdvancedPlayer();
-            currentSourceUrl = url;
-            document.getElementById('advancedPlayerContainer').style.display = 'none';
-            var iframeBox = document.getElementById('iframePlayerBox');
-            var iframe = document.getElementById('iframePlayer');
-            iframeBox.style.display = 'block';
-            iframe.src = url;
-        } else {
-            document.getElementById('iframePlayerBox').style.display = 'none';
-            document.getElementById('iframePlayer').src = 'about:blank';
-            document.getElementById('advancedPlayerContainer').style.display = '';
-            loadIntoAdvancedPlayer(url, title, cardElement, true);
-        }
-    };
-    
-    window.stopVideo = function() {
-        destroyAdvancedPlayer();
-        currentSourceUrl = null;
-        var iframe = document.getElementById('iframePlayer');
-        if (iframe) iframe.src = 'about:blank';
-        document.getElementById('iframePlayerBox').style.display = 'none';
-        document.getElementById('advancedPlayerContainer').style.display = '';
-        document.getElementById('videoBox').style.display = 'none';
-        document.querySelectorAll('.card').forEach(c => c.classList.remove('playing'));
-        const sliders = rawData.filter(d => (d.Category || d.category || "").toLowerCase() === 'slider');
-        if(currentCategory === 'All' && sliders.length > 0) document.getElementById('mainSlider').style.display = 'block';
-        if (controlsTimeout) clearTimeout(controlsTimeout);
-        hideControls();
-        setVideoBrightness(1.0);
-    };
-    
-    async function checkInternetBeforeStart() {
-        const checker = document.getElementById('internetChecker');
-        if (!navigator.onLine) { checker.style.display = 'flex'; return false; }
-        checker.style.display = 'none';
-        return true;
-    }
-    
-    window.checkInternetAgain = async function() {
-        const btn = document.querySelector('#internetChecker .retry-btn');
-        btn.innerHTML = '<i class="fa fa-spinner fa-spin"></i> Checking...';
-        btn.disabled = true;
-        const hasInternet = await checkInternetBeforeStart();
-        if (hasInternet) window.location.reload();
-        else { btn.innerHTML = '<i class="fa fa-arrow-rotate-right"></i> Try Again'; btn.disabled = false; }
-    };
-    
-    let rawData = [], settingsData = {}, currentCategory = 'All';
-    let isRefreshing = false, currentDataHash = '';
-    let availableCategories = []; 
-    let favorites = JSON.parse(localStorage.getItem(FAV_KEY_STORAGE) || '[]');
-    
-    function generateDataHash(data) { try { const importantFields = data.map(item => ({ name: item.name || item.Name || '', url: item.URL || item.url || '', category: item.Category || item.category || '', thumbnail: item.Thumbnail || item.thumbnail || '' })); return btoa(unescape(encodeURIComponent(JSON.stringify(importantFields)))); } catch(e) { return Date.now().toString(); } }
-    function isDataSame(newData, oldData) { if(newData.length !== oldData.length) return false; return generateDataHash(newData) === generateDataHash(oldData); }
-    function saveDataToCache(data, settings) { try { const dataHash = generateDataHash(data); currentDataHash = dataHash; localStorage.setItem(STORAGE_KEY_DATA, JSON.stringify({ rawData: data, settingsData: settings, timestamp: Date.now(), dataHash })); localStorage.setItem(STORAGE_KEY_HASH, dataHash); } catch(e) {} }
-    
-    function loadDataFromCache() { 
-        try { 
-            const cached = localStorage.getItem(STORAGE_KEY_DATA); 
-            if(cached) { 
-                const cacheData = JSON.parse(cached); 
-                if(cacheData.rawData && cacheData.rawData.length) { 
-                    rawData = cacheData.rawData; 
-                    currentDataHash = cacheData.dataHash || ''; 
-                    if(cacheData.settingsData) settingsData = cacheData.settingsData; 
-                    applySettings(); 
-                    return true; 
-                } 
-            } 
-        } catch(e) {} 
-        return false; 
-    }
-    
-    function showCachedDataBadge() { const badge = document.getElementById('data-save-badge'); badge.classList.add('show'); setTimeout(() => badge.classList.remove('show'), 2000); }
-    function showNoUpdateBadge() { const badge = document.getElementById('no-update-badge'); badge.classList.add('show'); setTimeout(() => badge.classList.remove('show'), 2000); }
-    function updateUIAfterDataLoad() { 
-        updateSlider(); 
-        buildDynamicCategoryMenu(); 
-        currentCategory = 'All';
-        filterData('All', document.getElementById('home-nav-btn'), false); 
-        const splash = document.getElementById('splash-screen'); 
-        if(splash && splash.style.display !== 'none') { 
-            splash.style.opacity = '0'; 
-            setTimeout(() => splash.style.display = 'none', 500); 
-        } 
-    }
-    function applySettings() { if(settingsData.ratingUrl) document.getElementById('rating-link').href = settingsData.ratingUrl; if(settingsData.privacyUrl) document.getElementById('privacy-link').href = settingsData.privacyUrl; if(settingsData.version && parseFloat(settingsData.version) > 3.9) { document.getElementById('update-overlay').style.display = 'flex'; document.getElementById('update-btn').onclick = () => window.location.href = settingsData.updateUrl; } }
-    
-    function showNoContentScreen() {
-        const homeCategoriesContainer = document.getElementById('homeCategoriesContainer');
-        const mainCategoryView = document.getElementById('mainCategoryView');
-        if(mainCategoryView) mainCategoryView.style.display = 'none';
-        if(homeCategoriesContainer) {
-            homeCategoriesContainer.style.display = 'block';
-            homeCategoriesContainer.innerHTML = `
-            <div class="empty-state">
-                <i class="fa fa-folder-open"></i>
-                <h3>No Content Available</h3>
-                <p>Category sheet mein koi active category nahi mili.</p>
-            </div>`;
-        }
-        const splash = document.getElementById('splash-screen');
-        if(splash && splash.style.display !== 'none') {
-            splash.style.opacity = '0';
-            setTimeout(() => splash.style.display = 'none', 500);
-        }
-    }
-
-    async function fetchFreshData() {
-        return new Promise((resolve) => {
-
-            Papa.parse('https://docs.google.com/spreadsheets/d/e/2PACX-1vQJM1FvOsBuKL_Al7PpwYerGDVFhs5tLF4PaVs3_TOLX-TFLW-iF3B6qLLLeuuBmjfZFGe3CFxJA-TR/pub?gid=1155331852&single=true&output=csv', {
-                download: true, header: true, skipEmptyLines: true,
-                complete: function(catResults) {
-                    
-                    var loadedCategories = catResults.data.filter(function(row){
-                        return (row.Category||row.category||'').trim() && (row.Status||'').toLowerCase() !== 'inactive';
-                    }).map(function(row){
-                        var ic = (row.Icon||row.icon||'folder').trim();
-                        var resolved = ic.includes(' ') ? ic : ic.startsWith('fa-') ? 'fa '+ic : 'fa fa-'+ic;
-                        return { name: (row.Category||row.category||'').trim(), icon: resolved };
-                    });
-
-                    if(!loadedCategories.length) {
-                        availableCategories = [];
-                        rawData = [];
-                        showNoContentScreen();
-                        resolve(false);
-                        return;
-                    }
-
-                    availableCategories = loadedCategories;
-
-                    Papa.parse('https://docs.google.com/spreadsheets/d/e/2PACX-1vQJM1FvOsBuKL_Al7PpwYerGDVFhs5tLF4PaVs3_TOLX-TFLW-iF3B6qLLLeuuBmjfZFGe3CFxJA-TR/pub?output=csv', {
-                        download: true, header: true, skipEmptyLines: true,
-                        complete: function(results) {
-                            let newRawData = results.data
-                                .filter(item => item && (item.name || item.Name || item.URL || item.url))
-                                .map(item => {
-                                    let cat = (item.Category || item.category || "").trim();
-                                    if(cat.toLowerCase() === "tv shows" || cat.toLowerCase() === "tvshow") item.Category = "TV Shows";
-                                    return item;
-                                });
-
-                            let categoryNames = availableCategories.map(c => c.name.toLowerCase());
-                            let matchedData = newRawData.filter(item => {
-                                let itemCat = (item.Category || item.category || "").trim().toLowerCase();
-                                return itemCat === 'slider' || categoryNames.includes(itemCat);
-                            });
-
-                            Papa.parse('https://docs.google.com/spreadsheets/d/e/2PACX-1vQD2lHL-u6zHPZKdYIVD4eXp98XipkVP4jKfxLDoNje9DeZ1726o0zFZf-gAR2kZj0ls7VhceXbbKih/pub?gid=1123743396&single=true&output=csv', {
-                                download: true, header: true, skipEmptyLines: true,
-                                complete: function(settingsResults) {
-                                    settingsData = settingsResults.data[0] || {};
-
-                                    var finalData = matchedData.length ? matchedData : newRawData;
-                                    if(finalData.length) {
-                                        rawData = finalData;
-                                        applySettings();
-                                        saveDataToCache(rawData, settingsData);
-                                        updateUIAfterDataLoad();
-                                        resolve(true);
-                                    } else {
-                                        showNoContentScreen();
-                                        resolve(false);
-                                    }
-                                },
-                                error: function() {
-                                    var finalData = matchedData.length ? matchedData : newRawData;
-                                    if(finalData.length) {
-                                        rawData = finalData;
-                                        saveDataToCache(rawData, settingsData);
-                                        updateUIAfterDataLoad();
-                                        resolve(true);
-                                    } else {
-                                        showNoContentScreen();
-                                        resolve(false);
-                                    }
-                                }
-                            });
-                        },
-                        error: function() {
-                            rawData = [];
-                            showNoContentScreen();
-                            resolve(false);
-                        }
-                    });
-                },
-                error: function() {
-                    availableCategories = [];
-                    rawData = [];
-                    showNoContentScreen();
-                    resolve(false);
-                }
+    function buildCategoryHorizontals() {
+        const homeContainer = document.getElementById('homeCategoriesContainer');
+        let cats = availableCategories.filter(c => c.name.toLowerCase() !== 'slider' && c.name.toLowerCase() !== 'live');
+        if(!cats.length) cats = [...new Set(rawData.map(i=>(i.Category||i.category||"").trim()))].filter(c=>c && c.toLowerCase()!=='slider').map(c=>({name:c, icon:'fa-folder'}));
+        let html = '';
+        cats.forEach(cat => {
+            let items = rawData.filter(d => (d.Category||d.category||"").trim().toLowerCase() === cat.name.toLowerCase());
+            if(!items.length) return;
+            items = items.slice().reverse();
+            const showAll = items.length > 5;
+            const first5 = items.slice(0,5);
+            html += `<div class="category-section"><div class="category-header"><div class="category-title"><i class="${cat.icon.includes(' ') ? cat.icon : 'fa fa-'+cat.icon}"></i> ${cat.name}</div>${showAll ? `<div class="read-more-btn" onclick="filterData('${cat.name}', null, false)">View All</div>` : ''}</div><div class="horizontal-scroll" id="scroll-cat-${cat.name.replace(/\s/g,'')}">`;
+            first5.forEach(item => {
+                let thumb = item.Thumbnail || item.thumbnail || MASTER_LOGO, title = item.name || item.Name || "Untitled", url = item.URL || item.url || "#";
+                let isFav = favorites.includes(url);
+                html += `<div class="card" data-url="${escapeHtml(url)}" data-title="${escapeHtml(title)}"><div class="fav-badge ${isFav ? 'active' : ''}" data-url="${escapeHtml(url)}" onclick="toggleFav(event, '${escapeHtml(url)}')"><i class="fa fa-heart"></i></div><div onclick="play('${escapeHtml(url)}', '${escapeHtml(title)}', this.parentElement)"><img src="${thumb}" loading="lazy" onerror="handleImageError(this)" onload="handleImageLoad(this)" class="img-loading"><div class="card-title">${title}</div></div></div>`;
             });
+            html += `</div></div>`;
         });
+        if(!html) homeContainer.innerHTML = `<div class="empty-state"><i class="fa fa-folder-open"></i><h3>No content</h3></div>`;
+        else homeContainer.innerHTML = html;
     }
     
-    function updateSlider() { const sliders = rawData.filter(d => (d.Category || d.category || "").toLowerCase() === 'slider'); const track = document.getElementById('sliderTrack'); if(sliders.length && track) { track.innerHTML = sliders.map(s => `<div class="slide-item"><img src="${s.Thumbnail || s.thumbnail || s.URL || s.url || MASTER_LOGO}" loading="lazy" onerror="handleImageError(this)" onload="handleImageLoad(this)" class="img-loading"></div>`).join(''); const videoBoxDisplay = document.getElementById('videoBox').style.display; document.getElementById('mainSlider').style.display = (currentCategory === 'All' && videoBoxDisplay !== 'block') ? 'block' : 'none'; } else document.getElementById('mainSlider').style.display = 'none'; }
-
-    function buildDynamicCategoryMenu() {
-        const liveBtn = document.getElementById('live-nav-btn');
-        const sideNavDynamicLinks = document.getElementById('sideNavDynamicLinks');
-        
-        let hasLiveCategory = rawData.some(d => {
-            let c = (d.Category || d.category || '').trim().toLowerCase();
-            return c === 'live' || c === 'life';
-        });
-
-        if (hasLiveCategory) {
-            liveBtn.style.display = 'block';
-            let liveCatObj = availableCategories.find(function(c) {
-                return c.name.toLowerCase() === 'live' || c.name.toLowerCase() === 'life';
-            });
-            if(liveCatObj && liveCatObj.icon) {
-                var liveBtnIcon = liveBtn.querySelector('i');
-                if(liveBtnIcon) liveBtnIcon.className = liveCatObj.icon;
-            }
-        } else {
-            liveBtn.style.display = 'none';
-        }
-
-        sideNavDynamicLinks.innerHTML = `<a href="#" onclick="filterData('All', document.getElementById('home-nav-btn'), true)"><i class="fa fa-home"></i> Home</a>`;
-    }
-
-    window.filterData = function(cat, btn, shouldClose = true) { 
-        currentCategory = cat; 
-        if(shouldClose) closeNav(); 
-        
-        const sliderDiv = document.getElementById('mainSlider');
-        const videoBox = document.getElementById('videoBox'); 
-        const sliders = rawData.filter(d => (d.Category || d.category || "").toLowerCase() === 'slider'); 
-        
-        sliderDiv.style.display = (cat === 'All' && videoBox.style.display !== 'block' && sliders.length) ? 'block' : 'none'; 
-        
-        document.querySelectorAll('.nav-btn').forEach(b => { 
-            if(b === btn) b.classList.add('active'); 
-            else if(!btn && (b.getAttribute('data-cat') === cat || (cat === 'All' && b.id === 'home-nav-btn'))) b.classList.add('active');
-            else b.classList.remove('active'); 
-        }); 
-
-        const homeCategoriesContainer = document.getElementById('homeCategoriesContainer');
-        const mainCategoryView = document.getElementById('mainCategoryView');
-        const moreSectionView = document.getElementById('moreSectionView');
-        const specificGrid = document.getElementById('specificGrid');
-        const specificCategoryTitle = document.getElementById('specificCategoryTitle');
-
-        moreSectionView.style.display = 'none';
-
-        if (cat === 'All') {
-            mainCategoryView.style.display = 'none';
-            homeCategoriesContainer.style.display = 'block';
-            
-            let categoriesToDisplay = availableCategories;
-            if(!categoriesToDisplay.length) {
-                const uniqueCategories = [...new Set(rawData.map(item => (item.Category || item.category || "").trim()))].filter(Boolean);
-                categoriesToDisplay = uniqueCategories.map(c => ({ name: c, icon: 'fa-folder' }));
-            }
-            
-            let finalHtml = '';
-            categoriesToDisplay.forEach(catObj => {
-                const catName = catObj.name;
-                const lowerCatName = catName.toLowerCase();
-                
-                if(lowerCatName === 'slider' || lowerCatName === 'live' || lowerCatName === 'life') return;
-                
-                let filteredItems = rawData.filter(d => (d.Category || d.category || "").trim().toLowerCase() === lowerCatName);
-                if (!filteredItems.length) return;
-                
-                filteredItems = filteredItems.slice().reverse();
-                const hasMore = filteredItems.length > 5;
-                const itemsToShow = filteredItems.slice(0, 5);
-                
-                let cleanIcon = catObj.icon;
-
-                finalHtml += `
-                <div class="category-section">
-                    <div class="category-header">
-                        <div class="category-title"><i class="${cleanIcon}"></i> ${catName}</div>
-                        ${hasMore ? `<div class="read-more-btn" onclick="filterData('${catName}', null, false)">Read More</div>` : ''}
-                    </div>
-                    <div class="grid">
-                        ${itemsToShow.map(item => {
-                            let thumb = item.Thumbnail || item.thumbnail || MASTER_LOGO;
-                            let itemName = item.name || item.Name || "Untitled";
-                            let url = item.URL || item.url || "#";
-                            let isFav = favorites.includes(url);
-                            return `
-                            <div class="card" data-url="${escapeHtml(url)}" data-title="${escapeHtml(itemName)}">
-                                <div class="fav-badge ${isFav ? 'active' : ''}" onclick="toggleFav(event, '${escapeHtml(url)}')"><i class="fa fa-heart"></i></div>
-                                <div style="width:100%; height:100%;" onclick="play('${escapeHtml(url)}', '${escapeHtml(itemName)}', this.parentElement)">
-                                    <img src="${thumb}" loading="lazy" onerror="handleImageError(this)" onload="handleImageLoad(this)" class="img-loading">
-                                    <div class="card-title">${itemName}</div>
-                                </div>
-                            </div>`;
-                        }).join('')}
-                    </div>
-                </div>`;
-            });
-            
-            if(!finalHtml) {
-                homeCategoriesContainer.innerHTML = `
-                <div class="empty-state">
-                    <i class="fa fa-folder-open"></i>
-                    <h3>No content available</h3>
-                </div>`;
-            } else {
-                homeCategoriesContainer.innerHTML = finalHtml;
-            }
-            
-        } else {
-            homeCategoriesContainer.style.display = 'none';
-            mainCategoryView.style.display = 'block';
-            
-            let matchedCategory = availableCategories.find(c => c.name.toLowerCase() === cat.toLowerCase());
-            let currentIconClass = matchedCategory ? matchedCategory.icon : "fa-folder";
-            
-            if(cat.toLowerCase() === 'live' || cat.toLowerCase() === 'life') {
-                let liveCatInSheet = availableCategories.find(function(c){
-                    return c.name.toLowerCase() === 'live' || c.name.toLowerCase() === 'life';
-                });
-                if(liveCatInSheet && liveCatInSheet.icon) {
-                    currentIconClass = liveCatInSheet.icon;
-                } else {
-                    currentIconClass = "fa fa-circle-play";
-                }
-            }
-            let cleanIcon = currentIconClass.includes(' ') ? currentIconClass : currentIconClass.startsWith('fa-') ? 'fa ' + currentIconClass : 'fa fa-' + currentIconClass;
-            specificCategoryTitle.innerHTML = `<i class="${cleanIcon}"></i> ${cat.toUpperCase()}`;
-            
-            let filtered = rawData.filter(d => {
-                let c = (d.Category || d.category || "").trim().toLowerCase();
-                if (cat.toLowerCase() === 'live') {
-                    return c === 'live' || c === 'life';
-                }
-                return c === cat.toLowerCase();
-            });
-            
-            filtered = filtered.slice().reverse();
-            
-            if(!filtered.length) {
-                specificGrid.innerHTML = `
-                <div style="grid-column:1/-1" class="empty-state">
-                    <i class="fa fa-folder-open"></i>
-                    <h3>No content found</h3>
-                </div>`;
-            } else {
-                specificGrid.innerHTML = filtered.map(item => {
-                    let thumb = item.Thumbnail || item.thumbnail || MASTER_LOGO, itemName = item.name || item.Name || "Untitled", url = item.URL || item.url || "#";
-                    let isFav = favorites.includes(url);
-                    return `
-                    <div class="card" data-url="${escapeHtml(url)}" data-title="${escapeHtml(itemName)}">
-                        <div class="fav-badge ${isFav ? 'active' : ''}" onclick="toggleFav(event, '${escapeHtml(url)}')"><i class="fa fa-heart"></i></div>
-                        <div style="width:100%; height:100%;" onclick="play('${escapeHtml(url)}', '${escapeHtml(itemName)}', this.parentElement)">
-                            <img src="${thumb}" loading="lazy" onerror="handleImageError(this)" onload="handleImageLoad(this)" class="img-loading">
-                            <div class="card-title">${itemName}</div>
-                        </div>
-                    </div>`;
-                }).join('');
-            }
-        }
-    };
-
-    window.toggleFav = function(e, url) {
-        if(e) e.stopPropagation();
-        let idx = favorites.indexOf(url);
-        if (idx > -1) { favorites.splice(idx, 1); } else { favorites.push(url); }
-        localStorage.setItem(FAV_KEY_STORAGE, JSON.stringify(favorites));
-        
-        document.querySelectorAll(`.card[data-url="${url}"] .fav-badge`).forEach(badge => {
-            if (favorites.includes(url)) badge.classList.add('active');
-            else badge.classList.remove('active');
-        });
-
-        if (currentCategory === 'favorites_view') { showFavorites(document.getElementById('fav-nav-btn')); }
-    };
-
-    window.showFavorites = function(btn) {
-        closeNav();
-        currentCategory = 'favorites_view';
-        document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+    window.filterData = function(cat, btn, closeSide=true) {
+        if(closeSide) closeNav();
+        currentCategory = cat;
+        document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
         if(btn) btn.classList.add('active');
-
-        document.getElementById('mainSlider').style.display = 'none';
+        document.getElementById('homeCategoriesContainer').style.display = cat === 'All' ? 'block' : 'none';
+        document.getElementById('mainCategoryView').style.display = cat !== 'All' && cat !== 'favorites_view' && cat !== 'more_section' ? 'block' : 'none';
+        document.getElementById('moreSectionView').style.display = 'none';
+        if(cat === 'All') { buildCategoryHorizontals(); document.getElementById('mainSlider').style.display = rawData.some(d=>(d.Category||d.category||"").toLowerCase()==='slider') ? 'block' : 'none'; return; }
+        if(cat === 'more_section') { document.getElementById('moreSectionView').style.display = 'block'; return; }
+        if(cat === 'favorites_view') { showFavorites(document.getElementById('fav-nav-btn')); return; }
+        let filtered = rawData.filter(d => (d.Category||d.category||"").trim().toLowerCase() === cat.toLowerCase()).slice().reverse();
+        const specTitle = document.getElementById('specificCategoryTitle');
+        let matched = availableCategories.find(c=>c.name.toLowerCase()===cat.toLowerCase());
+        let icon = matched ? (matched.icon.includes(' ') ? matched.icon : 'fa fa-'+matched.icon) : 'fa fa-folder';
+        specTitle.innerHTML = `<i class="${icon}"></i> ${cat.toUpperCase()}`;
+        const grid = document.getElementById('specificGrid');
+        if(!filtered.length) { grid.innerHTML = `<div class="empty-state" style="min-width:100%"><i class="fa fa-ban"></i><h3>No items</h3></div>`; return; }
+        grid.innerHTML = filtered.map(item => {
+            let thumb = item.Thumbnail || item.thumbnail || MASTER_LOGO, title = item.name || item.Name || "Untitled", url = item.URL || item.url || "#";
+            let isFav = favorites.includes(url);
+            return `<div class="card" data-url="${escapeHtml(url)}"><div class="fav-badge ${isFav ? 'active' : ''}" data-url="${escapeHtml(url)}" onclick="toggleFav(event, '${escapeHtml(url)}')"><i class="fa fa-heart"></i></div><div onclick="play('${escapeHtml(url)}', '${escapeHtml(title)}', this.parentElement)"><img src="${thumb}" loading="lazy" onerror="handleImageError(this)" onload="handleImageLoad(this)" class="img-loading"><div class="card-title">${title}</div></div></div>`;
+        }).join('');
+    };
+    
+    window.showFavorites = function(btn) { 
+        closeNav(); currentCategory = 'favorites_view';
+        document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active')); if(btn) btn.classList.add('active');
         document.getElementById('homeCategoriesContainer').style.display = 'none';
         document.getElementById('moreSectionView').style.display = 'none';
-        
-        const mainCategoryView = document.getElementById('mainCategoryView');
-        const specificGrid = document.getElementById('specificGrid');
-        const specificCategoryTitle = document.getElementById('specificCategoryTitle');
-        
-        mainCategoryView.style.display = 'block';
-        specificCategoryTitle.innerHTML = `<i class="fa fa-heart" style="color:#ff3b30;"></i> MY FAVORITES`;
-
-        let filtered = rawData.filter(d => favorites.includes(d.URL || d.url));
-        filtered = filtered.slice().reverse();
-
-        if(!filtered.length) {
-            specificGrid.innerHTML = `
-            <div style="grid-column:1/-1" class="empty-state">
-                <i class="fa fa-heart-broken" style="color:#555;"></i>
-                <h3>No favorites yet</h3>
-                <p>Click on the heart icon to add items</p>
-            </div>`;
-        } else {
-            specificGrid.innerHTML = filtered.map(item => {
-                let thumb = item.Thumbnail || item.thumbnail || MASTER_LOGO, itemName = item.name || item.Name || "Untitled", url = item.URL || item.url || "#";
-                return `
-                <div class="card" data-url="${escapeHtml(url)}" data-title="${escapeHtml(itemName)}">
-                    <div class="fav-badge active" onclick="toggleFav(event, '${escapeHtml(url)}')"><i class="fa fa-heart"></i></div>
-                    <div style="width:100%; height:100%;" onclick="play('${escapeHtml(url)}', '${escapeHtml(itemName)}', this.parentElement)">
-                        <img src="${thumb}" loading="lazy" onerror="handleImageError(this)" onload="handleImageLoad(this)" class="img-loading">
-                        <div class="card-title">${itemName}</div>
-                    </div>
-                </div>`;
-            }).join('');
-        }
+        document.getElementById('mainCategoryView').style.display = 'block';
+        document.getElementById('specificCategoryTitle').innerHTML = `<i class="fa fa-heart" style="color:#ff3b30;"></i> MY FAVORITES`;
+        let favItems = rawData.filter(d => favorites.includes(d.URL || d.url));
+        const grid = document.getElementById('specificGrid');
+        if(!favItems.length) grid.innerHTML = `<div class="empty-state" style="min-width:100%"><i class="fa fa-heart-broken"></i><h3>No favorites</h3></div>`;
+        else grid.innerHTML = favItems.map(item => {
+            let thumb = item.Thumbnail || item.thumbnail || MASTER_LOGO, title = item.name || item.Name || "Untitled", url = item.URL || item.url || "#";
+            return `<div class="card"><div class="fav-badge active" onclick="toggleFav(event, '${escapeHtml(url)}')"><i class="fa fa-heart"></i></div><div onclick="play('${escapeHtml(url)}', '${escapeHtml(title)}', this.parentElement)"><img src="${thumb}" loading="lazy" class="img-loading" onload="handleImageLoad(this)"><div class="card-title">${title}</div></div></div>`;
+        }).join('');
     };
-
-    window.showMoreSection = function(btn) {
-        closeNav();
-        currentCategory = 'more_section';
-        document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
-        if(btn) btn.classList.add('active');
-
-        document.getElementById('mainSlider').style.display = 'none';
-        document.getElementById('homeCategoriesContainer').style.display = 'none';
-        document.getElementById('mainCategoryView').style.display = 'none';
-        document.getElementById('moreSectionView').style.display = 'block';
-
-        let user = localStorage.getItem('nikamma_user');
-        if(user) {
-            document.getElementById('loggedOutView').style.display = 'none';
-            document.getElementById('loggedInView').style.display = 'block';
-            document.getElementById('welcomeUser').innerText = `Hi, ${user}!`;
-        } else {
-            document.getElementById('loggedOutView').style.display = 'block';
-            document.getElementById('loggedInView').style.display = 'none';
-        }
-    };
-
-    window.userLogin = function() {
-        let u = document.getElementById('loginUsername').value.trim();
-        if(u) { localStorage.setItem('nikamma_user', u); showMoreSection(document.getElementById('more-nav-btn')); }
-    };
-
-    window.userLogout = function() { localStorage.removeItem('nikamma_user'); showMoreSection(document.getElementById('more-nav-btn')); };
-
-    window.changeTheme = function(color) {
-        document.documentElement.style.setProperty('--main-color', color);
-        localStorage.setItem('nikamma_theme_color', color);
-        document.querySelectorAll('.category-title i').forEach(el => el.style.color = color);
-    };
-
-    function escapeHtml(str) { if(!str) return ''; return String(str).replace(/[&<>]/g, function(m) { if(m === '&') return '&amp;'; if(m === '<') return '&lt;'; if(m === '>') return '&gt;'; return m; }); }
-    function handleImageError(img) { if(img && img.src !== MASTER_LOGO) { img.src = MASTER_LOGO; img.classList.add('img-loading'); img.onerror = null; } }
-    function handleImageLoad(img) { if(img) { img.classList.remove('img-loading'); img.classList.add('img-loaded'); } }
-    function shareApp(e) { if(e) e.preventDefault(); const shareURL = settingsData.shareUrl || window.location.href; if(navigator.share) navigator.share({ title: 'Nikamma 4k', url: shareURL }); else window.open(shareURL, '_blank'); }
     
-    function openNav() { const sideNav = document.getElementById("mySidenav"), overlay = document.getElementById("menu-overlay"); overlay.style.display = "block"; setTimeout(() => { sideNav.classList.add("open"); overlay.classList.add("visible"); }, 10); }
-    function closeNav() { 
-        if(window.innerWidth >= 1025) return; // PC par sidebar hamesha open rehta hai
-        const sideNav = document.getElementById("mySidenav"), overlay = document.getElementById("menu-overlay"); sideNav.classList.remove("open"); overlay.classList.remove("visible"); setTimeout(() => { if(!sideNav.classList.contains('open')) overlay.style.display = "none"; }, 400); 
+    window.showMoreSection = function(btn) { filterData('more_section', btn); let user = localStorage.getItem('nikamma_user'); if(user) { document.getElementById('loggedOutView').style.display = 'none'; document.getElementById('loggedInView').style.display = 'block'; document.getElementById('welcomeUser').innerText = `Hi, ${user}!`; } else { document.getElementById('loggedOutView').style.display = 'block'; document.getElementById('loggedInView').style.display = 'none'; } };
+    window.userLogin = function(){ let u = document.getElementById('loginUsername').value.trim(); if(u){ localStorage.setItem('nikamma_user',u); showMoreSection(document.getElementById('more-nav-btn')); } };
+    window.userLogout = function(){ localStorage.removeItem('nikamma_user'); showMoreSection(document.getElementById('more-nav-btn')); };
+    window.changeTheme = function(color){ document.documentElement.style.setProperty('--main-color', color); localStorage.setItem('nikamma_theme', color); };
+    
+    // ---------- Video Player ----------
+    function destroyPlayer() { if(currentMpegtsPlayer) { currentMpegtsPlayer.destroy(); currentMpegtsPlayer=null; } if(currentHlsPlayer) { currentHlsPlayer.destroy(); currentHlsPlayer=null; } advVideo.pause(); advVideo.removeAttribute('src'); advVideo.load(); }
+    function loadIntoAdvancedPlayer(url, title, autoPlay=true) { if(url===currentSourceUrl) return; destroyPlayer(); currentSourceUrl=url; document.getElementById('exoLoader').style.display='flex'; advVideo.muted=true; const isM3u8 = url.includes('.m3u8'); if(isM3u8 && window.Hls && Hls.isSupported()){ currentHlsPlayer=new Hls({lowLatencyMode:true}); currentHlsPlayer.loadSource(url); currentHlsPlayer.attachMedia(advVideo); currentHlsPlayer.on(Hls.Events.MANIFEST_PARSED,()=>{ if(autoPlay) advVideo.play().catch(e=>console.log); }); } else { advVideo.src=url; if(autoPlay) advVideo.play(); } advVideo.onplaying=()=>{ document.getElementById('exoLoader').style.display='none'; }; advVideo.onerror=()=>{ document.getElementById('exoLoader').style.display='none'; }; }
+    window.play = function(url, title, cardEl){ if(!url || url==='#') return; document.querySelectorAll('.card').forEach(c=>c.classList.remove('playing')); if(cardEl) cardEl.classList.add('playing'); document.getElementById('videoBox').style.display='block'; document.getElementById('videoTitle').innerText=title; document.getElementById('mainSlider').style.display='none'; document.getElementById('iframePlayerBox').style.display='none'; document.getElementById('advancedPlayerContainer').style.display=''; loadIntoAdvancedPlayer(url, title, true); window.scrollTo({top:0,behavior:'smooth'}); };
+    window.stopVideo = function(){ destroyPlayer(); currentSourceUrl=null; document.getElementById('videoBox').style.display='none'; document.getElementById('iframePlayerBox').style.display='none'; document.getElementById('advancedPlayerContainer').style.display=''; document.querySelectorAll('.card').forEach(c=>c.classList.remove('playing')); let sliders=rawData.some(d=>(d.Category||'').toLowerCase()==='slider'); if(currentCategory==='All' && sliders) document.getElementById('mainSlider').style.display='block'; };
+    
+    // Player UI
+    const exoPlayBtn = document.getElementById('exoPlayBtn'), exoMuteBtn = document.getElementById('exoMuteBtn'), exoFullBtn = document.getElementById('exoFullBtn'), exoScreenSetBtn = document.getElementById('exoScreenSetBtn'), modeTextSpan = document.getElementById('mode-text'), exoOverlay = document.getElementById('exoOverlay');
+    let fitIdx=2; const fits=['contain','cover','fill'];
+    function setFit(){ advVideo.classList.remove('fit-contain','fit-cover','fit-fill'); advVideo.classList.add('fit-'+fits[fitIdx]); modeTextSpan.innerText=fits[fitIdx].toUpperCase(); }
+    exoScreenSetBtn.onclick=()=>{ fitIdx=(fitIdx+1)%3; setFit(); }; exoPlayBtn.onclick=()=>{ if(advVideo.paused) advVideo.play(); else advVideo.pause(); }; advVideo.onplay=()=>exoPlayBtn.innerHTML='<span class="material-icons-round">pause</span>'; advVideo.onpause=()=>exoPlayBtn.innerHTML='<span class="material-icons-round">play_arrow</span>'; exoMuteBtn.onclick=()=>{ advVideo.muted=!advVideo.muted; exoMuteBtn.innerHTML=`<span class="material-icons-round">${advVideo.muted?'volume_off':'volume_up'}</span>`; }; exoFullBtn.onclick=()=>{ const c=document.getElementById('advancedPlayerContainer'); if(c.requestFullscreen)c.requestFullscreen(); }; setFit();
+    document.getElementById('exoTopCloseBtn').onclick=()=>stopVideo();
+    function showControls(){ exoOverlay.classList.add('visible'); if(window.ct)clearTimeout(window.ct); if(!advVideo.paused) window.ct=setTimeout(()=>exoOverlay.classList.remove('visible'),4000); }
+    advVideo.addEventListener('click',()=>showControls()); advVideo.addEventListener('play',()=>showControls());
+    
+    // Data loading
+    let isRefreshing=false;
+    async function fetchFreshData() {
+        return new Promise(resolve=>{
+            Papa.parse('https://docs.google.com/spreadsheets/d/e/2PACX-1vQJM1FvOsBuKL_Al7PpwYerGDVFhs5tLF4PaVs3_TOLX-TFLW-iF3B6qLLLeuuBmjfZFGe3CFxJA-TR/pub?gid=1155331852&single=true&output=csv',{download:true,header:true,complete:cats=>{
+                let loadedCats = cats.data.filter(r=>(r.Category||r.category||'').trim() && (r.Status||'').toLowerCase()!=='inactive').map(r=>({name:(r.Category||r.category||'').trim(), icon: (r.Icon||r.icon||'folder').trim()}));
+                Papa.parse('https://docs.google.com/spreadsheets/d/e/2PACX-1vQJM1FvOsBuKL_Al7PpwYerGDVFhs5tLF4PaVs3_TOLX-TFLW-iF3B6qLLLeuuBmjfZFGe3CFxJA-TR/pub?output=csv',{download:true,header:true,complete:items=>{
+                    let data = items.data.filter(i=>i.name||i.Name).map(i=>{ i.Category = i.Category||i.category||''; return i; });
+                    if(loadedCats.length) availableCategories = loadedCats;
+                    else availableCategories = [...new Set(data.map(i=>(i.Category||'').trim()).filter(Boolean))].map(c=>({name:c,icon:'fa-folder'}));
+                    rawData = data.filter(i=>{ let cat = (i.Category||'').toLowerCase(); return cat==='slider' || availableCategories.some(c=>c.name.toLowerCase()===cat); });
+                    localStorage.setItem('nikamma_cache_v2', JSON.stringify({rawData, availableCategories, ts:Date.now()}));
+                    updateUI();
+                    resolve(true);
+                }});
+            }});
+        });
     }
-    (function(){ var sx=0,sy=0,sa=false; document.addEventListener('touchstart',function(e){ if(e.touches[0].clientX<window.innerWidth*0.8){sx=e.touches[0].clientX;sy=e.touches[0].clientY;sa=true;} },{passive:true}); document.addEventListener('touchmove',function(e){ if(!sa)return; var dx=e.touches[0].clientX-sx,dy=Math.abs(e.touches[0].clientY-sy); if(dx>45&&dy<60){openNav();sa=false;} else if(dx<-10||dy>60)sa=false; },{passive:true}); document.addEventListener('touchend',function(){sa=false;},{passive:true}); })();
-    function toggleSearch(show) { document.getElementById('header-main').style.display = show ? 'none' : 'flex'; document.getElementById('header-icons').style.display = show ? 'none' : 'flex'; document.getElementById('search-container').style.display = show ? 'flex' : 'none'; if(show) document.getElementById('searchBar').focus(); }
-    
-    window.search = function() { 
-        let term = document.getElementById('searchBar').value.toLowerCase().trim(); 
-        const homeCategoriesContainer = document.getElementById('homeCategoriesContainer');
-        const mainCategoryView = document.getElementById('mainCategoryView');
-        const specificGrid = document.getElementById('specificGrid');
-        const specificCategoryTitle = document.getElementById('specificCategoryTitle');
-
-        if(term === '') { filterData(currentCategory, null, false); return; } 
-        
-        homeCategoriesContainer.style.display = 'none';
-        mainCategoryView.style.display = 'block';
-        specificCategoryTitle.innerHTML = `<i class="fa fa-search"></i> SEARCH RESULTS`;
-        
-        const filtered = rawData.filter(d => (d.name || d.Name || "").toLowerCase().includes(term) && (d.Category || d.category || "").toLowerCase() !== 'slider').slice().reverse(); 
-        if(!filtered.length) { 
-            specificGrid.innerHTML = `<div style="grid-column:1/-1" class="empty-state"><i class="fa fa-search"></i><h3>No results for "${term}"</h3></div>`; 
-            return; 
-        } 
-        
-        specificGrid.innerHTML = filtered.map(item => `
-        <div class="card" onclick="play('${escapeHtml(item.URL || item.url || "#")}', '${escapeHtml(item.name || item.Name)}', this)">
-            <img src="${item.Thumbnail || item.thumbnail || MASTER_LOGO}" loading="lazy" onerror="handleImageError(this)" onload="handleImageLoad(this)" class="img-loading">
-            <div class="card-title">${item.name || item.Name}</div>
-        </div>`).join(''); 
-    };
-
-    window.forceRefreshData = async function() {
-        if(isRefreshing) return;
-        isRefreshing = true;
-        updatePTR('release');
-        try { localStorage.removeItem(STORAGE_KEY_DATA); localStorage.removeItem(STORAGE_KEY_HASH); } catch(e) {}
-        rawData = [];
-        currentDataHash = '';
-        const updated = await fetchFreshData();
-        updatePTR('complete');
-        if(updated) showCachedDataBadge();
-        else showNoUpdateBadge();
-        setTimeout(() => isRefreshing = false, 500);
-        closeNav();
-    };
-    
-    let ptrStartY = 0, ptrActive = false, ptrHeight = 0, isTouching = false;
-
-    function updatePTR(status, pullDistance = 0) {
-        var pc = document.getElementById('ptr-container');
-        var pt = document.getElementById('ptr-text');
-        var pi = document.getElementById('ptr-icon');
-        if (status === 'pull') {
-            var show = Math.min(pullDistance, 70);
-            var ty = -70 + show;
-            pc.style.transition = 'none';
-            pc.style.transform = 'translateY(' + ty + 'px)';
-            if (pullDistance > 50) { pt.innerText = 'Release to refresh'; pi.className = 'fa fa-rotate'; } 
-            else { pt.innerText = 'Pull to refresh'; pi.className = 'fa fa-arrow-down'; }
-        } else if (status === 'release') {
-            pc.style.transition = 'transform 0.3s ease'; pc.style.transform = 'translateY(0px)'; pt.innerText = 'Refreshing...';
-            pi.className = 'ptr-spinner';
-        } else if (status === 'complete') {
-            pc.style.transition = 'transform 0.3s ease'; pc.style.transform = 'translateY(-70px)';
-            setTimeout(function() { pt.innerText = 'Pull to refresh'; pi.className = 'fa fa-arrow-down'; }, 400);
-        }
-    }
-
-    document.addEventListener('touchstart', function(e) { if(window.pageYOffset === 0 && !isRefreshing) { ptrStartY = e.touches[0].pageY; isTouching = true; } }, {passive: true});
-    document.addEventListener('touchmove', function(e) { if(window.pageYOffset === 0 && isTouching && !isRefreshing) { const diffY = e.touches[0].pageY - ptrStartY; if(diffY > 0) { ptrActive = true; ptrHeight = Math.min(diffY, 70); updatePTR('pull', ptrHeight); } } }, {passive: false});
-    document.addEventListener('touchend', function() { if(ptrActive && ptrHeight > 50 && !isRefreshing) forceRefreshData(); else if(ptrActive) updatePTR('complete'); isTouching = false; ptrActive = false; ptrHeight = 0; });
-    
-    let sliderInterval, slideIndex = 0;
-    function startSlider() { if(sliderInterval) clearInterval(sliderInterval); sliderInterval = setInterval(() => { const track = document.getElementById('sliderTrack'); if(track && track.children.length) { slideIndex = (slideIndex + 1) % track.children.length; track.style.transform = `translateX(-${slideIndex * 100}%)`; } }, 3000); }
-    setInterval(() => { const track = document.getElementById('sliderTrack'); if(track && track.children.length && !sliderInterval) startSlider(); }, 1000);
-    
-    async function init() { 
-        let cachedColor = localStorage.getItem('nikamma_theme_color');
-        if(cachedColor) { document.documentElement.style.setProperty('--main-color', cachedColor); }
-        attachPlayerControls(); 
-        const hasInternet = await checkInternetBeforeStart(); 
-        if(hasInternet) fetchData(); 
-    }
-    
-    async function fetchData() { 
-        const hasCache = loadDataFromCache(); 
-        if(!hasCache || rawData.length === 0) { 
-            document.getElementById('splash-screen').style.display = 'flex'; 
-            localStorage.setItem(SPLASH_SEEN_KEY, 'true'); 
-            await fetchFreshData(); 
-        } else { 
-            document.getElementById('splash-screen').style.display = 'none';
-            Papa.parse('https://docs.google.com/spreadsheets/d/e/2PACX-1vQJM1FvOsBuKL_Al7PpwYerGDVFhs5tLF4PaVs3_TOLX-TFLW-iF3B6qLLLeuuBmjfZFGe3CFxJA-TR/pub?gid=1155331852&single=true&output=csv', {
-                download: true, header: true, skipEmptyLines: true,
-                complete: function(catResults) {
-                    var loadedCats = catResults.data.filter(function(row){
-                        return (row.Category||row.category||'').trim() && (row.Status||'').toLowerCase() !== 'inactive';
-                    }).map(function(row){
-                        var ic = (row.Icon||row.icon||'folder').trim();
-                        var resolved = ic.includes(' ') ? ic : ic.startsWith('fa-') ? 'fa '+ic : 'fa fa-'+ic;
-                        return { name: (row.Category||row.category||'').trim(), icon: resolved };
-                    });
-                    if(!loadedCats.length) {
-                        availableCategories = [];
-                        rawData = [];
-                        showNoContentScreen();
-                    } else {
-                        availableCategories = loadedCats;
-                        var categoryNames = availableCategories.map(function(c){ return c.name.toLowerCase(); });
-                        rawData = rawData.filter(function(item){
-                            var itemCat = (item.Category || item.category || "").trim().toLowerCase();
-                            return itemCat === 'slider' || categoryNames.includes(itemCat);
-                        });
-                        if(!rawData.length) {
-                            showNoContentScreen();
-                        } else {
-                            updateSlider();
-                            buildDynamicCategoryMenu();
-                            currentCategory = 'All';
-                            filterData('All', document.getElementById('home-nav-btn'), false);
-                            showCachedDataBadge();
-                        }
-                    }
-                    fetchFreshData().then(function(updated){ if(updated) console.log("Data updated"); });
-                },
-                error: function() {
-                    updateSlider();
-                    buildDynamicCategoryMenu();
-                    currentCategory = 'All';
-                    filterData('All', document.getElementById('home-nav-btn'), false);
-                    showCachedDataBadge();
-                    fetchFreshData().then(function(updated){ if(updated) console.log("Data updated"); });
-                }
-            });
-        } 
-    }
-    
-    document.getElementById('nav-header-static-img').src = NAV_HEADER_IMAGE;
-    document.getElementById('splash-logo-img').src = MASTER_LOGO;
+    function updateUI(){ buildCategoryHorizontals(); updateSlider(); let hasLive = rawData.some(d=>(d.Category||'').toLowerCase()==='live'); document.getElementById('live-nav-btn').style.display=hasLive?'block':'none'; filterData('All', document.getElementById('home-nav-btn'), false); document.getElementById('splash-screen').style.opacity='0'; setTimeout(()=>document.getElementById('splash-screen').style.display='none',500); }
+    function updateSlider(){ let sliders = rawData.filter(d=>(d.Category||'').toLowerCase()==='slider'); let track = document.getElementById('sliderTrack'); if(sliders.length && track){ track.innerHTML = sliders.map(s=>`<div class="slide-item"><img src="${s.Thumbnail||s.thumbnail||MASTER_LOGO}" loading="lazy"></div>`).join(''); if(window.slideInt) clearInterval(window.slideInt); let idx=0; window.slideInt=setInterval(()=>{ if(track.children.length){ idx=(idx+1)%track.children.length; track.style.transform=`translateX(-${idx*100}%)`; } },4000); } }
+    window.forceRefreshData = async function(){ if(isRefreshing)return; isRefreshing=true; await fetchFreshData(); isRefreshing=false; closeNav(); };
+    async function init(){ let cachedColor=localStorage.getItem('nikamma_theme'); if(cachedColor) document.documentElement.style.setProperty('--main-color',cachedColor); let cache = localStorage.getItem('nikamma_cache_v2'); if(cache){ let c=JSON.parse(cache); if(c.rawData && c.rawData.length){ rawData=c.rawData; availableCategories=c.availableCategories; updateUI(); } } await fetchFreshData(); }
+    document.getElementById('nav-header-static-img').src=NAV_HEADER_IMAGE; document.getElementById('splash-logo-img').src=MASTER_LOGO;
+    function openNav(){ document.getElementById("mySidenav").classList.add("open"); document.getElementById("menu-overlay").classList.add("visible"); }
+    function closeNav(){ if(window.innerWidth>=1025)return; document.getElementById("mySidenav").classList.remove("open"); document.getElementById("menu-overlay").classList.remove("visible"); }
+    function toggleSearch(show){ document.getElementById('header-main').style.display=show?'none':'flex'; document.getElementById('header-icons').style.display=show?'none':'flex'; document.getElementById('search-container').style.display=show?'flex':'none'; if(show) document.getElementById('searchBar').focus(); }
+    window.search=function(){ let term=document.getElementById('searchBar').value.toLowerCase(); if(!term){ filterData('All',document.getElementById('home-nav-btn'),false); return; } let filtered=rawData.filter(d=>(d.name||d.Name||"").toLowerCase().includes(term) && (d.Category||'').toLowerCase()!=='slider'); document.getElementById('homeCategoriesContainer').style.display='none'; document.getElementById('mainCategoryView').style.display='block'; document.getElementById('specificCategoryTitle').innerHTML=`<i class="fa fa-search"></i> SEARCH`; let grid=document.getElementById('specificGrid'); if(!filtered.length){ grid.innerHTML=`<div class="empty-state"><i class="fa fa-search"></i><h3>No results</h3></div>`; return; } grid.innerHTML=filtered.map(item=>{ let thumb=item.Thumbnail||item.thumbnail||MASTER_LOGO, title=item.name||item.Name||"Untitled", url=item.URL||item.url||"#"; return `<div class="card"><div onclick="play('${escapeHtml(url)}','${escapeHtml(title)}',this.parentElement)"><img src="${thumb}" class="img-loading" onload="handleImageLoad(this)"><div class="card-title">${title}</div></div></div>`; }).join(''); };
+    window.shareApp=function(e){ if(e)e.preventDefault(); let url=window.location.href; if(navigator.share)navigator.share({title:'Nikamma 4k',url:url}); else alert("Share via browser"); };
+    window.checkInternetAgain=function(){ location.reload(); };
     init();
 </script>
 </body>
