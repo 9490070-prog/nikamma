@@ -185,7 +185,23 @@
         .category-title i { color: var(--main-color); font-size: 16px; }
         .read-more-btn { background: rgba(0, 188, 212, 0.15); color: var(--main-color); border: 1px solid rgba(0, 188, 212, 0.3); padding: 4px 12px; border-radius: 20px; font-size: 11px; cursor: pointer; font-weight: 600; text-transform: uppercase; transition: 0.2s; }
         .read-more-btn:active { transform: scale(0.95); background: var(--main-color); color: #000; }
-        
+
+        /* View All Button */
+        .view-all-btn { background: linear-gradient(135deg, var(--main-color), #008c9e); color: #000; border: none; padding: 5px 14px; border-radius: 20px; font-size: 11px; cursor: pointer; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; transition: 0.2s; display: flex; align-items: center; gap: 5px; white-space: nowrap; }
+        .view-all-btn i { font-size: 10px; }
+        .view-all-btn:active { transform: scale(0.95); opacity: 0.85; }
+
+        /* Horizontal Scroll Row */
+        .h-scroll-row { display: flex; overflow-x: auto; gap: 10px; padding: 5px 0 10px 0; scroll-snap-type: x mandatory; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
+        .h-scroll-row::-webkit-scrollbar { display: none; }
+        .h-scroll-card { flex: 0 0 calc(28% - 5px); max-width: 140px; min-width: 100px; scroll-snap-align: start; background: var(--card-bg); border-radius: 10px; overflow: hidden; border: 1px solid #282828; cursor: pointer; transition: 0.3s; position: relative; }
+        .h-scroll-card img { width: 100%; aspect-ratio: 1/1; object-fit: cover; display: block; background: var(--card-bg); transition: filter 0.4s ease-out, opacity 0.3s ease; }
+        .h-scroll-card .card-title { font-size: 11px; padding: 6px 3px; text-align: center; color: #efefef; font-weight: 400; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; background: rgba(0,0,0,0.3); }
+        .h-scroll-card .fav-badge { position: absolute; top: 5px; right: 5px; background: rgba(0,0,0,0.6); color: #fff; width: 26px; height: 26px; border-radius: 50%; display: flex; align-items: center; justify-content: center; z-index: 5; font-size: 12px; cursor: pointer; transition: 0.2s; border: 1px solid rgba(255,255,255,0.1); }
+        .h-scroll-card .fav-badge.active { color: #ff3b30; background: rgba(255,255,255,0.9); }
+        .h-scroll-card.playing { background: var(--main-color) !important; border-color: #fff; transform: scale(0.95); }
+        .h-scroll-card.playing .card-title { color: #000 !important; font-weight: 800; }
+
         .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; padding: 5px 0; }
         .card { background: var(--card-bg); border-radius: 10px; overflow: hidden; border: 1px solid #282828; cursor: pointer; transition: 0.3s; position: relative; }
         .card img { width: 100%; aspect-ratio: 1/1; object-fit: cover; display: block; background: var(--card-bg); transition: filter 0.4s ease-out, opacity 0.3s ease; }
@@ -304,6 +320,11 @@
                 grid-template-columns: repeat(4, 1fr);
                 gap: 10px;
             }
+            .h-scroll-card {
+                flex: 0 0 calc(22% - 5px);
+                max-width: 160px;
+                min-width: 120px;
+            }
             .category-section {
                 padding: 0 15px;
             }
@@ -407,6 +428,19 @@
                 transform: translateY(-4px) scale(1.03);
                 border-color: var(--main-color);
                 box-shadow: 0 8px 24px rgba(0,188,212,0.25);
+            }
+            .h-scroll-card:hover {
+                transform: translateY(-4px) scale(1.03);
+                border-color: var(--main-color);
+                box-shadow: 0 8px 24px rgba(0,188,212,0.25);
+            }
+            .h-scroll-card {
+                flex: 0 0 180px;
+                max-width: 180px;
+            }
+            .view-all-btn:hover {
+                opacity: 0.85;
+                transform: scale(1.03);
             }
             .card.playing {
                 transform: scale(0.97);
@@ -1293,8 +1327,6 @@
                 if (!filteredItems.length) return;
                 
                 filteredItems = filteredItems.slice().reverse();
-                const hasMore = filteredItems.length > 5;
-                const itemsToShow = filteredItems.slice(0, 5);
                 
                 let cleanIcon = catObj.icon;
 
@@ -1302,16 +1334,16 @@
                 <div class="category-section">
                     <div class="category-header">
                         <div class="category-title"><i class="${cleanIcon}"></i> ${catName}</div>
-                        ${hasMore ? `<div class="read-more-btn" onclick="filterData('${catName}', null, false)">Read More</div>` : ''}
+                        <div class="view-all-btn" onclick="filterData('${catName}', null, false)"><i class="fa fa-th"></i> View All</div>
                     </div>
-                    <div class="grid">
-                        ${itemsToShow.map(item => {
+                    <div class="h-scroll-row">
+                        ${filteredItems.map(item => {
                             let thumb = item.Thumbnail || item.thumbnail || MASTER_LOGO;
                             let itemName = item.name || item.Name || "Untitled";
                             let url = item.URL || item.url || "#";
                             let isFav = favorites.includes(url);
                             return `
-                            <div class="card" data-url="${escapeHtml(url)}" data-title="${escapeHtml(itemName)}">
+                            <div class="h-scroll-card" data-url="${escapeHtml(url)}" data-title="${escapeHtml(itemName)}">
                                 <div class="fav-badge ${isFav ? 'active' : ''}" onclick="toggleFav(event, '${escapeHtml(url)}')"><i class="fa fa-heart"></i></div>
                                 <div style="width:100%; height:100%;" onclick="play('${escapeHtml(url)}', '${escapeHtml(itemName)}', this.parentElement)">
                                     <img src="${thumb}" loading="lazy" onerror="handleImageError(this)" onload="handleImageLoad(this)" class="img-loading">
