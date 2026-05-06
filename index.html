@@ -194,8 +194,8 @@
         /* Horizontal Scroll Row */
         .h-scroll-row { display: flex; overflow-x: auto; gap: 10px; padding: 5px 0 10px 0; scroll-snap-type: x mandatory; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
         .h-scroll-row::-webkit-scrollbar { display: none; }
-        .h-scroll-card { flex: 0 0 calc(28% - 5px); max-width: 140px; min-width: 100px; scroll-snap-align: start; background: var(--card-bg); border-radius: 10px; overflow: hidden; border: 1px solid #282828; cursor: pointer; transition: 0.3s; position: relative; }
-        .h-scroll-card img { width: 100%; height: 100%; aspect-ratio: 1/1; object-fit: fill; display: block; background: var(--card-bg); transition: filter 0.4s ease-out, opacity 0.3s ease; }
+        .h-scroll-card { flex: 0 0 110px; width: 110px; height: 140px; scroll-snap-align: start; background: var(--card-bg); border-radius: 10px; overflow: hidden; border: 1px solid #282828; cursor: pointer; transition: 0.3s; position: relative; }
+        .h-scroll-card img { width: 100%; height: calc(100% - 26px); object-fit: cover; display: block; background: var(--card-bg); transition: filter 0.4s ease-out, opacity 0.3s ease; }
         .h-scroll-card .card-title { font-size: 11px; padding: 6px 3px; text-align: center; color: #efefef; font-weight: 400; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; background: rgba(0,0,0,0.3); }
         .h-scroll-card .fav-badge { position: absolute; top: 5px; right: 5px; background: rgba(0,0,0,0.6); color: #fff; width: 26px; height: 26px; border-radius: 50%; display: flex; align-items: center; justify-content: center; z-index: 5; font-size: 12px; cursor: pointer; transition: 0.2s; border: 1px solid rgba(255,255,255,0.1); }
         .h-scroll-card .fav-badge.active { color: #ff3b30; background: rgba(255,255,255,0.9); }
@@ -204,11 +204,12 @@
 
         /* Specific Grid (View All) - same card size as home horizontal scroll but wraps */
         .specific-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; padding: 5px 10px; }
-        .specific-grid .h-scroll-card { flex: none; max-width: 100%; min-width: unset; width: 100%; }
+        .specific-grid .h-scroll-card { flex: none; max-width: 100%; min-width: unset; width: 100%; height: unset; aspect-ratio: 140px; }
 
-        .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; padding: 5px 0; }
-        .card { background: var(--card-bg); border-radius: 10px; overflow: hidden; border: 1px solid #282828; cursor: pointer; transition: 0.3s; position: relative; }
-        .card img { width: 100%; height: 100%; aspect-ratio: 1/1; object-fit: fill; display: block; background: var(--card-bg); transition: filter 0.4s ease-out, opacity 0.3s ease; }
+        .specific-grid .h-scroll-card img,
+        .grid .card img { width: 100%; height: calc(100% - 26px); object-fit: cover; display: block; }
+        .card { background: var(--card-bg); border-radius: 10px; overflow: hidden; border: 1px solid #282828; cursor: pointer; transition: 0.3s; position: relative; aspect-ratio: 140%; }
+        .card img { width: 100%; height: calc(100% - 26px); object-fit: cover; display: block; background: var(--card-bg); transition: filter 0.4s ease-out, opacity 0.3s ease; }
         .card-title { font-size: 11px; padding: 6px 3px; text-align: center; color: #efefef; font-weight: 400; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; background: rgba(0,0,0,0.3); }
         .card.playing { background: var(--main-color) !important; border-color: #fff; transform: scale(0.95); }
         .card.playing .card-title { color: #000 !important; font-weight: 800; }
@@ -1535,7 +1536,7 @@
         if(window.innerWidth >= 1025) return; // PC par sidebar hamesha open rehta hai
         const sideNav = document.getElementById("mySidenav"), overlay = document.getElementById("menu-overlay"); sideNav.classList.remove("open"); overlay.classList.remove("visible"); setTimeout(() => { if(!sideNav.classList.contains('open')) overlay.style.display = "none"; }, 400); 
     }
-    (function(){ var sx=0,sy=0,sa=false; document.addEventListener('touchstart',function(e){ if(e.touches[0].clientX<window.innerWidth*0.8){sx=e.touches[0].clientX;sy=e.touches[0].clientY;sa=true;} },{passive:true}); document.addEventListener('touchmove',function(e){ if(!sa)return; var dx=e.touches[0].clientX-sx,dy=Math.abs(e.touches[0].clientY-sy); if(dx>45&&dy<60){openNav();sa=false;} else if(dx<-10||dy>60)sa=false; },{passive:true}); document.addEventListener('touchend',function(){sa=false;},{passive:true}); })();
+    (function(){ var sx=0,sy=0,sa=false; document.addEventListener('touchstart',function(e){ var t=e.target; var inScroll=t.closest('.h-scroll-row,.h-scroll-card,.card,.specific-grid,.grid'); if(inScroll) { sa=false; return; } if(e.touches[0].clientX<window.innerWidth*0.8){sx=e.touches[0].clientX;sy=e.touches[0].clientY;sa=true;} },{passive:true}); document.addEventListener('touchmove',function(e){ if(!sa)return; var dx=e.touches[0].clientX-sx,dy=Math.abs(e.touches[0].clientY-sy); if(dx>45&&dy<60){openNav();sa=false;} else if(dx<-10||dy>60)sa=false; },{passive:true}); document.addEventListener('touchend',function(){sa=false;},{passive:true}); })();
     function toggleSearch(show) { document.getElementById('header-main').style.display = show ? 'none' : 'flex'; document.getElementById('header-icons').style.display = show ? 'none' : 'flex'; document.getElementById('search-container').style.display = show ? 'flex' : 'none'; if(show) document.getElementById('searchBar').focus(); }
     
     window.search = function() { 
@@ -1601,7 +1602,7 @@
         }
     }
 
-    document.addEventListener('touchstart', function(e) { if(window.pageYOffset === 0 && !isRefreshing) { ptrStartY = e.touches[0].pageY; isTouching = true; } }, {passive: true});
+    document.addEventListener('touchstart', function(e) { var t=e.target; var inScroll=t.closest('.h-scroll-row,.h-scroll-card,.card,.specific-grid,.grid'); if(inScroll){ isTouching=false; return; } if(window.pageYOffset === 0 && !isRefreshing) { ptrStartY = e.touches[0].pageY; isTouching = true; } }, {passive: true});
     document.addEventListener('touchmove', function(e) { if(window.pageYOffset === 0 && isTouching && !isRefreshing) { const diffY = e.touches[0].pageY - ptrStartY; if(diffY > 0) { ptrActive = true; ptrHeight = Math.min(diffY, 70); updatePTR('pull', ptrHeight); } } }, {passive: false});
     document.addEventListener('touchend', function() { if(ptrActive && ptrHeight > 50 && !isRefreshing) forceRefreshData(); else if(ptrActive) updatePTR('complete'); isTouching = false; ptrActive = false; ptrHeight = 0; });
     
