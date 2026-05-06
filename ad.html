@@ -195,16 +195,20 @@
         .h-scroll-row { display: flex; overflow-x: auto; gap: 10px; padding: 5px 0 10px 0; scroll-snap-type: x mandatory; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
         .h-scroll-row::-webkit-scrollbar { display: none; }
         .h-scroll-card { flex: 0 0 calc(28% - 5px); max-width: 140px; min-width: 100px; scroll-snap-align: start; background: var(--card-bg); border-radius: 10px; overflow: hidden; border: 1px solid #282828; cursor: pointer; transition: 0.3s; position: relative; }
-        .h-scroll-card img { width: 100%; aspect-ratio: 1/1; object-fit: cover; display: block; background: var(--card-bg); transition: filter 0.4s ease-out, opacity 0.3s ease; }
+        .h-scroll-card img { width: 100%; aspect-ratio: 1/1; object-fit: contain; display: block; background: var(--card-bg); transition: filter 0.4s ease-out, opacity 0.3s ease; }
         .h-scroll-card .card-title { font-size: 11px; padding: 6px 3px; text-align: center; color: #efefef; font-weight: 400; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; background: rgba(0,0,0,0.3); }
         .h-scroll-card .fav-badge { position: absolute; top: 5px; right: 5px; background: rgba(0,0,0,0.6); color: #fff; width: 26px; height: 26px; border-radius: 50%; display: flex; align-items: center; justify-content: center; z-index: 5; font-size: 12px; cursor: pointer; transition: 0.2s; border: 1px solid rgba(255,255,255,0.1); }
         .h-scroll-card .fav-badge.active { color: #ff3b30; background: rgba(255,255,255,0.9); }
         .h-scroll-card.playing { background: var(--main-color) !important; border-color: #fff; transform: scale(0.95); }
         .h-scroll-card.playing .card-title { color: #000 !important; font-weight: 800; }
 
+        /* Specific Grid (View All) - same card size as home horizontal scroll but wraps */
+        .specific-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; padding: 5px 10px; }
+        .specific-grid .h-scroll-card { flex: none; max-width: 100%; min-width: unset; width: 100%; }
+
         .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; padding: 5px 0; }
         .card { background: var(--card-bg); border-radius: 10px; overflow: hidden; border: 1px solid #282828; cursor: pointer; transition: 0.3s; position: relative; }
-        .card img { width: 100%; aspect-ratio: 1/1; object-fit: cover; display: block; background: var(--card-bg); transition: filter 0.4s ease-out, opacity 0.3s ease; }
+        .card img { width: 100%; aspect-ratio: 1/1; object-fit: contain; display: block; background: var(--card-bg); transition: filter 0.4s ease-out, opacity 0.3s ease; }
         .card-title { font-size: 11px; padding: 6px 3px; text-align: center; color: #efefef; font-weight: 400; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; background: rgba(0,0,0,0.3); }
         .card.playing { background: var(--main-color) !important; border-color: #fff; transform: scale(0.95); }
         .card.playing .card-title { color: #000 !important; font-weight: 800; }
@@ -320,6 +324,10 @@
                 grid-template-columns: repeat(4, 1fr);
                 gap: 10px;
             }
+            .specific-grid {
+                grid-template-columns: repeat(4, 1fr);
+                gap: 10px;
+            }
             .h-scroll-card {
                 flex: 0 0 calc(22% - 5px);
                 max-width: 160px;
@@ -406,6 +414,10 @@
 
             /* Grid - more columns on PC */
             .grid {
+                grid-template-columns: repeat(5, 1fr);
+                gap: 14px;
+            }
+            .specific-grid {
                 grid-template-columns: repeat(5, 1fr);
                 gap: 14px;
             }
@@ -503,6 +515,10 @@
         /* Large Desktop: 1400px+ */
         @media (min-width: 1400px) {
             .grid {
+                grid-template-columns: repeat(6, 1fr);
+                gap: 16px;
+            }
+            .specific-grid {
                 grid-template-columns: repeat(6, 1fr);
                 gap: 16px;
             }
@@ -643,7 +659,7 @@
         <div class="category-header" style="padding: 10px 15px;">
             <div class="category-title" id="specificCategoryTitle"><i class="fa fa-folder"></i> CATEGORY</div>
         </div>
-        <div class="grid" id="specificGrid"></div>
+        <div class="specific-grid" id="specificGrid"></div>
     </div>
     
     <div id="homeCategoriesContainer">
@@ -1406,7 +1422,7 @@
                     let thumb = item.Thumbnail || item.thumbnail || MASTER_LOGO, itemName = item.name || item.Name || "Untitled", url = item.URL || item.url || "#";
                     let isFav = favorites.includes(url);
                     return `
-                    <div class="card" data-url="${escapeHtml(url)}" data-title="${escapeHtml(itemName)}">
+                    <div class="h-scroll-card" data-url="${escapeHtml(url)}" data-title="${escapeHtml(itemName)}">
                         <div class="fav-badge ${isFav ? 'active' : ''}" onclick="toggleFav(event, '${escapeHtml(url)}')"><i class="fa fa-heart"></i></div>
                         <div style="width:100%; height:100%;" onclick="play('${escapeHtml(url)}', '${escapeHtml(itemName)}', this.parentElement)">
                             <img src="${thumb}" loading="lazy" onerror="handleImageError(this)" onload="handleImageLoad(this)" class="img-loading">
@@ -1463,7 +1479,7 @@
             specificGrid.innerHTML = filtered.map(item => {
                 let thumb = item.Thumbnail || item.thumbnail || MASTER_LOGO, itemName = item.name || item.Name || "Untitled", url = item.URL || item.url || "#";
                 return `
-                <div class="card" data-url="${escapeHtml(url)}" data-title="${escapeHtml(itemName)}">
+                <div class="h-scroll-card" data-url="${escapeHtml(url)}" data-title="${escapeHtml(itemName)}">
                     <div class="fav-badge active" onclick="toggleFav(event, '${escapeHtml(url)}')"><i class="fa fa-heart"></i></div>
                     <div style="width:100%; height:100%;" onclick="play('${escapeHtml(url)}', '${escapeHtml(itemName)}', this.parentElement)">
                         <img src="${thumb}" loading="lazy" onerror="handleImageError(this)" onload="handleImageLoad(this)" class="img-loading">
@@ -1542,7 +1558,7 @@
         } 
         
         specificGrid.innerHTML = filtered.map(item => `
-        <div class="card" onclick="play('${escapeHtml(item.URL || item.url || "#")}', '${escapeHtml(item.name || item.Name)}', this)">
+        <div class="h-scroll-card" onclick="play('${escapeHtml(item.URL || item.url || "#")}', '${escapeHtml(item.name || item.Name)}', this)">
             <img src="${item.Thumbnail || item.thumbnail || MASTER_LOGO}" loading="lazy" onerror="handleImageError(this)" onload="handleImageLoad(this)" class="img-loading">
             <div class="card-title">${item.name || item.Name}</div>
         </div>`).join(''); 
