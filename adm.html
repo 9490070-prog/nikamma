@@ -195,20 +195,18 @@
         .h-scroll-row { display: flex; overflow-x: auto; gap: 10px; padding: 5px 0 10px 0; scroll-snap-type: x mandatory; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
         .h-scroll-row::-webkit-scrollbar { display: none; }
         .h-scroll-card { flex: 0 0 110px; width: 110px; height: 140px; scroll-snap-align: start; background: var(--card-bg); border-radius: 10px; overflow: hidden; border: 1px solid #282828; cursor: pointer; transition: 0.3s; position: relative; }
-        .h-scroll-card img { width: 100%; height: calc(100% - 26px); object-fit: cover; display: block; background: var(--card-bg); transition: filter 0.4s ease-out, opacity 0.3s ease; }
+        .h-scroll-card img { width: 100%; height: calc(100% - 26px); object-fit: fill; display: block; background: var(--card-bg); transition: filter 0.4s ease-out, opacity 0.3s ease; }
         .h-scroll-card .card-title { font-size: 11px; padding: 6px 3px; text-align: center; color: #efefef; font-weight: 400; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; background: rgba(0,0,0,0.3); }
         .h-scroll-card .fav-badge { position: absolute; top: 5px; right: 5px; background: rgba(0,0,0,0.6); color: #fff; width: 26px; height: 26px; border-radius: 50%; display: flex; align-items: center; justify-content: center; z-index: 5; font-size: 12px; cursor: pointer; transition: 0.2s; border: 1px solid rgba(255,255,255,0.1); }
         .h-scroll-card .fav-badge.active { color: #ff3b30; background: rgba(255,255,255,0.9); }
         .h-scroll-card.playing { background: var(--main-color) !important; border-color: #fff; transform: scale(0.95); }
         .h-scroll-card.playing .card-title { color: #000 !important; font-weight: 800; }
 
-        /* Specific Grid (View All + Live) - proper small cards */
+        /* Specific Grid (View All) - same card size as home horizontal scroll but wraps */
         .specific-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; padding: 5px 10px; }
-        .specific-grid .h-scroll-card { flex: none; max-width: 100%; min-width: unset; width: 100%; height: unset; aspect-ratio: 110/140; display: flex; flex-direction: column; }
-        .specific-grid .h-scroll-card > div { display: flex; flex-direction: column; width: 100%; flex: 1; min-height: 0; }
-        .specific-grid .h-scroll-card img { width: 100%; flex: 1; min-height: 0; object-fit: cover; object-position: center top; display: block; height: unset !important; }
-        .specific-grid .h-scroll-card .card-title { flex-shrink: 0; height: 26px; line-height: 14px; }
+        .specific-grid .h-scroll-card { flex: none; max-width: 100%; min-width: unset; width: 100%; height: unset; aspect-ratio: 110/140; }
 
+        .specific-grid .h-scroll-card img,
         .grid .card img { width: 100%; height: calc(100% - 26px); object-fit: cover; display: block; }
         .card { background: var(--card-bg); border-radius: 10px; overflow: hidden; border: 1px solid #282828; cursor: pointer; transition: 0.3s; position: relative; aspect-ratio: 110/140; height: unset; }
         .card img { width: 100%; height: calc(100% - 26px); object-fit: cover; display: block; background: var(--card-bg); transition: filter 0.4s ease-out, opacity 0.3s ease; }
@@ -274,12 +272,12 @@
         .slider { width: 100%; height: 200px; overflow: hidden; position: relative; background: #000; margin-bottom: 5px; }
         .slides-track { display: flex; transition: 0.7s cubic-bezier(0.25, 1, 0.5, 1); height: 100%; }
         .slide-item { min-width: 100%; height: 100%; }
-        .slide-item img { width: 100%; height: 100%; object-fit: cover; background: #000; transition: filter 0.4s ease-out; }
+        .slide-item img { width: 100%; height: 100%; object-fit: contain; background: #000; transition: filter 0.4s ease-out; }
         
         /* Bottom Navigation Bar */
         .bottom-nav { position: fixed; bottom: 0; width: 100%; background: rgba(18,18,18,0.95); display: flex; justify-content: space-around; padding: 10px 0; backdrop-filter: blur(10px); border-top: 1px solid #222; z-index: 1000; }
-        .nav-btn { text-align: center; font-size: 11px; color: #888; flex: 1; cursor: pointer; font-weight: 600; letter-spacing: 0.5px; text-transform: uppercase; }
-        .nav-btn i { font-size: 24px; margin-bottom: 3px; display: block; }
+        .nav-btn { text-align: center; font-size: 10px; color: #888; flex: 1; cursor: pointer; font-weight: 600; letter-spacing: 0.5px; text-transform: uppercase; }
+        .nav-btn i { font-size: 18px; margin-bottom: 2px; display: block; }
         .nav-btn.active { color: var(--main-color); }
         
         /* More Section Styles */
@@ -675,40 +673,131 @@
 
     <div id="moreSectionView" style="display: none;">
         <div class="profile-container">
+
+            <!-- ===== LOGIN CARD ===== -->
             <div class="profile-card" id="profileContent">
+
+                <!-- Logged Out -->
                 <div id="loggedOutView">
-                    <i class="fa fa-user-circle" style="font-size: 60px; color: #444; margin-bottom: 15px;"></i>
-                    <h3 style="margin:0 0 10px;">Guest User</h3>
+                    <div style="width:80px;height:80px;border-radius:50%;background:linear-gradient(135deg,#1e1e1e,#2a2a2a);border:2px solid #333;display:flex;align-items:center;justify-content:center;margin:0 auto 16px;">
+                        <i class="fa fa-user" style="font-size:34px;color:#555;"></i>
+                    </div>
+                    <h3 style="margin:0 0 4px;font-size:18px;font-weight:700;">Welcome Back</h3>
+                    <p style="margin:0 0 20px;color:#666;font-size:12px;">Sign in to your account</p>
+
+                    <!-- Avatar picker (login page) -->
+                    <div id="avatarPickerLogin" style="display:flex;gap:10px;justify-content:center;margin-bottom:18px;flex-wrap:wrap;">
+                        <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=A" onclick="selectAvatar(this,'A')" style="width:44px;height:44px;border-radius:50%;border:2px solid #333;cursor:pointer;background:#1e1e1e;transition:.2s;" title="Avatar A">
+                        <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=B" onclick="selectAvatar(this,'B')" style="width:44px;height:44px;border-radius:50%;border:2px solid #333;cursor:pointer;background:#1e1e1e;transition:.2s;" title="Avatar B">
+                        <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=C" onclick="selectAvatar(this,'C')" style="width:44px;height:44px;border-radius:50%;border:2px solid #333;cursor:pointer;background:#1e1e1e;transition:.2s;" title="Avatar C">
+                        <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=D" onclick="selectAvatar(this,'D')" style="width:44px;height:44px;border-radius:50%;border:2px solid #333;cursor:pointer;background:#1e1e1e;transition:.2s;" title="Avatar D">
+                        <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=E" onclick="selectAvatar(this,'E')" style="width:44px;height:44px;border-radius:50%;border:2px solid #333;cursor:pointer;background:#1e1e1e;transition:.2s;" title="Avatar E">
+                    </div>
+
                     <div class="profile-form">
-                        <input type="text" id="loginUsername" placeholder="Enter Username">
-                        <button class="profile-btn" onclick="userLogin()">LOGIN</button>
+                        <div style="position:relative;margin-bottom:12px;">
+                            <i class="fa fa-user" style="position:absolute;left:14px;top:50%;transform:translateY(-50%);color:#555;font-size:13px;"></i>
+                            <input type="text" id="loginUsername" placeholder="Username" style="padding-left:38px !important;letter-spacing:.3px;">
+                        </div>
+                        <div style="position:relative;margin-bottom:6px;">
+                            <i class="fa fa-lock" style="position:absolute;left:14px;top:50%;transform:translateY(-50%);color:#555;font-size:13px;"></i>
+                            <input type="password" id="loginPassword" placeholder="Password" style="padding-left:38px !important;letter-spacing:2px;">
+                            <span onclick="togglePwdVisibility()" style="position:absolute;right:14px;top:50%;transform:translateY(-50%);color:#555;cursor:pointer;font-size:13px;"><i id="pwdEyeIcon" class="fa fa-eye"></i></span>
+                        </div>
+                        <div id="loginError" style="color:#ff3b30;font-size:11px;text-align:left;margin-bottom:8px;min-height:16px;padding-left:4px;"></div>
+                        <button class="profile-btn" onclick="userLogin()" style="display:flex;align-items:center;justify-content:center;gap:8px;font-size:14px;letter-spacing:.5px;">
+                            <i class="fa fa-sign-in-alt"></i> SIGN IN
+                        </button>
+                        <p style="color:#555;font-size:11px;margin-top:12px;text-align:center;">
+                            Default: any username + password <span style="color:var(--main-color)">1234</span>
+                        </p>
                     </div>
                 </div>
+
+                <!-- Logged In -->
                 <div id="loggedInView" style="display:none;">
-                    <img id="userPic" src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR6A63t7tXh8Gj7956mGq4n8-yK9vT-w_S46A&s" class="profile-pic">
-                    <h3 style="margin:0 0 5px;" id="welcomeUser">Hi, User!</h3>
-                    <p style="color:#777; font-size:12px; margin:0 0 15px;">Authenticated Member</p>
-                    <button class="profile-btn" style="background:#ff3b30; color:white;" onclick="userLogout()">LOGOUT</button>
+                    <div style="position:relative;width:90px;height:90px;margin:0 auto 14px;">
+                        <img id="userPic" src="https://api.dicebear.com/7.x/avataaars/svg?seed=A" class="profile-pic" style="width:90px;height:90px;">
+                        <div onclick="openAvatarChange()" style="position:absolute;bottom:0;right:0;width:26px;height:26px;background:var(--main-color);border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;border:2px solid #0b0b0b;">
+                            <i class="fa fa-pen" style="font-size:10px;color:#000;"></i>
+                        </div>
+                    </div>
+                    <h3 style="margin:0 0 3px;font-size:18px;font-weight:700;" id="welcomeUser">Hi, User!</h3>
+                    <p style="color:#666;font-size:12px;margin:0 0 6px;">Authenticated Member</p>
+                    <div style="display:inline-flex;align-items:center;gap:6px;background:rgba(0,188,212,.12);border:1px solid rgba(0,188,212,.25);padding:4px 14px;border-radius:30px;margin-bottom:18px;">
+                        <i class="fa fa-circle-check" style="color:var(--main-color);font-size:11px;"></i>
+                        <span style="font-size:11px;color:var(--main-color);font-weight:600;">VERIFIED</span>
+                    </div>
+
+                    <!-- Avatar change panel (hidden) -->
+                    <div id="avatarChangePanel" style="display:none;margin-bottom:16px;">
+                        <p style="font-size:11px;color:#777;margin:0 0 10px;">Choose new avatar:</p>
+                        <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;">
+                            <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=A" onclick="changeAvatar('A')" style="width:44px;height:44px;border-radius:50%;border:2px solid #333;cursor:pointer;background:#1e1e1e;transition:.2s;">
+                            <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=B" onclick="changeAvatar('B')" style="width:44px;height:44px;border-radius:50%;border:2px solid #333;cursor:pointer;background:#1e1e1e;transition:.2s;">
+                            <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=C" onclick="changeAvatar('C')" style="width:44px;height:44px;border-radius:50%;border:2px solid #333;cursor:pointer;background:#1e1e1e;transition:.2s;">
+                            <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=D" onclick="changeAvatar('D')" style="width:44px;height:44px;border-radius:50%;border:2px solid #333;cursor:pointer;background:#1e1e1e;transition:.2s;">
+                            <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=E" onclick="changeAvatar('E')" style="width:44px;height:44px;border-radius:50%;border:2px solid #333;cursor:pointer;background:#1e1e1e;transition:.2s;">
+                        </div>
+                    </div>
+
+                    <button class="profile-btn" style="background:#ff3b30;color:white;display:flex;align-items:center;justify-content:center;gap:8px;font-size:14px;" onclick="userLogout()">
+                        <i class="fa fa-sign-out-alt"></i> LOGOUT
+                    </button>
                 </div>
             </div>
 
+            <!-- ===== THEME CARD ===== -->
             <div class="profile-card">
-                <h4 style="margin: 0 0 10px; font-size: 14px; text-transform: uppercase; color: var(--main-color);">Select App Theme</h4>
-                <div class="theme-selector">
-                    <div class="theme-dot" style="background: #00bcd4;" onclick="changeTheme('#00bcd4')"></div>
-                    <div class="theme-dot" style="background: #ff9800;" onclick="changeTheme('#ff9800')"></div>
-                    <div class="theme-dot" style="background: #e91e63;" onclick="changeTheme('#e91e63')"></div>
-                    <div class="theme-dot" style="background: #4caf50;" onclick="changeTheme('#4caf50')"></div>
+                <h4 style="margin:0 0 16px;font-size:14px;text-transform:uppercase;color:var(--main-color);display:flex;align-items:center;gap:8px;">
+                    <i class="fa fa-palette"></i> App Theme
+                </h4>
+
+                <!-- Preset colours -->
+                <p style="font-size:11px;color:#666;margin:0 0 10px;text-align:left;">Preset Colors</p>
+                <div class="theme-selector" style="flex-wrap:wrap;gap:10px;margin-bottom:18px;">
+                    <div class="theme-dot" style="background:#00bcd4;" onclick="changeTheme('#00bcd4')" title="Cyan"></div>
+                    <div class="theme-dot" style="background:#ff9800;" onclick="changeTheme('#ff9800')" title="Orange"></div>
+                    <div class="theme-dot" style="background:#e91e63;" onclick="changeTheme('#e91e63')" title="Pink"></div>
+                    <div class="theme-dot" style="background:#4caf50;" onclick="changeTheme('#4caf50')" title="Green"></div>
+                    <div class="theme-dot" style="background:#9c27b0;" onclick="changeTheme('#9c27b0')" title="Purple"></div>
+                    <div class="theme-dot" style="background:#ff5722;" onclick="changeTheme('#ff5722')" title="Deep Orange"></div>
+                    <div class="theme-dot" style="background:#2196f3;" onclick="changeTheme('#2196f3')" title="Blue"></div>
+                    <div class="theme-dot" style="background:#f44336;" onclick="changeTheme('#f44336')" title="Red"></div>
+                    <div class="theme-dot" style="background:#ffd600;" onclick="changeTheme('#ffd600')" title="Yellow"></div>
+                    <div class="theme-dot" style="background:#00e5ff;" onclick="changeTheme('#00e5ff')" title="Light Cyan"></div>
                 </div>
+
+                <!-- Custom color picker -->
+                <p style="font-size:11px;color:#666;margin:0 0 10px;text-align:left;">Custom Color</p>
+                <div style="display:flex;align-items:center;gap:12px;">
+                    <input type="color" id="customColorPicker" value="#00bcd4" onchange="changeTheme(this.value)"
+                        style="width:44px;height:44px;border:none;border-radius:50%;cursor:pointer;background:none;padding:0;outline:none;">
+                    <div style="flex:1;">
+                        <input type="text" id="customColorHex" placeholder="#00bcd4" maxlength="7"
+                            style="width:100%;background:#1a1a1a;border:1px solid #333;color:white;padding:9px 14px;border-radius:10px;outline:none;font-family:monospace;font-size:14px;box-sizing:border-box;letter-spacing:1px;"
+                            oninput="applyHexColor(this.value)">
+                    </div>
+                    <button onclick="applyHexColor(document.getElementById('customColorHex').value)"
+                        style="background:var(--main-color);border:none;color:#000;padding:9px 16px;border-radius:10px;font-weight:700;cursor:pointer;font-size:12px;white-space:nowrap;">
+                        APPLY
+                    </button>
+                </div>
+                <!-- Live preview bar -->
+                <div id="themePreviewBar" style="height:4px;border-radius:4px;background:var(--main-color);margin-top:14px;transition:background .3s;"></div>
             </div>
 
+            <!-- ===== ABOUT CARD ===== -->
             <div class="profile-card">
-                <h4 style="margin: 0 0 10px; font-size: 14px; text-transform: uppercase; color: var(--main-color);">About App</h4>
-                <p style="font-size: 12px; color: #aaa; line-height: 1.6; margin:0;">
+                <h4 style="margin:0 0 10px;font-size:14px;text-transform:uppercase;color:var(--main-color);display:flex;align-items:center;gap:8px;">
+                    <i class="fa fa-circle-info"></i> About App
+                </h4>
+                <p style="font-size:12px;color:#aaa;line-height:1.7;margin:0;">
                     Nikamma 4k is a high-performance web media streaming application. Enjoy premium movies, live TV, and your personal favorites seamlessly on any modern device.
                 </p>
-                <p style="font-size: 11px; color: #555; margin-top: 10px;">Version 3.9 | All rights reserved.</p>
+                <p style="font-size:11px;color:#444;margin-top:10px;">Version 3.9 | All rights reserved.</p>
             </div>
+
         </div>
     </div>
 </div>
@@ -1505,27 +1594,88 @@
         document.getElementById('moreSectionView').style.display = 'block';
 
         let user = localStorage.getItem('nikamma_user');
+        let avatarSeed = localStorage.getItem('nikamma_avatar') || 'A';
         if(user) {
             document.getElementById('loggedOutView').style.display = 'none';
             document.getElementById('loggedInView').style.display = 'block';
             document.getElementById('welcomeUser').innerText = `Hi, ${user}!`;
+            document.getElementById('userPic').src = 'https://api.dicebear.com/7.x/avataaars/svg?seed=' + avatarSeed;
         } else {
             document.getElementById('loggedOutView').style.display = 'block';
             document.getElementById('loggedInView').style.display = 'none';
         }
     };
 
-    window.userLogin = function() {
-        let u = document.getElementById('loginUsername').value.trim();
-        if(u) { localStorage.setItem('nikamma_user', u); showMoreSection(document.getElementById('more-nav-btn')); }
+    // ===== LOGIN SYSTEM =====
+    const LOGIN_PASSWORD = '1234'; // default password - change as needed
+    let selectedAvatarSeed = localStorage.getItem('nikamma_avatar') || 'A';
+
+    window.selectAvatar = function(el, seed) {
+        selectedAvatarSeed = seed;
+        document.querySelectorAll('#avatarPickerLogin img').forEach(img => {
+            img.style.border = '2px solid #333';
+            img.style.transform = 'scale(1)';
+        });
+        el.style.border = '2px solid var(--main-color)';
+        el.style.transform = 'scale(1.1)';
     };
 
-    window.userLogout = function() { localStorage.removeItem('nikamma_user'); showMoreSection(document.getElementById('more-nav-btn')); };
+    window.togglePwdVisibility = function() {
+        let inp = document.getElementById('loginPassword');
+        let icon = document.getElementById('pwdEyeIcon');
+        if(inp.type === 'password') { inp.type = 'text'; icon.className = 'fa fa-eye-slash'; }
+        else { inp.type = 'password'; icon.className = 'fa fa-eye'; }
+    };
 
+    window.userLogin = function() {
+        let u = document.getElementById('loginUsername').value.trim();
+        let p = document.getElementById('loginPassword').value;
+        let errEl = document.getElementById('loginError');
+        if(!u) { errEl.textContent = '⚠ Username daalna zaroori hai'; return; }
+        if(p !== LOGIN_PASSWORD) { errEl.textContent = '⚠ Password galat hai'; document.getElementById('loginPassword').value=''; return; }
+        errEl.textContent = '';
+        localStorage.setItem('nikamma_user', u);
+        localStorage.setItem('nikamma_avatar', selectedAvatarSeed);
+        showMoreSection(document.getElementById('more-nav-btn'));
+    };
+
+    window.userLogout = function() {
+        localStorage.removeItem('nikamma_user');
+        document.getElementById('loginUsername').value = '';
+        document.getElementById('loginPassword').value = '';
+        document.getElementById('loginError').textContent = '';
+        showMoreSection(document.getElementById('more-nav-btn'));
+    };
+
+    window.openAvatarChange = function() {
+        let panel = document.getElementById('avatarChangePanel');
+        panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
+    };
+
+    window.changeAvatar = function(seed) {
+        selectedAvatarSeed = seed;
+        localStorage.setItem('nikamma_avatar', seed);
+        document.getElementById('userPic').src = 'https://api.dicebear.com/7.x/avataaars/svg?seed=' + seed;
+        document.getElementById('avatarChangePanel').style.display = 'none';
+    };
+
+    // ===== THEME SYSTEM =====
     window.changeTheme = function(color) {
         document.documentElement.style.setProperty('--main-color', color);
         localStorage.setItem('nikamma_theme_color', color);
-        document.querySelectorAll('.category-title i').forEach(el => el.style.color = color);
+        // sync picker and hex input
+        let picker = document.getElementById('customColorPicker');
+        let hexInput = document.getElementById('customColorHex');
+        let preview = document.getElementById('themePreviewBar');
+        if(picker) picker.value = color;
+        if(hexInput) hexInput.value = color;
+        if(preview) preview.style.background = color;
+    };
+
+    window.applyHexColor = function(val) {
+        if(/^#[0-9a-fA-F]{6}$/.test(val)) {
+            changeTheme(val);
+        }
     };
 
     function escapeHtml(str) { if(!str) return ''; return String(str).replace(/[&<>]/g, function(m) { if(m === '&') return '&amp;'; if(m === '<') return '&lt;'; if(m === '>') return '&gt;'; return m; }); }
