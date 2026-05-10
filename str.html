@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>LiveCam Pro - Customizable Overlays</title>
+<title>LiveCam Pro - Permanent Custom ID</title>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <style>
 :root {
@@ -39,6 +39,10 @@ html,body{width:100%;height:100%;overflow:hidden;background:#000;color:var(--tex
 .inp{flex:1;padding:13px 14px;background:var(--surface2);border:1px solid var(--border);border-radius:10px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:0.88rem;outline:none}
 .inp:focus{border-color:rgba(255,45,45,0.5)}
 .join-btn{padding:13px 18px;background:var(--red);border:none;border-radius:10px;color:#fff;font-weight:700;cursor:pointer;font-size:0.88rem;white-space:nowrap}
+.custom-id-row{display:flex;gap:8px;margin-top:12px}
+.custom-id-inp{flex:2;padding:13px 14px;background:var(--surface2);border:1px solid var(--border);border-radius:10px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:0.88rem;outline:none;text-transform:lowercase}
+.set-id-btn{padding:13px 16px;background:var(--surface2);border:1px solid var(--red);border-radius:10px;color:var(--red);font-weight:700;cursor:pointer;font-size:0.8rem}
+.set-id-btn:active{background:var(--red);color:#fff}
 
 #streamScreen{background:#000;justify-content:flex-start}
 #mainVideo{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
@@ -259,7 +263,7 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:20px;heigh
 #loadingOverlay{position:fixed;inset:0;background:rgba(0,0,0,0.9);display:none;flex-direction:column;align-items:center;justify-content:center;z-index:200;gap:16px}
 .spinner{width:44px;height:44px;border:3px solid rgba(255,255,255,0.1);border-top-color:var(--red);border-radius:50%;animation:spin 0.8s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
-#toast{position:fixed;top:70px;left:50%;transform:translateX(-50%) translateY(-20px);background:rgba(20,20,20,0.95);border:1px solid var(--border);padding:10px 20px;border-radius:20px;font-size:0.83rem;z-index:999;opacity:0;transition:all 0.3s;pointer-events:none;white-space:nowrap}
+#toast{position:fixed;top:70px;left:50%;transform:translateX(-50%) translateY(-20px);background:rgba(20,20,20,0.95);border:1px solid var(--border);padding:10px 20px;border-radius:20px;font-size:0.83rem;z-index:999;opacity:0;transition:opacity 0.3s;pointer-events:none;white-space:nowrap}
 #toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
 </style>
 </head>
@@ -268,11 +272,18 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:20px;heigh
 <div id="homeScreen" class="screen active">
   <div class="logo">LIVE<span>CAM</span> <span style="font-size:1.2rem;color:var(--muted)">PRO</span></div>
   <div class="tagline">Professional Live Streaming</div>
+  
   <div class="card">
     <div class="card-label">🔴 Admin — Stream Shuru Karo</div>
+    <div class="custom-id-row">
+      <input type="text" id="customPeerId" class="custom-id-inp" placeholder="Apna ID likho (jaise: ab12345)" value="ab12345" maxlength="20">
+      <button class="set-id-btn" onclick="setCustomId()">Set ID</button>
+    </div>
+    <div style="font-size:0.7rem;color:var(--muted);text-align:center;margin-bottom:10px">⬆️ Pehle ID set karo, phir stream start karo</div>
     <button class="big-btn red" onclick="startStream('back')">📸 Back Camera Se Live Ho</button>
     <button class="big-btn dark" onclick="startStream('front')">🤳 Front Camera Se Live Ho</button>
   </div>
+  
   <div class="card">
     <div class="card-label">👁️ Viewer — Stream Dekho</div>
     <div class="input-wrap">
@@ -292,6 +303,7 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:20px;heigh
     <div class="live-pill"><div class="pulse"></div>LIVE</div>
     <div class="stat-pill">⏱ <span id="timerDisp">00:00</span></div>
     <div class="stat-pill">👁 <span id="viewCount">0</span></div>
+    <div class="stat-pill">🆔 <span id="currentId">-</span></div>
   </div>
   <div id="adminBottom">
     <div class="ctrl-row">
@@ -310,15 +322,19 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:20px;heigh
 
   <div id="adminDrawer">
     <div class="drawer-handle"></div>
-    <div class="section-title">🔗 SHARE LINK</div>
+    <div class="section-title">🔗 SHARE LINK (Permanent ID)</div>
     <div class="share-row">
       <button class="s-btn" onclick="copyLink()">📋 Copy Link</button>
       <button class="s-btn" onclick="waShare()">📤 WhatsApp</button>
     </div>
+    <div class="control-group" style="background:#2a1a1a;border-color:var(--red)">
+      <div class="label">🔒 PERMANENT STREAM ID</div>
+      <div style="font-size:1.2rem;font-weight:bold;color:var(--red);text-align:center;padding:8px" id="displayPeerId">-</div>
+      <div style="font-size:0.7rem;color:var(--muted);text-align:center">Yeh ID hamesha same rahegi! Link share karo.</div>
+    </div>
 
-    <!-- LOGO CONTROLS -->
     <div class="control-group">
-      <div class="label">🖼️ LOGO - Size 20px to 90px | Move Left (0-400px) Top (0-800px)</div>
+      <div class="label">🖼️ LOGO - Size (20-90px) | Move Left (0-400px) Top (0-800px)</div>
       <div class="row">
         <span>Size:</span>
         <input type="range" id="logoSzeSlider" min="20" max="90" value="90" step="1" oninput="updateLogoSize(this.value)">
@@ -344,7 +360,6 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:20px;heigh
       </div>
     </div>
 
-    <!-- TEXT OVERLAY CONTROLS - Simple text input with color and move -->
     <div class="control-group">
       <div class="label">💬 TEXT ON SCREEN - Type message, choose color, move anywhere</div>
       <div class="text-input-row">
@@ -391,18 +406,38 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:20px;heigh
 
 <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
 <script>
-// FULL WORKING - VIDEO + LOGO + TEXT (CUSTOMIZABLE)
+// PERMANENT CUSTOM ID VERSION
 let peer, localStream, myPeerId, streamLink = '';
 let activeCalls = [], dataConns = [];
 let flashOn = false, currentFacing = 'environment';
 let videoTrack = null, timerInt, startTime;
 let drawerOpen = false;
 let logoDataUrl = '';
+let customPeerId = 'ab12345'; // Default custom ID
 
-// Drag for logo and text
+// Drag variables
 let dragTarget = null;
 let dragStartX = 0, dragStartY = 0;
 let initialLeft = 0, initialTop = 0;
+
+function setCustomId() {
+  let newId = document.getElementById('customPeerId').value.trim().toLowerCase();
+  if(!newId) { toast('Please enter an ID!'); return; }
+  // Allow only letters and numbers
+  newId = newId.replace(/[^a-z0-9]/g, '');
+  if(newId.length < 3) { toast('ID must be at least 3 characters!'); return; }
+  customPeerId = newId;
+  document.getElementById('customPeerId').value = customPeerId;
+  toast(`✅ Custom ID set to: ${customPeerId}`);
+  localStorage.setItem('liveCamPeerId', customPeerId);
+}
+
+// Load saved ID on startup
+const savedId = localStorage.getItem('liveCamPeerId');
+if(savedId) {
+  customPeerId = savedId;
+  document.getElementById('customPeerId').value = customPeerId;
+}
 
 function initDraggable(el, type) {
   if(!el) return;
@@ -684,31 +719,45 @@ async function startStream(facing) {
   }
   videoTrack = localStream.getVideoTracks()[0];
   document.getElementById('mainVideo').srcObject = localStream;
-  loading(true, 'Connecting to server...');
+  loading(true, 'Connecting with custom ID...');
   
-  peer = new Peer({ host: '0.peerjs.com', port: 443, secure: true, path: '/' });
+  // Use CUSTOM PEER ID!
+  peer = new Peer(customPeerId, { host: '0.peerjs.com', port: 443, secure: true, path: '/' });
+  
   peer.on('open', (id) => {
     myPeerId = id;
     streamLink = location.href.split('?')[0] + '?watch=' + id;
+    document.getElementById('currentId').textContent = id;
+    document.getElementById('displayPeerId').textContent = id;
     loading(false);
     showScreen('streamScreen');
     startTimer();
-    toast('🔴 Live! Share the link.');
+    toast(`🔴 Live! Permanent ID: ${id}`);
     initDraggable(document.getElementById('logoOverlay'), 'logo');
     initDraggable(document.getElementById('textOverlay'), 'text');
     document.getElementById('textBubble').style.backgroundColor = '#000000';
   });
+  
   peer.on('call', (call) => {
     call.answer(localStream);
     activeCalls.push(call);
     updateViewers();
     call.on('close', () => { activeCalls = activeCalls.filter(c => c !== call); updateViewers(); });
   });
+  
   peer.on('connection', (conn) => {
     dataConns.push(conn);
     conn.on('close', () => { dataConns = dataConns.filter(c => c !== conn); });
   });
-  peer.on('error', (e) => { loading(false); toast('Error: ' + e.type); });
+  
+  peer.on('error', (e) => {
+    loading(false);
+    if(e.type === 'unavailable-id') {
+      toast(`❌ ID "${customPeerId}" already in use! Try different ID.`);
+    } else {
+      toast('Error: ' + e.type);
+    }
+  });
 }
 
 function broadcastOverlay(data) {
