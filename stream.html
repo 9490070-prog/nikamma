@@ -1,0 +1,828 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>LiveCam Pro</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --red: #ff2d2d;
+  --red-dark: #c0000a;
+  --bg: #0a0a0a;
+  --surface: #141414;
+  --surface2: #1e1e1e;
+  --border: rgba(255,255,255,0.08);
+  --text: #f0f0f0;
+  --muted: #777;
+}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{width:100%;height:100%;overflow:hidden;background:#000;color:var(--text);font-family:'DM Sans',sans-serif}
+
+/* ===== SCREENS ===== */
+.screen{display:none;position:fixed;inset:0;z-index:1}
+.screen.active{display:flex;flex-direction:column;align-items:center;justify-content:center}
+
+/* ===== HOME ===== */
+#homeScreen{
+  background:radial-gradient(ellipse at 30% 20%,#1a0000 0%,#0a0a0a 60%);
+  padding:32px 20px;gap:0;overflow-y:auto;justify-content:flex-start;padding-top:60px;
+}
+.logo{font-family:'Bebas Neue',sans-serif;font-size:3rem;letter-spacing:4px;text-align:center;line-height:1}
+.logo span{color:var(--red)}
+.tagline{color:var(--muted);font-size:0.75rem;letter-spacing:2px;text-transform:uppercase;text-align:center;margin-top:4px;margin-bottom:36px}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:20px;width:100%;max-width:380px;margin-bottom:12px}
+.card-label{font-size:0.68rem;text-transform:uppercase;letter-spacing:2px;color:var(--muted);margin-bottom:14px}
+.big-btn{width:100%;padding:16px;border:none;border-radius:12px;font-family:'DM Sans',sans-serif;font-size:0.95rem;font-weight:600;cursor:pointer;transition:all 0.15s;display:flex;align-items:center;gap:10px;justify-content:center;margin-bottom:10px}
+.big-btn.red{background:var(--red);color:#fff}
+.big-btn.dark{background:var(--surface2);color:var(--text);border:1px solid var(--border)}
+.big-btn:active{transform:scale(0.97);opacity:0.85}
+.input-wrap{display:flex;gap:8px}
+.inp{flex:1;padding:13px 14px;background:var(--surface2);border:1px solid var(--border);border-radius:10px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:0.88rem;outline:none}
+.inp:focus{border-color:rgba(255,45,45,0.5)}
+.join-btn{padding:13px 18px;background:var(--red);border:none;border-radius:10px;color:#fff;font-weight:700;cursor:pointer;font-size:0.88rem;white-space:nowrap}
+
+/* ===== STREAM SCREEN (ADMIN) ===== */
+#streamScreen{background:#000;justify-content:flex-start}
+#mainVideo{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+
+/* Overlays on video */
+#adminOverlayContainer{position:absolute;inset:0;pointer-events:none;z-index:10}
+
+/* Logo image overlay */
+#logoOverlay{
+  position:absolute;top:80px;left:16px;
+  max-width:120px;max-height:80px;
+  object-fit:contain;display:none;
+  filter:drop-shadow(0 2px 8px rgba(0,0,0,0.8));
+  border-radius:8px;
+}
+
+/* Text overlay */
+#textOverlay{
+  position:absolute;bottom:160px;left:0;right:0;
+  text-align:center;padding:0 20px;display:none;
+  pointer-events:none;
+}
+.text-bubble{
+  display:inline-block;background:rgba(0,0,0,0.72);backdrop-filter:blur(10px);
+  border:1px solid rgba(255,255,255,0.1);border-radius:30px;
+  padding:10px 22px;font-size:1rem;font-weight:500;color:#fff;
+  max-width:320px;animation:fadeUp 0.3s ease;
+}
+@keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+
+/* Ticker text */
+#tickerBar{
+  position:absolute;bottom:110px;left:0;right:0;
+  background:rgba(220,0,0,0.85);padding:8px 0;
+  overflow:hidden;display:none;
+}
+.ticker-inner{
+  white-space:nowrap;display:inline-block;
+  animation:ticker 15s linear infinite;
+  font-size:0.88rem;font-weight:600;color:#fff;padding-left:100%;
+}
+@keyframes ticker{from{transform:translateX(0)}to{transform:translateX(-100%)}}
+
+/* Admin Top Bar */
+#adminTop{
+  position:absolute;top:0;left:0;right:0;z-index:20;
+  display:flex;align-items:center;justify-content:space-between;
+  padding:12px 16px;
+  background:linear-gradient(to bottom,rgba(0,0,0,0.8) 0%,transparent 100%);
+}
+.live-pill{display:flex;align-items:center;gap:7px;background:var(--red);padding:5px 13px;border-radius:20px;font-size:0.75rem;font-weight:700;letter-spacing:1px}
+.pulse{width:8px;height:8px;border-radius:50%;background:#fff;animation:p 1.2s ease-in-out infinite}
+@keyframes p{0%,100%{opacity:1;transform:scale(1)}50%{opacity:0.3;transform:scale(0.7)}}
+.stat-pill{background:rgba(0,0,0,0.6);border:1px solid rgba(255,255,255,0.12);padding:5px 12px;border-radius:20px;font-size:0.78rem;display:flex;align-items:center;gap:5px}
+
+/* Admin Bottom Controls */
+#adminBottom{
+  position:absolute;bottom:0;left:0;right:0;z-index:20;
+  padding:12px 16px 28px;
+  background:linear-gradient(to top,rgba(0,0,0,0.9) 0%,transparent 100%);
+}
+.ctrl-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+.c-btn{
+  width:50px;height:50px;border-radius:50%;border:none;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;font-size:1.25rem;
+  background:rgba(255,255,255,0.13);backdrop-filter:blur(6px);transition:all 0.15s;
+  flex-shrink:0;
+}
+.c-btn:active{transform:scale(0.88);background:rgba(255,255,255,0.22)}
+.c-btn.on{background:var(--red)}
+.stop-c{
+  width:66px;height:66px;border-radius:50%;border:3px solid rgba(255,255,255,0.25);
+  background:var(--red);cursor:pointer;display:flex;align-items:center;justify-content:center;
+  font-size:1.5rem;flex-shrink:0;
+}
+.stop-c:active{transform:scale(0.92);background:var(--red-dark)}
+.zoom-row{display:flex;align-items:center;gap:10px;padding:0 4px}
+.zoom-lbl{font-size:0.7rem;color:var(--muted);min-width:26px;text-align:center}
+input[type=range]{flex:1;height:3px;-webkit-appearance:none;appearance:none;background:rgba(255,255,255,0.18);border-radius:2px;outline:none}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:20px;height:20px;border-radius:50%;background:#fff;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,0.5)}
+.zoom-v{font-size:0.75rem;color:#fff;font-weight:600;min-width:34px}
+
+/* ===== ADMIN PANEL (DRAWER) ===== */
+#adminDrawer{
+  position:absolute;bottom:0;left:0;right:0;z-index:30;
+  background:var(--surface);border-radius:20px 20px 0 0;
+  border-top:1px solid var(--border);
+  padding:14px 18px 36px;
+  transform:translateY(100%);transition:transform 0.32s cubic-bezier(0.4,0,0.2,1);
+  max-height:82vh;overflow-y:auto;
+}
+#adminDrawer.open{transform:translateY(0)}
+.drawer-handle{width:36px;height:4px;background:var(--border);border-radius:2px;margin:0 auto 16px}
+.section-title{font-size:0.65rem;text-transform:uppercase;letter-spacing:2px;color:var(--muted);margin-bottom:10px;margin-top:14px}
+.msg-row{display:flex;gap:8px;margin-bottom:10px}
+.m-inp{flex:1;padding:12px 14px;background:var(--surface2);border:1px solid var(--border);border-radius:10px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:0.88rem;outline:none}
+.m-inp:focus{border-color:rgba(255,45,45,0.4)}
+.send-b{padding:12px 16px;background:var(--red);border:none;border-radius:10px;color:#fff;font-weight:700;cursor:pointer;font-size:0.88rem;white-space:nowrap}
+.quick-row{display:flex;flex-wrap:wrap;gap:7px;margin-bottom:4px}
+.q-tag{padding:7px 13px;background:var(--surface2);border:1px solid var(--border);border-radius:20px;font-size:0.78rem;cursor:pointer;color:var(--text)}
+.q-tag:active{background:rgba(255,45,45,0.15);border-color:var(--red)}
+
+/* Ticker input */
+.ticker-row{display:flex;gap:8px}
+
+/* Image upload */
+.img-upload-area{
+  border:1px dashed rgba(255,255,255,0.2);border-radius:12px;
+  padding:16px;text-align:center;cursor:pointer;margin-bottom:8px;
+}
+.img-upload-area:active{background:rgba(255,255,255,0.04)}
+.img-preview{max-width:100%;max-height:100px;border-radius:8px;margin-top:8px;display:none}
+
+/* Text style options */
+.style-row{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px}
+.style-opt{
+  padding:6px 12px;border-radius:8px;background:var(--surface2);border:1px solid var(--border);
+  font-size:0.78rem;cursor:pointer;color:var(--text);
+}
+.style-opt.sel{background:var(--red);border-color:var(--red);color:#fff}
+
+/* Share row */
+.share-row{display:flex;gap:8px;margin-top:6px}
+.s-btn{flex:1;padding:13px 8px;background:var(--surface2);border:1px solid var(--border);border-radius:10px;color:var(--text);font-size:0.8rem;font-weight:500;cursor:pointer;text-align:center}
+.s-btn:active{background:#2a2a2a}
+
+/* ===== VIEWER SCREEN (ExoPlayer Style) ===== */
+#viewerScreen{background:#000;justify-content:flex-start}
+#viewVideo{position:absolute;inset:0;width:100%;height:100%;object-fit:contain}
+
+/* Viewer overlays */
+#viewerLogoOverlay{
+  position:absolute;top:80px;left:16px;
+  max-width:120px;max-height:80px;object-fit:contain;
+  display:none;filter:drop-shadow(0 2px 8px rgba(0,0,0,0.8));border-radius:8px;
+  z-index:10;pointer-events:none;
+}
+#viewerTextOverlay{
+  position:absolute;bottom:100px;left:0;right:0;text-align:center;
+  padding:0 20px;display:none;z-index:10;pointer-events:none;
+}
+#viewerTickerBar{
+  position:absolute;bottom:60px;left:0;right:0;
+  background:rgba(220,0,0,0.85);padding:8px 0;
+  overflow:hidden;display:none;z-index:10;
+}
+
+/* ExoPlayer controls overlay */
+#playerControls{
+  position:absolute;inset:0;z-index:15;
+  background:rgba(0,0,0,0);
+  display:flex;flex-direction:column;
+  justify-content:space-between;
+  opacity:0;transition:opacity 0.3s;
+  pointer-events:none;
+}
+#playerControls.visible{opacity:1;pointer-events:all}
+#playerControls.visible{background:rgba(0,0,0,0.3)}
+
+/* Player top */
+.player-top{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:14px 16px;
+  background:linear-gradient(to bottom,rgba(0,0,0,0.7) 0%,transparent 100%);
+}
+.p-live{display:flex;align-items:center;gap:7px;background:var(--red);padding:5px 13px;border-radius:20px;font-size:0.75rem;font-weight:700;letter-spacing:1px}
+.p-title{font-size:0.85rem;font-weight:600;color:#fff;flex:1;text-align:center}
+.p-exit{background:rgba(0,0,0,0.5);border:1px solid rgba(255,255,255,0.15);color:#fff;padding:6px 14px;border-radius:20px;cursor:pointer;font-size:0.78rem;border:none}
+
+/* Player center */
+.player-center{display:flex;align-items:center;justify-content:center;gap:36px}
+.p-icon-btn{
+  width:56px;height:56px;border-radius:50%;
+  background:rgba(255,255,255,0.15);backdrop-filter:blur(6px);
+  border:none;color:#fff;font-size:1.4rem;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+}
+.p-icon-btn.big{width:72px;height:72px;font-size:1.8rem;background:rgba(255,255,255,0.2)}
+.p-icon-btn:active{transform:scale(0.9)}
+
+/* Player bottom */
+.player-bottom{
+  padding:12px 16px 28px;
+  background:linear-gradient(to top,rgba(0,0,0,0.8) 0%,transparent 100%);
+}
+.p-bottom-row{display:flex;align-items:center;justify-content:space-between;margin-top:10px}
+.p-stat{font-size:0.78rem;color:rgba(255,255,255,0.8);display:flex;align-items:center;gap:5px}
+.p-vol-row{display:flex;align-items:center;gap:8px}
+.vol-icon{font-size:1rem;cursor:pointer}
+.vol-slider{width:80px;height:3px;-webkit-appearance:none;appearance:none;background:rgba(255,255,255,0.3);border-radius:2px;outline:none}
+.vol-slider::-webkit-slider-thumb{-webkit-appearance:none;width:14px;height:14px;border-radius:50%;background:#fff;cursor:pointer}
+.fullscreen-btn{background:none;border:none;color:#fff;font-size:1.1rem;cursor:pointer}
+
+/* Live progress bar (fake) */
+.live-progress{height:3px;background:rgba(255,255,255,0.2);border-radius:2px;position:relative;margin-bottom:8px}
+.live-bar-fill{height:100%;background:var(--red);border-radius:2px;width:100%;position:relative}
+.live-bar-fill::after{content:'';position:absolute;right:-5px;top:-3px;width:10px;height:10px;border-radius:50%;background:var(--red)}
+
+/* ===== LOADING ===== */
+#loadingOverlay{
+  position:fixed;inset:0;background:rgba(0,0,0,0.9);
+  display:none;flex-direction:column;align-items:center;justify-content:center;
+  z-index:200;gap:16px;
+}
+.spinner{width:44px;height:44px;border:3px solid rgba(255,255,255,0.1);border-top-color:var(--red);border-radius:50%;animation:spin 0.8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* ===== TOAST ===== */
+#toast{
+  position:fixed;top:70px;left:50%;transform:translateX(-50%) translateY(-20px);
+  background:rgba(20,20,20,0.95);border:1px solid var(--border);
+  padding:10px 20px;border-radius:20px;font-size:0.83rem;
+  z-index:999;opacity:0;transition:all 0.3s;pointer-events:none;
+  backdrop-filter:blur(10px);white-space:nowrap;max-width:90vw;text-align:center;
+}
+#toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+</style>
+</head>
+<body>
+
+<!-- ===== HOME ===== -->
+<div id="homeScreen" class="screen active">
+  <div class="logo">LIVE<span>CAM</span> <span style="font-size:1.2rem;color:var(--muted)">PRO</span></div>
+  <div class="tagline">Professional Live Streaming</div>
+
+  <div class="card">
+    <div class="card-label">🔴 Admin — Stream Shuru Karo</div>
+    <button class="big-btn red" onclick="startStream('back')">📸 Back Camera Se Live Ho</button>
+    <button class="big-btn dark" onclick="startStream('front')">🤳 Front Camera Se Live Ho</button>
+  </div>
+
+  <div class="card">
+    <div class="card-label">👁️ Viewer — Stream Dekho</div>
+    <div class="input-wrap">
+      <input class="inp" id="watchInput" type="text" placeholder="Link ya Peer ID paste karo...">
+      <button class="join-btn" onclick="joinStream()">JOIN</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== ADMIN STREAM SCREEN ===== -->
+<div id="streamScreen" class="screen">
+  <video id="mainVideo" autoplay playsinline muted></video>
+
+  <!-- Overlay container (logo + text + ticker) -->
+  <div id="adminOverlayContainer">
+    <img id="logoOverlay" src="" alt="logo">
+    <div id="textOverlay"><div class="text-bubble" id="textBubble"></div></div>
+    <div id="tickerBar"><div class="ticker-inner" id="tickerInner"></div></div>
+  </div>
+
+  <!-- Admin Top -->
+  <div id="adminTop">
+    <div class="live-pill"><div class="pulse"></div>LIVE</div>
+    <div class="stat-pill">⏱ <span id="timerDisp">00:00</span></div>
+    <div class="stat-pill">👁 <span id="viewCount">0</span></div>
+  </div>
+
+  <!-- Admin Bottom -->
+  <div id="adminBottom">
+    <div class="ctrl-row">
+      <button class="c-btn" id="flashBtn" onclick="toggleFlash()">💡</button>
+      <button class="c-btn" id="flipBtn" onclick="flipCamera()">🔄</button>
+      <button class="stop-c" onclick="stopStream()">⏹</button>
+      <button class="c-btn" id="panelBtn" onclick="toggleDrawer()">🎛️</button>
+      <button class="c-btn" onclick="showShareLink()">🔗</button>
+    </div>
+    <div class="zoom-row">
+      <span class="zoom-lbl">🔍</span>
+      <input type="range" id="zoomSlider" min="1" max="8" step="0.1" value="1" oninput="applyZoom(this.value)">
+      <span class="zoom-v" id="zoomVal">1.0x</span>
+    </div>
+  </div>
+
+  <!-- Admin Drawer -->
+  <div id="adminDrawer">
+    <div class="drawer-handle"></div>
+
+    <!-- Share -->
+    <div class="section-title">🔗 Viewer Link Share Karo</div>
+    <div class="share-row">
+      <button class="s-btn" onclick="copyLink()">📋 Copy Link</button>
+      <button class="s-btn" onclick="waShare()">📤 WhatsApp</button>
+    </div>
+
+    <!-- Overlay Text -->
+    <div class="section-title">💬 Screen Pe Text Dikhao</div>
+    <div class="style-row" id="textStyleRow">
+      <span class="style-opt sel" data-style="bubble" onclick="selectStyle(this)">Bubble</span>
+      <span class="style-opt" data-style="ticker" onclick="selectStyle(this)">Ticker</span>
+    </div>
+    <div class="msg-row">
+      <input class="m-inp" id="overlayTextInput" type="text" placeholder="Viewers ko text dikhao..." maxlength="80">
+      <button class="send-b" onclick="sendText()">SHOW</button>
+    </div>
+    <div class="quick-row">
+      <span class="q-tag" onclick="quickText('🙏 Shukriya dekh rahe ho!')">🙏 Shukriya</span>
+      <span class="q-tag" onclick="quickText('👋 Welcome to my Live!')">👋 Welcome</span>
+      <span class="q-tag" onclick="quickText('🔥 Live chal rahi hai!')">🔥 Live</span>
+      <span class="q-tag" onclick="quickText('📢 Share karo dosto ke saath!')">📢 Share Karo</span>
+      <span class="q-tag" onclick="quickText('❤️ Love you all!')">❤️ Love</span>
+      <span class="q-tag" onclick="hideAllOverlays()">✕ Text Hatao</span>
+    </div>
+
+    <!-- Logo / Image Upload -->
+    <div class="section-title">🖼️ Logo / Image Screen Pe Lagao</div>
+    <div class="img-upload-area" onclick="document.getElementById('imgFileInput').click()">
+      <div style="font-size:2rem">📁</div>
+      <div style="font-size:0.82rem;color:var(--muted);margin-top:6px">Tap karo — image ya logo upload karo</div>
+      <img class="img-preview" id="imgPreview" src="" alt="">
+    </div>
+    <input type="file" id="imgFileInput" accept="image/*" style="display:none" onchange="uploadLogo(this)">
+    <div class="share-row">
+      <button class="s-btn" onclick="toggleLogo(true)">✅ Logo Show Karo</button>
+      <button class="s-btn" onclick="toggleLogo(false)">✕ Logo Hatao</button>
+    </div>
+
+    <!-- Close -->
+    <div style="margin-top:16px">
+      <button class="big-btn dark" onclick="toggleDrawer()">✕ Panel Band Karo</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== VIEWER SCREEN (ExoPlayer Style) ===== -->
+<div id="viewerScreen" class="screen">
+  <video id="viewVideo" autoplay playsinline></video>
+
+  <!-- Viewer overlays -->
+  <img id="viewerLogoOverlay" src="" alt="">
+  <div id="viewerTextOverlay"><div class="text-bubble" id="viewerTextBubble"></div></div>
+  <div id="viewerTickerBar"><div class="ticker-inner" id="viewerTickerInner"></div></div>
+
+  <!-- ExoPlayer Controls -->
+  <div id="playerControls" onclick="togglePlayerUI(event)">
+    <!-- Top -->
+    <div class="player-top">
+      <div class="p-live"><div class="pulse"></div>LIVE</div>
+      <div class="p-title" id="playerTitle">Live Stream</div>
+      <button class="p-exit" onclick="leaveStream()">✕ Leave</button>
+    </div>
+
+    <!-- Center -->
+    <div class="player-center">
+      <button class="p-icon-btn" onclick="seekLive()" title="Go Live">⏮</button>
+      <button class="p-icon-btn big" id="playPauseBtn" onclick="togglePlayPause()">⏸</button>
+      <button class="p-icon-btn" onclick="toggleMute()" id="muteBtn">🔊</button>
+    </div>
+
+    <!-- Bottom -->
+    <div class="player-bottom">
+      <div class="live-progress"><div class="live-bar-fill"></div></div>
+      <div class="p-bottom-row">
+        <div class="p-stat"><div class="pulse" style="background:var(--red)"></div> LIVE</div>
+        <div class="p-vol-row">
+          <span class="vol-icon" onclick="toggleMute()" id="volIcon">🔊</span>
+          <input type="range" class="vol-slider" id="volSlider" min="0" max="1" step="0.05" value="1" oninput="setVolume(this.value)">
+        </div>
+        <button class="fullscreen-btn" onclick="toggleFullscreen()">⛶</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Loading -->
+<div id="loadingOverlay">
+  <div class="spinner"></div>
+  <div style="color:var(--muted);font-size:0.85rem" id="loadingText">Connecting...</div>
+</div>
+
+<!-- Toast -->
+<div id="toast"></div>
+
+<script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
+<script>
+// =========================================
+// STATE
+// =========================================
+let peer, localStream, myPeerId, streamLink='';
+let activeCalls=[], dataConns=[];
+let flashOn=false, currentFacing='environment';
+let videoTrack=null, timerInt, startTime;
+let drawerOpen=false, playerVisible=false, playerTimer;
+let currentTextStyle='bubble';
+let logoDataUrl='';
+let isPaused=false, isMuted=false;
+
+// =========================================
+// UTILS
+// =========================================
+function showScreen(id){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+function toast(msg,dur=2500){
+  const t=document.getElementById('toast');
+  t.textContent=msg;t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),dur);
+}
+function loading(show,text='Connecting...'){
+  document.getElementById('loadingOverlay').style.display=show?'flex':'none';
+  document.getElementById('loadingText').textContent=text;
+}
+function startTimer(){
+  startTime=Date.now();
+  timerInt=setInterval(()=>{
+    const s=Math.floor((Date.now()-startTime)/1000);
+    const m=Math.floor(s/60),sec=s%60;
+    document.getElementById('timerDisp').textContent=
+      String(m).padStart(2,'0')+':'+String(sec).padStart(2,'0');
+  },1000);
+}
+
+// =========================================
+// HOST — START
+// =========================================
+async function startStream(facing){
+  currentFacing=facing==='front'?'user':'environment';
+  loading(true,'Camera shuru ho rahi hai...');
+  try{
+    localStream=await navigator.mediaDevices.getUserMedia({
+      video:{facingMode:currentFacing,width:{ideal:1920},height:{ideal:1080}},
+      audio:true
+    });
+  }catch(e){
+    loading(false);
+    toast('❌ Camera permission nahi mili!');
+    return;
+  }
+  videoTrack=localStream.getVideoTracks()[0];
+  document.getElementById('mainVideo').srcObject=localStream;
+  loading(true,'Server se connect ho raha hoon...');
+
+  peer=new Peer({host:'0.peerjs.com',port:443,secure:true,path:'/'});
+  peer.on('open',(id)=>{
+    myPeerId=id;
+    streamLink=location.href.split('?')[0]+'?watch='+id;
+    loading(false);
+    showScreen('streamScreen');
+    startTimer();
+    toast('🔴 Live ho gaye! Link share karo.');
+  });
+  peer.on('call',(call)=>{
+    call.answer(localStream);
+    activeCalls.push(call);
+    updateViewers();
+    call.on('close',()=>{activeCalls=activeCalls.filter(c=>c!==call);updateViewers();});
+    call.on('error',()=>{activeCalls=activeCalls.filter(c=>c!==call);updateViewers();});
+  });
+  peer.on('connection',(conn)=>{
+    dataConns.push(conn);
+    conn.on('close',()=>{dataConns=dataConns.filter(c=>c!==conn);});
+  });
+  peer.on('error',(e)=>{loading(false);toast('Error: '+e.type);});
+  peer.on('disconnected',()=>peer.reconnect());
+}
+
+function updateViewers(){
+  document.getElementById('viewCount').textContent=activeCalls.length;
+}
+
+// =========================================
+// HOST — CONTROLS
+// =========================================
+async function toggleFlash(){
+  if(!videoTrack){toast('Camera track nahi mili');return;}
+  try{
+    flashOn=!flashOn;
+    await videoTrack.applyConstraints({advanced:[{torch:flashOn}]});
+    document.getElementById('flashBtn').classList.toggle('on',flashOn);
+    toast(flashOn?'💡 Flash ON':'💡 Flash OFF');
+  }catch(e){
+    toast('❌ Flash support nahi is device pe');flashOn=false;
+  }
+}
+
+async function flipCamera(){
+  currentFacing=currentFacing==='environment'?'user':'environment';
+  if(localStream)localStream.getTracks().forEach(t=>t.stop());
+  try{
+    localStream=await navigator.mediaDevices.getUserMedia({
+      video:{facingMode:currentFacing,width:{ideal:1920},height:{ideal:1080}},
+      audio:true
+    });
+    videoTrack=localStream.getVideoTracks()[0];
+    document.getElementById('mainVideo').srcObject=localStream;
+    activeCalls.forEach(call=>{
+      const sender=call.peerConnection?.getSenders().find(s=>s.track?.kind==='video');
+      if(sender)sender.replaceTrack(videoTrack);
+    });
+    toast('🔄 Camera flip ho gaya');
+  }catch(e){toast('❌ Camera flip nahi hua');}
+}
+
+function applyZoom(val){
+  document.getElementById('zoomVal').textContent=parseFloat(val).toFixed(1)+'x';
+  if(!videoTrack)return;
+  try{
+    videoTrack.applyConstraints({advanced:[{zoom:parseFloat(val)}]});
+  }catch(e){
+    const v=document.getElementById('mainVideo');
+    v.style.transform=`scale(${val})`;v.style.transformOrigin='center center';
+  }
+}
+
+function toggleDrawer(){
+  drawerOpen=!drawerOpen;
+  document.getElementById('adminDrawer').classList.toggle('open',drawerOpen);
+  document.getElementById('panelBtn').classList.toggle('on',drawerOpen);
+}
+
+// =========================================
+// TEXT OVERLAY
+// =========================================
+function selectStyle(el){
+  document.querySelectorAll('.style-opt').forEach(e=>e.classList.remove('sel'));
+  el.classList.add('sel');
+  currentTextStyle=el.dataset.style;
+}
+function sendText(){
+  const msg=document.getElementById('overlayTextInput').value.trim();
+  if(!msg){toast('Text likho pehle!');return;}
+  broadcastOverlay({type:'text',style:currentTextStyle,msg});
+  document.getElementById('overlayTextInput').value='';
+}
+function quickText(msg){
+  broadcastOverlay({type:'text',style:currentTextStyle,msg});
+}
+function hideAllOverlays(){
+  broadcastOverlay({type:'hide'});
+}
+function showTextLocal(style,msg){
+  // Hide both first
+  document.getElementById('textOverlay').style.display='none';
+  document.getElementById('tickerBar').style.display='none';
+  if(style==='bubble'){
+    document.getElementById('textBubble').textContent=msg;
+    document.getElementById('textOverlay').style.display='block';
+    clearTimeout(document.getElementById('textOverlay')._t);
+    document.getElementById('textOverlay')._t=setTimeout(()=>{
+      document.getElementById('textOverlay').style.display='none';
+    },5000);
+  }else if(style==='ticker'){
+    document.getElementById('tickerInner').textContent=msg+' • '+msg+' • '+msg;
+    document.getElementById('tickerBar').style.display='block';
+    clearTimeout(document.getElementById('tickerBar')._t);
+    document.getElementById('tickerBar')._t=setTimeout(()=>{
+      document.getElementById('tickerBar').style.display='none';
+    },15000);
+  }
+}
+
+// =========================================
+// LOGO OVERLAY
+// =========================================
+function uploadLogo(input){
+  const file=input.files[0];
+  if(!file)return;
+  const reader=new FileReader();
+  reader.onload=(e)=>{
+    logoDataUrl=e.target.result;
+    document.getElementById('imgPreview').src=logoDataUrl;
+    document.getElementById('imgPreview').style.display='block';
+    document.getElementById('logoOverlay').src=logoDataUrl;
+    toast('✅ Image load ho gayi! "Logo Show Karo" dabao.');
+  };
+  reader.readAsDataURL(file);
+}
+function toggleLogo(show){
+  if(show&&!logoDataUrl){toast('Pehle image upload karo!');return;}
+  document.getElementById('logoOverlay').style.display=show?'block':'none';
+  broadcastOverlay({type:'logo',show,src:show?logoDataUrl:''});
+  toast(show?'🖼️ Logo live pe dikh raha hai':'🖼️ Logo hataya');
+}
+
+// =========================================
+// BROADCAST TO VIEWERS
+// =========================================
+function broadcastOverlay(data){
+  // Show locally
+  applyOverlayData(data,'admin');
+  // Send to all viewers
+  dataConns.forEach(conn=>{
+    try{conn.send(data);}catch(e){}
+  });
+  if(data.type==='text')toast('📢 Text broadcast hua!');
+}
+function applyOverlayData(data,side){
+  if(side==='admin'){
+    if(data.type==='text') showTextLocal(data.style,data.msg);
+    else if(data.type==='logo'){
+      document.getElementById('logoOverlay').style.display=data.show?'block':'none';
+      if(data.show)document.getElementById('logoOverlay').src=data.src;
+    }
+    else if(data.type==='hide'){
+      document.getElementById('textOverlay').style.display='none';
+      document.getElementById('tickerBar').style.display='none';
+    }
+  }else{
+    // Viewer side
+    if(data.type==='text'){
+      if(data.style==='bubble'){
+        document.getElementById('viewerTextBubble').textContent=data.msg;
+        document.getElementById('viewerTextOverlay').style.display='block';
+        clearTimeout(document.getElementById('viewerTextOverlay')._t);
+        document.getElementById('viewerTextOverlay')._t=setTimeout(()=>{
+          document.getElementById('viewerTextOverlay').style.display='none';
+        },5000);
+      }else if(data.style==='ticker'){
+        document.getElementById('viewerTickerInner').textContent=data.msg+' • '+data.msg+' • '+data.msg;
+        document.getElementById('viewerTickerBar').style.display='block';
+        clearTimeout(document.getElementById('viewerTickerBar')._t);
+        document.getElementById('viewerTickerBar')._t=setTimeout(()=>{
+          document.getElementById('viewerTickerBar').style.display='none';
+        },15000);
+      }
+    }else if(data.type==='logo'){
+      const el=document.getElementById('viewerLogoOverlay');
+      el.style.display=data.show?'block':'none';
+      if(data.show)el.src=data.src;
+    }else if(data.type==='hide'){
+      document.getElementById('viewerTextOverlay').style.display='none';
+      document.getElementById('viewerTickerBar').style.display='none';
+    }
+  }
+}
+
+// =========================================
+// SHARE
+// =========================================
+function copyLink(){
+  navigator.clipboard.writeText(streamLink)
+    .then(()=>toast('✅ Link copy ho gaya!'))
+    .catch(()=>prompt('Copy karo:',streamLink));
+}
+function waShare(){
+  const msg='📺 Meri live stream dekho!\n'+streamLink;
+  window.open('https://wa.me/?text='+encodeURIComponent(msg));
+}
+function showShareLink(){
+  copyLink();
+  toast('🔗 Link copy ho gaya — share karo!',3000);
+}
+
+function stopStream(){
+  if(timerInt)clearInterval(timerInt);
+  if(localStream)localStream.getTracks().forEach(t=>t.stop());
+  if(peer)peer.destroy();
+  location.reload();
+}
+
+// =========================================
+// VIEWER — JOIN
+// =========================================
+function joinStream(){
+  let input=document.getElementById('watchInput').value.trim();
+  if(!input){toast('Link ya ID daalo!');return;}
+  if(input.includes('watch='))input=input.split('watch=')[1].split('&')[0];
+  connectViewer(input);
+}
+function connectViewer(hostId){
+  loading(true,'Stream se connect ho raha hoon...');
+  peer=new Peer({host:'0.peerjs.com',port:443,secure:true,path:'/'});
+
+  peer.on('open',()=>{
+    // Data channel
+    const conn=peer.connect(hostId);
+    conn.on('open',()=>{});
+    conn.on('data',(data)=>applyOverlayData(data,'viewer'));
+
+    // Video
+    const canvas=Object.assign(document.createElement('canvas'),{width:1,height:1});
+    const call=peer.call(hostId,canvas.captureStream(1));
+    if(!call){loading(false);toast('❌ Host nahi mila.');return;}
+
+    call.on('stream',(remoteStream)=>{
+      const vid=document.getElementById('viewVideo');
+      vid.srcObject=remoteStream;
+      vid.muted=false;
+      vid.play().catch(()=>{vid.muted=true;vid.play();});
+      loading(false);
+      showScreen('viewerScreen');
+      // Show controls briefly
+      showPlayerControls();
+    });
+    call.on('close',()=>{toast('Stream band ho gayi.');setTimeout(leaveStream,2000);});
+    call.on('error',(e)=>{loading(false);toast('Error: '+e);});
+  });
+
+  peer.on('error',(e)=>{
+    loading(false);
+    toast(e.type==='peer-unavailable'?'❌ Host online nahi hai.':'❌ Error: '+e.type);
+  });
+}
+function leaveStream(){
+  if(peer)peer.destroy();
+  location.reload();
+}
+
+// =========================================
+// VIEWER — ExoPlayer Controls
+// =========================================
+function togglePlayerUI(e){
+  // Don't hide if clicking buttons
+  if(e.target.closest('button')||e.target.closest('input'))return;
+  playerVisible=!playerVisible;
+  document.getElementById('playerControls').classList.toggle('visible',playerVisible);
+  if(playerVisible){
+    clearTimeout(playerTimer);
+    playerTimer=setTimeout(()=>{
+      playerVisible=false;
+      document.getElementById('playerControls').classList.remove('visible');
+    },4000);
+  }
+}
+function showPlayerControls(){
+  playerVisible=true;
+  document.getElementById('playerControls').classList.add('visible');
+  clearTimeout(playerTimer);
+  playerTimer=setTimeout(()=>{
+    playerVisible=false;
+    document.getElementById('playerControls').classList.remove('visible');
+  },3000);
+}
+function togglePlayPause(){
+  const vid=document.getElementById('viewVideo');
+  if(vid.paused){vid.play();isPaused=false;document.getElementById('playPauseBtn').textContent='⏸';}
+  else{vid.pause();isPaused=true;document.getElementById('playPauseBtn').textContent='▶️';}
+}
+function seekLive(){
+  const vid=document.getElementById('viewVideo');
+  if(vid.duration)vid.currentTime=vid.duration;
+  vid.play();
+  toast('⏩ Live pe aa gaye');
+}
+function toggleMute(){
+  const vid=document.getElementById('viewVideo');
+  isMuted=!isMuted;
+  vid.muted=isMuted;
+  document.getElementById('muteBtn').textContent=isMuted?'🔇':'🔊';
+  document.getElementById('volIcon').textContent=isMuted?'🔇':'🔊';
+  document.getElementById('volSlider').value=isMuted?0:1;
+}
+function setVolume(val){
+  const vid=document.getElementById('viewVideo');
+  vid.volume=val;
+  vid.muted=val==0;
+  isMuted=val==0;
+  document.getElementById('volIcon').textContent=val==0?'🔇':val<0.5?'🔉':'🔊';
+  document.getElementById('muteBtn').textContent=val==0?'🔇':'🔊';
+}
+function toggleFullscreen(){
+  const el=document.getElementById('viewerScreen');
+  if(!document.fullscreenElement){
+    el.requestFullscreen&&el.requestFullscreen();
+    screen.orientation&&screen.orientation.lock('landscape').catch(()=>{});
+  }else{
+    document.exitFullscreen&&document.exitFullscreen();
+  }
+}
+
+// =========================================
+// AUTO JOIN FROM URL
+// =========================================
+window.onload=()=>{
+  const watchId=new URLSearchParams(location.search).get('watch');
+  if(watchId){
+    document.getElementById('watchInput').value=location.href;
+    setTimeout(()=>connectViewer(watchId),300);
+  }
+};
+
+// Close drawer on outside tap
+document.addEventListener('click',(e)=>{
+  if(drawerOpen&&
+     !document.getElementById('adminDrawer').contains(e.target)&&
+     e.target.id!=='panelBtn'&&
+     !document.getElementById('panelBtn').contains(e.target)){
+    toggleDrawer();
+  }
+});
+</script>
+</body>
+</html>
