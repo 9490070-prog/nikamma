@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>LiveCam Pro - Fixed ID + Logo Move</title>
+<title>LiveCam Pro - Complete Working</title>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <style>
 :root {
@@ -19,11 +19,9 @@
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body{width:100%;height:100%;overflow:hidden;background:#000;color:var(--text);font-family:'DM Sans',sans-serif}
 
-/* ===== SCREENS ===== */
 .screen{display:none;position:fixed;inset:0;z-index:1}
 .screen.active{display:flex;flex-direction:column;align-items:center;justify-content:center}
 
-/* ===== HOME ===== */
 #homeScreen{
   background:radial-gradient(ellipse at 30% 20%,#1a0000 0%,#0a0a0a 60%);
   padding:32px 20px;gap:0;overflow-y:auto;justify-content:flex-start;padding-top:60px;
@@ -41,26 +39,20 @@ html,body{width:100%;height:100%;overflow:hidden;background:#000;color:var(--tex
 .inp{flex:1;padding:13px 14px;background:var(--surface2);border:1px solid var(--border);border-radius:10px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:0.88rem;outline:none}
 .inp:focus{border-color:rgba(255,45,45,0.5)}
 .join-btn{padding:13px 18px;background:var(--red);border:none;border-radius:10px;color:#fff;font-weight:700;cursor:pointer;font-size:0.88rem;white-space:nowrap}
-
-/* NEW: Custom ID input row */
 .custom-id-row{display:flex;gap:8px;margin-bottom:12px}
 .custom-id-inp{flex:2;padding:13px 14px;background:var(--surface2);border:1px solid var(--border);border-radius:10px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:0.88rem;outline:none;text-transform:lowercase}
 .set-id-btn{padding:13px 16px;background:var(--surface2);border:1px solid var(--red);border-radius:10px;color:var(--red);font-weight:700;cursor:pointer;font-size:0.8rem}
 .set-id-btn:active{background:var(--red);color:#fff}
 .id-note{font-size:0.65rem;color:var(--muted);text-align:center;margin-bottom:8px}
 
-/* ===== STREAM SCREEN (ADMIN) ===== */
 #streamScreen{background:#000;justify-content:flex-start}
 #mainVideo{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
-
-/* Overlays on video */
 #adminOverlayContainer{position:absolute;inset:0;pointer-events:none;z-index:10}
 
-/* Logo image overlay - UPDATED with move support */
 #logoOverlay{
   position:absolute;top:80px;left:16px;
-  width: 90px;
-  max-width:120px;max-height:80px;
+  width: 90px; height: auto;
+  max-width: 120px;
   object-fit:contain;display:none;
   filter:drop-shadow(0 2px 8px rgba(0,0,0,0.8));
   border-radius:8px;
@@ -69,21 +61,29 @@ html,body{width:100%;height:100%;overflow:hidden;background:#000;color:var(--tex
   z-index: 20;
 }
 
-/* Text overlay */
+/* SIMPLE TEXT OVERLAY - NO BORDER */
 #textOverlay{
-  position:absolute;bottom:160px;left:0;right:0;
-  text-align:center;padding:0 20px;display:none;
-  pointer-events:none;
+  position:absolute;bottom:160px;left:50%;
+  transform:translateX(-50%);
+  text-align:center;
+  padding:0 20px;
+  display:none;
+  pointer-events: auto;
+  cursor: move;
+  z-index: 15;
+  white-space: nowrap;
 }
-.text-bubble{
-  display:inline-block;background:rgba(0,0,0,0.72);backdrop-filter:blur(10px);
-  border:1px solid rgba(255,255,255,0.1);border-radius:30px;
-  padding:10px 22px;font-size:1rem;font-weight:500;color:#fff;
-  max-width:320px;animation:fadeUp 0.3s ease;
+.simple-text{
+  display:inline-block;
+  padding:10px 20px;
+  font-size:1.2rem;
+  font-weight:600;
+  border: none !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
 }
-@keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
 
-/* Ticker text */
 #tickerBar{
   position:absolute;bottom:110px;left:0;right:0;
   background:rgba(220,0,0,0.85);padding:8px 0;
@@ -96,19 +96,17 @@ html,body{width:100%;height:100%;overflow:hidden;background:#000;color:var(--tex
 }
 @keyframes ticker{from{transform:translateX(0)}to{transform:translateX(-100%)}}
 
-/* Admin Top Bar */
 #adminTop{
   position:absolute;top:0;left:0;right:0;z-index:20;
   display:flex;align-items:center;justify-content:space-between;
   padding:12px 16px;
   background:linear-gradient(to bottom,rgba(0,0,0,0.8) 0%,transparent 100%);
 }
-.live-pill{display:flex;align-items:center;gap:7px;background:var(--red);padding:5px 13px;border-radius:20px;font-size:0.75rem;font-weight:700;letter-spacing:1px}
+.live-pill{display:flex;align-items:center;gap:7px;background:var(--red);padding:5px 13px;border-radius:20px;font-size:0.75rem;font-weight:700}
 .pulse{width:8px;height:8px;border-radius:50%;background:#fff;animation:p 1.2s ease-in-out infinite}
 @keyframes p{0%,100%{opacity:1;transform:scale(1)}50%{opacity:0.3;transform:scale(0.7)}}
 .stat-pill{background:rgba(0,0,0,0.6);border:1px solid rgba(255,255,255,0.12);padding:5px 12px;border-radius:20px;font-size:0.78rem;display:flex;align-items:center;gap:5px}
 
-/* Admin Bottom Controls */
 #adminBottom{
   position:absolute;bottom:0;left:0;right:0;z-index:20;
   padding:12px 16px 28px;
@@ -119,23 +117,19 @@ html,body{width:100%;height:100%;overflow:hidden;background:#000;color:var(--tex
   width:50px;height:50px;border-radius:50%;border:none;cursor:pointer;
   display:flex;align-items:center;justify-content:center;font-size:1.25rem;
   background:rgba(255,255,255,0.13);backdrop-filter:blur(6px);transition:all 0.15s;
-  flex-shrink:0;
 }
-.c-btn:active{transform:scale(0.88);background:rgba(255,255,255,0.22)}
+.c-btn:active{transform:scale(0.88)}
 .c-btn.on{background:var(--red)}
 .stop-c{
   width:66px;height:66px;border-radius:50%;border:3px solid rgba(255,255,255,0.25);
   background:var(--red);cursor:pointer;display:flex;align-items:center;justify-content:center;
-  font-size:1.5rem;flex-shrink:0;
+  font-size:1.5rem;
 }
-.stop-c:active{transform:scale(0.92);background:var(--red-dark)}
 .zoom-row{display:flex;align-items:center;gap:10px;padding:0 4px}
-.zoom-lbl{font-size:0.7rem;color:var(--muted);min-width:26px;text-align:center}
-input[type=range]{flex:1;height:3px;-webkit-appearance:none;appearance:none;background:rgba(255,255,255,0.18);border-radius:2px;outline:none}
-input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:20px;height:20px;border-radius:50%;background:#fff;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,0.5)}
-.zoom-v{font-size:0.75rem;color:#fff;font-weight:600;min-width:34px}
+.zoom-lbl{font-size:0.7rem;color:var(--muted)}
+input[type=range]{flex:1;height:3px;-webkit-appearance:none;background:rgba(255,255,255,0.18);border-radius:2px}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:20px;height:20px;border-radius:50%;background:#fff;cursor:pointer}
 
-/* ===== ADMIN PANEL (DRAWER) ===== */
 #adminDrawer{
   position:absolute;bottom:0;left:0;right:0;z-index:30;
   background:var(--surface);border-radius:20px 20px 0 0;
@@ -146,31 +140,29 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:20px;heigh
 }
 #adminDrawer.open{transform:translateY(0)}
 .drawer-handle{width:36px;height:4px;background:var(--border);border-radius:2px;margin:0 auto 16px}
-.section-title{font-size:0.65rem;text-transform:uppercase;letter-spacing:2px;color:var(--muted);margin-bottom:10px;margin-top:14px}
+.section-title{font-size:0.65rem;text-transform:uppercase;letter-spacing:2px;color:var(--red);margin-bottom:10px;margin-top:14px;font-weight:bold}
 
-/* NEW: Logo move controls */
-.logo-move-panel {
+.control-group {
   background: var(--surface2);
   border-radius: 12px;
   padding: 12px;
   margin-top: 12px;
   border: 1px solid var(--border);
 }
-.move-label {
+.label {
   font-size: 0.7rem;
-  color: var(--red);
+  color: var(--muted);
   margin-bottom: 8px;
   letter-spacing: 1px;
-  font-weight: bold;
 }
-.slider-row {
+.row {
   display: flex;
   gap: 10px;
   align-items: center;
-  margin-bottom: 10px;
+  margin-bottom: 8px;
   flex-wrap: wrap;
 }
-.move-input {
+.input-number {
   background: #2a2a2a;
   border: 1px solid var(--border);
   padding: 6px 10px;
@@ -180,7 +172,15 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:20px;heigh
   font-size: 0.8rem;
   text-align: center;
 }
-.apply-move-btn {
+.color-picker {
+  width: 45px;
+  height: 35px;
+  border: 2px solid var(--border);
+  border-radius: 8px;
+  cursor: pointer;
+  background: transparent;
+}
+.btn-sm {
   background: var(--red);
   border: none;
   border-radius: 8px;
@@ -190,74 +190,92 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:20px;heigh
   font-size: 0.7rem;
   cursor: pointer;
 }
-.url-input-row {
+.text-input-row {
   display: flex;
   gap: 8px;
-  margin-top: 8px;
+  margin-top: 5px;
+  margin-bottom: 10px;
 }
-.url-inp {
+.text-inp {
   flex: 1;
-  padding: 10px 12px;
+  padding: 12px 14px;
   background: var(--surface2);
   border: 1px solid var(--border);
   border-radius: 10px;
   color: var(--text);
-  font-size: 0.8rem;
+  font-size: 0.9rem;
   outline: none;
 }
-
-.msg-row{display:flex;gap:8px;margin-bottom:10px}
-.m-inp{flex:1;padding:12px 14px;background:var(--surface2);border:1px solid var(--border);border-radius:10px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:0.88rem;outline:none}
-.m-inp:focus{border-color:rgba(255,45,45,0.4)}
-.send-b{padding:12px 16px;background:var(--red);border:none;border-radius:10px;color:#fff;font-weight:700;cursor:pointer;font-size:0.88rem;white-space:nowrap}
-.quick-row{display:flex;flex-wrap:wrap;gap:7px;margin-bottom:4px}
-.q-tag{padding:7px 13px;background:var(--surface2);border:1px solid var(--border);border-radius:20px;font-size:0.78rem;cursor:pointer;color:var(--text)}
-.q-tag:active{background:rgba(255,45,45,0.15);border-color:var(--red)}
-
-/* Image upload */
+.text-inp:focus {
+  border-color: var(--red);
+}
+.send-btn {
+  padding: 12px 20px;
+  background: var(--red);
+  border: none;
+  border-radius: 10px;
+  color: #fff;
+  font-weight: 700;
+  cursor: pointer;
+}
+.quick-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 8px;
+}
+.quick-btn {
+  padding: 5px 12px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  font-size: 0.7rem;
+  cursor: pointer;
+  color: var(--text);
+}
+.quick-btn:active {
+  background: rgba(255,45,45,0.2);
+}
 .img-upload-area{
-  border:1px dashed rgba(255,255,255,0.2);border-radius:12px;
-  padding:16px;text-align:center;cursor:pointer;margin-bottom:8px;
+  border:1px dashed rgba(255,255,255,0.2);
+  border-radius:12px;
+  padding:12px;
+  text-align:center;
+  cursor:pointer;
+  margin-bottom:8px;
 }
-.img-upload-area:active{background:rgba(255,255,255,0.04)}
-.img-preview{max-width:100%;max-height:100px;border-radius:8px;margin-top:8px;display:none}
-
-/* Text style options */
-.style-row{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px}
-.style-opt{
-  padding:6px 12px;border-radius:8px;background:var(--surface2);border:1px solid var(--border);
-  font-size:0.78rem;cursor:pointer;color:var(--text);
-}
-.style-opt.sel{background:var(--red);border-color:var(--red);color:#fff}
-
-/* Share row */
+.img-preview{max-width:100%;max-height:80px;border-radius:8px;margin-top:8px;display:none}
 .share-row{display:flex;gap:8px;margin-top:6px}
-.s-btn{flex:1;padding:13px 8px;background:var(--surface2);border:1px solid var(--border);border-radius:10px;color:var(--text);font-size:0.8rem;font-weight:500;cursor:pointer;text-align:center}
-.s-btn:active{background:#2a2a2a}
+.s-btn{flex:1;padding:10px 8px;background:var(--surface2);border:1px solid var(--border);border-radius:10px;color:var(--text);font-size:0.75rem;cursor:pointer;text-align:center}
 
-/* ===== VIEWER SCREEN ===== */
 #viewerScreen{background:#000;justify-content:flex-start}
 #viewVideo{position:absolute;inset:0;width:100%;height:100%;object-fit:contain}
-
-/* Viewer overlays */
 #viewerLogoOverlay{
   position:absolute;top:80px;left:16px;
-  width: 90px;
-  max-width:120px;max-height:80px;object-fit:contain;
-  display:none;filter:drop-shadow(0 2px 8px rgba(0,0,0,0.8));border-radius:8px;
-  z-index:10;pointer-events:none;
+  width: 90px; max-width:120px;
+  object-fit:contain;display:none;filter:drop-shadow(0 2px 8px rgba(0,0,0,0.8));
+  border-radius:8px;z-index:10;pointer-events:none;
 }
 #viewerTextOverlay{
-  position:absolute;bottom:100px;left:0;right:0;text-align:center;
-  padding:0 20px;display:none;z-index:10;pointer-events:none;
+  position:absolute;bottom:100px;left:50%;
+  transform:translateX(-50%);
+  text-align:center;
+  padding:0 20px;
+  display:none;
+  z-index:10;
+  pointer-events:none;
+  white-space: nowrap;
 }
-#viewerTickerBar{
-  position:absolute;bottom:60px;left:0;right:0;
-  background:rgba(220,0,0,0.85);padding:8px 0;
-  overflow:hidden;display:none;z-index:10;
+#viewerTextOverlay .simple-text{
+  display:inline-block;
+  padding:10px 20px;
+  font-size:1.2rem;
+  font-weight:600;
+  border: none !important;
+  border-radius: 0 !important;
+  background: transparent !important;
 }
 
-/* ExoPlayer controls */
 #playerControls{
   position:absolute;inset:0;z-index:15;
   background:rgba(0,0,0,0);
@@ -266,70 +284,30 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:20px;heigh
   opacity:0;transition:opacity 0.3s;
   pointer-events:none;
 }
-#playerControls.visible{opacity:1;pointer-events:all}
-#playerControls.visible{background:rgba(0,0,0,0.3)}
-.player-top{
-  display:flex;align-items:center;justify-content:space-between;
-  padding:14px 16px;
-  background:linear-gradient(to bottom,rgba(0,0,0,0.7) 0%,transparent 100%);
-}
-.p-live{display:flex;align-items:center;gap:7px;background:var(--red);padding:5px 13px;border-radius:20px;font-size:0.75rem;font-weight:700;letter-spacing:1px}
+#playerControls.visible{opacity:1;pointer-events:all;background:rgba(0,0,0,0.3)}
+.player-top{display:flex;align-items:center;justify-content:space-between;padding:14px 16px;background:linear-gradient(to bottom,rgba(0,0,0,0.7) 0%,transparent 100%)}
+.p-live{display:flex;align-items:center;gap:7px;background:var(--red);padding:5px 13px;border-radius:20px;font-size:0.75rem}
 .p-title{font-size:0.85rem;font-weight:600;color:#fff;flex:1;text-align:center}
-.p-exit{background:rgba(0,0,0,0.5);border:1px solid rgba(255,255,255,0.15);color:#fff;padding:6px 14px;border-radius:20px;cursor:pointer;font-size:0.78rem;border:none}
+.p-exit{background:rgba(0,0,0,0.5);border:1px solid rgba(255,255,255,0.15);color:#fff;padding:6px 14px;border-radius:20px;cursor:pointer}
 .player-center{display:flex;align-items:center;justify-content:center;gap:36px}
-.p-icon-btn{
-  width:56px;height:56px;border-radius:50%;
-  background:rgba(255,255,255,0.15);backdrop-filter:blur(6px);
-  border:none;color:#fff;font-size:1.4rem;cursor:pointer;
-  display:flex;align-items:center;justify-content:center;
-}
-.p-icon-btn.big{width:72px;height:72px;font-size:1.8rem;background:rgba(255,255,255,0.2)}
-.p-icon-btn:active{transform:scale(0.9)}
-.player-bottom{
-  padding:12px 16px 28px;
-  background:linear-gradient(to top,rgba(0,0,0,0.8) 0%,transparent 100%);
-}
-.p-bottom-row{display:flex;align-items:center;justify-content:space-between;margin-top:10px}
-.p-stat{font-size:0.78rem;color:rgba(255,255,255,0.8);display:flex;align-items:center;gap:5px}
-.p-vol-row{display:flex;align-items:center;gap:8px}
-.vol-icon{font-size:1rem;cursor:pointer}
-.vol-slider{width:80px;height:3px;-webkit-appearance:none;appearance:none;background:rgba(255,255,255,0.3);border-radius:2px;outline:none}
-.vol-slider::-webkit-slider-thumb{-webkit-appearance:none;width:14px;height:14px;border-radius:50%;background:#fff;cursor:pointer}
-.fullscreen-btn{background:none;border:none;color:#fff;font-size:1.1rem;cursor:pointer}
-.live-progress{height:3px;background:rgba(255,255,255,0.2);border-radius:2px;position:relative;margin-bottom:8px}
-.live-bar-fill{height:100%;background:var(--red);border-radius:2px;width:100%;position:relative}
-.live-bar-fill::after{content:'';position:absolute;right:-5px;top:-3px;width:10px;height:10px;border-radius:50%;background:var(--red)}
-
-/* ===== LOADING ===== */
-#loadingOverlay{
-  position:fixed;inset:0;background:rgba(0,0,0,0.9);
-  display:none;flex-direction:column;align-items:center;justify-content:center;
-  z-index:200;gap:16px;
-}
+.p-icon-btn{width:56px;height:56px;border-radius:50%;background:rgba(255,255,255,0.15);backdrop-filter:blur(6px);border:none;color:#fff;font-size:1.4rem;cursor:pointer}
+.player-bottom{padding:12px 16px 28px;background:linear-gradient(to top,rgba(0,0,0,0.8) 0%,transparent 100%)}
+.live-progress{height:3px;background:rgba(255,255,255,0.2);border-radius:2px;margin-bottom:8px}
+.live-bar-fill{height:100%;background:var(--red);border-radius:2px;width:100%}
+#loadingOverlay{position:fixed;inset:0;background:rgba(0,0,0,0.9);display:none;flex-direction:column;align-items:center;justify-content:center;z-index:200;gap:16px}
 .spinner{width:44px;height:44px;border:3px solid rgba(255,255,255,0.1);border-top-color:var(--red);border-radius:50%;animation:spin 0.8s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
-
-/* ===== TOAST ===== */
-#toast{
-  position:fixed;top:70px;left:50%;transform:translateX(-50%) translateY(-20px);
-  background:rgba(20,20,20,0.95);border:1px solid var(--border);
-  padding:10px 20px;border-radius:20px;font-size:0.83rem;
-  z-index:999;opacity:0;transition:all 0.3s;pointer-events:none;
-  backdrop-filter:blur(10px);white-space:nowrap;max-width:90vw;text-align:center;
-}
+#toast{position:fixed;top:70px;left:50%;transform:translateX(-50%) translateY(-20px);background:rgba(20,20,20,0.95);border:1px solid var(--border);padding:10px 20px;border-radius:20px;font-size:0.83rem;z-index:999;opacity:0;transition:opacity 0.3s;pointer-events:none;white-space:nowrap}
 #toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
 </style>
 </head>
 <body>
 
-<!-- ===== HOME ===== -->
 <div id="homeScreen" class="screen active">
   <div class="logo">LIVE<span>CAM</span> <span style="font-size:1.2rem;color:var(--muted)">PRO</span></div>
   <div class="tagline">Professional Live Streaming</div>
-
   <div class="card">
     <div class="card-label">🔴 Admin — Stream Shuru Karo</div>
-    <!-- NEW: Custom ID input -->
     <div class="custom-id-row">
       <input type="text" id="customPeerId" class="custom-id-inp" placeholder="Apna ID likho (jaise: ab12345)" value="ab12345" maxlength="20">
       <button class="set-id-btn" onclick="setCustomId()">Set ID</button>
@@ -338,7 +316,6 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:20px;heigh
     <button class="big-btn red" onclick="startStream('back')">📸 Back Camera Se Live Ho</button>
     <button class="big-btn dark" onclick="startStream('front')">🤳 Front Camera Se Live Ho</button>
   </div>
-
   <div class="card">
     <div class="card-label">👁️ Viewer — Stream Dekho</div>
     <div class="input-wrap">
@@ -348,26 +325,19 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:20px;heigh
   </div>
 </div>
 
-<!-- ===== ADMIN STREAM SCREEN ===== -->
 <div id="streamScreen" class="screen">
   <video id="mainVideo" autoplay playsinline muted></video>
-
-  <!-- Overlay container -->
   <div id="adminOverlayContainer">
     <img id="logoOverlay" src="" alt="logo">
-    <div id="textOverlay"><div class="text-bubble" id="textBubble"></div></div>
+    <div id="textOverlay"><div class="simple-text" id="textBubble">Your Text</div></div>
     <div id="tickerBar"><div class="ticker-inner" id="tickerInner"></div></div>
   </div>
-
-  <!-- Admin Top -->
   <div id="adminTop">
     <div class="live-pill"><div class="pulse"></div>LIVE</div>
     <div class="stat-pill">⏱ <span id="timerDisp">00:00</span></div>
     <div class="stat-pill">👁 <span id="viewCount">0</span></div>
     <div class="stat-pill">🆔 <span id="currentId">-</span></div>
   </div>
-
-  <!-- Admin Bottom -->
   <div id="adminBottom">
     <div class="ctrl-row">
       <button class="c-btn" id="flashBtn" onclick="toggleFlash()">💡</button>
@@ -383,187 +353,136 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:20px;heigh
     </div>
   </div>
 
-  <!-- Admin Drawer -->
   <div id="adminDrawer">
     <div class="drawer-handle"></div>
-
-    <!-- Share -->
-    <div class="section-title">🔗 Viewer Link Share Karo</div>
+    <div class="section-title">🔗 SHARE LINK</div>
     <div class="share-row">
       <button class="s-btn" onclick="copyLink()">📋 Copy Link</button>
       <button class="s-btn" onclick="waShare()">📤 WhatsApp</button>
     </div>
 
-    <!-- NEW: Logo Move Controls - Left 0-400px, Top 0-800px -->
-    <div class="logo-move-panel">
-      <div class="move-label">🖼️ LOGO MOVE - Left (0-400px) | Top (0-800px)</div>
-      <div class="slider-row">
-        <span>← Left →</span>
-        <input type="range" id="logoLeftSlider" min="0" max="400" value="16" step="1" oninput="updateLogoLeft(this.value)">
-        <span id="logoLeftVal">16px</span>
-        <span>|</span>
-        <span>Top ↓</span>
-        <input type="range" id="logoTopSlider" min="0" max="800" value="80" step="1" oninput="updateLogoTop(this.value)">
-        <span id="logoTopVal">80px</span>
+    <!-- LOGO CONTROLS with SIZE -->
+    <div class="control-group">
+      <div class="label">🖼️ LOGO - Size (20px-120px) | Position Left(0-400px) Top(0-800px)</div>
+      <div class="row">
+        <span>Size:</span>
+        <input type="range" id="logoSizeSlider" min="20" max="120" value="90" step="1" oninput="updateLogoSize(this.value)">
+        <span id="logoSizeVal">90px</span>
       </div>
-      <div class="slider-row">
-        <span>Left: <input type="number" id="logoLeftNum" class="move-input" value="16" min="0" max="400" onchange="applyLogoPositionNum()"></span>
-        <span>Top: <input type="number" id="logoTopNum" class="move-input" value="80" min="0" max="800" onchange="applyLogoPositionNum()"></span>
-        <button class="apply-move-btn" onclick="applyLogoPositionNum()">Apply</button>
+      <div class="row">
+        <span>Left: <input type="number" id="logoLeftNum" class="input-number" value="16" min="0" max="400" onchange="applyLogoPosition()"></span>
+        <span>Top: <input type="number" id="logoTopNum" class="input-number" value="80" min="0" max="800" onchange="applyLogoPosition()"></span>
+        <button class="btn-sm" onclick="applyLogoPosition()">Apply</button>
       </div>
-      <div class="url-input-row">
-        <input type="text" id="logoUrlInput" class="url-inp" placeholder="Paste image URL (https://...png, .jpg)">
-        <button class="apply-move-btn" onclick="loadLogoFromUrl()">Load URL</button>
+      <div class="row">
+        <input type="text" id="logoUrlInput" class="text-inp" placeholder="Paste image URL" style="flex:1">
+        <button class="btn-sm" onclick="loadLogoFromUrl()">Load URL</button>
+      </div>
+      <div class="img-upload-area" onclick="document.getElementById('imgFileInput').click()">
+        <div>📁 OR Upload Image</div>
+        <img class="img-preview" id="imgPreview" src="">
+      </div>
+      <input type="file" id="imgFileInput" accept="image/*" style="display:none" onchange="uploadLogoFile(this)">
+      <div class="share-row" style="margin-top:8px">
+        <button class="s-btn" onclick="toggleLogo(true)">✅ Show Logo</button>
+        <button class="s-btn" onclick="toggleLogo(false)">✕ Hide Logo</button>
       </div>
     </div>
 
-    <!-- Logo Upload (Original - NOT REMOVED) -->
-    <div class="section-title">🖼️ Logo / Image Screen Pe Lagao</div>
-    <div class="img-upload-area" onclick="document.getElementById('imgFileInput').click()">
-      <div style="font-size:2rem">📁</div>
-      <div style="font-size:0.82rem;color:var(--muted);margin-top:6px">Tap karo — image ya logo upload karo</div>
-      <img class="img-preview" id="imgPreview" src="" alt="">
-    </div>
-    <input type="file" id="imgFileInput" accept="image/*" style="display:none" onchange="uploadLogo(this)">
-    <div class="share-row">
-      <button class="s-btn" onclick="toggleLogo(true)">✅ Logo Show Karo</button>
-      <button class="s-btn" onclick="toggleLogo(false)">✕ Logo Hatao</button>
-    </div>
-
-    <!-- Overlay Text (ORIGINAL - NOT REMOVED) -->
-    <div class="section-title">💬 Screen Pe Text Dikhao</div>
-    <div class="style-row" id="textStyleRow">
-      <span class="style-opt sel" data-style="bubble" onclick="selectStyle(this)">Bubble</span>
-      <span class="style-opt" data-style="ticker" onclick="selectStyle(this)">Ticker</span>
-    </div>
-    <div class="msg-row">
-      <input class="m-inp" id="overlayTextInput" type="text" placeholder="Viewers ko text dikhao..." maxlength="80">
-      <button class="send-b" onclick="sendText()">SHOW</button>
-    </div>
-    <div class="quick-row">
-      <span class="q-tag" onclick="quickText('🙏 Shukriya dekh rahe ho!')">🙏 Shukriya</span>
-      <span class="q-tag" onclick="quickText('👋 Welcome to my Live!')">👋 Welcome</span>
-      <span class="q-tag" onclick="quickText('🔥 Live chal rahi hai!')">🔥 Live</span>
-      <span class="q-tag" onclick="quickText('📢 Share karo dosto ke saath!')">📢 Share Karo</span>
-      <span class="q-tag" onclick="quickText('❤️ Love you all!')">❤️ Love</span>
-      <span class="q-tag" onclick="hideAllOverlays()">✕ Text Hatao</span>
+    <!-- SIMPLE TEXT BOX - NO BORDER -->
+    <div class="control-group">
+      <div class="label">💬 SIMPLE TEXT - Type message, choose color & size (NO BORDER)</div>
+      <div class="text-input-row">
+        <input class="text-inp" id="overlayTextInput" type="text" placeholder="✏️ Screen pe dikhane wala text likho..." maxlength="100">
+        <button class="send-btn" onclick="sendText()">SHOW TEXT</button>
+      </div>
+      <div class="row">
+        <span>Text Color: <input type="color" id="textColorPicker" class="color-picker" value="#ffffff" onchange="updateTextColor()"></span>
+        <span>Font Size: <input type="range" id="textFontSlider" min="12" max="60" value="24" step="1" onchange="updateTextFontSize(this.value)"><span id="textFontVal">24px</span></span>
+      </div>
+      <div class="row">
+        <span>Left (0-400px): <input type="number" id="textLeftNum" class="input-number" value="" placeholder="auto"></span>
+        <span>Top (0-800px): <input type="number" id="textTopNum" class="input-number" value="" placeholder="auto"></span>
+        <button class="btn-sm" onclick="applyTextPosition()">Set Position</button>
+        <button class="btn-sm" onclick="resetTextPosition()">Reset Center</button>
+      </div>
+      <div class="quick-actions">
+        <span class="quick-btn" onclick="quickText('🙏 Shukriya dekh rahe ho!')">🙏 Shukriya</span>
+        <span class="quick-btn" onclick="quickText('👋 Welcome to Live!')">👋 Welcome</span>
+        <span class="quick-btn" onclick="quickText('🔥 Live Streaming')">🔥 Live</span>
+        <span class="quick-btn" onclick="quickText('❤️ Love You All')">❤️ Love</span>
+        <span class="quick-btn" onclick="hideText()">✕ Hide Text</span>
+      </div>
     </div>
 
-    <!-- Close -->
-    <div style="margin-top:16px">
-      <button class="big-btn dark" onclick="toggleDrawer()">✕ Panel Band Karo</button>
+    <!-- TICKER STYLE (Original) -->
+    <div class="control-group">
+      <div class="label">📜 TICKER (Scrolling Text)</div>
+      <div class="style-row">
+        <span class="style-opt sel" data-style="bubble" onclick="selectStyle(this)">Simple Text</span>
+        <span class="style-opt" data-style="ticker" onclick="selectStyle(this)">Ticker (Scroll)</span>
+      </div>
     </div>
+
+    <div style="margin-top:16px"><button class="big-btn dark" onclick="toggleDrawer()">✕ Close Panel</button></div>
   </div>
 </div>
 
-<!-- ===== VIEWER SCREEN ===== -->
 <div id="viewerScreen" class="screen">
   <video id="viewVideo" autoplay playsinline></video>
-  <img id="viewerLogoOverlay" src="" alt="">
-  <div id="viewerTextOverlay"><div class="text-bubble" id="viewerTextBubble"></div></div>
+  <img id="viewerLogoOverlay" src="">
+  <div id="viewerTextOverlay"><div class="simple-text" id="viewerTextBubble"></div></div>
   <div id="viewerTickerBar"><div class="ticker-inner" id="viewerTickerInner"></div></div>
   <div id="playerControls" onclick="togglePlayerUI(event)">
-    <div class="player-top">
-      <div class="p-live"><div class="pulse"></div>LIVE</div>
-      <div class="p-title" id="playerTitle">Live Stream</div>
-      <button class="p-exit" onclick="leaveStream()">✕ Leave</button>
-    </div>
-    <div class="player-center">
-      <button class="p-icon-btn" onclick="seekLive()" title="Go Live">⏮</button>
-      <button class="p-icon-btn big" id="playPauseBtn" onclick="togglePlayPause()">⏸</button>
-      <button class="p-icon-btn" onclick="toggleMute()" id="muteBtn">🔊</button>
-    </div>
-    <div class="player-bottom">
-      <div class="live-progress"><div class="live-bar-fill"></div></div>
-      <div class="p-bottom-row">
-        <div class="p-stat"><div class="pulse" style="background:var(--red)"></div> LIVE</div>
-        <div class="p-vol-row">
-          <span class="vol-icon" onclick="toggleMute()" id="volIcon">🔊</span>
-          <input type="range" class="vol-slider" id="volSlider" min="0" max="1" step="0.05" value="1" oninput="setVolume(this.value)">
-        </div>
-        <button class="fullscreen-btn" onclick="toggleFullscreen()">⛶</button>
-      </div>
-    </div>
+    <div class="player-top"><div class="p-live"><div class="pulse"></div>LIVE</div><div class="p-title">Live Stream</div><button class="p-exit" onclick="leaveStream()">✕ Leave</button></div>
+    <div class="player-center"><button class="p-icon-btn" onclick="seekLive()">⏮</button><button class="p-icon-btn big" id="playPauseBtn" onclick="togglePlayPause()">⏸</button><button class="p-icon-btn" onclick="toggleMute()" id="muteBtn">🔊</button></div>
+    <div class="player-bottom"><div class="live-progress"><div class="live-bar-fill"></div></div><div class="p-bottom-row"><div class="p-stat"><div class="pulse" style="background:var(--red)"></div> LIVE</div><div class="p-vol-row"><span class="vol-icon" onclick="toggleMute()">🔊</span><input type="range" class="vol-slider" id="volSlider" min="0" max="1" step="0.05" value="1" oninput="setVolume(this.value)"></div><button class="fullscreen-btn" onclick="toggleFullscreen()">⛶</button></div></div>
   </div>
 </div>
 
-<!-- Loading -->
-<div id="loadingOverlay">
-  <div class="spinner"></div>
-  <div style="color:var(--muted);font-size:0.85rem" id="loadingText">Connecting...</div>
-</div>
-
-<!-- Toast -->
+<div id="loadingOverlay"><div class="spinner"></div><div id="loadingText">Connecting...</div></div>
 <div id="toast"></div>
 
 <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
 <script>
-// =========================================
-// STATE
-// =========================================
-let peer, localStream, myPeerId, streamLink='';
-let activeCalls=[], dataConns=[];
-let flashOn=false, currentFacing='environment';
-let videoTrack=null, timerInt, startTime;
-let drawerOpen=false, playerVisible=false, playerTimer;
-let currentTextStyle='bubble';
-let logoDataUrl='';
-let isPaused=false, isMuted=false;
-let customPeerId = 'ab12345'; // Default custom ID
+// FULL WORKING - FIXED: Viewer overlays show properly, Logo size works, Simple text no border
+let peer, localStream, myPeerId, streamLink = '';
+let activeCalls = [], dataConns = [];
+let flashOn = false, currentFacing = 'environment';
+let videoTrack = null, timerInt, startTime;
+let drawerOpen = false, currentTextStyle = 'bubble';
+let logoDataUrl = '';
+let customPeerId = 'ab12345';
 
-// =========================================
-// CUSTOM ID FUNCTIONS (NEW)
-// =========================================
+// ========== CUSTOM ID ==========
 function setCustomId() {
-  let newId = document.getElementById('customPeerId').value.trim().toLowerCase();
-  if(!newId) { toast('Please enter an ID!'); return; }
-  newId = newId.replace(/[^a-z0-9]/g, '');
-  if(newId.length < 3) { toast('ID must be at least 3 characters!'); return; }
+  let newId = document.getElementById('customPeerId').value.trim().toLowerCase().replace(/[^a-z0-9]/g, '');
+  if(!newId || newId.length < 3) { toast('ID must be 3+ characters (a-z,0-9)'); return; }
   customPeerId = newId;
   document.getElementById('customPeerId').value = customPeerId;
-  toast(`✅ Custom ID set to: ${customPeerId}`);
   localStorage.setItem('liveCamPeerId', customPeerId);
+  toast(`✅ Custom ID set to: ${customPeerId}`);
 }
-
-// Load saved ID on startup
 const savedId = localStorage.getItem('liveCamPeerId');
-if(savedId) {
-  customPeerId = savedId;
-  document.getElementById('customPeerId').value = customPeerId;
+if(savedId) { customPeerId = savedId; document.getElementById('customPeerId').value = customPeerId; }
+
+// ========== LOGO CONTROLS ==========
+function updateLogoSize(val) {
+  document.getElementById('logoSizeVal').innerText = val + 'px';
+  document.getElementById('logoOverlay').style.width = val + 'px';
+  if(document.getElementById('logoOverlay').style.display === 'block') {
+    broadcastOverlay({type: 'logo_update', show: true, src: logoDataUrl, left: document.getElementById('logoOverlay').style.left, top: document.getElementById('logoOverlay').style.top, width: val + 'px'});
+  }
 }
 
-// =========================================
-// LOGO MOVE FUNCTIONS (NEW - Left 0-400px, Top 0-800px)
-// =========================================
-function updateLogoLeft(val) {
-  let left = parseInt(val);
-  document.getElementById('logoLeftVal').innerText = left + 'px';
-  document.getElementById('logoLeftNum').value = left;
-  document.getElementById('logoOverlay').style.left = left + 'px';
-  // Broadcast to viewers
-  broadcastOverlay({type: 'logo_move', left: left + 'px', top: document.getElementById('logoOverlay').style.top});
-}
-
-function updateLogoTop(val) {
-  let top = parseInt(val);
-  document.getElementById('logoTopVal').innerText = top + 'px';
-  document.getElementById('logoTopNum').value = top;
-  document.getElementById('logoOverlay').style.top = top + 'px';
-  broadcastOverlay({type: 'logo_move', left: document.getElementById('logoOverlay').style.left, top: top + 'px'});
-}
-
-function applyLogoPositionNum() {
-  let left = parseInt(document.getElementById('logoLeftNum').value) || 16;
-  let top = parseInt(document.getElementById('logoTopNum').value) || 80;
-  left = Math.min(400, Math.max(0, left));
-  top = Math.min(800, Math.max(0, top));
-  document.getElementById('logoLeftSlider').value = left;
-  document.getElementById('logoTopSlider').value = top;
-  document.getElementById('logoLeftVal').innerText = left + 'px';
-  document.getElementById('logoTopVal').innerText = top + 'px';
+function applyLogoPosition() {
+  let left = Math.min(400, Math.max(0, parseInt(document.getElementById('logoLeftNum').value) || 16));
+  let top = Math.min(800, Math.max(0, parseInt(document.getElementById('logoTopNum').value) || 80));
   document.getElementById('logoOverlay').style.left = left + 'px';
   document.getElementById('logoOverlay').style.top = top + 'px';
-  broadcastOverlay({type: 'logo_move', left: left + 'px', top: top + 'px'});
+  if(document.getElementById('logoOverlay').style.display === 'block') {
+    broadcastOverlay({type: 'logo_update', show: true, src: logoDataUrl, left: left + 'px', top: top + 'px', width: document.getElementById('logoOverlay').style.width});
+  }
 }
 
 function loadLogoFromUrl() {
@@ -573,417 +492,329 @@ function loadLogoFromUrl() {
   document.getElementById('logoOverlay').src = url;
   document.getElementById('imgPreview').src = url;
   document.getElementById('imgPreview').style.display = 'block';
-  toast('✅ Logo loaded from URL! Click "Logo Show Karo" to display.');
+  toast('✅ Logo loaded! Click "Show Logo" to display.');
 }
 
-// =========================================
-// UTILS
-// =========================================
-function showScreen(id){
-  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
-  document.getElementById(id).classList.add('active');
-}
-function toast(msg,dur=2500){
-  const t=document.getElementById('toast');
-  t.textContent=msg;t.classList.add('show');
-  setTimeout(()=>t.classList.remove('show'),dur);
-}
-function loading(show,text='Connecting...'){
-  document.getElementById('loadingOverlay').style.display=show?'flex':'none';
-  document.getElementById('loadingText').textContent=text;
-}
-function startTimer(){
-  startTime=Date.now();
-  timerInt=setInterval(()=>{
-    const s=Math.floor((Date.now()-startTime)/1000);
-    const m=Math.floor(s/60),sec=s%60;
-    document.getElementById('timerDisp').textContent=
-      String(m).padStart(2,'0')+':'+String(sec).padStart(2,'0');
-  },1000);
+function uploadLogoFile(input) {
+  const file = input.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    logoDataUrl = e.target.result;
+    document.getElementById('imgPreview').src = logoDataUrl;
+    document.getElementById('imgPreview').style.display = 'block';
+    document.getElementById('logoOverlay').src = logoDataUrl;
+    toast('✅ Image uploaded! Click "Show Logo" to display.');
+  };
+  reader.readAsDataURL(file);
 }
 
-// =========================================
-// HOST — START (with FIXED CUSTOM ID)
-// =========================================
-async function startStream(facing){
-  currentFacing=facing==='front'?'user':'environment';
-  loading(true,'Camera shuru ho rahi hai...');
-  try{
-    localStream=await navigator.mediaDevices.getUserMedia({
-      video:{facingMode:currentFacing,width:{ideal:1920},height:{ideal:1080}},
-      audio:true
+function toggleLogo(show) {
+  if(show && !logoDataUrl) { toast('Pehle image URL daalo ya upload karo!'); return; }
+  document.getElementById('logoOverlay').style.display = show ? 'block' : 'none';
+  broadcastOverlay({
+    type: 'logo_update',
+    show: show,
+    src: logoDataUrl,
+    left: document.getElementById('logoOverlay').style.left,
+    top: document.getElementById('logoOverlay').style.top,
+    width: document.getElementById('logoOverlay').style.width
+  });
+  toast(show ? '🖼️ Logo show' : '🖼️ Logo hidden');
+}
+
+// ========== SIMPLE TEXT CONTROLS ==========
+function updateTextFontSize(val) {
+  document.getElementById('textFontVal').innerText = val + 'px';
+  document.getElementById('textBubble').style.fontSize = val + 'px';
+  if(document.getElementById('textOverlay').style.display === 'block') {
+    broadcastTextState();
+  }
+}
+
+function updateTextColor() {
+  const color = document.getElementById('textColorPicker').value;
+  document.getElementById('textBubble').style.color = color;
+  if(document.getElementById('textOverlay').style.display === 'block') {
+    broadcastTextState();
+  }
+}
+
+function applyTextPosition() {
+  let leftVal = document.getElementById('textLeftNum').value;
+  let topVal = document.getElementById('textTopNum').value;
+  const overlay = document.getElementById('textOverlay');
+  if(leftVal && leftVal !== 'auto' && leftVal !== '') {
+    overlay.style.left = Math.min(400, Math.max(0, parseInt(leftVal))) + 'px';
+    overlay.style.transform = 'none';
+  } else {
+    overlay.style.left = '50%';
+    overlay.style.transform = 'translateX(-50%)';
+  }
+  if(topVal && topVal !== '') {
+    overlay.style.top = Math.min(800, Math.max(0, parseInt(topVal))) + 'px';
+  }
+  if(overlay.style.display === 'block') {
+    broadcastTextState();
+  }
+}
+
+function resetTextPosition() {
+  document.getElementById('textOverlay').style.left = '50%';
+  document.getElementById('textOverlay').style.transform = 'translateX(-50%)';
+  document.getElementById('textOverlay').style.top = '';
+  document.getElementById('textLeftNum').value = '';
+  document.getElementById('textTopNum').value = '';
+  if(document.getElementById('textOverlay').style.display === 'block') {
+    broadcastTextState();
+  }
+}
+
+function sendText() {
+  let msg = document.getElementById('overlayTextInput').value.trim();
+  if(!msg) { toast('Text likho!'); return; }
+  document.getElementById('textBubble').textContent = msg;
+  document.getElementById('textOverlay').style.display = 'block';
+  broadcastTextState();
+  document.getElementById('overlayTextInput').value = '';
+  toast('📢 Text show ho raha hai!');
+}
+
+function quickText(msg) {
+  document.getElementById('textBubble').textContent = msg;
+  document.getElementById('textOverlay').style.display = 'block';
+  broadcastTextState();
+}
+
+function hideText() {
+  document.getElementById('textOverlay').style.display = 'none';
+  broadcastOverlay({ type: 'text_hide' });
+  toast('Text hidden');
+}
+
+function selectStyle(el) {
+  document.querySelectorAll('.style-opt').forEach(e => e.classList.remove('sel'));
+  el.classList.add('sel');
+  currentTextStyle = el.dataset.style;
+}
+
+function broadcastTextState() {
+  const txtDiv = document.getElementById('textOverlay');
+  broadcastOverlay({
+    type: 'text_update',
+    show: txtDiv.style.display === 'block',
+    text: document.getElementById('textBubble').textContent,
+    left: txtDiv.style.left,
+    top: txtDiv.style.top,
+    transform: txtDiv.style.transform,
+    fontSize: document.getElementById('textFontSlider').value,
+    color: document.getElementById('textColorPicker').value
+  });
+}
+
+// ========== BROADCAST (FIXED FOR VIEWER) ==========
+function broadcastOverlay(data) {
+  applyOverlayData(data, 'admin');
+  dataConns.forEach(conn => { try { conn.send(data); } catch(e) {} });
+}
+
+function applyOverlayData(data, side) {
+  if(side === 'admin') {
+    if(data.type === 'text') {
+      if(data.style === 'bubble') {
+        document.getElementById('textBubble').textContent = data.msg;
+        document.getElementById('textOverlay').style.display = 'block';
+        setTimeout(() => document.getElementById('textOverlay').style.display = 'none', 5000);
+      } else if(data.style === 'ticker') {
+        document.getElementById('tickerInner').innerHTML = data.msg + ' • ' + data.msg + ' • ' + data.msg;
+        document.getElementById('tickerBar').style.display = 'block';
+        setTimeout(() => document.getElementById('tickerBar').style.display = 'none', 15000);
+      }
+    }
+    else if(data.type === 'logo_update') {
+      document.getElementById('logoOverlay').style.display = data.show ? 'block' : 'none';
+      if(data.show && data.src) document.getElementById('logoOverlay').src = data.src;
+      if(data.left) document.getElementById('logoOverlay').style.left = data.left;
+      if(data.top) document.getElementById('logoOverlay').style.top = data.top;
+      if(data.width) document.getElementById('logoOverlay').style.width = data.width;
+    }
+    else if(data.type === 'text_update') {
+      document.getElementById('textOverlay').style.display = data.show ? 'block' : 'none';
+      if(data.text) document.getElementById('textBubble').textContent = data.text;
+      if(data.left) document.getElementById('textOverlay').style.left = data.left;
+      if(data.top) document.getElementById('textOverlay').style.top = data.top;
+      if(data.transform) document.getElementById('textOverlay').style.transform = data.transform;
+      if(data.fontSize) document.getElementById('textBubble').style.fontSize = data.fontSize + 'px';
+      if(data.color) document.getElementById('textBubble').style.color = data.color;
+    }
+    else if(data.type === 'text_hide') {
+      document.getElementById('textOverlay').style.display = 'none';
+    }
+    else if(data.type === 'hide') {
+      document.getElementById('textOverlay').style.display = 'none';
+      document.getElementById('tickerBar').style.display = 'none';
+    }
+  } else {
+    // VIEWER SIDE - FIXED: Properly shows logo and text
+    if(data.type === 'text') {
+      if(data.style === 'bubble') {
+        document.getElementById('viewerTextBubble').textContent = data.msg;
+        document.getElementById('viewerTextOverlay').style.display = 'block';
+        setTimeout(() => document.getElementById('viewerTextOverlay').style.display = 'none', 5000);
+      } else if(data.style === 'ticker') {
+        document.getElementById('viewerTickerInner').innerHTML = data.msg + ' • ' + data.msg + ' • ' + data.msg;
+        document.getElementById('viewerTickerBar').style.display = 'block';
+        setTimeout(() => document.getElementById('viewerTickerBar').style.display = 'none', 15000);
+      }
+    }
+    else if(data.type === 'logo_update') {
+      const el = document.getElementById('viewerLogoOverlay');
+      el.style.display = data.show ? 'block' : 'none';
+      if(data.show && data.src) el.src = data.src;
+      if(data.left) el.style.left = data.left;
+      if(data.top) el.style.top = data.top;
+      if(data.width) el.style.width = data.width;
+    }
+    else if(data.type === 'text_update') {
+      const t = document.getElementById('viewerTextOverlay');
+      const bubble = document.getElementById('viewerTextBubble');
+      t.style.display = data.show ? 'block' : 'none';
+      if(data.text) bubble.textContent = data.text;
+      if(data.left) t.style.left = data.left;
+      if(data.top) t.style.top = data.top;
+      if(data.transform) t.style.transform = data.transform;
+      if(data.fontSize) bubble.style.fontSize = data.fontSize + 'px';
+      if(data.color) bubble.style.color = data.color;
+    }
+    else if(data.type === 'text_hide') {
+      document.getElementById('viewerTextOverlay').style.display = 'none';
+    }
+    else if(data.type === 'hide') {
+      document.getElementById('viewerTextOverlay').style.display = 'none';
+      document.getElementById('viewerTickerBar').style.display = 'none';
+    }
+  }
+}
+
+// ========== STREAM START (with FIXED ID) ==========
+async function startStream(facing) {
+  currentFacing = facing === 'front' ? 'user' : 'environment';
+  loading(true, 'Camera starting...');
+  try {
+    localStream = await navigator.mediaDevices.getUserMedia({
+      video: { facingMode: currentFacing, width: { ideal: 1920 }, height: { ideal: 1080 } },
+      audio: true
     });
-  }catch(e){
+  } catch(e) {
     loading(false);
-    toast('❌ Camera permission nahi mili!');
+    toast('❌ Camera permission denied!');
     return;
   }
-  videoTrack=localStream.getVideoTracks()[0];
-  document.getElementById('mainVideo').srcObject=localStream;
-  loading(true,'Server se connect ho raha hoon...');
-
-  // USE CUSTOM PEER ID!
-  peer = new Peer(customPeerId, {host:'0.peerjs.com',port:443,secure:true,path:'/'});
+  videoTrack = localStream.getVideoTracks()[0];
+  document.getElementById('mainVideo').srcObject = localStream;
+  loading(true, 'Connecting...');
   
-  peer.on('open',(id)=>{
-    myPeerId=id;
-    streamLink=location.href.split('?')[0]+'?watch='+id;
+  peer = new Peer(customPeerId, { host: '0.peerjs.com', port: 443, secure: true, path: '/' });
+  
+  peer.on('open', (id) => {
+    myPeerId = id;
+    streamLink = location.href.split('?')[0] + '?watch=' + id;
     document.getElementById('currentId').textContent = id;
     loading(false);
     showScreen('streamScreen');
     startTimer();
-    toast(`🔴 Live ho gaye! Permanent ID: ${id}`);
+    toast(`🔴 Live! Permanent ID: ${id}`);
   });
-  peer.on('call',(call)=>{
+  
+  peer.on('call', (call) => {
     call.answer(localStream);
     activeCalls.push(call);
     updateViewers();
-    call.on('close',()=>{activeCalls=activeCalls.filter(c=>c!==call);updateViewers();});
-    call.on('error',()=>{activeCalls=activeCalls.filter(c=>c!==call);updateViewers();});
+    call.on('close', () => { activeCalls = activeCalls.filter(c => c !== call); updateViewers(); });
   });
-  peer.on('connection',(conn)=>{
+  
+  peer.on('connection', (conn) => {
     dataConns.push(conn);
-    conn.on('close',()=>{dataConns=dataConns.filter(c=>c!==conn);});
+    conn.on('close', () => { dataConns = dataConns.filter(c => c !== conn); });
   });
-  peer.on('error',(e)=>{
+  
+  peer.on('error', (e) => {
     loading(false);
-    if(e.type === 'unavailable-id') {
-      toast(`❌ ID "${customPeerId}" already in use! Try different ID.`);
-    } else {
-      toast('Error: '+e.type);
-    }
+    if(e.type === 'unavailable-id') toast(`❌ ID "${customPeerId}" already in use!`);
+    else toast('Error: ' + e.type);
   });
-  peer.on('disconnected',()=>peer.reconnect());
 }
 
-function updateViewers(){
-  document.getElementById('viewCount').textContent=activeCalls.length;
-}
+// ========== OTHER FUNCTIONS ==========
+function showScreen(id) { document.querySelectorAll('.screen').forEach(s => s.classList.remove('active')); document.getElementById(id).classList.add('active'); }
+function toast(msg) { let t = document.getElementById('toast'); t.textContent = msg; t.classList.add('show'); setTimeout(() => t.classList.remove('show'), 2500); }
+function startTimer() { startTime = Date.now(); timerInt = setInterval(() => { let s = Math.floor((Date.now() - startTime) / 1000); let m = Math.floor(s / 60); document.getElementById('timerDisp').textContent = String(m).padStart(2, '0') + ':' + String(s % 60).padStart(2, '0'); }, 1000); }
+function updateViewers() { document.getElementById('viewCount').textContent = activeCalls.length; }
+function loading(show, text) { document.getElementById('loadingOverlay').style.display = show ? 'flex' : 'none'; if(text) document.getElementById('loadingText').textContent = text; }
 
-// =========================================
-// HOST — CONTROLS
-// =========================================
-async function toggleFlash(){
-  if(!videoTrack){toast('Camera track nahi mili');return;}
-  try{
-    flashOn=!flashOn;
-    await videoTrack.applyConstraints({advanced:[{torch:flashOn}]});
-    document.getElementById('flashBtn').classList.toggle('on',flashOn);
-    toast(flashOn?'💡 Flash ON':'💡 Flash OFF');
-  }catch(e){
-    toast('❌ Flash support nahi is device pe');flashOn=false;
-  }
+async function toggleFlash() {
+  if(!videoTrack) return;
+  try { flashOn = !flashOn; await videoTrack.applyConstraints({ advanced: [{ torch: flashOn }] }); toast(flashOn ? '💡 Flash ON' : '💡 Flash OFF'); } catch(e) { toast('Flash not supported'); }
 }
+async function flipCamera() {
+  currentFacing = currentFacing === 'environment' ? 'user' : 'environment';
+  if(localStream) localStream.getTracks().forEach(t => t.stop());
+  try {
+    localStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: currentFacing }, audio: true });
+    videoTrack = localStream.getVideoTracks()[0];
+    document.getElementById('mainVideo').srcObject = localStream;
+    activeCalls.forEach(call => { const sender = call.peerConnection?.getSenders().find(s => s.track?.kind === 'video'); if(sender) sender.replaceTrack(videoTrack); });
+    toast('Camera flipped');
+  } catch(e) { toast('Flip failed'); }
+}
+function applyZoom(val) { document.getElementById('zoomVal').textContent = parseFloat(val).toFixed(1) + 'x'; if(videoTrack) try { videoTrack.applyConstraints({ advanced: [{ zoom: parseFloat(val) }] }); } catch(e) {} }
+function toggleDrawer() { drawerOpen = !drawerOpen; document.getElementById('adminDrawer').classList.toggle('open', drawerOpen); }
+function copyLink() { navigator.clipboard.writeText(streamLink).then(() => toast('Link copied!')); }
+function waShare() { window.open('https://wa.me/?text=' + encodeURIComponent('Live stream: ' + streamLink)); }
+function showShareLink() { copyLink(); }
+function stopStream() { if(timerInt) clearInterval(timerInt); if(localStream) localStream.getTracks().forEach(t => t.stop()); if(peer) peer.destroy(); location.reload(); }
 
-async function flipCamera(){
-  currentFacing=currentFacing==='environment'?'user':'environment';
-  if(localStream)localStream.getTracks().forEach(t=>t.stop());
-  try{
-    localStream=await navigator.mediaDevices.getUserMedia({
-      video:{facingMode:currentFacing,width:{ideal:1920},height:{ideal:1080}},
-      audio:true
-    });
-    videoTrack=localStream.getVideoTracks()[0];
-    document.getElementById('mainVideo').srcObject=localStream;
-    activeCalls.forEach(call=>{
-      const sender=call.peerConnection?.getSenders().find(s=>s.track?.kind==='video');
-      if(sender)sender.replaceTrack(videoTrack);
-    });
-    toast('🔄 Camera flip ho gaya');
-  }catch(e){toast('❌ Camera flip nahi hua');}
-}
-
-function applyZoom(val){
-  document.getElementById('zoomVal').textContent=parseFloat(val).toFixed(1)+'x';
-  if(!videoTrack)return;
-  try{
-    videoTrack.applyConstraints({advanced:[{zoom:parseFloat(val)}]});
-  }catch(e){
-    const v=document.getElementById('mainVideo');
-    v.style.transform=`scale(${val})`;v.style.transformOrigin='center center';
-  }
-}
-
-function toggleDrawer(){
-  drawerOpen=!drawerOpen;
-  document.getElementById('adminDrawer').classList.toggle('open',drawerOpen);
-  document.getElementById('panelBtn').classList.toggle('on',drawerOpen);
-}
-
-// =========================================
-// TEXT OVERLAY (ORIGINAL)
-// =========================================
-function selectStyle(el){
-  document.querySelectorAll('.style-opt').forEach(e=>e.classList.remove('sel'));
-  el.classList.add('sel');
-  currentTextStyle=el.dataset.style;
-}
-function sendText(){
-  const msg=document.getElementById('overlayTextInput').value.trim();
-  if(!msg){toast('Text likho pehle!');return;}
-  broadcastOverlay({type:'text',style:currentTextStyle,msg});
-  document.getElementById('overlayTextInput').value='';
-}
-function quickText(msg){
-  broadcastOverlay({type:'text',style:currentTextStyle,msg});
-}
-function hideAllOverlays(){
-  broadcastOverlay({type:'hide'});
-}
-function showTextLocal(style,msg){
-  document.getElementById('textOverlay').style.display='none';
-  document.getElementById('tickerBar').style.display='none';
-  if(style==='bubble'){
-    document.getElementById('textBubble').textContent=msg;
-    document.getElementById('textOverlay').style.display='block';
-    clearTimeout(document.getElementById('textOverlay')._t);
-    document.getElementById('textOverlay')._t=setTimeout(()=>{
-      document.getElementById('textOverlay').style.display='none';
-    },5000);
-  }else if(style==='ticker'){
-    document.getElementById('tickerInner').textContent=msg+' • '+msg+' • '+msg;
-    document.getElementById('tickerBar').style.display='block';
-    clearTimeout(document.getElementById('tickerBar')._t);
-    document.getElementById('tickerBar')._t=setTimeout(()=>{
-      document.getElementById('tickerBar').style.display='none';
-    },15000);
-  }
-}
-
-// =========================================
-// LOGO OVERLAY (ORIGINAL + MOVE SUPPORT)
-// =========================================
-function uploadLogo(input){
-  const file=input.files[0];
-  if(!file)return;
-  const reader=new FileReader();
-  reader.onload=(e)=>{
-    logoDataUrl=e.target.result;
-    document.getElementById('imgPreview').src=logoDataUrl;
-    document.getElementById('imgPreview').style.display='block';
-    document.getElementById('logoOverlay').src=logoDataUrl;
-    toast('✅ Image load ho gayi! "Logo Show Karo" dabao.');
-  };
-  reader.readAsDataURL(file);
-}
-function toggleLogo(show){
-  if(show&&!logoDataUrl){toast('Pehle image upload karo ya URL daalo!');return;}
-  document.getElementById('logoOverlay').style.display=show?'block':'none';
-  broadcastOverlay({type:'logo',show,src:show?logoDataUrl:'', left: document.getElementById('logoOverlay').style.left, top: document.getElementById('logoOverlay').style.top});
-  toast(show?'🖼️ Logo live pe dikh raha hai':'🖼️ Logo hataya');
-}
-
-// =========================================
-// BROADCAST TO VIEWERS
-// =========================================
-function broadcastOverlay(data){
-  applyOverlayData(data,'admin');
-  dataConns.forEach(conn=>{
-    try{conn.send(data);}catch(e){}
-  });
-  if(data.type==='text')toast('📢 Text broadcast hua!');
-}
-
-function applyOverlayData(data,side){
-  if(side==='admin'){
-    if(data.type==='text') showTextLocal(data.style,data.msg);
-    else if(data.type==='logo'){
-      document.getElementById('logoOverlay').style.display=data.show?'block':'none';
-      if(data.show)document.getElementById('logoOverlay').src=data.src;
-      if(data.left)document.getElementById('logoOverlay').style.left=data.left;
-      if(data.top)document.getElementById('logoOverlay').style.top=data.top;
-    }
-    else if(data.type==='logo_move'){
-      if(data.left)document.getElementById('logoOverlay').style.left=data.left;
-      if(data.top)document.getElementById('logoOverlay').style.top=data.top;
-    }
-    else if(data.type==='hide'){
-      document.getElementById('textOverlay').style.display='none';
-      document.getElementById('tickerBar').style.display='none';
-    }
-  }else{
-    if(data.type==='text'){
-      if(data.style==='bubble'){
-        document.getElementById('viewerTextBubble').textContent=data.msg;
-        document.getElementById('viewerTextOverlay').style.display='block';
-        clearTimeout(document.getElementById('viewerTextOverlay')._t);
-        document.getElementById('viewerTextOverlay')._t=setTimeout(()=>{
-          document.getElementById('viewerTextOverlay').style.display='none';
-        },5000);
-      }else if(data.style==='ticker'){
-        document.getElementById('viewerTickerInner').textContent=data.msg+' • '+data.msg+' • '+data.msg;
-        document.getElementById('viewerTickerBar').style.display='block';
-        clearTimeout(document.getElementById('viewerTickerBar')._t);
-        document.getElementById('viewerTickerBar')._t=setTimeout(()=>{
-          document.getElementById('viewerTickerBar').style.display='none';
-        },15000);
-      }
-    }else if(data.type==='logo'){
-      const el=document.getElementById('viewerLogoOverlay');
-      el.style.display=data.show?'block':'none';
-      if(data.show)el.src=data.src;
-      if(data.left)el.style.left=data.left;
-      if(data.top)el.style.top=data.top;
-    }else if(data.type==='logo_move'){
-      const el=document.getElementById('viewerLogoOverlay');
-      if(data.left)el.style.left=data.left;
-      if(data.top)el.style.top=data.top;
-    }else if(data.type==='hide'){
-      document.getElementById('viewerTextOverlay').style.display='none';
-      document.getElementById('viewerTickerBar').style.display='none';
-    }
-  }
-}
-
-// =========================================
-// SHARE
-// =========================================
-function copyLink(){
-  navigator.clipboard.writeText(streamLink)
-    .then(()=>toast('✅ Link copy ho gaya!'))
-    .catch(()=>prompt('Copy karo:',streamLink));
-}
-function waShare(){
-  const msg='📺 Meri live stream dekho!\n'+streamLink;
-  window.open('https://wa.me/?text='+encodeURIComponent(msg));
-}
-function showShareLink(){
-  copyLink();
-  toast('🔗 Link copy ho gaya — share karo!',3000);
-}
-
-function stopStream(){
-  if(timerInt)clearInterval(timerInt);
-  if(localStream)localStream.getTracks().forEach(t=>t.stop());
-  if(peer)peer.destroy();
-  location.reload();
-}
-
-// =========================================
-// VIEWER — JOIN
-// =========================================
-function joinStream(){
-  let input=document.getElementById('watchInput').value.trim();
-  if(!input){toast('Link ya ID daalo!');return;}
-  if(input.includes('watch='))input=input.split('watch=')[1].split('&')[0];
+function joinStream() {
+  let input = document.getElementById('watchInput').value.trim();
+  if(!input) { toast('Enter link or ID!'); return; }
+  if(input.includes('watch=')) input = input.split('watch=')[1].split('&')[0];
   connectViewer(input);
 }
-function connectViewer(hostId){
-  loading(true,'Stream se connect ho raha hoon...');
-  peer=new Peer({host:'0.peerjs.com',port:443,secure:true,path:'/'});
-
-  peer.on('open',()=>{
-    const conn=peer.connect(hostId);
-    conn.on('open',()=>{});
-    conn.on('data',(data)=>applyOverlayData(data,'viewer'));
-
-    const canvas=Object.assign(document.createElement('canvas'),{width:1,height:1});
-    const call=peer.call(hostId,canvas.captureStream(1));
-    if(!call){loading(false);toast('❌ Host nahi mila.');return;}
-
-    call.on('stream',(remoteStream)=>{
-      const vid=document.getElementById('viewVideo');
-      vid.srcObject=remoteStream;
-      vid.muted=false;
-      vid.play().catch(()=>{vid.muted=true;vid.play();});
+function connectViewer(hostId) {
+  loading(true, 'Connecting...');
+  peer = new Peer({ host: '0.peerjs.com', port: 443, secure: true, path: '/' });
+  peer.on('open', () => {
+    const conn = peer.connect(hostId);
+    conn.on('data', (data) => applyOverlayData(data, 'viewer'));
+    const fakeStream = document.createElement('canvas').captureStream(1);
+    const call = peer.call(hostId, fakeStream);
+    call.on('stream', (stream) => {
+      document.getElementById('viewVideo').srcObject = stream;
       loading(false);
       showScreen('viewerScreen');
       showPlayerControls();
     });
-    call.on('close',()=>{toast('Stream band ho gayi.');setTimeout(leaveStream,2000);});
-    call.on('error',(e)=>{loading(false);toast('Error: '+e);});
+    call.on('close', () => { toast('Stream ended'); setTimeout(leaveStream, 2000); });
   });
+  peer.on('error', (e) => { loading(false); toast(e.type === 'peer-unavailable' ? 'Host offline' : 'Error'); });
+}
+function leaveStream() { if(peer) peer.destroy(); location.reload(); }
 
-  peer.on('error',(e)=>{
-    loading(false);
-    toast(e.type==='peer-unavailable'?'❌ Host online nahi hai.':'❌ Error: '+e.type);
-  });
-}
-function leaveStream(){
-  if(peer)peer.destroy();
-  location.reload();
-}
+let playerVisible = false;
+function togglePlayerUI(e) { if(e.target.closest('button')) return; playerVisible = !playerVisible; document.getElementById('playerControls').classList.toggle('visible', playerVisible); if(playerVisible) setTimeout(() => { playerVisible = false; document.getElementById('playerControls').classList.remove('visible'); }, 4000); }
+function showPlayerControls() { playerVisible = true; document.getElementById('playerControls').classList.add('visible'); setTimeout(() => { playerVisible = false; document.getElementById('playerControls').classList.remove('visible'); }, 3000); }
+function togglePlayPause() { const v = document.getElementById('viewVideo'); if(v.paused) v.play(); else v.pause(); }
+function seekLive() { const v = document.getElementById('viewVideo'); if(v.duration) v.currentTime = v.duration; v.play(); toast('Live now'); }
+function toggleMute() { const v = document.getElementById('viewVideo'); v.muted = !v.muted; }
+function setVolume(val) { document.getElementById('viewVideo').volume = val; }
+function toggleFullscreen() { const el = document.getElementById('viewerScreen'); if(!document.fullscreenElement) el.requestFullscreen(); else document.exitFullscreen(); }
 
-// =========================================
-// VIEWER — ExoPlayer Controls
-// =========================================
-function togglePlayerUI(e){
-  if(e.target.closest('button')||e.target.closest('input'))return;
-  playerVisible=!playerVisible;
-  document.getElementById('playerControls').classList.toggle('visible',playerVisible);
-  if(playerVisible){
-    clearTimeout(playerTimer);
-    playerTimer=setTimeout(()=>{
-      playerVisible=false;
-      document.getElementById('playerControls').classList.remove('visible');
-    },4000);
-  }
-}
-function showPlayerControls(){
-  playerVisible=true;
-  document.getElementById('playerControls').classList.add('visible');
-  clearTimeout(playerTimer);
-  playerTimer=setTimeout(()=>{
-    playerVisible=false;
-    document.getElementById('playerControls').classList.remove('visible');
-  },3000);
-}
-function togglePlayPause(){
-  const vid=document.getElementById('viewVideo');
-  if(vid.paused){vid.play();isPaused=false;document.getElementById('playPauseBtn').textContent='⏸';}
-  else{vid.pause();isPaused=true;document.getElementById('playPauseBtn').textContent='▶️';}
-}
-function seekLive(){
-  const vid=document.getElementById('viewVideo');
-  if(vid.duration)vid.currentTime=vid.duration;
-  vid.play();
-  toast('⏩ Live pe aa gaye');
-}
-function toggleMute(){
-  const vid=document.getElementById('viewVideo');
-  isMuted=!isMuted;
-  vid.muted=isMuted;
-  document.getElementById('muteBtn').textContent=isMuted?'🔇':'🔊';
-  document.getElementById('volIcon').textContent=isMuted?'🔇':'🔊';
-  document.getElementById('volSlider').value=isMuted?0:1;
-}
-function setVolume(val){
-  const vid=document.getElementById('viewVideo');
-  vid.volume=val;
-  vid.muted=val==0;
-  isMuted=val==0;
-  document.getElementById('volIcon').textContent=val==0?'🔇':val<0.5?'🔉':'🔊';
-  document.getElementById('muteBtn').textContent=val==0?'🔇':'🔊';
-}
-function toggleFullscreen(){
-  const el=document.getElementById('viewerScreen');
-  if(!document.fullscreenElement){
-    el.requestFullscreen&&el.requestFullscreen();
-    screen.orientation&&screen.orientation.lock('landscape').catch(()=>{});
-  }else{
-    document.exitFullscreen&&document.exitFullscreen();
-  }
-}
-
-// =========================================
-// AUTO JOIN FROM URL
-// =========================================
-window.onload=()=>{
-  const watchId=new URLSearchParams(location.search).get('watch');
-  if(watchId){
-    document.getElementById('watchInput').value=location.href;
-    setTimeout(()=>connectViewer(watchId),300);
-  }
+window.onload = () => {
+  const watchId = new URLSearchParams(location.search).get('watch');
+  if(watchId) { document.getElementById('watchInput').value = location.href; setTimeout(() => connectViewer(watchId), 300); }
 };
-
-// Close drawer on outside tap
-document.addEventListener('click',(e)=>{
-  if(drawerOpen&&
-     !document.getElementById('adminDrawer').contains(e.target)&&
-     e.target.id!=='panelBtn'&&
-     !document.getElementById('panelBtn').contains(e.target)){
-    toggleDrawer();
-  }
+document.addEventListener('click', (e) => {
+  if(drawerOpen && !document.getElementById('adminDrawer').contains(e.target) && e.target.id !== 'panelBtn') toggleDrawer();
 });
 </script>
 </body>
