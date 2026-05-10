@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>LiveCam Pro - Movable Overlays</title>
+<title>LiveCam Pro - Full Working</title>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <style>
 :root {
@@ -19,11 +19,9 @@
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body{width:100%;height:100%;overflow:hidden;background:#000;color:var(--text);font-family:'DM Sans',sans-serif}
 
-/* ===== SCREENS ===== */
 .screen{display:none;position:fixed;inset:0;z-index:1}
 .screen.active{display:flex;flex-direction:column;align-items:center;justify-content:center}
 
-/* ===== HOME ===== */
 #homeScreen{
   background:radial-gradient(ellipse at 30% 20%,#1a0000 0%,#0a0a0a 60%);
   padding:32px 20px;gap:0;overflow-y:auto;justify-content:flex-start;padding-top:60px;
@@ -42,33 +40,29 @@ html,body{width:100%;height:100%;overflow:hidden;background:#000;color:var(--tex
 .inp:focus{border-color:rgba(255,45,45,0.5)}
 .join-btn{padding:13px 18px;background:var(--red);border:none;border-radius:10px;color:#fff;font-weight:700;cursor:pointer;font-size:0.88rem;white-space:nowrap}
 
-/* ===== STREAM SCREEN (ADMIN) ===== */
 #streamScreen{background:#000;justify-content:flex-start}
 #mainVideo{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
 
-/* Overlays on video - UPDATED: movable logo & text */
 #adminOverlayContainer{position:absolute;inset:0;pointer-events:none;z-index:10}
 
-/* Logo overlay - adjustable size and position */
 #logoOverlay{
   position:absolute;top:80px;left:16px;
-  width: 90px; /* default width, dynamic via JS */
-  height: auto;
+  width: 90px; height: auto;
   max-width: 90px;
   max-height: 90px;
   object-fit:contain;
   display:none;
   filter:drop-shadow(0 2px 8px rgba(0,0,0,0.8));
   border-radius:8px;
-  pointer-events: auto; /* allow drag interaction */
+  pointer-events: auto;
   cursor: move;
+  z-index: 20;
 }
 
-/* Movable text overlay (Bubble style) */
 #textOverlay{
   position:absolute;bottom:160px;left:0;right:0;
   text-align:center;padding:0 20px;display:none;
-  pointer-events: auto; /* draggable */
+  pointer-events: auto;
   cursor: move;
   z-index: 15;
 }
@@ -81,7 +75,6 @@ html,body{width:100%;height:100%;overflow:hidden;background:#000;color:var(--tex
 }
 @keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
 
-/* Ticker text (non movable, original behavior) */
 #tickerBar{
   position:absolute;bottom:110px;left:0;right:0;
   background:rgba(220,0,0,0.85);padding:8px 0;
@@ -95,7 +88,6 @@ html,body{width:100%;height:100%;overflow:hidden;background:#000;color:var(--tex
 }
 @keyframes ticker{from{transform:translateX(0)}to{transform:translateX(-100%)}}
 
-/* Admin Top Bar */
 #adminTop{
   position:absolute;top:0;left:0;right:0;z-index:20;
   display:flex;align-items:center;justify-content:space-between;
@@ -107,7 +99,6 @@ html,body{width:100%;height:100%;overflow:hidden;background:#000;color:var(--tex
 @keyframes p{0%,100%{opacity:1;transform:scale(1)}50%{opacity:0.3;transform:scale(0.7)}}
 .stat-pill{background:rgba(0,0,0,0.6);border:1px solid rgba(255,255,255,0.12);padding:5px 12px;border-radius:20px;font-size:0.78rem;display:flex;align-items:center;gap:5px}
 
-/* Admin Bottom Controls */
 #adminBottom{
   position:absolute;bottom:0;left:0;right:0;z-index:20;
   padding:12px 16px 28px;
@@ -134,7 +125,6 @@ input[type=range]{flex:1;height:3px;-webkit-appearance:none;appearance:none;back
 input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:20px;height:20px;border-radius:50%;background:#fff;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,0.5)}
 .zoom-v{font-size:0.75rem;color:#fff;font-weight:600;min-width:34px}
 
-/* ===== ADMIN PANEL (DRAWER) ===== */
 #adminDrawer{
   position:absolute;bottom:0;left:0;right:0;z-index:30;
   background:var(--surface);border-radius:20px 20px 0 0;
@@ -154,7 +144,6 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:20px;heigh
 .q-tag{padding:7px 13px;background:var(--surface2);border:1px solid var(--border);border-radius:20px;font-size:0.78rem;cursor:pointer;color:var(--text)}
 .q-tag:active{background:rgba(255,45,45,0.15);border-color:var(--red)}
 
-/* New controller for movable elements */
 .movable-controls {
   background: var(--surface2);
   border-radius: 12px;
@@ -227,7 +216,6 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:20px;heigh
 .s-btn{flex:1;padding:13px 8px;background:var(--surface2);border:1px solid var(--border);border-radius:10px;color:var(--text);font-size:0.8rem;font-weight:500;cursor:pointer;text-align:center}
 .s-btn:active{background:#2a2a2a}
 
-/* ===== VIEWER SCREEN ===== */
 #viewerScreen{background:#000;justify-content:flex-start}
 #viewVideo{position:absolute;inset:0;width:100%;height:100%;object-fit:contain}
 
@@ -315,7 +303,7 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:20px;heigh
   <video id="mainVideo" autoplay playsinline muted></video>
   <div id="adminOverlayContainer">
     <img id="logoOverlay" src="" alt="" draggable="false">
-    <div id="textOverlay"><div class="text-bubble" id="textBubble"></div></div>
+    <div id="textOverlay"><div class="text-bubble" id="textBubble">Text</div></div>
     <div id="tickerBar"><div class="ticker-inner" id="tickerInner"></div></div>
   </div>
   <div id="adminTop">
@@ -345,7 +333,6 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:20px;heigh
       <button class="s-btn" onclick="waShare()">📤 WhatsApp</button>
     </div>
 
-    <!-- NEW: Movable logo & text controls -->
     <div class="movable-controls">
       <div class="ctrl-label">🖼️ LOGO MOVE & SIZE (20px - 90px)</div>
       <div class="size-row">
@@ -354,33 +341,33 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:20px;heigh
         <span id="logoSzeVal">90px</span>
       </div>
       <div class="pos-row">
-        <span>Left: <input type="number" id="logoLeft" class="pos-input" value="16" min="0" max="400"></span>
-        <span>Top: <input type="number" id="logoTop" class="pos-input" value="80" min="0" max="800"></span>
-        <button class="apply-btn" onclick="applyLogoPosition()">Apply Pos</button>
+        <span>Left (0-400px): <input type="number" id="logoLeft" class="pos-input" value="16" min="0" max="400"></span>
+        <span>Top (0-800px): <input type="number" id="logoTop" class="pos-input" value="80" min="0" max="800"></span>
+        <button class="apply-btn" onclick="applyLogoPosition()">Apply</button>
       </div>
     </div>
 
     <div class="movable-controls">
-      <div class="ctrl-label">💬 TEXT (BUBBLE) - MOVE, SIZE & COLOR</div>
+      <div class="ctrl-label">💬 TEXT BUBBLE - MOVE, SIZE & COLOR</div>
       <div class="size-row">
         <span>Font Size: <input type="range" id="textFontSlider" min="12" max="48" value="16" step="1" oninput="updateTextFontSize(this.value)"><span id="textFontVal">16px</span></span>
         <span>Color: <input type="color" id="textColorPicker" class="color-picker" value="#ffffff" onchange="updateTextColor()"></span>
       </div>
       <div class="pos-row">
-        <span>Left: <input type="number" id="textLeft" class="pos-input" value="auto" placeholder="auto"></span>
-        <span>Top: <input type="number" id="textTop" class="pos-input" value="" placeholder="px"></span>
-        <button class="apply-btn" onclick="applyTextPosition()">Set Position</button>
+        <span>Left (0-400px): <input type="number" id="textLeft" class="pos-input" value="" placeholder="auto"></span>
+        <span>Top (0-800px): <input type="number" id="textTop" class="pos-input" value="" placeholder="auto"></span>
+        <button class="apply-btn" onclick="applyTextPosition()">Set Pos</button>
         <button class="apply-btn" onclick="resetTextPosition()">Reset</button>
       </div>
     </div>
 
-    <div class="section-title">💬 Screen Pe Text Dikhao</div>
+    <div class="section-title">💬 Screen Pe Text Dikhao (TEXT BOX - YAHAN LIKHO)</div>
     <div class="style-row" id="textStyleRow">
       <span class="style-opt sel" data-style="bubble" onclick="selectStyle(this)">Bubble</span>
       <span class="style-opt" data-style="ticker" onclick="selectStyle(this)">Ticker</span>
     </div>
     <div class="msg-row">
-      <input class="m-inp" id="overlayTextInput" type="text" placeholder="Viewers ko text dikhao..." maxlength="80">
+      <input class="m-inp" id="overlayTextInput" type="text" placeholder="Yahan apna text likho... (max 80 characters)" maxlength="80">
       <button class="send-b" onclick="sendText()">SHOW</button>
     </div>
     <div class="quick-row">
@@ -391,6 +378,7 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:20px;heigh
       <span class="q-tag" onclick="quickText('❤️ Love you all!')">❤️ Love</span>
       <span class="q-tag" onclick="hideAllOverlays()">✕ Text Hatao</span>
     </div>
+
     <div class="section-title">🖼️ Logo / Image Screen Pe Lagao</div>
     <div class="img-upload-area" onclick="document.getElementById('imgFileInput').click()">
       <div style="font-size:2rem">📁</div>
@@ -422,6 +410,7 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:20px;heigh
 
 <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
 <script>
+// FULL WORKING CODE - VIDEO + ALL OVERLAYS
 let peer, localStream, myPeerId, streamLink='';
 let activeCalls=[], dataConns=[];
 let flashOn=false, currentFacing='environment';
@@ -429,41 +418,49 @@ let videoTrack=null, timerInt, startTime;
 let drawerOpen=false, currentTextStyle='bubble';
 let logoDataUrl='';
 
-// Drag variables for logo & text (mouse/touch)
+// Drag variables
 let dragTarget = null;
 let dragStartX = 0, dragStartY = 0;
 let initialLeft = 0, initialTop = 0;
 
 function initDraggable(el, type) {
   if(!el) return;
+  el.removeEventListener('mousedown', startDrag);
+  el.removeEventListener('touchstart', startDrag);
   el.addEventListener('mousedown', startDrag);
   el.addEventListener('touchstart', startDrag);
+  
   function startDrag(e) {
     e.preventDefault();
+    e.stopPropagation();
     dragTarget = {el, type};
-    const rect = el.getBoundingClientRect();
-    dragStartX = (e.touches ? e.touches[0].clientX : e.clientX);
-    dragStartY = (e.touches ? e.touches[0].clientY : e.clientY);
+    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+    const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+    dragStartX = clientX;
+    dragStartY = clientY;
+    
     if(type === 'logo') {
       initialLeft = parseFloat(el.style.left) || 16;
       initialTop = parseFloat(el.style.top) || 80;
     } else {
-      let leftVal = el.style.left;
-      if(leftVal === 'auto' || leftVal === '') leftVal = '50%';
-      initialLeft = leftVal;
+      initialLeft = parseFloat(el.style.left) || (window.innerWidth/2 - 100);
       initialTop = parseFloat(el.style.top) || (window.innerHeight - 200);
     }
+    
     window.addEventListener('mousemove', onDrag);
     window.addEventListener('mouseup', stopDrag);
     window.addEventListener('touchmove', onDrag);
     window.addEventListener('touchend', stopDrag);
   }
+  
   function onDrag(e) {
     if(!dragTarget) return;
-    let clientX = (e.touches ? e.touches[0].clientX : e.clientX);
-    let clientY = (e.touches ? e.touches[0].clientY : e.clientY);
+    e.preventDefault();
+    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+    const clientY = e.touches ? e.touches[0].clientY : e.clientY;
     let dx = clientX - dragStartX;
     let dy = clientY - dragStartY;
+    
     if(type === 'logo') {
       let newLeft = Math.min(400, Math.max(0, initialLeft + dx));
       let newTop = Math.min(800, Math.max(0, initialTop + dy));
@@ -472,19 +469,24 @@ function initDraggable(el, type) {
       document.getElementById('logoLeft').value = newLeft;
       document.getElementById('logoTop').value = newTop;
     } else {
-      let currentLeftPx = parseFloat(dragTarget.el.style.left) || (window.innerWidth/2 - 100);
-      let newLeftPx = Math.min(400, Math.max(0, currentLeftPx + dx));
-      let newTopPx = Math.min(800, Math.max(0, (parseFloat(dragTarget.el.style.top)||100) + dy));
-      dragTarget.el.style.left = newLeftPx + 'px';
-      dragTarget.el.style.top = newTopPx + 'px';
+      let currentLeft = parseFloat(dragTarget.el.style.left) || (window.innerWidth/2 - 100);
+      let currentTop = parseFloat(dragTarget.el.style.top) || (window.innerHeight - 200);
+      let newLeft = Math.min(400, Math.max(0, currentLeft + dx));
+      let newTop = Math.min(800, Math.max(0, currentTop + dy));
+      dragTarget.el.style.left = newLeft + 'px';
+      dragTarget.el.style.top = newTop + 'px';
       dragTarget.el.style.right = 'auto';
-      document.getElementById('textLeft').value = newLeftPx;
-      document.getElementById('textTop').value = newTopPx;
+      document.getElementById('textLeft').value = newLeft;
+      document.getElementById('textTop').value = newTop;
     }
-    dragStartX = clientX; dragStartY = clientY;
-    if(type === 'logo') { initialLeft = parseFloat(dragTarget.el.style.left); initialTop = parseFloat(dragTarget.el.style.top); }
-    else { initialLeft = parseFloat(dragTarget.el.style.left); initialTop = parseFloat(dragTarget.el.style.top); }
+    dragStartX = clientX;
+    dragStartY = clientY;
+    if(type === 'logo') {
+      initialLeft = parseFloat(dragTarget.el.style.left);
+      initialTop = parseFloat(dragTarget.el.style.top);
+    }
   }
+  
   function stopDrag() {
     dragTarget = null;
     window.removeEventListener('mousemove', onDrag);
@@ -503,6 +505,7 @@ function updateLogoSize(val) {
   document.getElementById('logoOverlay').style.maxHeight = val+'px';
   applyLogoPositionBroadcast();
 }
+
 function applyLogoPosition() {
   let left = parseInt(document.getElementById('logoLeft').value) || 16;
   let top = parseInt(document.getElementById('logoTop').value) || 80;
@@ -514,94 +517,309 @@ function applyLogoPosition() {
   document.getElementById('logoTop').value = top;
   applyLogoPositionBroadcast();
 }
+
 function applyLogoPositionBroadcast() {
   const logo = document.getElementById('logoOverlay');
-  const left = logo.style.left; const top = logo.style.top;
-  const width = logo.style.width;
-  broadcastOverlay({type:'logo_move', left, top, width});
+  broadcastOverlay({type:'logo_move', left: logo.style.left, top: logo.style.top, width: logo.style.width});
 }
+
 function updateTextFontSize(val) {
   document.getElementById('textFontVal').innerText = val+'px';
   document.getElementById('textBubble').style.fontSize = val+'px';
   applyTextPositionBroadcast();
 }
+
 function updateTextColor() {
   const color = document.getElementById('textColorPicker').value;
   document.getElementById('textBubble').style.color = color;
-  broadcastOverlay({type:'text_style', color, fontSize: document.getElementById('textFontSlider').value});
+  broadcastOverlay({type:'text_style', color: color, fontSize: document.getElementById('textFontSlider').value});
 }
+
 function applyTextPosition() {
   let leftVal = document.getElementById('textLeft').value;
   let topVal = document.getElementById('textTop').value;
   const overlay = document.getElementById('textOverlay');
-  if(leftVal !== 'auto' && leftVal !== '') overlay.style.left = Math.min(400, Math.max(0, parseInt(leftVal)))+'px';
-  else overlay.style.left = 'auto';
-  if(topVal !== '') overlay.style.top = Math.min(800, Math.max(0, parseInt(topVal)))+'px';
-  overlay.style.right = 'auto';
+  if(leftVal && leftVal !== 'auto' && leftVal !== '') {
+    overlay.style.left = Math.min(400, Math.max(0, parseInt(leftVal)))+'px';
+    overlay.style.right = 'auto';
+  } else {
+    overlay.style.left = 'auto';
+    overlay.style.right = 'auto';
+  }
+  if(topVal && topVal !== '') {
+    overlay.style.top = Math.min(800, Math.max(0, parseInt(topVal)))+'px';
+  }
   applyTextPositionBroadcast();
 }
+
 function resetTextPosition() {
   document.getElementById('textOverlay').style.left = 'auto';
   document.getElementById('textOverlay').style.right = 'auto';
   document.getElementById('textOverlay').style.top = '';
-  document.getElementById('textLeft').value = 'auto';
+  document.getElementById('textLeft').value = '';
   document.getElementById('textTop').value = '';
   applyTextPositionBroadcast();
 }
+
 function applyTextPositionBroadcast() {
   const txtDiv = document.getElementById('textOverlay');
-  broadcastOverlay({type:'text_move', left: txtDiv.style.left, top: txtDiv.style.top, fontSize: document.getElementById('textFontSlider').value, color: document.getElementById('textColorPicker').value});
+  broadcastOverlay({
+    type:'text_move', 
+    left: txtDiv.style.left, 
+    top: txtDiv.style.top, 
+    fontSize: document.getElementById('textFontSlider').value, 
+    color: document.getElementById('textColorPicker').value
+  });
 }
-// Override broadcast to include move data
-function applyOverlayData(data,side) {
-  if(side==='admin') {
-    if(data.type==='text') showTextLocal(data.style,data.msg);
-    else if(data.type==='logo') { document.getElementById('logoOverlay').style.display=data.show?'block':'none'; if(data.show && data.src) document.getElementById('logoOverlay').src=data.src; }
-    else if(data.type==='logo_move') { let logo=document.getElementById('logoOverlay'); if(data.left) logo.style.left=data.left; if(data.top) logo.style.top=data.top; if(data.width) logo.style.width=data.width; }
-    else if(data.type==='text_move') { let t=document.getElementById('textOverlay'); if(data.left!==undefined) t.style.left=data.left; if(data.top!==undefined) t.style.top=data.top; if(data.fontSize) document.getElementById('textBubble').style.fontSize=data.fontSize+'px'; if(data.color) document.getElementById('textBubble').style.color=data.color; }
-    else if(data.type==='text_style') { document.getElementById('textBubble').style.fontSize=data.fontSize+'px'; document.getElementById('textBubble').style.color=data.color; }
-    else if(data.type==='hide') { document.getElementById('textOverlay').style.display='none'; document.getElementById('tickerBar').style.display='none'; }
+
+function applyOverlayData(data, side) {
+  if(side === 'admin') {
+    if(data.type === 'text') showTextLocal(data.style, data.msg);
+    else if(data.type === 'logo') { 
+      document.getElementById('logoOverlay').style.display = data.show ? 'block' : 'none'; 
+      if(data.show && data.src) document.getElementById('logoOverlay').src = data.src; 
+    }
+    else if(data.type === 'logo_move') { 
+      let logo = document.getElementById('logoOverlay'); 
+      if(data.left) logo.style.left = data.left; 
+      if(data.top) logo.style.top = data.top; 
+      if(data.width) logo.style.width = data.width; 
+    }
+    else if(data.type === 'text_move') { 
+      let t = document.getElementById('textOverlay'); 
+      if(data.left !== undefined) t.style.left = data.left; 
+      if(data.top !== undefined) t.style.top = data.top; 
+      if(data.fontSize) document.getElementById('textBubble').style.fontSize = data.fontSize + 'px'; 
+      if(data.color) document.getElementById('textBubble').style.color = data.color; 
+    }
+    else if(data.type === 'text_style') { 
+      document.getElementById('textBubble').style.fontSize = data.fontSize + 'px'; 
+      document.getElementById('textBubble').style.color = data.color; 
+    }
+    else if(data.type === 'hide') { 
+      document.getElementById('textOverlay').style.display = 'none'; 
+      document.getElementById('tickerBar').style.display = 'none'; 
+    }
   } else {
-    if(data.type==='text'){ if(data.style==='bubble'){ document.getElementById('viewerTextBubble').textContent=data.msg; document.getElementById('viewerTextOverlay').style.display='block'; setTimeout(()=>document.getElementById('viewerTextOverlay').style.display='none',5000);} else if(data.style==='ticker'){ document.getElementById('viewerTickerInner').innerHTML=data.msg+' • '+data.msg+' • '+data.msg; document.getElementById('viewerTickerBar').style.display='block'; setTimeout(()=>document.getElementById('viewerTickerBar').style.display='none',15000);} }
-    else if(data.type==='logo'){ const el=document.getElementById('viewerLogoOverlay'); el.style.display=data.show?'block':'none'; if(data.show && data.src) el.src=data.src; }
-    else if(data.type==='logo_move'){ const el=document.getElementById('viewerLogoOverlay'); if(data.left) el.style.left=data.left; if(data.top) el.style.top=data.top; if(data.width) el.style.width=data.width; }
-    else if(data.type==='text_move'){ const t=document.getElementById('viewerTextOverlay'); if(data.left!==undefined) t.style.left=data.left; if(data.top!==undefined) t.style.top=data.top; const bubble=document.getElementById('viewerTextBubble'); if(data.fontSize) bubble.style.fontSize=data.fontSize+'px'; if(data.color) bubble.style.color=data.color; }
-    else if(data.type==='hide'){ document.getElementById('viewerTextOverlay').style.display='none'; document.getElementById('viewerTickerBar').style.display='none';}
+    if(data.type === 'text') {
+      if(data.style === 'bubble') {
+        document.getElementById('viewerTextBubble').textContent = data.msg; 
+        document.getElementById('viewerTextOverlay').style.display = 'block'; 
+        setTimeout(() => document.getElementById('viewerTextOverlay').style.display = 'none', 5000);
+      } else if(data.style === 'ticker') {
+        document.getElementById('viewerTickerInner').innerHTML = data.msg + ' • ' + data.msg + ' • ' + data.msg; 
+        document.getElementById('viewerTickerBar').style.display = 'block'; 
+        setTimeout(() => document.getElementById('viewerTickerBar').style.display = 'none', 15000);
+      }
+    }
+    else if(data.type === 'logo') {
+      const el = document.getElementById('viewerLogoOverlay'); 
+      el.style.display = data.show ? 'block' : 'none'; 
+      if(data.show && data.src) el.src = data.src; 
+    }
+    else if(data.type === 'logo_move') {
+      const el = document.getElementById('viewerLogoOverlay'); 
+      if(data.left) el.style.left = data.left; 
+      if(data.top) el.style.top = data.top; 
+      if(data.width) el.style.width = data.width; 
+    }
+    else if(data.type === 'text_move') {
+      const t = document.getElementById('viewerTextOverlay'); 
+      if(data.left !== undefined) t.style.left = data.left; 
+      if(data.top !== undefined) t.style.top = data.top; 
+      const bubble = document.getElementById('viewerTextBubble'); 
+      if(data.fontSize) bubble.style.fontSize = data.fontSize + 'px'; 
+      if(data.color) bubble.style.color = data.color; 
+    }
+    else if(data.type === 'hide') {
+      document.getElementById('viewerTextOverlay').style.display = 'none'; 
+      document.getElementById('viewerTickerBar').style.display = 'none';
+    }
   }
 }
-function showTextLocal(style,msg){ document.getElementById('textOverlay').style.display='none'; document.getElementById('tickerBar').style.display='none'; if(style==='bubble'){ document.getElementById('textBubble').textContent=msg; document.getElementById('textOverlay').style.display='block'; clearTimeout(window.timerTxt); window.timerTxt=setTimeout(()=>document.getElementById('textOverlay').style.display='none',5000);} else if(style==='ticker'){ document.getElementById('tickerInner').innerHTML=msg+' • '+msg+' • '+msg; document.getElementById('tickerBar').style.display='block'; clearTimeout(window.timerTick); window.timerTick=setTimeout(()=>document.getElementById('tickerBar').style.display='none',15000);} }
-function toggleLogo(show){ if(show&&!logoDataUrl){toast('Pehle image upload karo!');return;} document.getElementById('logoOverlay').style.display=show?'block':'none'; broadcastOverlay({type:'logo',show,src:show?logoDataUrl:''}); toast(show?'🖼️ Logo live pe dikh raha hai':'🖼️ Logo hataya'); }
-function uploadLogo(input){ const file=input.files[0]; if(!file)return; const reader=new FileReader(); reader.onload=(e)=>{ logoDataUrl=e.target.result; document.getElementById('imgPreview').src=logoDataUrl; document.getElementById('imgPreview').style.display='block'; document.getElementById('logoOverlay').src=logoDataUrl; toast('✅ Image load ho gayi! "Logo Show Karo" dabao.'); }; reader.readAsDataURL(file); }
-async function startStream(facing){ /* existing full logic omitted for brevity but kept functional */ currentFacing=facing==='front'?'user':'environment'; try{ localStream=await navigator.mediaDevices.getUserMedia({ video:{facingMode:currentFacing}, audio:true}); }catch(e){ toast('Camera error'); return; } videoTrack=localStream.getVideoTracks()[0]; document.getElementById('mainVideo').srcObject=localStream; peer=new Peer({host:'0.peerjs.com',port:443,secure:true,path:'/'}); peer.on('open',(id)=>{ myPeerId=id; streamLink=location.href.split('?')[0]+'?watch='+id; showScreen('streamScreen'); startTimer(); toast('Live ho gaye'); initDraggable(document.getElementById('logoOverlay'),'logo'); initDraggable(document.getElementById('textOverlay'),'text'); }); peer.on('call',(call)=>{ call.answer(localStream); activeCalls.push(call); updateViewers(); }); peer.on('connection',(conn)=>{ dataConns.push(conn); }); }
-function updateViewers(){ document.getElementById('viewCount').textContent=activeCalls.length; }
-function showScreen(id){ document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active')); document.getElementById(id).classList.add('active'); }
-function toast(msg){ let t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),2500); }
-function startTimer(){ startTime=Date.now(); timerInt=setInterval(()=>{ let s=Math.floor((Date.now()-startTime)/1000); let m=Math.floor(s/60); document.getElementById('timerDisp').textContent=String(m).padStart(2,'0')+':'+String(s%60).padStart(2,'0'); },1000); }
-function toggleFlash(){ if(videoTrack) videoTrack.applyConstraints({advanced:[{torch:!flashOn}]}).then(()=>{ flashOn=!flashOn; toast(flashOn?'Flash ON':'Flash OFF'); }).catch(()=>toast('No flash')); }
-async function flipCamera(){ currentFacing=currentFacing==='environment'?'user':'environment'; if(localStream)localStream.getTracks().forEach(t=>t.stop()); localStream=await navigator.mediaDevices.getUserMedia({ video:{facingMode:currentFacing}, audio:true }); videoTrack=localStream.getVideoTracks()[0]; document.getElementById('mainVideo').srcObject=localStream; activeCalls.forEach(call=>{ let sender=call.peerConnection?.getSenders().find(s=>s.track?.kind==='video'); if(sender)sender.replaceTrack(videoTrack); }); }
-function applyZoom(val){ document.getElementById('zoomVal').textContent=parseFloat(val).toFixed(1)+'x'; if(videoTrack) videoTrack.applyConstraints({advanced:[{zoom:parseFloat(val)}]}).catch(()=>{}); }
-function toggleDrawer(){ drawerOpen=!drawerOpen; document.getElementById('adminDrawer').classList.toggle('open',drawerOpen); }
-function selectStyle(el){ document.querySelectorAll('.style-opt').forEach(e=>e.classList.remove('sel')); el.classList.add('sel'); currentTextStyle=el.dataset.style; }
-function sendText(){ let msg=document.getElementById('overlayTextInput').value.trim(); if(!msg)return; broadcastOverlay({type:'text',style:currentTextStyle,msg}); document.getElementById('overlayTextInput').value=''; }
-function quickText(msg){ broadcastOverlay({type:'text',style:currentTextStyle,msg}); }
-function hideAllOverlays(){ broadcastOverlay({type:'hide'}); }
-function broadcastOverlay(data){ applyOverlayData(data,'admin'); dataConns.forEach(conn=>{ try{conn.send(data);}catch(e){} }); }
-function copyLink(){ navigator.clipboard.writeText(streamLink); toast('Link copied'); }
-function waShare(){ window.open('https://wa.me/?text='+encodeURIComponent('Live stream: '+streamLink)); }
-function showShareLink(){ copyLink(); }
-function stopStream(){ if(timerInt)clearInterval(timerInt); if(localStream)localStream.getTracks().forEach(t=>t.stop()); if(peer)peer.destroy(); location.reload(); }
-function joinStream(){ let input=document.getElementById('watchInput').value.trim(); if(input.includes('watch='))input=input.split('watch=')[1].split('&')[0]; connectViewer(input); }
-function connectViewer(hostId){ loading(true); peer=new Peer({host:'0.peerjs.com',port:443,secure:true}); peer.on('open',()=>{ let conn=peer.connect(hostId); conn.on('data',(d)=>applyOverlayData(d,'viewer')); let call=peer.call(hostId, document.createElement('canvas').captureStream(1)); call.on('stream',(stream)=>{ document.getElementById('viewVideo').srcObject=stream; loading(false); showScreen('viewerScreen'); showPlayerControls(); }); }); }
-function leaveStream(){ if(peer)peer.destroy(); location.reload(); }
-function loading(show,text=''){ document.getElementById('loadingOverlay').style.display=show?'flex':'none'; if(text)document.getElementById('loadingText').textContent=text; }
-function togglePlayerUI(e){ if(e.target.closest('button'))return; playerVisible=!playerVisible; document.getElementById('playerControls').classList.toggle('visible',playerVisible); }
-let playerVisible=false; function showPlayerControls(){ playerVisible=true; document.getElementById('playerControls').classList.add('visible'); setTimeout(()=>{ playerVisible=false; document.getElementById('playerControls').classList.remove('visible'); },3000); }
-function togglePlayPause(){ let v=document.getElementById('viewVideo'); if(v.paused) v.play(); else v.pause(); }
-function seekLive(){ let v=document.getElementById('viewVideo'); if(v.duration) v.currentTime=v.duration; v.play(); }
-function toggleMute(){ let v=document.getElementById('viewVideo'); v.muted=!v.muted; }
-function setVolume(val){ let v=document.getElementById('viewVideo'); v.volume=val; v.muted=val==0; }
-function toggleFullscreen(){ let el=document.getElementById('viewerScreen'); if(!document.fullscreenElement) el.requestFullscreen(); else document.exitFullscreen(); }
-window.onload=()=>{ let watch=new URLSearchParams(location.search).get('watch'); if(watch){ document.getElementById('watchInput').value=location.href; setTimeout(()=>connectViewer(watch),300); } };
+
+function showTextLocal(style, msg) {
+  document.getElementById('textOverlay').style.display = 'none'; 
+  document.getElementById('tickerBar').style.display = 'none'; 
+  if(style === 'bubble') {
+    document.getElementById('textBubble').textContent = msg; 
+    document.getElementById('textOverlay').style.display = 'block'; 
+    clearTimeout(window.timerTxt); 
+    window.timerTxt = setTimeout(() => document.getElementById('textOverlay').style.display = 'none', 5000);
+  } else if(style === 'ticker') {
+    document.getElementById('tickerInner').innerHTML = msg + ' • ' + msg + ' • ' + msg; 
+    document.getElementById('tickerBar').style.display = 'block'; 
+    clearTimeout(window.timerTick); 
+    window.timerTick = setTimeout(() => document.getElementById('tickerBar').style.display = 'none', 15000);
+  }
+}
+
+function toggleLogo(show) { 
+  if(show && !logoDataUrl) { toast('Pehle image upload karo!'); return; } 
+  document.getElementById('logoOverlay').style.display = show ? 'block' : 'none'; 
+  broadcastOverlay({type:'logo', show: show, src: show ? logoDataUrl : ''}); 
+  toast(show ? '🖼️ Logo live pe dikh raha hai' : '🖼️ Logo hataya'); 
+}
+
+function uploadLogo(input) { 
+  const file = input.files[0]; 
+  if(!file) return; 
+  const reader = new FileReader(); 
+  reader.onload = (e) => { 
+    logoDataUrl = e.target.result; 
+    document.getElementById('imgPreview').src = logoDataUrl; 
+    document.getElementById('imgPreview').style.display = 'block'; 
+    document.getElementById('logoOverlay').src = logoDataUrl; 
+    toast('✅ Image load ho gayi! "Logo Show Karo" dabao.'); 
+  }; 
+  reader.readAsDataURL(file); 
+}
+
+async function startStream(facing) {
+  currentFacing = facing === 'front' ? 'user' : 'environment';
+  loading(true, 'Camera shuru ho rahi hai...');
+  try {
+    localStream = await navigator.mediaDevices.getUserMedia({
+      video: { facingMode: currentFacing, width: { ideal: 1920 }, height: { ideal: 1080 } },
+      audio: true
+    });
+  } catch(e) {
+    loading(false);
+    toast('❌ Camera permission nahi mili!');
+    return;
+  }
+  videoTrack = localStream.getVideoTracks()[0];
+  document.getElementById('mainVideo').srcObject = localStream;
+  loading(true, 'Server se connect ho raha hoon...');
+  
+  peer = new Peer({ host: '0.peerjs.com', port: 443, secure: true, path: '/' });
+  peer.on('open', (id) => {
+    myPeerId = id;
+    streamLink = location.href.split('?')[0] + '?watch=' + id;
+    loading(false);
+    showScreen('streamScreen');
+    startTimer();
+    toast('🔴 Live ho gaye! Link share karo.');
+    initDraggable(document.getElementById('logoOverlay'), 'logo');
+    initDraggable(document.getElementById('textOverlay'), 'text');
+  });
+  peer.on('call', (call) => {
+    call.answer(localStream);
+    activeCalls.push(call);
+    updateViewers();
+    call.on('close', () => { activeCalls = activeCalls.filter(c => c !== call); updateViewers(); });
+    call.on('error', () => { activeCalls = activeCalls.filter(c => c !== call); updateViewers(); });
+  });
+  peer.on('connection', (conn) => {
+    dataConns.push(conn);
+    conn.on('close', () => { dataConns = dataConns.filter(c => c !== conn); });
+  });
+  peer.on('error', (e) => { loading(false); toast('Error: ' + e.type); });
+  peer.on('disconnected', () => peer.reconnect());
+}
+
+function updateViewers() { document.getElementById('viewCount').textContent = activeCalls.length; }
+function showScreen(id) { document.querySelectorAll('.screen').forEach(s => s.classList.remove('active')); document.getElementById(id).classList.add('active'); }
+function toast(msg) { let t = document.getElementById('toast'); t.textContent = msg; t.classList.add('show'); setTimeout(() => t.classList.remove('show'), 2500); }
+function startTimer() { startTime = Date.now(); timerInt = setInterval(() => { let s = Math.floor((Date.now() - startTime) / 1000); let m = Math.floor(s / 60); document.getElementById('timerDisp').textContent = String(m).padStart(2, '0') + ':' + String(s % 60).padStart(2, '0'); }, 1000); }
+
+async function toggleFlash() {
+  if(!videoTrack) { toast('Camera track nahi mili'); return; }
+  try {
+    flashOn = !flashOn;
+    await videoTrack.applyConstraints({ advanced: [{ torch: flashOn }] });
+    document.getElementById('flashBtn').classList.toggle('on', flashOn);
+    toast(flashOn ? '💡 Flash ON' : '💡 Flash OFF');
+  } catch(e) { toast('❌ Flash support nahi is device pe'); flashOn = false; }
+}
+
+async function flipCamera() {
+  currentFacing = currentFacing === 'environment' ? 'user' : 'environment';
+  if(localStream) localStream.getTracks().forEach(t => t.stop());
+  try {
+    localStream = await navigator.mediaDevices.getUserMedia({
+      video: { facingMode: currentFacing, width: { ideal: 1920 }, height: { ideal: 1080 } },
+      audio: true
+    });
+    videoTrack = localStream.getVideoTracks()[0];
+    document.getElementById('mainVideo').srcObject = localStream;
+    activeCalls.forEach(call => {
+      const sender = call.peerConnection?.getSenders().find(s => s.track?.kind === 'video');
+      if(sender) sender.replaceTrack(videoTrack);
+    });
+    toast('🔄 Camera flip ho gaya');
+  } catch(e) { toast('❌ Camera flip nahi hua'); }
+}
+
+function applyZoom(val) {
+  document.getElementById('zoomVal').textContent = parseFloat(val).toFixed(1) + 'x';
+  if(!videoTrack) return;
+  try { videoTrack.applyConstraints({ advanced: [{ zoom: parseFloat(val) }] }); } catch(e) {}
+}
+
+function toggleDrawer() { drawerOpen = !drawerOpen; document.getElementById('adminDrawer').classList.toggle('open', drawerOpen); document.getElementById('panelBtn').classList.toggle('on', drawerOpen); }
+function selectStyle(el) { document.querySelectorAll('.style-opt').forEach(e => e.classList.remove('sel')); el.classList.add('sel'); currentTextStyle = el.dataset.style; }
+function sendText() { let msg = document.getElementById('overlayTextInput').value.trim(); if(!msg) { toast('Text likho pehle!'); return; } broadcastOverlay({ type: 'text', style: currentTextStyle, msg: msg }); document.getElementById('overlayTextInput').value = ''; toast('📢 Text broadcast ho gaya!'); }
+function quickText(msg) { broadcastOverlay({ type: 'text', style: currentTextStyle, msg: msg }); }
+function hideAllOverlays() { broadcastOverlay({ type: 'hide' }); }
+function broadcastOverlay(data) { applyOverlayData(data, 'admin'); dataConns.forEach(conn => { try { conn.send(data); } catch(e) {} }); }
+function copyLink() { navigator.clipboard.writeText(streamLink).then(() => toast('✅ Link copy ho gaya!')).catch(() => prompt('Copy karo:', streamLink)); }
+function waShare() { window.open('https://wa.me/?text=' + encodeURIComponent('📺 Meri live stream dekho!\n' + streamLink)); }
+function showShareLink() { copyLink(); toast('🔗 Link copy ho gaya — share karo!', 3000); }
+function stopStream() { if(timerInt) clearInterval(timerInt); if(localStream) localStream.getTracks().forEach(t => t.stop()); if(peer) peer.destroy(); location.reload(); }
+
+function joinStream() {
+  let input = document.getElementById('watchInput').value.trim();
+  if(!input) { toast('Link ya ID daalo!'); return; }
+  if(input.includes('watch=')) input = input.split('watch=')[1].split('&')[0];
+  connectViewer(input);
+}
+
+function connectViewer(hostId) {
+  loading(true, 'Stream se connect ho raha hoon...');
+  peer = new Peer({ host: '0.peerjs.com', port: 443, secure: true, path: '/' });
+  peer.on('open', () => {
+    const conn = peer.connect(hostId);
+    conn.on('open', () => { console.log('Data connected'); });
+    conn.on('data', (data) => applyOverlayData(data, 'viewer'));
+    const fakeStream = document.createElement('canvas').captureStream(1);
+    const call = peer.call(hostId, fakeStream);
+    if(!call) { loading(false); toast('❌ Host nahi mila.'); return; }
+    call.on('stream', (remoteStream) => {
+      const vid = document.getElementById('viewVideo');
+      vid.srcObject = remoteStream;
+      vid.muted = false;
+      vid.play().catch(() => { vid.muted = true; vid.play(); });
+      loading(false);
+      showScreen('viewerScreen');
+      showPlayerControls();
+    });
+    call.on('close', () => { toast('Stream band ho gayi.'); setTimeout(leaveStream, 2000); });
+    call.on('error', (e) => { loading(false); toast('Error: ' + e); });
+  });
+  peer.on('error', (e) => { loading(false); toast(e.type === 'peer-unavailable' ? '❌ Host online nahi hai.' : '❌ Error: ' + e.type); });
+}
+
+function leaveStream() { if(peer) peer.destroy(); location.reload(); }
+function loading(show, text) { document.getElementById('loadingOverlay').style.display = show ? 'flex' : 'none'; if(text) document.getElementById('loadingText').textContent = text; }
+
+let playerVisible = false;
+function togglePlayerUI(e) { if(e.target.closest('button') || e.target.closest('input')) return; playerVisible = !playerVisible; document.getElementById('playerControls').classList.toggle('visible', playerVisible); if(playerVisible) { clearTimeout(window.playerTimer); window.playerTimer = setTimeout(() => { playerVisible = false; document.getElementById('playerControls').classList.remove('visible'); }, 4000); } }
+function showPlayerControls() { playerVisible = true; document.getElementById('playerControls').classList.add('visible'); clearTimeout(window.playerTimer); window.playerTimer = setTimeout(() => { playerVisible = false; document.getElementById('playerControls').classList.remove('visible'); }, 3000); }
+function togglePlayPause() { const vid = document.getElementById('viewVideo'); if(vid.paused) { vid.play(); document.getElementById('playPauseBtn').textContent = '⏸'; } else { vid.pause(); document.getElementById('playPauseBtn').textContent = '▶️'; } }
+function seekLive() { const vid = document.getElementById('viewVideo'); if(vid.duration) vid.currentTime = vid.duration; vid.play(); toast('⏩ Live pe aa gaye'); }
+function toggleMute() { const vid = document.getElementById('viewVideo'); vid.muted = !vid.muted; document.getElementById('muteBtn').textContent = vid.muted ? '🔇' : '🔊'; document.getElementById('volIcon').textContent = vid.muted ? '🔇' : '🔊'; }
+function setVolume(val) { const vid = document.getElementById('viewVideo'); vid.volume = val; vid.muted = val == 0; document.getElementById('volIcon').textContent = val == 0 ? '🔇' : (val < 0.5 ? '🔉' : '🔊'); document.getElementById('muteBtn').textContent = val == 0 ? '🔇' : '🔊'; }
+function toggleFullscreen() { const el = document.getElementById('viewerScreen'); if(!document.fullscreenElement) { el.requestFullscreen(); } else { document.exitFullscreen(); } }
+
+window.onload = () => {
+  const watchId = new URLSearchParams(location.search).get('watch');
+  if(watchId) { document.getElementById('watchInput').value = location.href; setTimeout(() => connectViewer(watchId), 300); }
+};
+
+document.addEventListener('click', (e) => {
+  if(drawerOpen && !document.getElementById('adminDrawer').contains(e.target) && e.target.id !== 'panelBtn' && !document.getElementById('panelBtn').contains(e.target)) { toggleDrawer(); }
+});
 </script>
 </body>
 </html>
