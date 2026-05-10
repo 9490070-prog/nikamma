@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>LiveCam Pro - Full Working</title>
+<title>LiveCam Pro - Complete Working</title>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <style>
 * {
@@ -11,12 +11,12 @@
   padding: 0;
   box-sizing: border-box;
   -webkit-tap-highlight-color: transparent;
+  user-select: none;
 }
 
 :root {
   --red: #ff2d2d;
   --red-dark: #c0000a;
-  --bg: #0a0a0a;
   --surface: #141414;
   --surface2: #1e1e1e;
   --border: rgba(255,255,255,0.08);
@@ -158,51 +158,56 @@ body {
   z-index: 15;
 }
 
-/* Text Overlay */
-#textOverlay {
+/* Draggable Text Box */
+#movableTextBox {
   position: absolute;
-  bottom: 120px;
-  left: 0;
-  right: 0;
-  text-align: center;
-  padding: 0 20px;
-  display: none;
-  z-index: 15;
-}
-.text-bubble {
-  display: inline-block;
+  min-width: 150px;
+  max-width: 280px;
   background: rgba(0,0,0,0.75);
-  backdrop-filter: blur(10px);
-  border: 1px solid rgba(255,255,255,0.2);
-  border-radius: 30px;
-  padding: 10px 24px;
-  font-size: 1rem;
+  backdrop-filter: blur(12px);
+  border: 2px solid var(--red);
+  border-radius: 16px;
+  padding: 12px 16px;
   color: white;
-  max-width: 90%;
-}
-
-/* Ticker */
-#tickerBar {
-  position: absolute;
-  bottom: 80px;
-  left: 0;
-  right: 0;
-  background: rgba(255,45,45,0.9);
-  padding: 8px 0;
-  overflow: hidden;
+  font-size: 1rem;
+  font-weight: 500;
+  text-align: center;
+  word-wrap: break-word;
+  cursor: move;
+  pointer-events: auto;
+  z-index: 20;
   display: none;
-  z-index: 15;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.3);
 }
-.ticker-inner {
-  white-space: nowrap;
-  display: inline-block;
-  animation: ticker 12s linear infinite;
-  padding-left: 100%;
-  font-weight: 600;
+#movableTextBox .drag-handle {
+  position: absolute;
+  top: -10px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 40px;
+  height: 4px;
+  background: var(--red);
+  border-radius: 2px;
+  cursor: move;
 }
-@keyframes ticker {
-  from { transform: translateX(0); }
-  to { transform: translateX(-100%); }
+#movableTextBox .close-text {
+  position: absolute;
+  top: -12px;
+  right: -12px;
+  width: 24px;
+  height: 24px;
+  background: var(--red);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  cursor: pointer;
+  pointer-events: auto;
+  font-weight: bold;
+}
+#movableTextBox .close-text:hover {
+  background: var(--red-dark);
 }
 
 /* Admin Top Bar */
@@ -315,7 +320,7 @@ input[type=range]::-webkit-slider-thumb {
   transform: translateY(100%);
   transition: transform 0.3s ease;
   z-index: 30;
-  max-height: 80vh;
+  max-height: 75vh;
   overflow-y: auto;
   padding: 16px 18px 30px;
 }
@@ -372,23 +377,6 @@ input[type=range]::-webkit-slider-thumb {
   border-radius: 20px;
   font-size: 0.7rem;
   cursor: pointer;
-}
-.style-row {
-  display: flex;
-  gap: 10px;
-  margin-bottom: 12px;
-}
-.style-opt {
-  padding: 6px 14px;
-  background: var(--surface2);
-  border: 1px solid var(--border);
-  border-radius: 20px;
-  font-size: 0.75rem;
-  cursor: pointer;
-}
-.style-opt.sel {
-  background: var(--red);
-  border-color: var(--red);
 }
 .logo-ctrl-group {
   background: rgba(0,0,0,0.3);
@@ -453,6 +441,26 @@ input[type=range]::-webkit-slider-thumb {
   text-align: center;
 }
 
+/* Text Position Buttons */
+.text-pos-row {
+  display: flex;
+  gap: 8px;
+  margin: 10px 0;
+  flex-wrap: wrap;
+}
+.text-pos-btn {
+  padding: 6px 12px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  font-size: 0.7rem;
+  cursor: pointer;
+}
+.text-pos-btn.active {
+  background: var(--red);
+  border-color: var(--red);
+}
+
 /* Viewer Screen */
 #viewerScreen {
   background: #000;
@@ -474,25 +482,22 @@ input[type=range]::-webkit-slider-thumb {
   pointer-events: none;
   border-radius: 8px;
 }
-#viewerTextOverlay {
+#viewerTextBox {
   position: absolute;
-  bottom: 100px;
-  left: 0;
-  right: 0;
+  min-width: 150px;
+  max-width: 280px;
+  background: rgba(0,0,0,0.75);
+  backdrop-filter: blur(12px);
+  border: 2px solid var(--red);
+  border-radius: 16px;
+  padding: 12px 16px;
+  color: white;
+  font-size: 1rem;
   text-align: center;
-  display: none;
+  word-wrap: break-word;
   z-index: 10;
-}
-#viewerTickerBar {
-  position: absolute;
-  bottom: 60px;
-  left: 0;
-  right: 0;
-  background: rgba(255,45,45,0.9);
-  padding: 8px 0;
-  overflow: hidden;
   display: none;
-  z-index: 10;
+  pointer-events: none;
 }
 #playerControls {
   position: absolute;
@@ -628,8 +633,12 @@ input[type=range]::-webkit-slider-thumb {
   
   <div id="overlayContainer">
     <img id="logoOverlay" src="">
-    <div id="textOverlay"><div class="text-bubble" id="textBubble"></div></div>
-    <div id="tickerBar"><div class="ticker-inner" id="tickerInner"></div></div>
+    <!-- Movable Text Box -->
+    <div id="movableTextBox">
+      <div class="drag-handle"></div>
+      <div class="close-text" onclick="hideMovableText()">✕</div>
+      <span id="movableTextContent">Text Here</span>
+    </div>
   </div>
 
   <div id="adminTop">
@@ -660,6 +669,28 @@ input[type=range]::-webkit-slider-thumb {
     <div class="share-row">
       <button class="s-btn" onclick="copyLink()">📋 Copy Link</button>
       <button class="s-btn" onclick="waShare()">📤 WhatsApp</button>
+    </div>
+
+    <div class="section-title">💬 MOVABLE TEXT BOX</div>
+    <div class="msg-row">
+      <input class="m-inp" id="msgInput" placeholder="Type your message here...">
+      <button class="send-b" onclick="addMovableText()">ADD TEXT</button>
+    </div>
+    <div class="quick-row">
+      <span class="q-tag" onclick="quickAddText('🙏 Thank you for watching!')">🙏 Thank You</span>
+      <span class="q-tag" onclick="quickAddText('👋 Welcome to my Live!')">👋 Welcome</span>
+      <span class="q-tag" onclick="quickAddText('🔥 Live Streaming Now!')">🔥 Live Now</span>
+      <span class="q-tag" onclick="quickAddText('📢 Please Share!')">📢 Share</span>
+      <span class="q-tag" onclick="quickAddText('❤️ Love You All!')">❤️ Love</span>
+    </div>
+    
+    <div class="section-title">📍 TEXT POSITION</div>
+    <div class="text-pos-row">
+      <button class="text-pos-btn" onclick="setTextPosition('top-left')">◤ Top Left</button>
+      <button class="text-pos-btn" onclick="setTextPosition('top-right')">◥ Top Right</button>
+      <button class="text-pos-btn" onclick="setTextPosition('center')">● Center</button>
+      <button class="text-pos-btn" onclick="setTextPosition('bottom-left')">◣ Bottom Left</button>
+      <button class="text-pos-btn" onclick="setTextPosition('bottom-right')">◢ Bottom Right</button>
     </div>
 
     <div class="section-title">🖼️ LOGO (Size & Position)</div>
@@ -698,24 +729,6 @@ input[type=range]::-webkit-slider-thumb {
       <button class="s-btn" onclick="showLogo(false)">❌ Hide Logo</button>
     </div>
 
-    <div class="section-title">💬 TEXT ON SCREEN</div>
-    <div class="style-row">
-      <span class="style-opt sel" data-style="bubble" onclick="selectTextStyle(this)">Bubble</span>
-      <span class="style-opt" data-style="ticker" onclick="selectTextStyle(this)">Ticker</span>
-    </div>
-    <div class="msg-row">
-      <input class="m-inp" id="msgInput" placeholder="Type message for viewers...">
-      <button class="send-b" onclick="sendTextMessage()">SHOW</button>
-    </div>
-    <div class="quick-row">
-      <span class="q-tag" onclick="quickMsg('🙏 Thank you for watching!')">🙏 Thank You</span>
-      <span class="q-tag" onclick="quickMsg('👋 Welcome to my Live!')">👋 Welcome</span>
-      <span class="q-tag" onclick="quickMsg('🔥 Live Streaming Now!')">🔥 Live Now</span>
-      <span class="q-tag" onclick="quickMsg('📢 Please Share!')">📢 Share</span>
-      <span class="q-tag" onclick="quickMsg('❤️ Love You All!')">❤️ Love</span>
-      <span class="q-tag" onclick="hideText()">✕ Hide Text</span>
-    </div>
-
     <div class="section-title">🎤 AUDIO STATUS</div>
     <div class="share-row">
       <button class="s-btn" onclick="toast('🎤 Microphone is active! Viewers can hear you.')">🎤 Mic Active</button>
@@ -727,8 +740,7 @@ input[type=range]::-webkit-slider-thumb {
 <div id="viewerScreen" class="screen">
   <video id="viewVideo" autoplay playsinline></video>
   <img id="viewerLogoOverlay" src="">
-  <div id="viewerTextOverlay"><div class="text-bubble" id="viewerTextBubble"></div></div>
-  <div id="viewerTickerBar"><div class="ticker-inner" id="viewerTickerInner"></div></div>
+  <div id="viewerTextBox"></div>
   
   <div id="playerControls">
     <div class="player-top">
@@ -771,8 +783,12 @@ let timerInterval = null;
 let startTime = null;
 let logoDataUrl = '';
 let logoSize = 80, logoTop = 70, logoLeft = 15;
-let currentTextStyle = 'bubble';
 let drawerOpen = false;
+let flashOn = false;
+let currentTextX = 50, currentTextY = 80; // percentage
+let isDragging = false;
+let dragStartX = 0, dragStartY = 0;
+let textBoxStartLeft = 0, textBoxStartTop = 0;
 
 // ==================== UTILS ====================
 function showScreen(id) {
@@ -841,6 +857,7 @@ async function startStream(facing) {
     showScreen('streamScreen');
     startTimer();
     toast('🔴 LIVE! Share the link with viewers.');
+    setupDragForTextBox();
   });
   
   peer.on('call', (call) => {
@@ -886,7 +903,6 @@ async function toggleFlash() {
     }
   } catch(e) { toast('❌ Flash error'); }
 }
-let flashOn = false;
 
 async function flipCamera() {
   currentFacing = currentFacing === 'environment' ? 'user' : 'environment';
@@ -899,7 +915,6 @@ async function flipCamera() {
     videoTrack = localStream.getVideoTracks()[0];
     document.getElementById('mainVideo').srcObject = localStream;
     
-    // Update video track for all active calls
     activeCalls.forEach(call => {
       const sender = call.peerConnection?.getSenders().find(s => s.track?.kind === 'video');
       if (sender && videoTrack) sender.replaceTrack(videoTrack);
@@ -914,7 +929,6 @@ function applyZoom(val) {
     try {
       videoTrack.applyConstraints({ advanced: [{ zoom: parseFloat(val) }] });
     } catch(e) {
-      // Fallback - CSS zoom
       document.getElementById('mainVideo').style.transform = `scale(${val})`;
     }
   }
@@ -923,6 +937,133 @@ function applyZoom(val) {
 function toggleDrawer() {
   drawerOpen = !drawerOpen;
   document.getElementById('adminDrawer').classList.toggle('open', drawerOpen);
+}
+
+// ==================== MOVABLE TEXT BOX FUNCTIONS ====================
+function setupDragForTextBox() {
+  const textBox = document.getElementById('movableTextBox');
+  const dragHandle = textBox.querySelector('.drag-handle');
+  
+  dragHandle.addEventListener('mousedown', startDrag);
+  dragHandle.addEventListener('touchstart', startDrag, { passive: false });
+  
+  function startDrag(e) {
+    e.preventDefault();
+    isDragging = true;
+    const rect = textBox.getBoundingClientRect();
+    const clientX = e.clientX || (e.touches ? e.touches[0].clientX : 0);
+    const clientY = e.clientY || (e.touches ? e.touches[0].clientY : 0);
+    dragStartX = clientX - rect.left;
+    dragStartY = clientY - rect.top;
+    
+    document.addEventListener('mousemove', onDrag);
+    document.addEventListener('mouseup', stopDrag);
+    document.addEventListener('touchmove', onDrag, { passive: false });
+    document.addEventListener('touchend', stopDrag);
+  }
+  
+  function onDrag(e) {
+    if (!isDragging) return;
+    e.preventDefault();
+    const clientX = e.clientX || (e.touches ? e.touches[0].clientX : 0);
+    const clientY = e.clientY || (e.touches ? e.touches[0].clientY : 0);
+    let newLeft = clientX - dragStartX;
+    let newTop = clientY - dragStartY;
+    
+    // Constrain to screen
+    const maxLeft = window.innerWidth - textBox.offsetWidth;
+    const maxTop = window.innerHeight - textBox.offsetHeight;
+    newLeft = Math.max(0, Math.min(newLeft, maxLeft));
+    newTop = Math.max(0, Math.min(newTop, maxTop));
+    
+    textBox.style.left = newLeft + 'px';
+    textBox.style.top = newTop + 'px';
+    
+    // Save position as percentage
+    currentTextX = (newLeft / window.innerWidth) * 100;
+    currentTextY = (newTop / window.innerHeight) * 100;
+  }
+  
+  function stopDrag() {
+    isDragging = false;
+    document.removeEventListener('mousemove', onDrag);
+    document.removeEventListener('mouseup', stopDrag);
+    document.removeEventListener('touchmove', onDrag);
+    document.removeEventListener('touchend', stopDrag);
+    
+    // Broadcast new position to viewers
+    if (document.getElementById('movableTextBox').style.display === 'block') {
+      const text = document.getElementById('movableTextContent').innerText;
+      broadcastOverlay({ type: 'textbox', text: text, x: currentTextX, y: currentTextY, show: true });
+    }
+  }
+}
+
+function addMovableText() {
+  const msg = document.getElementById('msgInput').value.trim();
+  if (!msg) { toast('Type a message first!'); return; }
+  showMovableText(msg);
+  document.getElementById('msgInput').value = '';
+}
+
+function quickAddText(msg) {
+  showMovableText(msg);
+}
+
+function showMovableText(msg) {
+  const textBox = document.getElementById('movableTextBox');
+  const contentSpan = document.getElementById('movableTextContent');
+  contentSpan.innerText = msg;
+  textBox.style.display = 'block';
+  
+  // Set position based on saved percentage
+  let leftPos = (currentTextX / 100) * window.innerWidth;
+  let topPos = (currentTextY / 100) * window.innerHeight;
+  leftPos = Math.max(0, Math.min(leftPos, window.innerWidth - textBox.offsetWidth));
+  topPos = Math.max(0, Math.min(topPos, window.innerHeight - textBox.offsetHeight));
+  textBox.style.left = leftPos + 'px';
+  textBox.style.top = topPos + 'px';
+  
+  broadcastOverlay({ type: 'textbox', text: msg, x: currentTextX, y: currentTextY, show: true });
+  toast('✅ Text added! Drag the red bar to move it anywhere.');
+}
+
+function hideMovableText() {
+  document.getElementById('movableTextBox').style.display = 'none';
+  broadcastOverlay({ type: 'textbox', show: false });
+}
+
+function setTextPosition(position) {
+  const textBox = document.getElementById('movableTextBox');
+  let left = 0, top = 0;
+  
+  switch(position) {
+    case 'top-left':
+      left = 20; top = 100; break;
+    case 'top-right':
+      left = window.innerWidth - textBox.offsetWidth - 20; top = 100; break;
+    case 'center':
+      left = (window.innerWidth - textBox.offsetWidth) / 2; top = (window.innerHeight - textBox.offsetHeight) / 2; break;
+    case 'bottom-left':
+      left = 20; top = window.innerHeight - textBox.offsetHeight - 100; break;
+    case 'bottom-right':
+      left = window.innerWidth - textBox.offsetWidth - 20; top = window.innerHeight - textBox.offsetHeight - 100; break;
+  }
+  
+  left = Math.max(0, Math.min(left, window.innerWidth - textBox.offsetWidth));
+  top = Math.max(0, Math.min(top, window.innerHeight - textBox.offsetHeight));
+  
+  textBox.style.left = left + 'px';
+  textBox.style.top = top + 'px';
+  
+  currentTextX = (left / window.innerWidth) * 100;
+  currentTextY = (top / window.innerHeight) * 100;
+  
+  if (textBox.style.display === 'block') {
+    const text = document.getElementById('movableTextContent').innerText;
+    broadcastOverlay({ type: 'textbox', text: text, x: currentTextX, y: currentTextY, show: true });
+  }
+  toast(`Text moved to ${position}`);
 }
 
 // ==================== LOGO FUNCTIONS ====================
@@ -980,7 +1121,7 @@ function uploadLogo(input) {
     document.getElementById('logoOverlay').src = logoDataUrl;
     applyLogoStyle();
     showLogo(true);
-    toast('✅ Logo uploaded! Adjust size/position and click Show Logo');
+    toast('✅ Logo uploaded!');
   };
   reader.readAsDataURL(file);
 }
@@ -992,65 +1133,27 @@ function showLogo(show) {
   }
   document.getElementById('logoOverlay').style.display = show ? 'block' : 'none';
   broadcastOverlay({ type: 'logo', show: show, src: show ? logoDataUrl : '', size: logoSize, top: logoTop, left: logoLeft });
-  toast(show ? '🖼️ Logo visible on screen' : '🖼️ Logo hidden');
-}
-
-// ==================== TEXT FUNCTIONS ====================
-function selectTextStyle(el) {
-  document.querySelectorAll('.style-opt').forEach(opt => opt.classList.remove('sel'));
-  el.classList.add('sel');
-  currentTextStyle = el.dataset.style;
-}
-
-function sendTextMessage() {
-  const msg = document.getElementById('msgInput').value.trim();
-  if (!msg) { toast('Type a message first!'); return; }
-  broadcastOverlay({ type: 'text', style: currentTextStyle, msg: msg });
-  document.getElementById('msgInput').value = '';
-}
-
-function quickMsg(msg) {
-  broadcastOverlay({ type: 'text', style: currentTextStyle, msg: msg });
-}
-
-function hideText() {
-  broadcastOverlay({ type: 'hide' });
-}
-
-function showTextLocal(style, msg) {
-  // Hide both first
-  document.getElementById('textOverlay').style.display = 'none';
-  document.getElementById('tickerBar').style.display = 'none';
-  
-  if (style === 'bubble') {
-    document.getElementById('textBubble').textContent = msg;
-    document.getElementById('textOverlay').style.display = 'block';
-    // Auto hide after 5 seconds
-    clearTimeout(window.textTimer);
-    window.textTimer = setTimeout(() => {
-      document.getElementById('textOverlay').style.display = 'none';
-    }, 5000);
-  } else if (style === 'ticker') {
-    document.getElementById('tickerInner').textContent = msg + '   •   ' + msg + '   •   ' + msg;
-    document.getElementById('tickerBar').style.display = 'block';
-    clearTimeout(window.tickerTimer);
-    window.tickerTimer = setTimeout(() => {
-      document.getElementById('tickerBar').style.display = 'none';
-    }, 12000);
-  }
-}
-
-function hideTextLocal() {
-  document.getElementById('textOverlay').style.display = 'none';
-  document.getElementById('tickerBar').style.display = 'none';
+  toast(show ? '🖼️ Logo visible' : '🖼️ Logo hidden');
 }
 
 // ==================== BROADCAST ====================
 function broadcastOverlay(data) {
-  // Show locally
-  if (data.type === 'text') showTextLocal(data.style, data.msg);
-  else if (data.type === 'hide') hideTextLocal();
-  else if (data.type === 'logo') {
+  // Show locally for admin
+  if (data.type === 'textbox') {
+    const textBox = document.getElementById('movableTextBox');
+    if (data.show) {
+      document.getElementById('movableTextContent').innerText = data.text;
+      textBox.style.display = 'block';
+      let leftPos = (data.x / 100) * window.innerWidth;
+      let topPos = (data.y / 100) * window.innerHeight;
+      textBox.style.left = leftPos + 'px';
+      textBox.style.top = topPos + 'px';
+      currentTextX = data.x;
+      currentTextY = data.y;
+    } else {
+      textBox.style.display = 'none';
+    }
+  } else if (data.type === 'logo') {
     const el = document.getElementById('logoOverlay');
     if (data.show) {
       el.src = data.src;
@@ -1071,25 +1174,18 @@ function broadcastOverlay(data) {
 }
 
 function applyViewerOverlay(data) {
-  if (data.type === 'text') {
-    if (data.style === 'bubble') {
-      document.getElementById('viewerTextBubble').textContent = data.msg;
-      document.getElementById('viewerTextOverlay').style.display = 'block';
-      clearTimeout(window.viewerTextTimer);
-      window.viewerTextTimer = setTimeout(() => {
-        document.getElementById('viewerTextOverlay').style.display = 'none';
-      }, 5000);
-    } else if (data.style === 'ticker') {
-      document.getElementById('viewerTickerInner').textContent = data.msg + '   •   ' + data.msg;
-      document.getElementById('viewerTickerBar').style.display = 'block';
-      clearTimeout(window.viewerTickerTimer);
-      window.viewerTickerTimer = setTimeout(() => {
-        document.getElementById('viewerTickerBar').style.display = 'none';
-      }, 12000);
+  if (data.type === 'textbox') {
+    const viewerTextBox = document.getElementById('viewerTextBox');
+    if (data.show) {
+      viewerTextBox.innerHTML = data.text;
+      viewerTextBox.style.display = 'block';
+      let leftPos = (data.x / 100) * window.innerWidth;
+      let topPos = (data.y / 100) * window.innerHeight;
+      viewerTextBox.style.left = leftPos + 'px';
+      viewerTextBox.style.top = topPos + 'px';
+    } else {
+      viewerTextBox.style.display = 'none';
     }
-  } else if (data.type === 'hide') {
-    document.getElementById('viewerTextOverlay').style.display = 'none';
-    document.getElementById('viewerTickerBar').style.display = 'none';
   } else if (data.type === 'logo') {
     const el = document.getElementById('viewerLogoOverlay');
     if (data.show) {
@@ -1143,12 +1239,10 @@ function connectToViewer(hostId) {
   peer = new Peer({ host: '0.peerjs.com', port: 443, secure: true, path: '/' });
   
   peer.on('open', () => {
-    // Data connection for overlays
     const conn = peer.connect(hostId);
     conn.on('open', () => console.log('Data connected'));
     conn.on('data', (data) => applyViewerOverlay(data));
     
-    // Call for video/audio
     const dummyCanvas = document.createElement('canvas');
     dummyCanvas.width = 1; dummyCanvas.height = 1;
     const dummyStream = dummyCanvas.captureStream(0);
@@ -1163,7 +1257,7 @@ function connectToViewer(hostId) {
       video.play().catch(e => console.log(e));
       loading(false);
       showScreen('viewerScreen');
-      toast('✅ Connected! You can hear the stream.');
+      toast('✅ Connected! Video + Audio working.');
       showPlayerControls();
     });
     
@@ -1236,6 +1330,19 @@ function toggleFullscreen() {
   else document.exitFullscreen();
 }
 
+// Handle window resize for text box
+window.addEventListener('resize', () => {
+  const textBox = document.getElementById('movableTextBox');
+  if (textBox.style.display === 'block') {
+    let leftPos = (currentTextX / 100) * window.innerWidth;
+    let topPos = (currentTextY / 100) * window.innerHeight;
+    leftPos = Math.max(0, Math.min(leftPos, window.innerWidth - textBox.offsetWidth));
+    topPos = Math.max(0, Math.min(topPos, window.innerHeight - textBox.offsetHeight));
+    textBox.style.left = leftPos + 'px';
+    textBox.style.top = topPos + 'px';
+  }
+});
+
 // Auto join from URL
 window.onload = () => {
   const watchId = new URLSearchParams(location.search).get('watch');
@@ -1248,12 +1355,11 @@ window.onload = () => {
 // Close drawer on outside click
 document.addEventListener('click', (e) => {
   if (drawerOpen && !document.getElementById('adminDrawer').contains(e.target) && 
-      !e.target.closest('#panelBtn') && e.target.id !== 'panelBtn') {
+      !e.target.closest('.c-btn') && e.target.id !== 'panelBtn') {
     toggleDrawer();
   }
 });
 
-// Attach event listeners to viewer controls
 document.getElementById('playerControls')?.addEventListener('click', togglePlayerUI);
 </script>
 </body>
