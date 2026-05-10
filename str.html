@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>LiveCam Pro - Full Working with Logo URL & Text Box</title>
+<title>LiveCam Pro - Customizable Overlays</title>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <style>
 :root {
@@ -60,33 +60,28 @@ html,body{width:100%;height:100%;overflow:hidden;background:#000;color:var(--tex
 }
 
 #textOverlay{
-  position:absolute;bottom:160px;left:0;right:0;
-  text-align:center;padding:0 20px;display:none;
+  position:absolute;bottom:160px;left:50%;
+  transform:translateX(-50%);
+  text-align:center;
+  padding:0 20px;
+  display:none;
   pointer-events: auto;
   cursor: move;
   z-index: 15;
+  white-space: nowrap;
 }
 .text-bubble{
-  display:inline-block;background:rgba(0,0,0,0.72);backdrop-filter:blur(10px);
-  border:1px solid rgba(255,255,255,0.1);border-radius:30px;
-  padding:10px 22px;font-size:1rem;font-weight:500;color:#fff;
-  max-width:320px;animation:fadeUp 0.3s ease;
-  cursor: move;
+  display:inline-block;background:rgba(0,0,0,0.75);
+  border:1px solid rgba(255,255,255,0.2);
+  border-radius:40px;
+  padding:12px 28px;
+  font-size:1.2rem;
+  font-weight:600;
+  color:#fff;
+  box-shadow:0 4px 15px rgba(0,0,0,0.3);
+  backdrop-filter:blur(8px);
+  white-space: nowrap;
 }
-@keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
-
-#tickerBar{
-  position:absolute;bottom:110px;left:0;right:0;
-  background:rgba(220,0,0,0.85);padding:8px 0;
-  overflow:hidden;display:none;
-  pointer-events: none;
-}
-.ticker-inner{
-  white-space:nowrap;display:inline-block;
-  animation:ticker 15s linear infinite;
-  font-size:0.88rem;font-weight:600;color:#fff;padding-left:100%;
-}
-@keyframes ticker{from{transform:translateX(0)}to{transform:translateX(-100%)}}
 
 #adminTop{
   position:absolute;top:0;left:0;right:0;z-index:20;
@@ -135,36 +130,35 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:20px;heigh
 }
 #adminDrawer.open{transform:translateY(0)}
 .drawer-handle{width:36px;height:4px;background:var(--border);border-radius:2px;margin:0 auto 16px}
-.section-title{font-size:0.65rem;text-transform:uppercase;letter-spacing:2px;color:var(--muted);margin-bottom:10px;margin-top:14px}
+.section-title{font-size:0.65rem;text-transform:uppercase;letter-spacing:2px;color:var(--red);margin-bottom:10px;margin-top:14px;font-weight:bold}
 
-.movable-controls {
+.control-group {
   background: var(--surface2);
   border-radius: 12px;
   padding: 12px;
   margin-top: 12px;
   border: 1px solid var(--border);
 }
-.ctrl-label {
+.label {
   font-size: 0.7rem;
-  color: var(--red);
+  color: var(--muted);
   margin-bottom: 8px;
   letter-spacing: 1px;
-  font-weight: bold;
 }
-.size-row, .pos-row {
+.row {
   display: flex;
   gap: 10px;
   align-items: center;
   margin-bottom: 10px;
   flex-wrap: wrap;
 }
-.pos-input {
+.input-number {
   background: #2a2a2a;
   border: 1px solid var(--border);
   padding: 6px 10px;
   border-radius: 8px;
   color: white;
-  width: 80px;
+  width: 70px;
   font-size: 0.8rem;
   text-align: center;
 }
@@ -173,10 +167,9 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:20px;heigh
   height: 35px;
   border: 2px solid var(--border);
   border-radius: 8px;
-  background: transparent;
   cursor: pointer;
 }
-.apply-btn {
+.btn-sm {
   background: var(--red);
   border: none;
   border-radius: 8px;
@@ -186,46 +179,72 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:20px;heigh
   font-size: 0.7rem;
   cursor: pointer;
 }
-.url-input-row {
+.text-input-row {
   display: flex;
   gap: 8px;
-  margin-top: 8px;
+  margin-top: 5px;
+  margin-bottom: 10px;
 }
-.url-inp {
+.text-inp {
   flex: 1;
-  padding: 10px 12px;
+  padding: 12px 14px;
   background: var(--surface2);
   border: 1px solid var(--border);
   border-radius: 10px;
   color: var(--text);
-  font-size: 0.8rem;
+  font-size: 0.9rem;
   outline: none;
 }
-.img-upload-area{
-  border:1px dashed rgba(255,255,255,0.2);border-radius:12px;
-  padding:16px;text-align:center;cursor:pointer;margin-bottom:8px;
+.text-inp:focus {
+  border-color: var(--red);
 }
-.img-upload-area:active{background:rgba(255,255,255,0.04)}
-.img-preview{max-width:100%;max-height:100px;border-radius:8px;margin-top:8px;display:none}
-.msg-row{display:flex;gap:8px;margin-bottom:10px}
-.m-inp{flex:1;padding:12px 14px;background:var(--surface2);border:1px solid var(--border);border-radius:10px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:0.88rem;outline:none}
-.m-inp:focus{border-color:rgba(255,45,45,0.4)}
-.send-b{padding:12px 16px;background:var(--red);border:none;border-radius:10px;color:#fff;font-weight:700;cursor:pointer;font-size:0.88rem;white-space:nowrap}
-.quick-row{display:flex;flex-wrap:wrap;gap:7px;margin-bottom:4px}
-.q-tag{padding:7px 13px;background:var(--surface2);border:1px solid var(--border);border-radius:20px;font-size:0.78rem;cursor:pointer;color:var(--text)}
-.q-tag:active{background:rgba(255,45,45,0.15);border-color:var(--red)}
-.style-row{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px}
-.style-opt{padding:6px 12px;border-radius:8px;background:var(--surface2);border:1px solid var(--border);font-size:0.78rem;cursor:pointer;color:var(--text)}
-.style-opt.sel{background:var(--red);border-color:var(--red);color:#fff}
+.send-btn {
+  padding: 12px 20px;
+  background: var(--red);
+  border: none;
+  border-radius: 10px;
+  color: #fff;
+  font-weight: 700;
+  cursor: pointer;
+  font-size: 0.85rem;
+}
+.quick-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 8px;
+}
+.quick-btn {
+  padding: 5px 12px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  font-size: 0.7rem;
+  cursor: pointer;
+  color: var(--text);
+}
+.quick-btn:active {
+  background: rgba(255,45,45,0.2);
+  border-color: var(--red);
+}
+.img-upload-area{
+  border:1px dashed rgba(255,255,255,0.2);
+  border-radius:12px;
+  padding:12px;
+  text-align:center;
+  cursor:pointer;
+  margin-bottom:8px;
+}
+.img-preview{max-width:100%;max-height:80px;border-radius:8px;margin-top:8px;display:none}
 .share-row{display:flex;gap:8px;margin-top:6px}
-.s-btn{flex:1;padding:13px 8px;background:var(--surface2);border:1px solid var(--border);border-radius:10px;color:var(--text);font-size:0.8rem;font-weight:500;cursor:pointer;text-align:center}
-.s-btn:active{background:#2a2a2a}
+.s-btn{flex:1;padding:10px 8px;background:var(--surface2);border:1px solid var(--border);border-radius:10px;color:var(--text);font-size:0.75rem;font-weight:500;cursor:pointer;text-align:center}
 
 #viewerScreen{background:#000;justify-content:flex-start}
 #viewVideo{position:absolute;inset:0;width:100%;height:100%;object-fit:contain}
 #viewerLogoOverlay{position:absolute;top:80px;left:16px;width:90px;max-width:90px;max-height:90px;object-fit:contain;display:none;filter:drop-shadow(0 2px 8px rgba(0,0,0,0.8));border-radius:8px;z-index:10;pointer-events:none}
-#viewerTextOverlay{position:absolute;bottom:100px;left:0;right:0;text-align:center;padding:0 20px;display:none;z-index:10;pointer-events:none}
-#viewerTickerBar{position:absolute;bottom:60px;left:0;right:0;background:rgba(220,0,0,0.85);padding:8px 0;overflow:hidden;display:none;z-index:10}
+#viewerTextOverlay{position:absolute;bottom:100px;left:50%;transform:translateX(-50%);text-align:center;padding:0 20px;display:none;z-index:10;pointer-events:none;white-space:nowrap}
+#viewerTextOverlay .text-bubble{display:inline-block;background:rgba(0,0,0,0.75);border-radius:40px;padding:12px 28px;font-size:1.2rem;font-weight:600;color:#fff;backdrop-filter:blur(8px);white-space:nowrap}
+
 #playerControls{position:absolute;inset:0;z-index:15;background:rgba(0,0,0,0);display:flex;flex-direction:column;justify-content:space-between;opacity:0;transition:opacity 0.3s;pointer-events:none}
 #playerControls.visible{opacity:1;pointer-events:all;background:rgba(0,0,0,0.3)}
 .player-top{display:flex;align-items:center;justify-content:space-between;padding:14px 16px;background:linear-gradient(to bottom,rgba(0,0,0,0.7) 0%,transparent 100%)}
@@ -240,7 +259,7 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:20px;heigh
 #loadingOverlay{position:fixed;inset:0;background:rgba(0,0,0,0.9);display:none;flex-direction:column;align-items:center;justify-content:center;z-index:200;gap:16px}
 .spinner{width:44px;height:44px;border:3px solid rgba(255,255,255,0.1);border-top-color:var(--red);border-radius:50%;animation:spin 0.8s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
-#toast{position:fixed;top:70px;left:50%;transform:translateX(-50%) translateY(-20px);background:rgba(20,20,20,0.95);border:1px solid var(--border);padding:10px 20px;border-radius:20px;font-size:0.83rem;z-index:999;opacity:0;transition:all 0.3s;pointer-events:none;backdrop-filter:blur(10px);white-space:nowrap;max-width:90vw}
+#toast{position:fixed;top:70px;left:50%;transform:translateX(-50%) translateY(-20px);background:rgba(20,20,20,0.95);border:1px solid var(--border);padding:10px 20px;border-radius:20px;font-size:0.83rem;z-index:999;opacity:0;transition:all 0.3s;pointer-events:none;white-space:nowrap}
 #toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
 </style>
 </head>
@@ -266,9 +285,8 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:20px;heigh
 <div id="streamScreen" class="screen">
   <video id="mainVideo" autoplay playsinline muted></video>
   <div id="adminOverlayContainer">
-    <img id="logoOverlay" src="" alt="" draggable="false" crossorigin="anonymous">
-    <div id="textOverlay"><div class="text-bubble" id="textBubble">Your Text Here</div></div>
-    <div id="tickerBar"><div class="ticker-inner" id="tickerInner"></div></div>
+    <img id="logoOverlay" src="" alt="" draggable="false">
+    <div id="textOverlay"><div class="text-bubble" id="textBubble">Your Text</div></div>
   </div>
   <div id="adminTop">
     <div class="live-pill"><div class="pulse"></div>LIVE</div>
@@ -289,106 +307,99 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:20px;heigh
       <span class="zoom-v" id="zoomVal">1.0x</span>
     </div>
   </div>
+
   <div id="adminDrawer">
     <div class="drawer-handle"></div>
-    <div class="section-title">🔗 Viewer Link Share Karo</div>
+    <div class="section-title">🔗 SHARE LINK</div>
     <div class="share-row">
       <button class="s-btn" onclick="copyLink()">📋 Copy Link</button>
       <button class="s-btn" onclick="waShare()">📤 WhatsApp</button>
     </div>
 
-    <!-- LOGO SECTION with URL option -->
-    <div class="movable-controls">
-      <div class="ctrl-label">🖼️ LOGO - Size (20-90px) & Position (Left:0-400px, Top:0-800px)</div>
-      <div class="size-row">
+    <!-- LOGO CONTROLS -->
+    <div class="control-group">
+      <div class="label">🖼️ LOGO - Size 20px to 90px | Move Left (0-400px) Top (0-800px)</div>
+      <div class="row">
         <span>Size:</span>
         <input type="range" id="logoSzeSlider" min="20" max="90" value="90" step="1" oninput="updateLogoSize(this.value)">
         <span id="logoSzeVal">90px</span>
       </div>
-      <div class="pos-row">
-        <span>Left: <input type="number" id="logoLeft" class="pos-input" value="16" min="0" max="400"></span>
-        <span>Top: <input type="number" id="logoTop" class="pos-input" value="80" min="0" max="800"></span>
-        <button class="apply-btn" onclick="applyLogoPosition()">Apply</button>
+      <div class="row">
+        <span>Left: <input type="number" id="logoLeft" class="input-number" value="16" min="0" max="400"></span>
+        <span>Top: <input type="number" id="logoTop" class="input-number" value="80" min="0" max="800"></span>
+        <button class="btn-sm" onclick="applyLogoPosition()">Apply</button>
       </div>
-      <div class="url-input-row">
-        <input type="text" id="logoUrlInput" class="url-inp" placeholder="Paste image URL (https://...png, .jpg)">
-        <button class="apply-btn" onclick="loadLogoFromUrl()">Load URL</button>
+      <div class="row">
+        <input type="text" id="logoUrlInput" class="text-inp" placeholder="Paste image URL (https://...png, .jpg)" style="flex:1">
+        <button class="btn-sm" onclick="loadLogoFromUrl()">Load URL</button>
       </div>
       <div class="img-upload-area" onclick="document.getElementById('imgFileInput').click()">
-        <div style="font-size:1.5rem">📁 OR Upload Image</div>
-        <div style="font-size:0.7rem;color:var(--muted)">Tap to select from device</div>
-        <img class="img-preview" id="imgPreview" src="" alt="">
+        <div>📁 OR Upload Image</div>
+        <img class="img-preview" id="imgPreview" src="">
       </div>
       <input type="file" id="imgFileInput" accept="image/*" style="display:none" onchange="uploadLogoFile(this)">
       <div class="share-row" style="margin-top:8px">
-        <button class="s-btn" onclick="toggleLogo(true)">✅ Logo Show Karo</button>
-        <button class="s-btn" onclick="toggleLogo(false)">✕ Logo Hatao</button>
+        <button class="s-btn" onclick="toggleLogo(true)">✅ Show Logo</button>
+        <button class="s-btn" onclick="toggleLogo(false)">✕ Hide Logo</button>
       </div>
     </div>
 
-    <!-- TEXT BOX SECTION with Color Picker -->
-    <div class="movable-controls">
-      <div class="ctrl-label">💬 TEXT BOX - Type your message, choose color, set position</div>
-      <div class="msg-row">
-        <input class="m-inp" id="overlayTextInput" type="text" placeholder="✏️ Yahan apna text likho... (max 80 chars)" maxlength="80">
-        <button class="send-b" onclick="sendText()">SHOW TEXT</button>
+    <!-- TEXT OVERLAY CONTROLS - Simple text input with color and move -->
+    <div class="control-group">
+      <div class="label">💬 TEXT ON SCREEN - Type message, choose color, move anywhere</div>
+      <div class="text-input-row">
+        <input class="text-inp" id="overlayTextInput" type="text" placeholder="✏️ Screen pe dikhane wala text likho..." maxlength="100">
+        <button class="send-btn" onclick="sendText()">SHOW</button>
       </div>
-      <div class="size-row">
-        <span>Font Size: <input type="range" id="textFontSlider" min="12" max="48" value="18" step="1" oninput="updateTextFontSize(this.value)"><span id="textFontVal">18px</span></span>
+      <div class="row">
         <span>Text Color: <input type="color" id="textColorPicker" class="color-picker" value="#ffffff" onchange="updateTextColor()"></span>
         <span>BG Color: <input type="color" id="bgColorPicker" class="color-picker" value="#000000" onchange="updateBgColor()"></span>
+        <span>Font Size: <input type="range" id="textFontSlider" min="12" max="48" value="20" step="1" onchange="updateTextFontSize(this.value)"><span id="textFontVal">20px</span></span>
       </div>
-      <div class="pos-row">
-        <span>Left (0-400px): <input type="number" id="textLeft" class="pos-input" value="" placeholder="auto"></span>
-        <span>Top (0-800px): <input type="number" id="textTop" class="pos-input" value="" placeholder="auto"></span>
-        <button class="apply-btn" onclick="applyTextPosition()">Set Position</button>
-        <button class="apply-btn" onclick="resetTextPosition()">Reset</button>
+      <div class="row">
+        <span>Left (0-400px): <input type="number" id="textLeft" class="input-number" value="" placeholder="auto"></span>
+        <span>Top (0-800px): <input type="number" id="textTop" class="input-number" value="" placeholder="auto"></span>
+        <button class="btn-sm" onclick="applyTextPosition()">Set Position</button>
+        <button class="btn-sm" onclick="resetTextPosition()">Reset Center</button>
       </div>
-      <div class="quick-row">
-        <span class="q-tag" onclick="quickText('🙏 Shukriya dekh rahe ho!')">🙏 Shukriya</span>
-        <span class="q-tag" onclick="quickText('👋 Welcome to my Live!')">👋 Welcome</span>
-        <span class="q-tag" onclick="quickText('🔥 Live chal rahi hai!')">🔥 Live</span>
-        <span class="q-tag" onclick="quickText('📢 Share karo dosto ke saath!')">📢 Share Karo</span>
-        <span class="q-tag" onclick="quickText('❤️ Love you all!')">❤️ Love</span>
-        <span class="q-tag" onclick="hideAllOverlays()">✕ Text Hatao</span>
+      <div class="quick-actions">
+        <span class="quick-btn" onclick="quickText('🙏 Shukriya dekh rahe ho!')">🙏 Shukriya</span>
+        <span class="quick-btn" onclick="quickText('👋 Welcome to Live!')">👋 Welcome</span>
+        <span class="quick-btn" onclick="quickText('🔥 Live Streaming')">🔥 Live</span>
+        <span class="quick-btn" onclick="quickText('❤️ Love You All')">❤️ Love</span>
+        <span class="quick-btn" onclick="hideText()">✕ Hide Text</span>
       </div>
     </div>
 
-    <div class="section-title">📜 Ticker Style (Scrolling Text)</div>
-    <div class="style-row" id="textStyleRow">
-      <span class="style-opt sel" data-style="bubble" onclick="selectStyle(this)">Bubble (Normal)</span>
-      <span class="style-opt" data-style="ticker" onclick="selectStyle(this)">Ticker (Scroll)</span>
-    </div>
-
-    <div style="margin-top:16px"><button class="big-btn dark" onclick="toggleDrawer()">✕ Panel Band Karo</button></div>
+    <div style="margin-top:16px"><button class="big-btn dark" onclick="toggleDrawer()">✕ Close Panel</button></div>
   </div>
 </div>
 
 <div id="viewerScreen" class="screen">
   <video id="viewVideo" autoplay playsinline></video>
-  <img id="viewerLogoOverlay" src="" alt="">
+  <img id="viewerLogoOverlay" src="">
   <div id="viewerTextOverlay"><div class="text-bubble" id="viewerTextBubble"></div></div>
-  <div id="viewerTickerBar"><div class="ticker-inner" id="viewerTickerInner"></div></div>
   <div id="playerControls" onclick="togglePlayerUI(event)">
     <div class="player-top"><div class="p-live"><div class="pulse"></div>LIVE</div><div class="p-title">Live Stream</div><button class="p-exit" onclick="leaveStream()">✕ Leave</button></div>
     <div class="player-center"><button class="p-icon-btn" onclick="seekLive()">⏮</button><button class="p-icon-btn big" id="playPauseBtn" onclick="togglePlayPause()">⏸</button><button class="p-icon-btn" onclick="toggleMute()" id="muteBtn">🔊</button></div>
     <div class="player-bottom"><div class="live-progress"><div class="live-bar-fill"></div></div><div class="p-bottom-row"><div class="p-stat"><div class="pulse" style="background:var(--red)"></div> LIVE</div><div class="p-vol-row"><span class="vol-icon" onclick="toggleMute()">🔊</span><input type="range" class="vol-slider" id="volSlider" min="0" max="1" step="0.05" value="1" oninput="setVolume(this.value)"></div><button class="fullscreen-btn" onclick="toggleFullscreen()">⛶</button></div></div>
   </div>
 </div>
+
 <div id="loadingOverlay"><div class="spinner"></div><div id="loadingText">Connecting...</div></div>
 <div id="toast"></div>
 
 <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
 <script>
-// FULL WORKING CODE
+// FULL WORKING - VIDEO + LOGO + TEXT (CUSTOMIZABLE)
 let peer, localStream, myPeerId, streamLink = '';
 let activeCalls = [], dataConns = [];
 let flashOn = false, currentFacing = 'environment';
 let videoTrack = null, timerInt, startTime;
-let drawerOpen = false, currentTextStyle = 'bubble';
+let drawerOpen = false;
 let logoDataUrl = '';
 
-// Drag variables
+// Drag for logo and text
 let dragTarget = null;
 let dragStartX = 0, dragStartY = 0;
 let initialLeft = 0, initialTop = 0;
@@ -445,7 +456,7 @@ function initDraggable(el, type) {
       let newTop = Math.min(800, Math.max(0, currentTop + dy));
       dragTarget.el.style.left = newLeft + 'px';
       dragTarget.el.style.top = newTop + 'px';
-      dragTarget.el.style.right = 'auto';
+      dragTarget.el.style.transform = 'none';
       document.getElementById('textLeft').value = newLeft;
       document.getElementById('textTop').value = newTop;
     }
@@ -463,78 +474,65 @@ function initDraggable(el, type) {
     window.removeEventListener('mouseup', stopDrag);
     window.removeEventListener('touchmove', onDrag);
     window.removeEventListener('touchend', stopDrag);
-    if(type === 'logo') applyLogoPositionBroadcast();
-    else applyTextPositionBroadcast();
+    if(type === 'logo') broadcastLogoState();
+    else broadcastTextState();
   }
 }
 
 function loadLogoFromUrl() {
   const url = document.getElementById('logoUrlInput').value.trim();
-  if(!url) { toast('Please enter a valid image URL!'); return; }
+  if(!url) { toast('Enter image URL!'); return; }
   logoDataUrl = url;
   document.getElementById('logoOverlay').src = url;
   document.getElementById('imgPreview').src = url;
   document.getElementById('imgPreview').style.display = 'block';
-  toast('✅ Logo loaded from URL! Click "Logo Show Karo" to display.');
+  toast('✅ Logo loaded! Click "Show Logo" to display.');
 }
 
 function updateLogoSize(val) {
   document.getElementById('logoSzeVal').innerText = val+'px';
   document.getElementById('logoOverlay').style.width = val+'px';
-  document.getElementById('logoOverlay').style.maxWidth = val+'px';
-  document.getElementById('logoOverlay').style.maxHeight = val+'px';
-  if(document.getElementById('logoOverlay').style.display === 'block') {
-    applyLogoPositionBroadcast();
-  }
+  if(document.getElementById('logoOverlay').style.display === 'block') broadcastLogoState();
 }
 
 function applyLogoPosition() {
-  let left = parseInt(document.getElementById('logoLeft').value) || 16;
-  let top = parseInt(document.getElementById('logoTop').value) || 80;
-  left = Math.min(400, Math.max(0, left));
-  top = Math.min(800, Math.max(0, top));
+  let left = Math.min(400, Math.max(0, parseInt(document.getElementById('logoLeft').value) || 16));
+  let top = Math.min(800, Math.max(0, parseInt(document.getElementById('logoTop').value) || 80));
   document.getElementById('logoOverlay').style.left = left+'px';
   document.getElementById('logoOverlay').style.top = top+'px';
   document.getElementById('logoLeft').value = left;
   document.getElementById('logoTop').value = top;
-  if(document.getElementById('logoOverlay').style.display === 'block') {
-    applyLogoPositionBroadcast();
-  }
+  if(document.getElementById('logoOverlay').style.display === 'block') broadcastLogoState();
 }
 
-function applyLogoPositionBroadcast() {
+function broadcastLogoState() {
   const logo = document.getElementById('logoOverlay');
   broadcastOverlay({
-    type: 'logo_move', 
-    left: logo.style.left, 
-    top: logo.style.top, 
-    width: logo.style.width,
-    src: logoDataUrl
+    type: 'logo_update',
+    show: logo.style.display === 'block',
+    src: logoDataUrl,
+    left: logo.style.left,
+    top: logo.style.top,
+    width: logo.style.width
   });
 }
 
 function updateTextFontSize(val) {
   document.getElementById('textFontVal').innerText = val+'px';
   document.getElementById('textBubble').style.fontSize = val+'px';
-  if(document.getElementById('textOverlay').style.display === 'block') {
-    applyTextPositionBroadcast();
-  }
+  if(document.getElementById('textOverlay').style.display === 'block') broadcastTextState();
 }
 
 function updateTextColor() {
   const color = document.getElementById('textColorPicker').value;
   document.getElementById('textBubble').style.color = color;
-  if(document.getElementById('textOverlay').style.display === 'block') {
-    broadcastOverlay({type:'text_style', color: color, fontSize: document.getElementById('textFontSlider').value, bgColor: document.getElementById('bgColorPicker').value});
-  }
+  if(document.getElementById('textOverlay').style.display === 'block') broadcastTextState();
 }
 
 function updateBgColor() {
   const bgColor = document.getElementById('bgColorPicker').value;
   document.getElementById('textBubble').style.backgroundColor = bgColor;
-  if(document.getElementById('textOverlay').style.display === 'block') {
-    broadcastOverlay({type:'text_style', color: document.getElementById('textColorPicker').value, fontSize: document.getElementById('textFontSlider').value, bgColor: bgColor});
-  }
+  if(document.getElementById('textOverlay').style.display === 'block') broadcastTextState();
 }
 
 function applyTextPosition() {
@@ -543,157 +541,137 @@ function applyTextPosition() {
   const overlay = document.getElementById('textOverlay');
   if(leftVal && leftVal !== 'auto' && leftVal !== '') {
     overlay.style.left = Math.min(400, Math.max(0, parseInt(leftVal)))+'px';
-    overlay.style.right = 'auto';
+    overlay.style.transform = 'none';
   } else {
-    overlay.style.left = 'auto';
-    overlay.style.right = 'auto';
+    overlay.style.left = '50%';
+    overlay.style.transform = 'translateX(-50%)';
   }
   if(topVal && topVal !== '') {
     overlay.style.top = Math.min(800, Math.max(0, parseInt(topVal)))+'px';
   }
-  if(overlay.style.display === 'block') {
-    applyTextPositionBroadcast();
-  }
+  if(overlay.style.display === 'block') broadcastTextState();
 }
 
 function resetTextPosition() {
-  document.getElementById('textOverlay').style.left = 'auto';
-  document.getElementById('textOverlay').style.right = 'auto';
+  document.getElementById('textOverlay').style.left = '50%';
+  document.getElementById('textOverlay').style.transform = 'translateX(-50%)';
   document.getElementById('textOverlay').style.top = '';
   document.getElementById('textLeft').value = '';
   document.getElementById('textTop').value = '';
-  if(document.getElementById('textOverlay').style.display === 'block') {
-    applyTextPositionBroadcast();
-  }
+  if(document.getElementById('textOverlay').style.display === 'block') broadcastTextState();
 }
 
-function applyTextPositionBroadcast() {
+function broadcastTextState() {
   const txtDiv = document.getElementById('textOverlay');
   broadcastOverlay({
-    type: 'text_move', 
-    left: txtDiv.style.left, 
-    top: txtDiv.style.top, 
-    fontSize: document.getElementById('textFontSlider').value, 
+    type: 'text_update',
+    show: txtDiv.style.display === 'block',
+    text: document.getElementById('textBubble').textContent,
+    left: txtDiv.style.left,
+    top: txtDiv.style.top,
+    transform: txtDiv.style.transform,
+    fontSize: document.getElementById('textFontSlider').value,
     color: document.getElementById('textColorPicker').value,
     bgColor: document.getElementById('bgColorPicker').value
   });
 }
 
+function sendText() {
+  let msg = document.getElementById('overlayTextInput').value.trim();
+  if(!msg) { toast('Text likho!'); return; }
+  document.getElementById('textBubble').textContent = msg;
+  document.getElementById('textOverlay').style.display = 'block';
+  broadcastTextState();
+  document.getElementById('overlayTextInput').value = '';
+  toast('📢 Text show ho raha hai!');
+}
+
+function quickText(msg) {
+  document.getElementById('textBubble').textContent = msg;
+  document.getElementById('textOverlay').style.display = 'block';
+  broadcastTextState();
+}
+
+function hideText() {
+  document.getElementById('textOverlay').style.display = 'none';
+  broadcastOverlay({ type: 'text_hide' });
+  toast('Text hidden');
+}
+
+function toggleLogo(show) {
+  if(show && !logoDataUrl) { toast('Pehle image URL daalo ya upload karo!'); return; }
+  document.getElementById('logoOverlay').style.display = show ? 'block' : 'none';
+  broadcastLogoState();
+  toast(show ? '🖼️ Logo show' : '🖼️ Logo hidden');
+}
+
+function uploadLogoFile(input) {
+  const file = input.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    logoDataUrl = e.target.result;
+    document.getElementById('imgPreview').src = logoDataUrl;
+    document.getElementById('imgPreview').style.display = 'block';
+    document.getElementById('logoOverlay').src = logoDataUrl;
+    document.getElementById('logoUrlInput').value = '';
+    toast('✅ Image uploaded! Click "Show Logo" to display.');
+  };
+  reader.readAsDataURL(file);
+}
+
 function applyOverlayData(data, side) {
   if(side === 'admin') {
-    if(data.type === 'text') showTextLocal(data.style, data.msg);
-    else if(data.type === 'logo') { 
-      document.getElementById('logoOverlay').style.display = data.show ? 'block' : 'none'; 
-      if(data.show && data.src) {
-        document.getElementById('logoOverlay').src = data.src;
-        logoDataUrl = data.src;
-      }
+    if(data.type === 'logo_update') {
+      document.getElementById('logoOverlay').style.display = data.show ? 'block' : 'none';
+      if(data.show && data.src) document.getElementById('logoOverlay').src = data.src;
+      if(data.left) document.getElementById('logoOverlay').style.left = data.left;
+      if(data.top) document.getElementById('logoOverlay').style.top = data.top;
+      if(data.width) document.getElementById('logoOverlay').style.width = data.width;
     }
-    else if(data.type === 'logo_move') { 
-      let logo = document.getElementById('logoOverlay'); 
-      if(data.left) logo.style.left = data.left; 
-      if(data.top) logo.style.top = data.top; 
-      if(data.width) logo.style.width = data.width;
-      if(data.src && logo.style.display === 'block') logo.src = data.src;
-    }
-    else if(data.type === 'text_move') { 
-      let t = document.getElementById('textOverlay'); 
-      if(data.left !== undefined) t.style.left = data.left; 
-      if(data.top !== undefined) t.style.top = data.top; 
-      if(data.fontSize) document.getElementById('textBubble').style.fontSize = data.fontSize + 'px'; 
+    else if(data.type === 'text_update') {
+      document.getElementById('textOverlay').style.display = data.show ? 'block' : 'none';
+      if(data.text) document.getElementById('textBubble').textContent = data.text;
+      if(data.left) document.getElementById('textOverlay').style.left = data.left;
+      if(data.top) document.getElementById('textOverlay').style.top = data.top;
+      if(data.transform) document.getElementById('textOverlay').style.transform = data.transform;
+      if(data.fontSize) document.getElementById('textBubble').style.fontSize = data.fontSize + 'px';
       if(data.color) document.getElementById('textBubble').style.color = data.color;
       if(data.bgColor) document.getElementById('textBubble').style.backgroundColor = data.bgColor;
     }
-    else if(data.type === 'text_style') { 
-      document.getElementById('textBubble').style.fontSize = data.fontSize + 'px'; 
-      document.getElementById('textBubble').style.color = data.color;
-      if(data.bgColor) document.getElementById('textBubble').style.backgroundColor = data.bgColor;
-    }
-    else if(data.type === 'hide') { 
-      document.getElementById('textOverlay').style.display = 'none'; 
-      document.getElementById('tickerBar').style.display = 'none'; 
+    else if(data.type === 'text_hide') {
+      document.getElementById('textOverlay').style.display = 'none';
     }
   } else {
-    if(data.type === 'text') {
-      if(data.style === 'bubble') {
-        document.getElementById('viewerTextBubble').textContent = data.msg; 
-        document.getElementById('viewerTextOverlay').style.display = 'block'; 
-        setTimeout(() => document.getElementById('viewerTextOverlay').style.display = 'none', 5000);
-      } else if(data.style === 'ticker') {
-        document.getElementById('viewerTickerInner').innerHTML = data.msg + ' • ' + data.msg + ' • ' + data.msg; 
-        document.getElementById('viewerTickerBar').style.display = 'block'; 
-        setTimeout(() => document.getElementById('viewerTickerBar').style.display = 'none', 15000);
-      }
-    }
-    else if(data.type === 'logo') {
-      const el = document.getElementById('viewerLogoOverlay'); 
-      el.style.display = data.show ? 'block' : 'none'; 
-      if(data.show && data.src) el.src = data.src; 
-    }
-    else if(data.type === 'logo_move') {
-      const el = document.getElementById('viewerLogoOverlay'); 
-      if(data.left) el.style.left = data.left; 
-      if(data.top) el.style.top = data.top; 
+    if(data.type === 'logo_update') {
+      const el = document.getElementById('viewerLogoOverlay');
+      el.style.display = data.show ? 'block' : 'none';
+      if(data.show && data.src) el.src = data.src;
+      if(data.left) el.style.left = data.left;
+      if(data.top) el.style.top = data.top;
       if(data.width) el.style.width = data.width;
-      if(data.src && el.style.display === 'block') el.src = data.src;
     }
-    else if(data.type === 'text_move') {
-      const t = document.getElementById('viewerTextOverlay'); 
-      if(data.left !== undefined) t.style.left = data.left; 
-      if(data.top !== undefined) t.style.top = data.top; 
-      const bubble = document.getElementById('viewerTextBubble'); 
-      if(data.fontSize) bubble.style.fontSize = data.fontSize + 'px'; 
+    else if(data.type === 'text_update') {
+      const t = document.getElementById('viewerTextOverlay');
+      const bubble = document.getElementById('viewerTextBubble');
+      t.style.display = data.show ? 'block' : 'none';
+      if(data.text) bubble.textContent = data.text;
+      if(data.left) t.style.left = data.left;
+      if(data.top) t.style.top = data.top;
+      if(data.transform) t.style.transform = data.transform;
+      if(data.fontSize) bubble.style.fontSize = data.fontSize + 'px';
       if(data.color) bubble.style.color = data.color;
       if(data.bgColor) bubble.style.backgroundColor = data.bgColor;
     }
-    else if(data.type === 'hide') {
-      document.getElementById('viewerTextOverlay').style.display = 'none'; 
-      document.getElementById('viewerTickerBar').style.display = 'none';
+    else if(data.type === 'text_hide') {
+      document.getElementById('viewerTextOverlay').style.display = 'none';
     }
   }
-}
-
-function showTextLocal(style, msg) {
-  document.getElementById('textOverlay').style.display = 'none'; 
-  document.getElementById('tickerBar').style.display = 'none'; 
-  if(style === 'bubble') {
-    document.getElementById('textBubble').textContent = msg; 
-    document.getElementById('textOverlay').style.display = 'block'; 
-    clearTimeout(window.timerTxt); 
-    window.timerTxt = setTimeout(() => document.getElementById('textOverlay').style.display = 'none', 5000);
-  } else if(style === 'ticker') {
-    document.getElementById('tickerInner').innerHTML = msg + ' • ' + msg + ' • ' + msg; 
-    document.getElementById('tickerBar').style.display = 'block'; 
-    clearTimeout(window.timerTick); 
-    window.timerTick = setTimeout(() => document.getElementById('tickerBar').style.display = 'none', 15000);
-  }
-}
-
-function toggleLogo(show) { 
-  if(show && !logoDataUrl) { toast('Pehle URL daalo ya image upload karo!'); return; } 
-  document.getElementById('logoOverlay').style.display = show ? 'block' : 'none'; 
-  broadcastOverlay({type:'logo', show: show, src: logoDataUrl}); 
-  toast(show ? '🖼️ Logo live pe dikh raha hai' : '🖼️ Logo hataya');
-}
-
-function uploadLogoFile(input) { 
-  const file = input.files[0]; 
-  if(!file) return; 
-  const reader = new FileReader(); 
-  reader.onload = (e) => { 
-    logoDataUrl = e.target.result; 
-    document.getElementById('imgPreview').src = logoDataUrl; 
-    document.getElementById('imgPreview').style.display = 'block'; 
-    document.getElementById('logoOverlay').src = logoDataUrl; 
-    document.getElementById('logoUrlInput').value = '';
-    toast('✅ Image uploaded! Click "Logo Show Karo" to display.'); 
-  }; 
-  reader.readAsDataURL(file); 
 }
 
 async function startStream(facing) {
   currentFacing = facing === 'front' ? 'user' : 'environment';
-  loading(true, 'Camera shuru ho rahi hai...');
+  loading(true, 'Camera starting...');
   try {
     localStream = await navigator.mediaDevices.getUserMedia({
       video: { facingMode: currentFacing, width: { ideal: 1920 }, height: { ideal: 1080 } },
@@ -701,12 +679,12 @@ async function startStream(facing) {
     });
   } catch(e) {
     loading(false);
-    toast('❌ Camera permission nahi mili!');
+    toast('❌ Camera permission denied!');
     return;
   }
   videoTrack = localStream.getVideoTracks()[0];
   document.getElementById('mainVideo').srcObject = localStream;
-  loading(true, 'Server se connect ho raha hoon...');
+  loading(true, 'Connecting to server...');
   
   peer = new Peer({ host: '0.peerjs.com', port: 443, secure: true, path: '/' });
   peer.on('open', (id) => {
@@ -715,7 +693,7 @@ async function startStream(facing) {
     loading(false);
     showScreen('streamScreen');
     startTimer();
-    toast('🔴 Live ho gaye! Link share karo.');
+    toast('🔴 Live! Share the link.');
     initDraggable(document.getElementById('logoOverlay'), 'logo');
     initDraggable(document.getElementById('textOverlay'), 'text');
     document.getElementById('textBubble').style.backgroundColor = '#000000';
@@ -725,14 +703,17 @@ async function startStream(facing) {
     activeCalls.push(call);
     updateViewers();
     call.on('close', () => { activeCalls = activeCalls.filter(c => c !== call); updateViewers(); });
-    call.on('error', () => { activeCalls = activeCalls.filter(c => c !== call); updateViewers(); });
   });
   peer.on('connection', (conn) => {
     dataConns.push(conn);
     conn.on('close', () => { dataConns = dataConns.filter(c => c !== conn); });
   });
   peer.on('error', (e) => { loading(false); toast('Error: ' + e.type); });
-  peer.on('disconnected', () => peer.reconnect());
+}
+
+function broadcastOverlay(data) {
+  applyOverlayData(data, 'admin');
+  dataConns.forEach(conn => { try { conn.send(data); } catch(e) {} });
 }
 
 function updateViewers() { document.getElementById('viewCount').textContent = activeCalls.length; }
@@ -741,13 +722,12 @@ function toast(msg) { let t = document.getElementById('toast'); t.textContent = 
 function startTimer() { startTime = Date.now(); timerInt = setInterval(() => { let s = Math.floor((Date.now() - startTime) / 1000); let m = Math.floor(s / 60); document.getElementById('timerDisp').textContent = String(m).padStart(2, '0') + ':' + String(s % 60).padStart(2, '0'); }, 1000); }
 
 async function toggleFlash() {
-  if(!videoTrack) { toast('Camera track nahi mili'); return; }
+  if(!videoTrack) return;
   try {
     flashOn = !flashOn;
     await videoTrack.applyConstraints({ advanced: [{ torch: flashOn }] });
-    document.getElementById('flashBtn').classList.toggle('on', flashOn);
     toast(flashOn ? '💡 Flash ON' : '💡 Flash OFF');
-  } catch(e) { toast('❌ Flash support nahi is device pe'); flashOn = false; }
+  } catch(e) { toast('❌ Flash not supported'); flashOn = false; }
 }
 
 async function flipCamera() {
@@ -764,79 +744,63 @@ async function flipCamera() {
       const sender = call.peerConnection?.getSenders().find(s => s.track?.kind === 'video');
       if(sender) sender.replaceTrack(videoTrack);
     });
-    toast('🔄 Camera flip ho gaya');
-  } catch(e) { toast('❌ Camera flip nahi hua'); }
+    toast('🔄 Camera flipped');
+  } catch(e) { toast('❌ Flip failed'); }
 }
 
 function applyZoom(val) {
   document.getElementById('zoomVal').textContent = parseFloat(val).toFixed(1) + 'x';
-  if(!videoTrack) return;
-  try { videoTrack.applyConstraints({ advanced: [{ zoom: parseFloat(val) }] }); } catch(e) {}
+  if(videoTrack) try { videoTrack.applyConstraints({ advanced: [{ zoom: parseFloat(val) }] }); } catch(e) {}
 }
 
-function toggleDrawer() { drawerOpen = !drawerOpen; document.getElementById('adminDrawer').classList.toggle('open', drawerOpen); document.getElementById('panelBtn').classList.toggle('on', drawerOpen); }
-function selectStyle(el) { document.querySelectorAll('.style-opt').forEach(e => e.classList.remove('sel')); el.classList.add('sel'); currentTextStyle = el.dataset.style; }
-function sendText() { let msg = document.getElementById('overlayTextInput').value.trim(); if(!msg) { toast('Text likho pehle!'); return; } broadcastOverlay({ type: 'text', style: currentTextStyle, msg: msg }); document.getElementById('overlayTextInput').value = ''; toast('📢 Text broadcast ho gaya!'); }
-function quickText(msg) { broadcastOverlay({ type: 'text', style: currentTextStyle, msg: msg }); }
-function hideAllOverlays() { broadcastOverlay({ type: 'hide' }); }
-function broadcastOverlay(data) { applyOverlayData(data, 'admin'); dataConns.forEach(conn => { try { conn.send(data); } catch(e) {} }); }
-function copyLink() { navigator.clipboard.writeText(streamLink).then(() => toast('✅ Link copy ho gaya!')).catch(() => prompt('Copy karo:', streamLink)); }
-function waShare() { window.open('https://wa.me/?text=' + encodeURIComponent('📺 Meri live stream dekho!\n' + streamLink)); }
-function showShareLink() { copyLink(); toast('🔗 Link copy ho gaya — share karo!', 3000); }
+function toggleDrawer() { drawerOpen = !drawerOpen; document.getElementById('adminDrawer').classList.toggle('open', drawerOpen); }
+function copyLink() { navigator.clipboard.writeText(streamLink).then(() => toast('✅ Link copied!')); }
+function waShare() { window.open('https://wa.me/?text=' + encodeURIComponent('Live stream: ' + streamLink)); }
+function showShareLink() { copyLink(); }
 function stopStream() { if(timerInt) clearInterval(timerInt); if(localStream) localStream.getTracks().forEach(t => t.stop()); if(peer) peer.destroy(); location.reload(); }
 
 function joinStream() {
   let input = document.getElementById('watchInput').value.trim();
-  if(!input) { toast('Link ya ID daalo!'); return; }
+  if(!input) { toast('Enter link or ID!'); return; }
   if(input.includes('watch=')) input = input.split('watch=')[1].split('&')[0];
   connectViewer(input);
 }
 
 function connectViewer(hostId) {
-  loading(true, 'Stream se connect ho raha hoon...');
+  loading(true, 'Connecting to stream...');
   peer = new Peer({ host: '0.peerjs.com', port: 443, secure: true, path: '/' });
   peer.on('open', () => {
     const conn = peer.connect(hostId);
-    conn.on('open', () => {});
     conn.on('data', (data) => applyOverlayData(data, 'viewer'));
     const fakeStream = document.createElement('canvas').captureStream(1);
     const call = peer.call(hostId, fakeStream);
-    if(!call) { loading(false); toast('❌ Host nahi mila.'); return; }
     call.on('stream', (remoteStream) => {
-      const vid = document.getElementById('viewVideo');
-      vid.srcObject = remoteStream;
-      vid.muted = false;
-      vid.play().catch(() => { vid.muted = true; vid.play(); });
+      document.getElementById('viewVideo').srcObject = remoteStream;
       loading(false);
       showScreen('viewerScreen');
       showPlayerControls();
     });
-    call.on('close', () => { toast('Stream band ho gayi.'); setTimeout(leaveStream, 2000); });
-    call.on('error', (e) => { loading(false); toast('Error: ' + e); });
+    call.on('close', () => { toast('Stream ended'); setTimeout(leaveStream, 2000); });
   });
-  peer.on('error', (e) => { loading(false); toast(e.type === 'peer-unavailable' ? '❌ Host online nahi hai.' : '❌ Error: ' + e.type); });
+  peer.on('error', (e) => { loading(false); toast(e.type === 'peer-unavailable' ? '❌ Host offline' : 'Error'); });
 }
 
 function leaveStream() { if(peer) peer.destroy(); location.reload(); }
 function loading(show, text) { document.getElementById('loadingOverlay').style.display = show ? 'flex' : 'none'; if(text) document.getElementById('loadingText').textContent = text; }
 
 let playerVisible = false;
-function togglePlayerUI(e) { if(e.target.closest('button') || e.target.closest('input')) return; playerVisible = !playerVisible; document.getElementById('playerControls').classList.toggle('visible', playerVisible); if(playerVisible) { clearTimeout(window.playerTimer); window.playerTimer = setTimeout(() => { playerVisible = false; document.getElementById('playerControls').classList.remove('visible'); }, 4000); } }
-function showPlayerControls() { playerVisible = true; document.getElementById('playerControls').classList.add('visible'); clearTimeout(window.playerTimer); window.playerTimer = setTimeout(() => { playerVisible = false; document.getElementById('playerControls').classList.remove('visible'); }, 3000); }
-function togglePlayPause() { const vid = document.getElementById('viewVideo'); if(vid.paused) { vid.play(); document.getElementById('playPauseBtn').textContent = '⏸'; } else { vid.pause(); document.getElementById('playPauseBtn').textContent = '▶️'; } }
-function seekLive() { const vid = document.getElementById('viewVideo'); if(vid.duration) vid.currentTime = vid.duration; vid.play(); toast('⏩ Live pe aa gaye'); }
-function toggleMute() { const vid = document.getElementById('viewVideo'); vid.muted = !vid.muted; document.getElementById('muteBtn').textContent = vid.muted ? '🔇' : '🔊'; document.getElementById('volIcon').textContent = vid.muted ? '🔇' : '🔊'; }
-function setVolume(val) { const vid = document.getElementById('viewVideo'); vid.volume = val; vid.muted = val == 0; document.getElementById('volIcon').textContent = val == 0 ? '🔇' : (val < 0.5 ? '🔉' : '🔊'); document.getElementById('muteBtn').textContent = val == 0 ? '🔇' : '🔊'; }
-function toggleFullscreen() { const el = document.getElementById('viewerScreen'); if(!document.fullscreenElement) { el.requestFullscreen(); } else { document.exitFullscreen(); } }
+function togglePlayerUI(e) { if(e.target.closest('button')) return; playerVisible = !playerVisible; document.getElementById('playerControls').classList.toggle('visible', playerVisible); if(playerVisible) setTimeout(() => { playerVisible = false; document.getElementById('playerControls').classList.remove('visible'); }, 4000); }
+function showPlayerControls() { playerVisible = true; document.getElementById('playerControls').classList.add('visible'); setTimeout(() => { playerVisible = false; document.getElementById('playerControls').classList.remove('visible'); }, 3000); }
+function togglePlayPause() { const v = document.getElementById('viewVideo'); if(v.paused) v.play(); else v.pause(); }
+function seekLive() { const v = document.getElementById('viewVideo'); if(v.duration) v.currentTime = v.duration; v.play(); toast('⏩ Live now'); }
+function toggleMute() { const v = document.getElementById('viewVideo'); v.muted = !v.muted; }
+function setVolume(val) { document.getElementById('viewVideo').volume = val; }
+function toggleFullscreen() { const el = document.getElementById('viewerScreen'); if(!document.fullscreenElement) el.requestFullscreen(); else document.exitFullscreen(); }
 
 window.onload = () => {
   const watchId = new URLSearchParams(location.search).get('watch');
   if(watchId) { document.getElementById('watchInput').value = location.href; setTimeout(() => connectViewer(watchId), 300); }
 };
-
-document.addEventListener('click', (e) => {
-  if(drawerOpen && !document.getElementById('adminDrawer').contains(e.target) && e.target.id !== 'panelBtn' && !document.getElementById('panelBtn').contains(e.target)) { toggleDrawer(); }
-});
 </script>
 </body>
 </html>
