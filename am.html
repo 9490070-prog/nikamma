@@ -281,51 +281,46 @@
     .img-edit-row { display: flex; gap: 10px; align-items: center; background: #0a1020; padding: 4px 12px; border-radius: 50px; margin: 4px 0; }
     .icon-edit-btn { background: #28a87a; border: none; border-radius: 40px; width: 40px; height: 40px; font-size: 16px; cursor: pointer; flex-shrink: 0; }
 
-    /* ── FILE INPUT WITH ICON ── */
-    .file-input-wrapper {
-      flex: 1; position: relative; display: flex; align-items: center;
+    /* ── SMART FILE BAR (unified: icon + path + crop data) ── */
+    .smart-file-bar {
+      flex: 1; display: flex; align-items: center; gap: 0;
       background: #0e1830; border: 1px solid #2c3e62; border-radius: 40px;
-      overflow: hidden; transition: border-color 0.2s; min-width: 0;
+      overflow: hidden; transition: border-color 0.2s; min-width: 0; position: relative;
     }
-    .file-input-wrapper:hover { border-color: var(--accent); }
-    .file-input-wrapper .file-icon {
-      position: absolute; left: 12px; font-size: 17px; pointer-events: none; z-index: 2; flex-shrink: 0;
+    .smart-file-bar:hover { border-color: var(--accent); }
+    .smart-file-bar:focus-within { border-color: var(--accent); }
+    .smart-file-bar input[type="file"] {
+      position: absolute; inset: 0; opacity: 0; cursor: pointer; z-index: 3; width: 100%; height: 100%;
     }
-    .file-input-wrapper input[type="file"] {
-      flex: 1; background: transparent; border: none; padding: 8px 10px 8px 36px;
-      color: #aac4ff; font-size: 0.78rem; cursor: pointer; outline: none;
-      font-family: var(--font-body); min-width: 0; width: 100%;
+    .sfb-icon {
+      font-size: 17px; padding: 0 10px 0 14px; flex-shrink: 0; pointer-events: none; z-index: 1;
     }
-    .file-input-wrapper input[type="file"]::-webkit-file-upload-button {
-      background: rgba(0,180,255,0.18); border: none; border-radius: 30px;
-      color: #7fd4ff; font-size: 0.72rem; font-weight: 700; padding: 4px 12px;
-      cursor: pointer; margin-right: 8px; transition: background 0.15s;
+    .sfb-text {
+      flex: 1; min-width: 0; pointer-events: none; z-index: 1;
+      display: flex; flex-direction: column; justify-content: center; padding: 6px 4px;
     }
-    .file-input-wrapper input[type="file"]::-webkit-file-upload-button:hover {
-      background: rgba(0,180,255,0.32);
+    .sfb-path {
+      font-size: 0.75rem; color: #aac4ff; white-space: nowrap;
+      overflow: hidden; text-overflow: ellipsis; font-family: var(--font-body);
     }
-
-    /* ── CROP DATA TEXTBOX + PREVIEW ROW ── */
-    .crop-data-row {
-      display: none; align-items: flex-start; gap: 12px;
-      background: #091520; border: 1px solid rgba(0,180,255,0.2);
-      border-radius: 16px; padding: 10px 14px; margin: 8px 0;
+    .sfb-path.placeholder { color: #4a5a80; font-style: italic; }
+    .sfb-crop-tag {
+      display: none; font-size: 0.58rem; color: #2ecc88; font-weight: 700;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+      font-family: 'Courier New', monospace; margin-top: 1px;
     }
-    .crop-data-preview {
-      width: 80px; height: 56px; border-radius: 10px; object-fit: cover;
-      border: 2px solid rgba(0,180,255,0.4); flex-shrink: 0;
-      background: #1a2235;
+    .sfb-thumb {
+      display: none; width: 36px; height: 28px; border-radius: 8px;
+      object-fit: cover; flex-shrink: 0; margin-right: 8px;
+      border: 1.5px solid rgba(0,180,255,0.45); z-index: 1;
     }
-    .crop-data-info { flex: 1; min-width: 0; }
-    .crop-data-label { font-size: 0.62rem; color: var(--muted); font-weight: 700; text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 4px; }
-    .crop-data-textarea {
-      width: 100%; background: #0a1020; border: 1px solid #2c3e62;
-      border-radius: 8px; color: #6ec6ff; font-size: 0.6rem; padding: 5px 8px;
-      resize: none; outline: none; font-family: 'Courier New', monospace;
-      line-height: 1.4; height: 46px; overflow-y: auto;
+    .sfb-btn {
+      background: rgba(0,180,255,0.16); color: #7fd4ff;
+      font-size: 0.68rem; font-weight: 700; padding: 5px 13px;
+      border-radius: 30px; white-space: nowrap; flex-shrink: 0;
+      margin: 0 6px; pointer-events: none; z-index: 1;
+      border: 1px solid rgba(0,180,255,0.22);
     }
-    .crop-data-textarea:focus { border-color: var(--accent); }
-    .crop-data-dims { font-size: 0.6rem; color: #4a7aa3; margin-top: 3px; }
     .replace-cb-wrap {
       display: none; align-items: center; gap: 6px;
       background: rgba(255,100,100,0.12); border: 1px solid rgba(255,100,100,0.3);
@@ -585,18 +580,16 @@
         <label for="replaceOldCb">🔄 Replace</label>
       </div>
       <button type="button" id="openMiniImageBtn" class="icon-edit-btn">✂️</button>
-      <div class="file-input-wrapper">
-        <span class="file-icon">🖼️</span>
+      <!-- Unified Smart File Bar: icon + path + crop tag + thumb -->
+      <div class="smart-file-bar" id="smartFileBar">
         <input type="file" id="thumbFile" accept="image/*">
-      </div>
-    </div>
-    <!-- Crop Data TextBox + Preview Row -->
-    <div class="crop-data-row" id="cropDataRow">
-      <img class="crop-data-preview" id="cropDataPreview" src="" alt="Cropped Preview">
-      <div class="crop-data-info">
-        <div class="crop-data-label">✂️ Cropped Image Data (Base64)</div>
-        <textarea class="crop-data-textarea" id="cropDataBox" readonly placeholder="Crop apply karne ke baad yahan data aayega..."></textarea>
-        <div class="crop-data-dims" id="cropDataDims"></div>
+        <span class="sfb-icon" id="sfbIcon">🖼️</span>
+        <div class="sfb-text">
+          <span class="sfb-path placeholder" id="sfbPath">Image choose karo...</span>
+          <span class="sfb-crop-tag" id="sfbCropTag"></span>
+        </div>
+        <img class="sfb-thumb" id="sfbThumb" src="" alt="">
+        <span class="sfb-btn">Browse</span>
       </div>
     </div>
     <div class="modal-buttons">
@@ -972,7 +965,19 @@ function jsonOut(obj) {
       document.getElementById(id).addEventListener("input", drawCropCanvas);
     });
     document.getElementById("thumbFile").addEventListener("change", e => {
-      if (e.target.files?.[0]) openCropper(e.target.files[0]);
+      const file = e.target.files?.[0];
+      if (file) {
+        // Show file name/path in smart bar
+        document.getElementById("sfbPath").textContent = file.name;
+        document.getElementById("sfbPath").classList.remove("placeholder");
+        document.getElementById("sfbIcon").textContent = "🖼️";
+        // Reset crop tag & thumb (new file, not yet cropped)
+        document.getElementById("sfbCropTag").style.display = "none";
+        document.getElementById("sfbCropTag").textContent = "";
+        document.getElementById("sfbThumb").style.display = "none";
+        document.getElementById("sfbThumb").src = "";
+        openCropper(file);
+      }
     });
   });
 
@@ -1427,7 +1432,16 @@ function jsonOut(obj) {
     document.getElementById("thumbBadge").innerText = "Required";
     document.getElementById("currentThumbRow").style.display = "none";
     document.getElementById("replaceCbWrap").style.display = "none";
-    document.getElementById("cropDataRow").style.display = "none";
+    document.getElementById("cropDataRow") && (document.getElementById("cropDataRow").style.display = "none");
+    // Reset smart file bar
+    document.getElementById("sfbPath").textContent = "Image choose karo...";
+    document.getElementById("sfbPath").classList.add("placeholder");
+    document.getElementById("sfbIcon").textContent = "🖼️";
+    document.getElementById("sfbCropTag").style.display = "none";
+    document.getElementById("sfbCropTag").textContent = "";
+    document.getElementById("sfbThumb").style.display = "none";
+    document.getElementById("sfbThumb").src = "";
+    document.getElementById("smartFileBar").style.borderColor = "";
     document.getElementById("globalModal").style.display = "flex";
   }
 
@@ -1442,7 +1456,16 @@ function jsonOut(obj) {
     document.getElementById("videoUrl").value = url;
     document.getElementById("videoCategorySelect").value = cat || "";
     document.getElementById("thumbFile").value = "";
-    document.getElementById("cropDataRow").style.display = "none";
+    document.getElementById("cropDataRow") && (document.getElementById("cropDataRow").style.display = "none");
+    // Reset smart file bar
+    document.getElementById("sfbPath").textContent = "Nai image choose karo (optional)...";
+    document.getElementById("sfbPath").classList.add("placeholder");
+    document.getElementById("sfbIcon").textContent = "🖼️";
+    document.getElementById("sfbCropTag").style.display = "none";
+    document.getElementById("sfbCropTag").textContent = "";
+    document.getElementById("sfbThumb").style.display = "none";
+    document.getElementById("sfbThumb").src = "";
+    document.getElementById("smartFileBar").style.borderColor = "";
     
     document.getElementById("thumbBadge").className = "badge-opt";
     document.getElementById("thumbBadge").innerText = "Optional";
@@ -1815,25 +1838,27 @@ function jsonOut(obj) {
       dt.items.add(f);
       document.getElementById("thumbFile").files = dt.files;
 
-      // ── Show crop data in TextBox + Preview ──
+      // ── Update Smart File Bar with crop data inline ──
       const reader = new FileReader();
       reader.onload = e => {
         const dataUrl = e.target.result;
+        const kb = (blob.size / 1024).toFixed(1);
 
-        // Preview image
-        const previewImg = document.getElementById("cropDataPreview");
-        previewImg.src = dataUrl;
+        // Thumbnail inside bar (right side)
+        const thumb = document.getElementById("sfbThumb");
+        thumb.src = dataUrl;
+        thumb.style.display = "block";
 
-        // Textbox mein base64 data
-        const tb = document.getElementById("cropDataBox");
-        tb.value = dataUrl;
+        // Icon update to scissors = cropped
+        document.getElementById("sfbIcon").textContent = "✂️";
 
-        // Dimensions
-        document.getElementById("cropDataDims").innerText =
-          `📐 ${fw}×${fh}px  |  📦 ${(blob.size / 1024).toFixed(1)} KB  |  JPEG`;
+        // Path line stays as file name, crop tag shows below it
+        const cropTag = document.getElementById("sfbCropTag");
+        cropTag.textContent = `✅ Cropped ${fw}×${fh}px · ${kb}KB · ${dataUrl.substring(0, 28)}...`;
+        cropTag.style.display = "block";
 
-        // Row visible karo
-        document.getElementById("cropDataRow").style.display = "flex";
+        // Border glow green to indicate crop done
+        document.getElementById("smartFileBar").style.borderColor = "#2ecc71";
       };
       reader.readAsDataURL(blob);
 
