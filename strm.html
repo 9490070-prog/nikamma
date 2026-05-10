@@ -13,13 +13,66 @@
 }
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body{width:100%;height:100%;overflow:hidden;background:#000;color:var(--text);font-family:'DM Sans',sans-serif}
-.screen{display:none;position:fixed;inset:0;z-index:1}
-.screen.active{display:flex;flex-direction:column;align-items:center;justify-content:center}
 
-/* ===== HOME ===== */
+/* ============================================================
+   VIEWER PAGE — shown when ?watch= in URL
+   Ultra clean — only video + overlays + single tap icon
+   ============================================================ */
+#viewerPage{
+  display:none;position:fixed;inset:0;background:#000;z-index:1;
+}
+#viewVideo{
+  position:absolute;inset:0;width:100%;height:100%;
+  object-fit:contain;background:#000;z-index:1;
+}
+/* Admin-sent overlays */
+#vLogoOverlay{position:absolute;object-fit:contain;display:none;filter:drop-shadow(0 2px 12px rgba(0,0,0,0.9));border-radius:6px;pointer-events:none;z-index:10}
+#vTextOverlay{position:absolute;display:none;pointer-events:none;z-index:11;white-space:pre-wrap;word-break:break-word;line-height:1.4}
+#vTickerWrap{position:absolute;left:0;right:0;overflow:hidden;pointer-events:none;display:none;z-index:11}
+.ticker-inner-v{white-space:nowrap;display:inline-block;animation:tick 18s linear infinite;font-weight:600;color:#fff;padding-left:100%}
+@keyframes tick{from{transform:translateX(0)}to{transform:translateX(-100%)}}
+
+/* Tap area — invisible, covers whole screen */
+#vTapArea{position:absolute;inset:0;z-index:20;cursor:pointer}
+
+/* Single play/pause icon — appears on tap, fades out */
+#vPlayIcon{
+  position:absolute;top:50%;left:50%;
+  transform:translate(-50%,-50%);
+  z-index:25;pointer-events:none;
+  width:88px;height:88px;border-radius:50%;
+  background:rgba(0,0,0,0.52);
+  backdrop-filter:blur(10px);
+  border:2px solid rgba(255,255,255,0.22);
+  display:flex;align-items:center;justify-content:center;
+  opacity:0;transition:opacity 0.3s ease;
+}
+#vPlayIcon.show{opacity:1}
+#vPlayIcon svg{width:40px;height:40px;fill:#fff}
+
+/* Connecting spinner for viewer */
+#vLoader{
+  position:absolute;inset:0;background:#000;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:18px;z-index:30;
+}
+.spinner{width:46px;height:46px;border:3px solid rgba(255,255,255,0.08);border-top-color:var(--red);border-radius:50%;animation:spin 0.8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.vloader-txt{color:var(--muted);font-size:0.85rem}
+.vloader-logo{font-family:'Bebas Neue',sans-serif;font-size:2rem;letter-spacing:3px;color:#fff}
+.vloader-logo span{color:var(--red)}
+
+/* ============================================================
+   ADMIN / HOME PAGE — shown when no ?watch= in URL
+   ============================================================ */
+#adminPage{display:none;position:fixed;inset:0;z-index:1;overflow-y:auto}
+
+/* HOME SCREEN */
 #homeScreen{
+  min-height:100%;
   background:radial-gradient(ellipse at 30% 20%,#1a0000 0%,#0a0a0a 60%);
-  padding:24px 20px;overflow-y:auto;justify-content:flex-start;padding-top:50px;
+  display:flex;flex-direction:column;align-items:center;
+  padding:50px 20px 40px;
 }
 .logo-title{font-family:'Bebas Neue',sans-serif;font-size:3rem;letter-spacing:4px;text-align:center;line-height:1}
 .logo-title span{color:var(--red)}
@@ -34,15 +87,14 @@ html,body{width:100%;height:100%;overflow:hidden;background:#000;color:var(--tex
 .row{display:flex;gap:8px;align-items:center}
 .inp{flex:1;padding:13px 14px;background:var(--surface2);border:1px solid var(--border);border-radius:10px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:0.88rem;outline:none}
 .inp:focus{border-color:rgba(255,45,45,0.5)}
-.join-btn{padding:13px 18px;background:var(--red);border:none;border-radius:10px;color:#fff;font-weight:700;cursor:pointer;font-size:0.88rem;white-space:nowrap}
-.id-hint{font-size:0.72rem;color:var(--muted);margin-top:6px;padding-left:2px}
+.id-hint{font-size:0.72rem;color:var(--muted);margin-top:6px}
 
-/* ===== ADMIN STREAM ===== */
-#streamScreen{background:#000;justify-content:flex-start}
+/* STREAM SCREEN (admin live) */
+#streamScreen{display:none;position:fixed;inset:0;background:#000}
 #mainVideo{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
 #overlayCanvas{position:absolute;inset:0;pointer-events:none;z-index:10;overflow:hidden}
 #logoOverlay{position:absolute;object-fit:contain;display:none;filter:drop-shadow(0 2px 12px rgba(0,0,0,0.9));cursor:move;z-index:12;border-radius:6px;touch-action:none}
-#textOverlay{position:absolute;display:none;pointer-events:none;z-index:11;white-space:pre-wrap;word-break:break-word;text-shadow:0 2px 8px rgba(0,0,0,0.9)}
+#textOverlay{position:absolute;display:none;pointer-events:none;z-index:11;white-space:pre-wrap;word-break:break-word;line-height:1.4}
 
 /* Admin Top */
 #adminTop{position:absolute;top:0;left:0;right:0;z-index:20;display:flex;align-items:center;justify-content:space-between;padding:12px 16px;background:linear-gradient(to bottom,rgba(0,0,0,0.85) 0%,transparent 100%)}
@@ -58,7 +110,7 @@ html,body{width:100%;height:100%;overflow:hidden;background:#000;color:var(--tex
 .c-btn:active{transform:scale(0.88)}
 .c-btn.on{background:var(--red)}
 .stop-c{width:64px;height:64px;border-radius:50%;border:3px solid rgba(255,255,255,0.22);background:var(--red);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:1.45rem;flex-shrink:0}
-.stop-c:active{transform:scale(0.92);background:var(--red-dark)}
+.stop-c:active{transform:scale(0.92)}
 .zoom-row{display:flex;align-items:center;gap:10px;padding:0 4px}
 .zoom-lbl{font-size:0.68rem;color:var(--muted);min-width:24px;text-align:center}
 input[type=range]{flex:1;height:3px;-webkit-appearance:none;appearance:none;background:rgba(255,255,255,0.18);border-radius:2px;outline:none}
@@ -66,7 +118,7 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:20px;heigh
 .zoom-v{font-size:0.75rem;color:#fff;font-weight:600;min-width:34px}
 
 /* Admin Drawer */
-#adminDrawer{position:absolute;bottom:0;left:0;right:0;z-index:30;background:var(--surface);border-radius:20px 20px 0 0;border-top:1px solid var(--border);padding:12px 16px 36px;transform:translateY(100%);transition:transform 0.32s cubic-bezier(0.4,0,0.2,1);max-height:85vh;overflow-y:auto}
+#adminDrawer{position:absolute;bottom:0;left:0;right:0;z-index:30;background:var(--surface);border-radius:20px 20px 0 0;border-top:1px solid var(--border);padding:12px 16px 40px;transform:translateY(100%);transition:transform 0.32s cubic-bezier(0.4,0,0.2,1);max-height:86vh;overflow-y:auto}
 #adminDrawer.open{transform:translateY(0)}
 .dhandle{width:36px;height:4px;background:var(--border);border-radius:2px;margin:0 auto 14px}
 .sec{font-size:0.62rem;text-transform:uppercase;letter-spacing:2px;color:var(--muted);margin-bottom:8px;margin-top:14px}
@@ -80,10 +132,10 @@ input[type=color]{width:36px;height:36px;border:none;border-radius:8px;backgroun
 .font-row{display:flex;gap:8px;align-items:center;margin-bottom:10px;flex-wrap:wrap}
 .font-row select,.font-row input[type=number]{padding:8px 10px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:0.82rem;outline:none}
 .font-row select{flex:1}
-.logo-ctrl-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px}
-.pos-inp-wrap{display:flex;flex-direction:column;gap:3px}
-.pos-inp-wrap label{font-size:0.68rem;color:var(--muted)}
-.pos-inp{padding:9px 10px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:0.85rem;outline:none;width:100%}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px}
+.fi{display:flex;flex-direction:column;gap:3px}
+.fi label{font-size:0.68rem;color:var(--muted)}
+.pi{padding:9px 10px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:0.85rem;outline:none;width:100%}
 .size-row{display:flex;gap:8px;align-items:center;margin-bottom:8px;flex-wrap:wrap}
 .size-row label{font-size:0.75rem;color:var(--muted);white-space:nowrap}
 .qtags{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:6px}
@@ -93,347 +145,424 @@ input[type=color]{width:36px;height:36px;border:none;border-radius:8px;backgroun
 .s-btn{flex:1;padding:12px 8px;background:var(--surface2);border:1px solid var(--border);border-radius:10px;color:var(--text);font-size:0.78rem;font-weight:500;cursor:pointer;text-align:center}
 .s-btn:active{background:#2a2a2a}
 .upload-area{border:1px dashed rgba(255,255,255,0.18);border-radius:12px;padding:14px;text-align:center;cursor:pointer;margin-bottom:8px}
-.upload-area:active{background:rgba(255,255,255,0.04)}
 .img-prev{max-width:100%;max-height:80px;border-radius:8px;margin-top:8px;display:none}
 .ticker-wrap{position:absolute;left:0;right:0;overflow:hidden;z-index:11;pointer-events:none}
 .ticker-inner{white-space:nowrap;display:inline-block;animation:tick 18s linear infinite;font-weight:600;color:#fff;padding-left:100%}
-@keyframes tick{from{transform:translateX(0)}to{transform:translateX(-100%)}}
-
-/* ===== VIEWER SCREEN — ULTRA CLEAN ===== */
-#viewerScreen{background:#000;justify-content:flex-start}
-#viewVideo{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;z-index:1}
-
-/* Viewer overlays (logo, text, ticker) — above video, no controls */
-#vLogoOverlay{position:absolute;object-fit:contain;display:none;filter:drop-shadow(0 2px 12px rgba(0,0,0,0.9));z-index:10;border-radius:6px;pointer-events:none}
-#vTextOverlay{position:absolute;display:none;pointer-events:none;z-index:11;white-space:pre-wrap;word-break:break-word;text-shadow:0 2px 8px rgba(0,0,0,0.9)}
-#vTickerWrap{position:absolute;left:0;right:0;overflow:hidden;z-index:11;pointer-events:none;display:none}
-#vTickerInner{white-space:nowrap;display:inline-block;animation:tick 18s linear infinite;font-weight:600;color:#fff;padding-left:100%}
-
-/* Single play/pause button — center of screen, shows on tap, fades */
-#viewPlayBtn{
-  position:absolute;
-  top:50%;left:50%;
-  transform:translate(-50%,-50%);
-  z-index:20;
-  width:80px;height:80px;
-  border-radius:50%;
-  background:rgba(0,0,0,0.55);
-  backdrop-filter:blur(8px);
-  border:2px solid rgba(255,255,255,0.25);
-  display:flex;align-items:center;justify-content:center;
-  cursor:pointer;
-  opacity:0;
-  transition:opacity 0.35s ease;
-  pointer-events:none;
-}
-#viewPlayBtn.show{opacity:1;pointer-events:all}
-#viewPlayBtn svg{width:36px;height:36px;fill:#fff;margin-left:4px}
-#viewPlayBtn.paused svg{margin-left:6px}
-
-/* Loading */
-#loadingOverlay{position:fixed;inset:0;background:rgba(0,0,0,0.92);display:none;flex-direction:column;align-items:center;justify-content:center;z-index:200;gap:16px}
-.spinner{width:44px;height:44px;border:3px solid rgba(255,255,255,0.1);border-top-color:var(--red);border-radius:50%;animation:spin 0.8s linear infinite}
-@keyframes spin{to{transform:rotate(360deg)}}
 
 /* Toast */
-#toast{position:fixed;top:68px;left:50%;transform:translateX(-50%) translateY(-16px);background:rgba(18,18,18,0.96);border:1px solid var(--border);padding:10px 20px;border-radius:20px;font-size:0.82rem;z-index:999;opacity:0;transition:all 0.3s;pointer-events:none;backdrop-filter:blur(10px);white-space:nowrap;max-width:90vw;text-align:center}
+#toast{position:fixed;top:68px;left:50%;transform:translateX(-50%) translateY(-16px);background:rgba(18,18,18,0.96);border:1px solid var(--border);padding:10px 20px;border-radius:20px;font-size:0.82rem;z-index:9999;opacity:0;transition:all 0.3s;pointer-events:none;backdrop-filter:blur(10px);white-space:nowrap;max-width:90vw;text-align:center}
 #toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
 </style>
 </head>
 <body>
 
-<!-- ===== HOME ===== -->
-<div id="homeScreen" class="screen active">
-  <div class="logo-title">LIVE<span>CAM</span> <span style="font-size:1.1rem;color:var(--muted)">PRO</span></div>
-  <div class="tagline">Professional Live Streaming</div>
-
-  <div class="card">
-    <div class="card-label">🔴 Admin — Stream Shuru Karo</div>
-    <div class="sec" style="margin-top:0;margin-bottom:6px">Stream ID (apna naam ya code likho)</div>
-    <div class="row" style="margin-bottom:6px">
-      <input class="inp" id="customIdInput" type="text" placeholder="e.g. ab12345 ya meristream" maxlength="30"
-        oninput="this.value=this.value.replace(/[^a-z0-9\-_]/gi,'').toLowerCase()">
-    </div>
-    <div class="id-hint">⚠️ Unique ID rakho — agar kisi ne pehle use ki ho to error aayega.</div>
-    <br>
-    <button class="big-btn red" onclick="startStream('back')">📸 Back Camera Se Live Ho</button>
-    <button class="big-btn dark" onclick="startStream('front')">🤳 Front Camera Se Live Ho</button>
+<!-- ============================================================
+     VIEWER PAGE — ?watch= link pe yeh dikhta hai
+     Sirf video + overlays. Admin panel bilkul nahi.
+     ============================================================ -->
+<div id="viewerPage">
+  <!-- Loading screen -->
+  <div id="vLoader">
+    <div class="vloader-logo">LIVE<span>CAM</span></div>
+    <div class="spinner"></div>
+    <div class="vloader-txt" id="vLoaderTxt">Stream se connect ho raha hoon...</div>
   </div>
 
-  <div class="card">
-    <div class="card-label">👁️ Viewer — Stream Dekho</div>
-    <div class="row">
-      <input class="inp" id="watchInput" type="text" placeholder="Link ya Stream ID paste karo...">
-      <button class="join-btn" onclick="joinStream()">JOIN</button>
-    </div>
-  </div>
-</div>
-
-<!-- ===== ADMIN STREAM ===== -->
-<div id="streamScreen" class="screen">
-  <video id="mainVideo" autoplay playsinline muted></video>
-
-  <div id="overlayCanvas">
-    <img id="logoOverlay" src="" alt="logo" draggable="false">
-    <div id="textOverlay"></div>
-  </div>
-
-  <div id="adminTop">
-    <div class="live-pill"><div class="pulse"></div>LIVE</div>
-    <div class="stat-pill">⏱ <span id="timerDisp">00:00</span></div>
-    <div class="stat-pill">👁 <span id="viewCount">0</span></div>
-  </div>
-
-  <div id="adminBottom">
-    <div class="ctrl-row">
-      <button class="c-btn" id="flashBtn" onclick="toggleFlash()">💡</button>
-      <button class="c-btn" id="flipBtn" onclick="flipCamera()">🔄</button>
-      <button class="stop-c" onclick="stopStream()">⏹</button>
-      <button class="c-btn" id="panelBtn" onclick="toggleDrawer()">🎛️</button>
-      <button class="c-btn" onclick="showShareLink()">🔗</button>
-    </div>
-    <div class="zoom-row">
-      <span class="zoom-lbl">🔍</span>
-      <input type="range" id="zoomSlider" min="1" max="8" step="0.1" value="1" oninput="applyZoom(this.value)">
-      <span class="zoom-v" id="zoomVal">1.0x</span>
-    </div>
-  </div>
-
-  <!-- Admin Drawer -->
-  <div id="adminDrawer">
-    <div class="dhandle"></div>
-
-    <!-- Share -->
-    <div class="sec" style="margin-top:0">🔗 Viewer Link</div>
-    <div class="s-row" style="margin-bottom:8px">
-      <button class="s-btn" onclick="copyLink()">📋 Copy Link</button>
-      <button class="s-btn" onclick="waShare()">📤 WhatsApp</button>
-    </div>
-    <div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:10px 12px;font-size:0.72rem;color:#4fc3f7;word-break:break-all;margin-bottom:4px" id="linkDisplay">-</div>
-
-    <!-- TEXT OVERLAY -->
-    <div class="sec">💬 Screen Pe Text Dikhao</div>
-    <div class="m-row">
-      <input class="m-inp" id="overlayTextInput" type="text" placeholder="Text likho jo viewers ko dikhe..." maxlength="100">
-      <button class="send-b" onclick="sendText()">SHOW</button>
-    </div>
-
-    <!-- Font -->
-    <div class="font-row">
-      <select id="fontFamily" onchange="updateTextStyle()">
-        <option value="'DM Sans',sans-serif">DM Sans</option>
-        <option value="'Bebas Neue',sans-serif">Bebas Neue</option>
-        <option value="Arial,sans-serif">Arial</option>
-        <option value="'Courier New',monospace">Courier New</option>
-        <option value="Georgia,serif">Georgia</option>
-        <option value="Impact,sans-serif">Impact</option>
-        <option value="Verdana,sans-serif">Verdana</option>
-      </select>
-      <input type="number" id="fontSize" value="22" min="10" max="80" style="width:70px" oninput="updateTextStyle()" placeholder="Size">
-      <span style="font-size:0.72rem;color:var(--muted)">px</span>
-    </div>
-
-    <!-- Colors -->
-    <div class="color-row">
-      <label>Text:</label><input type="color" id="textColor" value="#ffffff" oninput="updateTextStyle()">
-      <label>BG:</label><input type="color" id="textBgColor" value="#000000" oninput="updateTextStyle()">
-      <label>Opacity:</label>
-      <input type="range" id="textBgOpacity" min="0" max="1" step="0.05" value="0.6" style="width:70px;height:3px" oninput="updateTextStyle()">
-    </div>
-
-    <!-- Text position -->
-    <div class="logo-ctrl-grid" style="margin-bottom:8px">
-      <div class="pos-inp-wrap"><label>Text Left (px)</label><input class="pos-inp" type="number" id="textX" value="20" oninput="updateTextPos()"></div>
-      <div class="pos-inp-wrap"><label>Text Top (px)</label><input class="pos-inp" type="number" id="textY" value="400" oninput="updateTextPos()"></div>
-    </div>
-
-    <div class="qtags">
-      <span class="qtag" onclick="quickText('🙏 Shukriya!')">🙏 Shukriya</span>
-      <span class="qtag" onclick="quickText('👋 Welcome!')">👋 Welcome</span>
-      <span class="qtag" onclick="quickText('🔥 Live hai!')">🔥 Live</span>
-      <span class="qtag" onclick="quickText('📢 Share karo!')">📢 Share</span>
-      <span class="qtag" onclick="hideText()">✕ Text Hatao</span>
-    </div>
-
-    <!-- LOGO -->
-    <div class="sec">🖼️ Logo / Image Overlay</div>
-    <div class="upload-area" onclick="document.getElementById('imgFileInput').click()">
-      <div style="font-size:1.8rem">📁</div>
-      <div style="font-size:0.8rem;color:var(--muted);margin-top:4px">Tap karo — image ya logo upload karo</div>
-      <img class="img-prev" id="imgPreview" src="" alt="">
-    </div>
-    <input type="file" id="imgFileInput" accept="image/*" style="display:none" onchange="uploadLogo(this)">
-
-    <div class="size-row">
-      <label>Width:</label>
-      <input type="number" id="logoW" value="120" min="30" max="400" class="pos-inp" style="width:72px" oninput="applyLogoSize()">
-      <label>px &nbsp;Height:</label>
-      <input type="number" id="logoH" value="80" min="20" max="400" class="pos-inp" style="width:72px" oninput="applyLogoSize()">
-      <label>px</label>
-    </div>
-
-    <div class="logo-ctrl-grid" style="margin-bottom:8px">
-      <div class="pos-inp-wrap"><label>Logo Left (px)</label><input class="pos-inp" type="number" id="logoX" value="16" oninput="applyLogoPos()"></div>
-      <div class="pos-inp-wrap"><label>Logo Top (px)</label><input class="pos-inp" type="number" id="logoY" value="80" oninput="applyLogoPos()"></div>
-    </div>
-
-    <!-- Move buttons -->
-    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;max-width:180px;margin:0 auto 10px">
-      <div></div>
-      <button class="s-btn" onclick="moveLogo(0,-10)" style="padding:10px;font-size:1rem">▲</button>
-      <div></div>
-      <button class="s-btn" onclick="moveLogo(-10,0)" style="padding:10px;font-size:1rem">◄</button>
-      <div style="display:flex;align-items:center;justify-content:center;font-size:0.65rem;color:var(--muted)">MOVE</div>
-      <button class="s-btn" onclick="moveLogo(10,0)" style="padding:10px;font-size:1rem">►</button>
-      <div></div>
-      <button class="s-btn" onclick="moveLogo(0,10)" style="padding:10px;font-size:1rem">▼</button>
-      <div></div>
-    </div>
-
-    <div class="s-row" style="margin-bottom:10px">
-      <button class="s-btn" onclick="toggleLogo(true)">✅ Logo Show</button>
-      <button class="s-btn" onclick="toggleLogo(false)">✕ Logo Hide</button>
-    </div>
-
-    <!-- TICKER -->
-    <div class="sec">📢 Ticker Text (Running)</div>
-    <div class="m-row">
-      <input class="m-inp" id="tickerInput" type="text" placeholder="Running ticker text..." maxlength="120">
-      <button class="send-b" onclick="sendTicker()">GO</button>
-    </div>
-    <button class="s-btn" style="width:100%;margin-bottom:10px" onclick="hideTicker()">✕ Ticker Hatao</button>
-
-    <button class="big-btn dark" onclick="toggleDrawer()" style="margin-top:8px">✕ Panel Band Karo</button>
-  </div>
-</div>
-
-<!-- ===== VIEWER SCREEN — ULTRA CLEAN ===== -->
-<div id="viewerScreen" class="screen">
   <!-- Pure video -->
   <video id="viewVideo" autoplay playsinline></video>
 
-  <!-- Overlays sent by admin -->
+  <!-- Admin se aane wale overlays -->
   <img id="vLogoOverlay" src="" alt="">
   <div id="vTextOverlay"></div>
-  <div id="vTickerWrap"><div class="ticker-inner" id="vTickerInner"></div></div>
+  <div id="vTickerWrap"><div class="ticker-inner-v" id="vTickerInner"></div></div>
 
-  <!-- Only ONE control: tap screen → play/pause icon appears briefly -->
-  <div id="viewPlayBtn" onclick="viewerTogglePlay()">
-    <!-- Play icon SVG -->
-    <svg id="playIcon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M8 5v14l11-7z"/></svg>
+  <!-- Tap area — puri screen -->
+  <div id="vTapArea" onclick="viewerTap()"></div>
+
+  <!-- Play/Pause icon — tap pe aata hai, fade ho jata hai -->
+  <div id="vPlayIcon">
+    <svg id="vIconSvg" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+      <path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/>
+    </svg>
+  </div>
+</div>
+
+<!-- ============================================================
+     ADMIN PAGE — normal URL pe yeh dikhta hai
+     ============================================================ -->
+<div id="adminPage">
+
+  <!-- HOME: ID + Camera select -->
+  <div id="homeScreen">
+    <div class="logo-title">LIVE<span>CAM</span> <span style="font-size:1.1rem;color:var(--muted)">PRO</span></div>
+    <div class="tagline">Professional Live Streaming</div>
+
+    <div class="card">
+      <div class="card-label">🔴 Stream Shuru Karo</div>
+      <div class="sec" style="margin-top:0;margin-bottom:6px">Apna Stream ID likho</div>
+      <input class="inp" id="customIdInput" type="text" placeholder="e.g. ab12345 ya meristream" maxlength="30"
+        style="width:100%;margin-bottom:6px" oninput="this.value=this.value.replace(/[^a-z0-9\-_]/gi,'').toLowerCase()">
+      <div class="id-hint" style="margin-bottom:14px">⚠️ Unique ID rakho — warna error aayega.</div>
+      <button class="big-btn red" onclick="startStream('back')">📸 Back Camera Se Live Ho</button>
+      <button class="big-btn dark" onclick="startStream('front')">🤳 Front Camera Se Live Ho</button>
+    </div>
   </div>
 
-  <!-- Tap anywhere to toggle play -->
-  <div id="viewTapArea" style="position:absolute;inset:0;z-index:15;" onclick="viewerTap()"></div>
-</div>
+  <!-- LIVE STREAM SCREEN (admin) -->
+  <div id="streamScreen">
+    <video id="mainVideo" autoplay playsinline muted></video>
 
-<!-- Loading -->
-<div id="loadingOverlay">
-  <div class="spinner"></div>
-  <div style="color:var(--muted);font-size:0.85rem" id="loadTxt">Connecting...</div>
-</div>
+    <div id="overlayCanvas">
+      <img id="logoOverlay" src="" alt="logo" draggable="false">
+      <div id="textOverlay"></div>
+    </div>
 
-<!-- Toast -->
+    <!-- Top bar -->
+    <div id="adminTop">
+      <div class="live-pill"><div class="pulse"></div>LIVE</div>
+      <div class="stat-pill">⏱ <span id="timerDisp">00:00</span></div>
+      <div class="stat-pill">👁 <span id="viewCount">0</span></div>
+    </div>
+
+    <!-- Bottom controls -->
+    <div id="adminBottom">
+      <div class="ctrl-row">
+        <button class="c-btn" id="flashBtn" onclick="toggleFlash()">💡</button>
+        <button class="c-btn" id="flipBtn" onclick="flipCamera()">🔄</button>
+        <button class="stop-c" onclick="stopStream()">⏹</button>
+        <button class="c-btn" id="panelBtn" onclick="toggleDrawer()">🎛️</button>
+        <button class="c-btn" onclick="copyLink()">🔗</button>
+      </div>
+      <div class="zoom-row">
+        <span class="zoom-lbl">🔍</span>
+        <input type="range" id="zoomSlider" min="1" max="8" step="0.1" value="1" oninput="applyZoom(this.value)">
+        <span class="zoom-v" id="zoomVal">1.0x</span>
+      </div>
+    </div>
+
+    <!-- Admin Control Drawer -->
+    <div id="adminDrawer">
+      <div class="dhandle"></div>
+
+      <!-- Link -->
+      <div class="sec" style="margin-top:0">🔗 Viewer Ko Yeh Link Bhejo</div>
+      <div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:10px 12px;font-size:0.72rem;color:#4fc3f7;word-break:break-all;margin-bottom:8px" id="linkDisplay">-</div>
+      <div class="s-row" style="margin-bottom:4px">
+        <button class="s-btn" onclick="copyLink()">📋 Copy Link</button>
+        <button class="s-btn" onclick="waShare()">📤 WhatsApp</button>
+      </div>
+
+      <!-- Text Overlay -->
+      <div class="sec">💬 Screen Pe Text Dikhao</div>
+      <div class="m-row">
+        <input class="m-inp" id="overlayTextInput" type="text" placeholder="Viewers ko text dikhao..." maxlength="100">
+        <button class="send-b" onclick="sendText()">SHOW</button>
+      </div>
+      <div class="font-row">
+        <select id="fontFamily" onchange="updateTextStyle()">
+          <option value="'DM Sans',sans-serif">DM Sans</option>
+          <option value="'Bebas Neue',sans-serif">Bebas Neue</option>
+          <option value="Arial,sans-serif">Arial</option>
+          <option value="'Courier New',monospace">Courier New</option>
+          <option value="Georgia,serif">Georgia</option>
+          <option value="Impact,sans-serif">Impact</option>
+          <option value="Verdana,sans-serif">Verdana</option>
+        </select>
+        <input type="number" id="fontSize" value="22" min="10" max="80" style="width:70px" oninput="updateTextStyle()">
+        <span style="font-size:0.72rem;color:var(--muted)">px</span>
+      </div>
+      <div class="color-row">
+        <label>Text:</label><input type="color" id="textColor" value="#ffffff" oninput="updateTextStyle()">
+        <label>BG:</label><input type="color" id="textBgColor" value="#000000" oninput="updateTextStyle()">
+        <label>Opacity:</label>
+        <input type="range" id="textBgOpacity" min="0" max="1" step="0.05" value="0.6" style="width:70px;height:3px" oninput="updateTextStyle()">
+      </div>
+      <div class="grid2" style="margin-bottom:8px">
+        <div class="fi"><label>Text Left (px)</label><input class="pi" type="number" id="textX" value="20" oninput="updateTextPos()"></div>
+        <div class="fi"><label>Text Top (px)</label><input class="pi" type="number" id="textY" value="400" oninput="updateTextPos()"></div>
+      </div>
+      <div class="qtags">
+        <span class="qtag" onclick="quickText('🙏 Shukriya!')">🙏 Shukriya</span>
+        <span class="qtag" onclick="quickText('👋 Welcome!')">👋 Welcome</span>
+        <span class="qtag" onclick="quickText('🔥 Live hai!')">🔥 Live</span>
+        <span class="qtag" onclick="quickText('📢 Share karo!')">📢 Share</span>
+        <span class="qtag" onclick="hideText()">✕ Text Hatao</span>
+      </div>
+
+      <!-- Logo -->
+      <div class="sec">🖼️ Logo / Image Overlay</div>
+      <div class="upload-area" onclick="document.getElementById('imgFileInput').click()">
+        <div style="font-size:1.8rem">📁</div>
+        <div style="font-size:0.8rem;color:var(--muted);margin-top:4px">Tap — image upload karo</div>
+        <img class="img-prev" id="imgPreview" src="" alt="">
+      </div>
+      <input type="file" id="imgFileInput" accept="image/*" style="display:none" onchange="uploadLogo(this)">
+      <div class="size-row">
+        <label>W:</label><input type="number" id="logoW" value="120" min="30" max="400" class="pi" style="width:70px" oninput="applyLogoSize()">
+        <label>px H:</label><input type="number" id="logoH" value="80" min="20" max="400" class="pi" style="width:70px" oninput="applyLogoSize()">
+        <label>px</label>
+      </div>
+      <div class="grid2" style="margin-bottom:8px">
+        <div class="fi"><label>Logo Left (px)</label><input class="pi" type="number" id="logoX" value="16" oninput="applyLogoPos()"></div>
+        <div class="fi"><label>Logo Top (px)</label><input class="pi" type="number" id="logoY" value="80" oninput="applyLogoPos()"></div>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;max-width:180px;margin:0 auto 10px">
+        <div></div><button class="s-btn" onclick="moveLogo(0,-10)" style="padding:10px">▲</button><div></div>
+        <button class="s-btn" onclick="moveLogo(-10,0)" style="padding:10px">◄</button>
+        <div style="display:flex;align-items:center;justify-content:center;font-size:0.6rem;color:var(--muted)">MOVE</div>
+        <button class="s-btn" onclick="moveLogo(10,0)" style="padding:10px">►</button>
+        <div></div><button class="s-btn" onclick="moveLogo(0,10)" style="padding:10px">▼</button><div></div>
+      </div>
+      <div class="s-row" style="margin-bottom:10px">
+        <button class="s-btn" onclick="toggleLogo(true)">✅ Logo Show</button>
+        <button class="s-btn" onclick="toggleLogo(false)">✕ Logo Hide</button>
+      </div>
+
+      <!-- Ticker -->
+      <div class="sec">📢 Ticker (Running Text)</div>
+      <div class="m-row">
+        <input class="m-inp" id="tickerInput" type="text" placeholder="Running text..." maxlength="120">
+        <button class="send-b" onclick="sendTicker()">GO</button>
+      </div>
+      <button class="s-btn" style="width:100%;margin-bottom:10px" onclick="hideTicker()">✕ Ticker Hatao</button>
+
+      <button class="big-btn dark" onclick="toggleDrawer()">✕ Panel Band Karo</button>
+    </div>
+  </div>
+
+</div><!-- /adminPage -->
+
 <div id="toast"></div>
 
 <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
 <script>
-// =============================================
-// STATE
-// =============================================
-let peer,localStream,myPeerId,streamLink='';
-let activeCalls=[],dataConns=[];
-let flashOn=false,currentFacing='environment';
-let videoTrack=null,timerInt,startTime;
+// ==============================================
+// ROUTING — first thing: check URL
+// ==============================================
+const watchId = new URLSearchParams(location.search).get('watch');
+
+if (watchId) {
+  // VIEWER MODE — show only viewer page
+  document.getElementById('viewerPage').style.display = 'block';
+  initViewer(watchId);
+} else {
+  // ADMIN MODE — show only admin page
+  document.getElementById('adminPage').style.display = 'block';
+}
+
+// ==============================================
+// SHARED UTILS
+// ==============================================
+function toast(msg, dur=2500){
+  const t=document.getElementById('toast');
+  t.textContent=msg; t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'), dur);
+}
+function hexToRgb(hex){
+  if(!hex||hex.length<7)return'0,0,0';
+  return`${parseInt(hex.slice(1,3),16)},${parseInt(hex.slice(3,5),16)},${parseInt(hex.slice(5,7),16)}`;
+}
+
+// ==============================================
+// ==============================================
+// VIEWER LOGIC
+// ==============================================
+// ==============================================
+let viewerPeer, iconHideTimer;
+
+function initViewer(hostId){
+  const vLoader = document.getElementById('vLoader');
+  const vLoaderTxt = document.getElementById('vLoaderTxt');
+
+  viewerPeer = new Peer({ host:'0.peerjs.com', port:443, secure:true, path:'/' });
+
+  viewerPeer.on('open', () => {
+    vLoaderTxt.textContent = 'Host se connect ho raha hoon...';
+
+    // Data channel for overlays
+    const conn = viewerPeer.connect(hostId);
+    conn.on('data', applyViewerOverlays);
+
+    // Video call
+    const canvas = Object.assign(document.createElement('canvas'),{width:1,height:1});
+    const call = viewerPeer.call(hostId, canvas.captureStream(1));
+
+    if(!call){
+      vLoaderTxt.textContent = '❌ Host nahi mila. Link check karo.';
+      return;
+    }
+
+    call.on('stream', (remote) => {
+      const vid = document.getElementById('viewVideo');
+      vid.srcObject = remote;
+      vid.muted = false;
+      vid.play().catch(() => { vid.muted = true; vid.play(); });
+      // Hide loader, show video
+      vLoader.style.display = 'none';
+      // Show pause icon briefly on connect
+      flashIcon();
+    });
+
+    call.on('close', () => {
+      vLoaderTxt.textContent = 'Stream band ho gayi.';
+      vLoader.style.display = 'flex';
+    });
+
+    call.on('error', e => {
+      vLoaderTxt.textContent = 'Error: ' + e;
+      vLoader.style.display = 'flex';
+    });
+  });
+
+  viewerPeer.on('error', e => {
+    document.getElementById('vLoaderTxt').textContent =
+      e.type === 'peer-unavailable' ? '❌ Host online nahi hai.' : '❌ Error: ' + e.type;
+  });
+}
+
+// Apply overlays sent by admin
+function applyViewerOverlays(data){
+  if(data.type !== 'fullState') return;
+
+  // LOGO
+  const l = data.logo, vl = document.getElementById('vLogoOverlay');
+  if(l.show && l.src){
+    vl.src = l.src;
+    vl.style.cssText = `display:block;position:absolute;left:${l.x}px;top:${l.y}px;width:${l.w}px;height:${l.h}px;object-fit:contain;filter:drop-shadow(0 2px 12px rgba(0,0,0,0.9));border-radius:6px;pointer-events:none;z-index:10`;
+  } else { vl.style.display = 'none'; }
+
+  // TEXT
+  const t = data.text, vt = document.getElementById('vTextOverlay');
+  if(t.show && t.msg){
+    vt.textContent = t.msg;
+    vt.style.cssText = `display:block;position:absolute;left:${t.x}px;top:${t.y}px;color:${t.color};background:rgba(${hexToRgb(t.bgColor)},${t.bgOpacity});font-family:${t.font};font-size:${t.size}px;padding:8px 18px;border-radius:8px;line-height:1.4;white-space:pre-wrap;word-break:break-word;text-shadow:0 2px 8px rgba(0,0,0,0.9);pointer-events:none;z-index:11`;
+  } else { vt.style.display = 'none'; }
+
+  // TICKER
+  const tk = data.ticker, tw = document.getElementById('vTickerWrap'), ti = document.getElementById('vTickerInner');
+  if(tk.show && tk.msg){
+    ti.textContent = tk.msg + ' • ' + tk.msg + ' • ' + tk.msg;
+    tw.style.cssText = 'display:block;position:absolute;bottom:60px;left:0;right:0;overflow:hidden;background:rgba(200,0,0,0.88);padding:7px 0;z-index:11;pointer-events:none';
+  } else { tw.style.display = 'none'; }
+}
+
+// Viewer tap → show icon briefly → tap icon = play/pause
+function viewerTap(){
+  flashIcon();
+}
+function flashIcon(){
+  const btn = document.getElementById('vPlayIcon');
+  updateViewerIcon();
+  btn.classList.add('show');
+  clearTimeout(iconHideTimer);
+  iconHideTimer = setTimeout(() => btn.classList.remove('show'), 1800);
+}
+function updateViewerIcon(){
+  const vid = document.getElementById('viewVideo');
+  const svg = document.getElementById('vIconSvg');
+  if(vid.paused){
+    svg.innerHTML = '<path d="M8 5v14l11-7z"/>'; // play
+  } else {
+    svg.innerHTML = '<path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/>'; // pause
+  }
+}
+// vPlayIcon click — stop propagation so it doesn't double-fire with tap area
+document.getElementById('vPlayIcon').addEventListener('click', e => {
+  e.stopPropagation();
+  const vid = document.getElementById('viewVideo');
+  if(vid.paused) vid.play(); else vid.pause();
+  updateViewerIcon();
+  flashIcon();
+});
+
+// ==============================================
+// ==============================================
+// ADMIN LOGIC
+// ==============================================
+// ==============================================
+let peer, localStream, myPeerId, streamLink='';
+let activeCalls=[], dataConns=[];
+let flashOn=false, currentFacing='environment';
+let videoTrack=null, timerInt, startTime;
 let drawerOpen=false;
-let logoDataUrl='',logoVisible=false;
-let textVisible=false,tickerVisible=false;
-let viewerPaused=false;
-let btnHideTimer;
+let logoDataUrl='', logoVisible=false;
+let textVisible=false, tickerVisible=false;
+let isDragging=false, dragStartX=0, dragStartY=0, logoStartX=0, logoStartY=0;
 
-// Logo drag
-let isDragging=false,dragStartX=0,dragStartY=0,logoStartX=0,logoStartY=0;
+function startTimer(){
+  startTime=Date.now();
+  timerInt=setInterval(()=>{
+    const s=Math.floor((Date.now()-startTime)/1000),m=Math.floor(s/60),sec=s%60;
+    document.getElementById('timerDisp').textContent=String(m).padStart(2,'0')+':'+String(sec).padStart(2,'0');
+  },1000);
+}
+function updateViewers(){ document.getElementById('viewCount').textContent=activeCalls.length; }
 
-// =============================================
-// UTILS
-// =============================================
-function showScreen(id){document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));document.getElementById(id).classList.add('active')}
-function toast(msg,dur=2500){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),dur)}
-function loading(show,text=''){document.getElementById('loadingOverlay').style.display=show?'flex':'none';if(text)document.getElementById('loadTxt').textContent=text}
-function startTimer(){startTime=Date.now();timerInt=setInterval(()=>{const s=Math.floor((Date.now()-startTime)/1000),m=Math.floor(s/60),sec=s%60;document.getElementById('timerDisp').textContent=String(m).padStart(2,'0')+':'+String(sec).padStart(2,'0')},1000)}
-function updateViewers(){document.getElementById('viewCount').textContent=activeCalls.length}
-function hexToRgb(hex){if(!hex||hex.length<7)return'0,0,0';return`${parseInt(hex.slice(1,3),16)},${parseInt(hex.slice(3,5),16)},${parseInt(hex.slice(5,7),16)}`}
-
-// =============================================
-// LOGO DRAG (Touch)
-// =============================================
+// Logo drag (touch)
 function initLogoDrag(){
   const el=document.getElementById('logoOverlay');
   el.style.pointerEvents='auto';
   el.addEventListener('touchstart',e=>{
     isDragging=true;
-    dragStartX=e.touches[0].clientX;dragStartY=e.touches[0].clientY;
+    dragStartX=e.touches[0].clientX; dragStartY=e.touches[0].clientY;
     logoStartX=parseInt(document.getElementById('logoX').value)||16;
     logoStartY=parseInt(document.getElementById('logoY').value)||80;
     e.preventDefault();
   },{passive:false});
   el.addEventListener('touchmove',e=>{
     if(!isDragging)return;
-    const nx=logoStartX+(e.touches[0].clientX-dragStartX);
-    const ny=logoStartY+(e.touches[0].clientY-dragStartY);
-    document.getElementById('logoX').value=Math.round(nx);
-    document.getElementById('logoY').value=Math.round(ny);
-    applyLogoPos();e.preventDefault();
+    document.getElementById('logoX').value=Math.round(logoStartX+(e.touches[0].clientX-dragStartX));
+    document.getElementById('logoY').value=Math.round(logoStartY+(e.touches[0].clientY-dragStartY));
+    applyLogoPos(); e.preventDefault();
   },{passive:false});
-  el.addEventListener('touchend',()=>{isDragging=false;broadcastState()});
+  el.addEventListener('touchend',()=>{isDragging=false; broadcastState();});
 }
 
-// =============================================
-// HOST — START
-// =============================================
 async function startStream(facing){
   const rawId=document.getElementById('customIdInput').value.trim();
   const streamId=rawId||('stream'+Math.random().toString(36).substr(2,6));
   currentFacing=facing==='front'?'user':'environment';
-  loading(true,'Camera shuru ho rahi hai...');
+
+  // Show loading state
+  document.getElementById('homeScreen').style.display='none';
+
   try{
     localStream=await navigator.mediaDevices.getUserMedia({
       video:{facingMode:currentFacing,width:{ideal:1920},height:{ideal:1080}},audio:true
     });
-  }catch(e){loading(false);toast('❌ Camera permission nahi mili!');return}
+  }catch(e){
+    document.getElementById('homeScreen').style.display='flex';
+    toast('❌ Camera permission nahi mili!'); return;
+  }
   videoTrack=localStream.getVideoTracks()[0];
   document.getElementById('mainVideo').srcObject=localStream;
-  loading(true,'Server se connect ho raha hoon...');
+  document.getElementById('streamScreen').style.display='block';
 
   peer=new Peer(streamId,{host:'0.peerjs.com',port:443,secure:true,path:'/'});
   peer.on('open',(id)=>{
     myPeerId=id;
     streamLink=location.href.split('?')[0]+'?watch='+id;
     document.getElementById('linkDisplay').textContent=streamLink;
-    loading(false);showScreen('streamScreen');startTimer();initLogoDrag();
+    startTimer(); initLogoDrag();
     toast('🔴 Live! ID: '+id);
   });
   peer.on('call',(call)=>{
-    call.answer(localStream);activeCalls.push(call);updateViewers();
-    call.on('close',()=>{activeCalls=activeCalls.filter(c=>c!==call);updateViewers()});
-    call.on('error',()=>{activeCalls=activeCalls.filter(c=>c!==call);updateViewers()});
+    call.answer(localStream); activeCalls.push(call); updateViewers();
+    call.on('close',()=>{activeCalls=activeCalls.filter(c=>c!==call); updateViewers();});
+    call.on('error',()=>{activeCalls=activeCalls.filter(c=>c!==call); updateViewers();});
   });
   peer.on('connection',(conn)=>{
     dataConns.push(conn);
-    conn.on('open',()=>{setTimeout(()=>{try{conn.send(getCurrentState())}catch(e){}},400)});
-    conn.on('close',()=>{dataConns=dataConns.filter(c=>c!==conn)});
+    conn.on('open',()=>{setTimeout(()=>{try{conn.send(getCurrentState())}catch(e){}},400);});
+    conn.on('close',()=>{dataConns=dataConns.filter(c=>c!==conn);});
   });
   peer.on('error',(e)=>{
-    loading(false);
-    if(e.type==='unavailable-id')toast('❌ Yeh ID pehle se use ho rahi hai! Doosri ID rakho.');
+    if(e.type==='unavailable-id') toast('❌ Yeh ID pehle se use ho rahi hai! Doosri ID rakho.');
     else toast('Error: '+e.type);
   });
   peer.on('disconnected',()=>peer.reconnect());
 }
 
-// =============================================
-// STATE SNAPSHOT
-// =============================================
 function getCurrentState(){
   return{
     type:'fullState',
@@ -455,13 +584,10 @@ function getCurrentState(){
   };
 }
 function broadcastState(){
-  const state=getCurrentState();
-  dataConns.forEach(conn=>{try{conn.send(state)}catch(e){}});
+  const s=getCurrentState();
+  dataConns.forEach(conn=>{try{conn.send(s)}catch(e){}});
 }
 
-// =============================================
-// ADMIN — CAMERA CONTROLS
-// =============================================
 async function toggleFlash(){
   if(!videoTrack)return;
   try{
@@ -469,7 +595,7 @@ async function toggleFlash(){
     await videoTrack.applyConstraints({advanced:[{torch:flashOn}]});
     document.getElementById('flashBtn').classList.toggle('on',flashOn);
     toast(flashOn?'💡 Flash ON':'💡 Flash OFF');
-  }catch(e){toast('❌ Flash support nahi');flashOn=false}
+  }catch(e){toast('❌ Flash support nahi');flashOn=false;}
 }
 async function flipCamera(){
   currentFacing=currentFacing==='environment'?'user':'environment';
@@ -478,15 +604,15 @@ async function flipCamera(){
     localStream=await navigator.mediaDevices.getUserMedia({video:{facingMode:currentFacing,width:{ideal:1920},height:{ideal:1080}},audio:true});
     videoTrack=localStream.getVideoTracks()[0];
     document.getElementById('mainVideo').srcObject=localStream;
-    activeCalls.forEach(call=>{const s=call.peerConnection?.getSenders().find(s=>s.track?.kind==='video');if(s)s.replaceTrack(videoTrack)});
+    activeCalls.forEach(call=>{const s=call.peerConnection?.getSenders().find(s=>s.track?.kind==='video');if(s)s.replaceTrack(videoTrack);});
     toast('🔄 Camera flip');
-  }catch(e){toast('❌ Flip nahi hua')}
+  }catch(e){toast('❌ Flip nahi hua');}
 }
 function applyZoom(val){
   document.getElementById('zoomVal').textContent=parseFloat(val).toFixed(1)+'x';
   if(!videoTrack)return;
-  try{videoTrack.applyConstraints({advanced:[{zoom:parseFloat(val)}]})}
-  catch(e){const v=document.getElementById('mainVideo');v.style.transform=`scale(${val})`;v.style.transformOrigin='center center'}
+  try{videoTrack.applyConstraints({advanced:[{zoom:parseFloat(val)}]});}
+  catch(e){const v=document.getElementById('mainVideo');v.style.transform=`scale(${val})`;v.style.transformOrigin='center center';}
 }
 function toggleDrawer(){
   drawerOpen=!drawerOpen;
@@ -494,21 +620,14 @@ function toggleDrawer(){
   document.getElementById('panelBtn').classList.toggle('on',drawerOpen);
 }
 
-// =============================================
-// TEXT OVERLAY
-// =============================================
+// Text overlay
 function updateTextStyle(){
   const el=document.getElementById('textOverlay');
-  const color=document.getElementById('textColor').value;
-  const bgColor=document.getElementById('textBgColor').value;
-  const bgOpacity=parseFloat(document.getElementById('textBgOpacity').value);
-  el.style.color=color;
-  el.style.background=`rgba(${hexToRgb(bgColor)},${bgOpacity})`;
+  el.style.color=document.getElementById('textColor').value;
+  el.style.background=`rgba(${hexToRgb(document.getElementById('textBgColor').value)},${parseFloat(document.getElementById('textBgOpacity').value)})`;
   el.style.fontFamily=document.getElementById('fontFamily').value;
   el.style.fontSize=document.getElementById('fontSize').value+'px';
-  el.style.padding='8px 18px';
-  el.style.borderRadius='8px';
-  el.style.lineHeight='1.4';
+  el.style.padding='8px 18px'; el.style.borderRadius='8px';
   if(textVisible)broadcastState();
 }
 function updateTextPos(){
@@ -519,21 +638,19 @@ function updateTextPos(){
 }
 function sendText(){
   const msg=document.getElementById('overlayTextInput').value.trim();
-  if(!msg){toast('Text likho!');return}
+  if(!msg){toast('Text likho!');return;}
   document.getElementById('textOverlay').textContent=msg;
   textVisible=true;
   document.getElementById('textOverlay').style.display='block';
-  updateTextStyle();updateTextPos();broadcastState();
+  updateTextStyle(); updateTextPos(); broadcastState();
   toast('✅ Text live pe dikh raha hai!');
 }
-function quickText(msg){document.getElementById('overlayTextInput').value=msg;sendText()}
-function hideText(){textVisible=false;document.getElementById('textOverlay').style.display='none';broadcastState();toast('Text hataya')}
+function quickText(msg){document.getElementById('overlayTextInput').value=msg;sendText();}
+function hideText(){textVisible=false;document.getElementById('textOverlay').style.display='none';broadcastState();toast('Text hataya');}
 
-// =============================================
-// LOGO OVERLAY
-// =============================================
+// Logo
 function uploadLogo(input){
-  const file=input.files[0];if(!file)return;
+  const file=input.files[0]; if(!file)return;
   const reader=new FileReader();
   reader.onload=(e)=>{
     logoDataUrl=e.target.result;
@@ -556,160 +673,60 @@ function applyLogoSize(){
 }
 function moveLogo(dx,dy){
   const lx=document.getElementById('logoX'),ly=document.getElementById('logoY');
-  lx.value=(parseInt(lx.value)||0)+dx;
-  ly.value=(parseInt(ly.value)||0)+dy;
-  applyLogoPos();if(logoVisible)broadcastState();
+  lx.value=(parseInt(lx.value)||0)+dx; ly.value=(parseInt(ly.value)||0)+dy;
+  applyLogoPos(); if(logoVisible)broadcastState();
 }
 function toggleLogo(show){
-  if(show&&!logoDataUrl){toast('Pehle image upload karo!');return}
+  if(show&&!logoDataUrl){toast('Pehle image upload karo!');return;}
   logoVisible=show;
   const el=document.getElementById('logoOverlay');
   el.style.display=show?'block':'none';
-  if(show){applyLogoPos();applyLogoSize()}
-  broadcastState();toast(show?'🖼️ Logo live!':'🖼️ Logo hataya');
+  if(show){applyLogoPos();applyLogoSize();}
+  broadcastState(); toast(show?'🖼️ Logo live!':'🖼️ Logo hataya');
 }
 
-// =============================================
-// TICKER
-// =============================================
+// Ticker
 function sendTicker(){
   const msg=document.getElementById('tickerInput').value.trim();
-  if(!msg){toast('Ticker text likho!');return}
-  tickerVisible=true;showTickerAdmin(msg);broadcastState();toast('📢 Ticker live!');
+  if(!msg){toast('Ticker text likho!');return;}
+  tickerVisible=true; showTickerAdmin(msg); broadcastState(); toast('📢 Ticker live!');
 }
 function showTickerAdmin(msg){
   let tb=document.getElementById('adminTickerWrap');
   if(!tb){
-    tb=document.createElement('div');tb.id='adminTickerWrap';tb.className='ticker-wrap';
+    tb=document.createElement('div'); tb.id='adminTickerWrap'; tb.className='ticker-wrap';
     tb.style.cssText='position:absolute;bottom:115px;left:0;right:0;background:rgba(200,0,0,0.88);padding:7px 0';
-    const inner=document.createElement('div');inner.className='ticker-inner';inner.id='adminTickerInner';
-    tb.appendChild(inner);document.getElementById('overlayCanvas').appendChild(tb);
+    const inner=document.createElement('div'); inner.className='ticker-inner'; inner.id='adminTickerInner';
+    tb.appendChild(inner); document.getElementById('overlayCanvas').appendChild(tb);
   }
   document.getElementById('adminTickerInner').textContent=msg+' • '+msg+' • '+msg;
   tb.style.display='block';
 }
 function hideTicker(){
   tickerVisible=false;
-  const tb=document.getElementById('adminTickerWrap');if(tb)tb.style.display='none';
-  broadcastState();toast('Ticker hataya');
+  const tb=document.getElementById('adminTickerWrap'); if(tb)tb.style.display='none';
+  broadcastState(); toast('Ticker hataya');
 }
 
-// =============================================
-// SHARE
-// =============================================
-function copyLink(){navigator.clipboard.writeText(streamLink).then(()=>toast('✅ Link copy ho gaya!')).catch(()=>prompt('Copy karo:',streamLink))}
-function waShare(){window.open('https://wa.me/?text='+encodeURIComponent('📺 Meri live stream dekho!\n'+streamLink))}
-function showShareLink(){copyLink()}
+// Share
+function copyLink(){
+  if(!streamLink){toast('Pehle live ho jao!');return;}
+  navigator.clipboard.writeText(streamLink).then(()=>toast('✅ Link copy ho gaya!')).catch(()=>prompt('Copy karo:',streamLink));
+}
+function waShare(){
+  if(!streamLink){toast('Pehle live ho jao!');return;}
+  window.open('https://wa.me/?text='+encodeURIComponent('📺 Meri live stream dekho!\n'+streamLink));
+}
 function stopStream(){
   if(timerInt)clearInterval(timerInt);
   if(localStream)localStream.getTracks().forEach(t=>t.stop());
-  if(peer)peer.destroy();location.reload();
+  if(peer)peer.destroy();
+  location.reload();
 }
-
-// =============================================
-// VIEWER — JOIN
-// =============================================
-function joinStream(){
-  let input=document.getElementById('watchInput').value.trim();
-  if(!input){toast('Link ya ID daalo!');return}
-  if(input.includes('watch='))input=input.split('watch=')[1].split('&')[0];
-  connectViewer(input);
-}
-function connectViewer(hostId){
-  loading(true,'Stream se connect ho raha hoon...');
-  peer=new Peer({host:'0.peerjs.com',port:443,secure:true,path:'/'});
-  peer.on('open',()=>{
-    // Data for overlays
-    const conn=peer.connect(hostId);
-    conn.on('data',(data)=>applyViewerData(data));
-
-    // Video stream
-    const canvas=Object.assign(document.createElement('canvas'),{width:1,height:1});
-    const call=peer.call(hostId,canvas.captureStream(1));
-    if(!call){loading(false);toast('❌ Host nahi mila.');return}
-    call.on('stream',(remote)=>{
-      const vid=document.getElementById('viewVideo');
-      vid.srcObject=remote;vid.muted=false;
-      vid.play().catch(()=>{vid.muted=true;vid.play()});
-      loading(false);showScreen('viewerScreen');
-    });
-    call.on('close',()=>{toast('Stream band ho gayi.');setTimeout(()=>location.reload(),2500)});
-    call.on('error',(e)=>{loading(false);toast('Error: '+e)});
-  });
-  peer.on('error',(e)=>{loading(false);toast(e.type==='peer-unavailable'?'❌ Host online nahi.':'❌ Error: '+e.type)});
-}
-
-// =============================================
-// VIEWER — APPLY OVERLAYS FROM ADMIN
-// =============================================
-function applyViewerData(data){
-  if(data.type!=='fullState')return;
-
-  // Logo
-  const l=data.logo,vl=document.getElementById('vLogoOverlay');
-  if(l.show&&l.src){
-    vl.src=l.src;vl.style.cssText=`display:block;position:absolute;left:${l.x}px;top:${l.y}px;width:${l.w}px;height:${l.h}px;object-fit:contain;filter:drop-shadow(0 2px 12px rgba(0,0,0,0.9));border-radius:6px;pointer-events:none;z-index:10`;
-  }else{vl.style.display='none'}
-
-  // Text
-  const t=data.text,vt=document.getElementById('vTextOverlay');
-  if(t.show&&t.msg){
-    vt.textContent=t.msg;
-    vt.style.cssText=`display:block;position:absolute;left:${t.x}px;top:${t.y}px;color:${t.color};background:rgba(${hexToRgb(t.bgColor)},${t.bgOpacity});font-family:${t.font};font-size:${t.size}px;padding:8px 18px;border-radius:8px;line-height:1.4;white-space:pre-wrap;word-break:break-word;text-shadow:0 2px 8px rgba(0,0,0,0.9);pointer-events:none;z-index:11`;
-  }else{vt.style.display='none'}
-
-  // Ticker
-  const tk=data.ticker,vtkw=document.getElementById('vTickerWrap'),vtk=document.getElementById('vTickerInner');
-  if(tk.show&&tk.msg){
-    vtk.textContent=tk.msg+' • '+tk.msg+' • '+tk.msg;
-    vtkw.style.cssText='display:block;position:absolute;bottom:60px;left:0;right:0;overflow:hidden;background:rgba(200,0,0,0.88);padding:7px 0;z-index:11;pointer-events:none';
-  }else{vtkw.style.display='none'}
-}
-
-// =============================================
-// VIEWER — PLAY/PAUSE (single icon, tap to toggle)
-// =============================================
-function viewerTap(){
-  const btn=document.getElementById('viewPlayBtn');
-  // Update icon before showing
-  updatePlayIcon();
-  btn.classList.add('show');
-  clearTimeout(btnHideTimer);
-  btnHideTimer=setTimeout(()=>btn.classList.remove('show'),1800);
-}
-function viewerTogglePlay(){
-  const vid=document.getElementById('viewVideo');
-  if(vid.paused){vid.play();viewerPaused=false}
-  else{vid.pause();viewerPaused=true}
-  updatePlayIcon();
-  // Keep icon visible a bit longer after action
-  clearTimeout(btnHideTimer);
-  btnHideTimer=setTimeout(()=>document.getElementById('viewPlayBtn').classList.remove('show'),1200);
-}
-function updatePlayIcon(){
-  const vid=document.getElementById('viewVideo');
-  const icon=document.getElementById('playIcon');
-  if(vid.paused){
-    // Play icon
-    icon.innerHTML='<path d="M8 5v14l11-7z"/>';
-    document.getElementById('viewPlayBtn').style.marginLeft='4px';
-  }else{
-    // Pause icon
-    icon.innerHTML='<path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/>';
-    document.getElementById('viewPlayBtn').style.marginLeft='0';
-  }
-}
-
-// =============================================
-// AUTO JOIN FROM URL
-// =============================================
-window.onload=()=>{
-  const watchId=new URLSearchParams(location.search).get('watch');
-  if(watchId){document.getElementById('watchInput').value=location.href;setTimeout(()=>connectViewer(watchId),300)}
-};
 
 // Close drawer on outside tap
 document.addEventListener('click',(e)=>{
+  if(!document.getElementById('adminDrawer'))return;
   if(drawerOpen&&!document.getElementById('adminDrawer').contains(e.target)&&!document.getElementById('panelBtn').contains(e.target))toggleDrawer();
 });
 </script>
