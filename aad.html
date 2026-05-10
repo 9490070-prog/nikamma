@@ -1,0 +1,1041 @@
+package com.abid.abidwebview;
+
+import android.app.Activity;
+import android.content.Intent;
+import android.net.Uri;
+import android.net.http.SslError;
+import android.os.Build;
+import android.os.Handler;
+import android.os.Looper;
+import android.provider.MediaStore;
+import android.view.KeyEvent;
+import android.view.View;
+import android.view.ViewGroup;
+import android.webkit.CookieManager;
+import android.webkit.SslErrorHandler;
+import android.webkit.ValueCallback;
+import android.webkit.WebChromeClient;
+import android.webkit.WebResourceError;
+import android.webkit.WebResourceRequest;
+import android.webkit.WebSettings;
+import android.webkit.WebView;
+import android.webkit.WebViewClient;
+import android.widget.FrameLayout;
+import android.widget.ProgressBar;
+import android.widget.RelativeLayout;
+import android.graphics.Color;
+import android.content.ContentResolver;
+import android.database.Cursor;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.os.Environment;
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.Locale;
+
+import com.google.appinventor.components.annotations.DesignerComponent;
+import com.google.appinventor.components.annotations.SimpleEvent;
+import com.google.appinventor.components.annotations.SimpleFunction;
+import com.google.appinventor.components.common.ComponentCategory;
+import com.google.appinventor.components.runtime.ActivityResultListener;
+import com.google.appinventor.components.runtime.AndroidNonvisibleComponent;
+import com.google.appinventor.components.runtime.AndroidViewComponent;
+import com.google.appinventor.components.runtime.ComponentContainer;
+import com.google.appinventor.components.runtime.EventDispatcher;
+
+@DesignerComponent(
+    version = 18,
+    description = "AbidWebview - Android 16+ Safe | File Upload + In-App Crop + Base64 + Desktop Mode + Button Click",
+    category = ComponentCategory.EXTENSION,
+    nonVisible = true,
+    iconName = "icon.png"
+)
+public class AbidWebview extends AndroidNonvisibleComponent implements ActivityResultListener {
+
+    private final Activity activity;
+    private final ComponentContainer container;
+    private final Handler uiHandler;
+    private WebView webView;
+    private FrameLayout webViewContainer;
+    private ProgressBar progressBar;
+    private ValueCallback<Uri[]> filePathCallback;
+    private int requestCode = 0;
+    private boolean isSetupDone = false;
+    private String pendingUrl = null;
+    private AndroidViewComponent parentComponent = null;
+    private boolean canGoBack = true;
+    private int backgroundColor = 0xFF000000;
+    private boolean isDesktopMode = false;
+    
+    // Image Crop variables  (Android 16+ safe — no external intent, no file:// URI)
+    private String croppedImagePath = "";
+    private String pickedImagePath  = "";   // content:// URI string as picked "path"
+    private boolean isCroppingEnabled = false;
+    private int cropAspectX = 1;
+    private int cropAspectY = 1;
+    private boolean isCropCircle = false;
+    private String cropDataBase64 = "";     // "data:image/jpeg;base64,..." string
+
+    public AbidWebview(ComponentContainer container) {
+        super(container.$form());
+        this.activity = (Activity) container.$context();
+        this.container = container;
+        this.uiHandler = new Handler(Looper.getMainLooper());
+    }
+
+    // ══════════════════════════════════════════════════════
+    //  IMAGE CROP FUNCTIONS - NEW FEATURE
+    // ══════════════════════════════════════════════════════
+    
+    @SimpleFunction(description = "Image crop feature enable karo (crop aspect ratio set kar sakte ho)")
+    public void EnableImageCrop(int aspectRatioX, int aspectRatioY) {
+        isCroppingEnabled = true;
+        cropAspectX = aspectRatioX;
+        cropAspectY = aspectRatioY;
+        isCropCircle = false;
+        OnErrorOccurred("Image crop enabled with aspect ratio " + aspectRatioX + ":" + aspectRatioY);
+    }
+    
+    @SimpleFunction(description = "Circular image crop enable karo (for profile pictures)")
+    public void EnableCircularImageCrop() {
+        isCroppingEnabled = true;
+        isCropCircle = true;
+        cropAspectX = 1;
+        cropAspectY = 1;
+        OnErrorOccurred("Circular image crop enabled");
+    }
+    
+    @SimpleFunction(description = "Image crop band karo")
+    public void DisableImageCrop() {
+        isCroppingEnabled = false;
+        isCropCircle = false;
+        OnErrorOccurred("Image crop disabled");
+    }
+    
+    @SimpleFunction(description = "Crop aspect ratio change karo (enable crop ke baad)")
+    public void SetCropAspectRatio(int aspectX, int aspectY) {
+        if (aspectX > 0 && aspectY > 0) {
+            cropAspectX = aspectX;
+            cropAspectY = aspectY;
+            OnErrorOccurred("Crop aspect ratio set to " + aspectX + ":" + aspectY);
+        }
+    }
+    
+    @SimpleFunction(description = "Circle crop ON/OFF karo")
+    public void SetCircleCrop(boolean circle) {
+        isCropCircle = circle;
+        OnErrorOccurred("Circle crop set to " + circle);
+    }
+    
+    // ══════════════════════════════════════════════════════
+    //  ANDROID 16+ SAFE CROP HELPERS
+    // ══════════════════════════════════════════════════════
+
+    // Temp output file in app-private dir (no FileProvider needed for same-app use)
+    private File createTempCropFile() {
+        try {
+            String ts = new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(new Date());
+            File dir = activity.getExternalFilesDir(Environment.DIRECTORY_PICTURES);
+            if (dir != null && !dir.exists()) dir.mkdirs();
+            return File.createTempFile("CROP_" + ts + "_", ".jpg", dir);
+        } catch (IOException e) {
+            OnErrorOccurred("Temp file error: " + e.getMessage());
+            return null;
+        }
+    }
+
+    // ContentResolver se Bitmap load — Android 16+ pe content:// ke liye only safe way
+    private Bitmap loadBitmapFromUri(Uri uri) {
+        InputStream is = null;
+        try {
+            is = activity.getContentResolver().openInputStream(uri);
+            if (is == null) return null;
+            return BitmapFactory.decodeStream(is);
+        } catch (Exception e) {
+            OnErrorOccurred("Bitmap load error: " + e.getMessage());
+            return null;
+        } finally {
+            if (is != null) { try { is.close(); } catch (Exception ignored) {} }
+        }
+    }
+
+    // Display name ya content URI string — path nahi (Android 16+ pe /data/... path restricted hai)
+    private String getPickedLabel(Uri uri) {
+        try {
+            Cursor c = activity.getContentResolver().query(
+                uri,
+                new String[]{ android.provider.OpenableColumns.DISPLAY_NAME },
+                null, null, null
+            );
+            if (c != null && c.moveToFirst()) {
+                String name = c.getString(0);
+                c.close();
+                if (name != null && !name.isEmpty()) return name;
+            }
+            if (c != null) c.close();
+        } catch (Exception ignored) {}
+        // Fallback: last segment ya full uri
+        String seg = uri.getLastPathSegment();
+        return (seg != null && !seg.isEmpty()) ? seg : uri.toString();
+    }
+
+    // ── MAIN CROP: fully in-app, background thread, no external intent ──
+    private void doCropInBackground(final Uri sourceUri, final ValueCallback<Uri[]> callback) {
+
+        final File outFile = createTempCropFile();
+        if (outFile == null) {
+            OnErrorOccurred("❌ Crop output file nahi bana");
+            OnFileSelected(pickedImagePath, "");
+            OnCropDataReady(pickedImagePath, "", "");
+            callback.onReceiveValue(new Uri[]{sourceUri});
+            filePathCallback = null;
+            return;
+        }
+
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                String outPath = "";
+                String base64  = "";
+
+                try {
+                    // 1. Bitmap load via ContentResolver (Android 16+ safe)
+                    Bitmap original = loadBitmapFromUri(sourceUri);
+                    if (original == null) throw new Exception("Image load nahi hua — URI: " + sourceUri);
+
+                    int w = original.getWidth();
+                    int h = original.getHeight();
+
+                    // 2. Crop rectangle — aspect ratio ya square
+                    int cropW, cropH;
+                    if (cropAspectX <= 0 || cropAspectY <= 0) {
+                        cropW = Math.min(w, h);
+                        cropH = cropW;
+                    } else {
+                        float ratio = (float) cropAspectX / cropAspectY;
+                        if ((float) w / h >= ratio) {
+                            cropH = h; cropW = (int)(h * ratio);
+                        } else {
+                            cropW = w; cropH = (int)(w / ratio);
+                        }
+                    }
+                    // Bounds check
+                    cropW = Math.max(1, Math.min(cropW, w));
+                    cropH = Math.max(1, Math.min(cropH, h));
+                    int startX = (w - cropW) / 2;
+                    int startY = (h - cropH) / 2;
+
+                    Bitmap cropped = Bitmap.createBitmap(original, startX, startY, cropW, cropH);
+                    original.recycle();
+
+                    // 3. File pe save karo
+                    FileOutputStream fos = new FileOutputStream(outFile);
+                    cropped.compress(Bitmap.CompressFormat.JPEG, 92, fos);
+                    fos.flush(); fos.close();
+                    outPath = outFile.getAbsolutePath();
+
+                    // 4. Base64 seedha Bitmap se (reliable, file re-read ki zaroorat nahi)
+                    ByteArrayOutputStream baos = new ByteArrayOutputStream();
+                    cropped.compress(Bitmap.CompressFormat.JPEG, 92, baos);
+                    cropped.recycle();
+                    byte[] bytes = baos.toByteArray();
+                    base64 = "data:image/jpeg;base64,"
+                           + android.util.Base64.encodeToString(bytes, android.util.Base64.NO_WRAP);
+
+                } catch (Exception e) {
+                    OnErrorOccurred("❌ Crop failed: " + e.getMessage());
+                }
+
+                // 5. UI thread pe fire karo
+                final String finalPath   = outPath;
+                final String finalBase64 = base64;
+
+                uiHandler.post(new Runnable() {
+                    @Override
+                    public void run() {
+                        croppedImagePath = finalPath;
+                        cropDataBase64   = finalBase64;
+
+                        if (!finalPath.isEmpty() && !finalBase64.isEmpty()) {
+                            OnErrorOccurred("✅ Crop OK | path=" + finalPath
+                                + " | base64 len=" + finalBase64.length());
+                            OnFileSelected(pickedImagePath, finalPath);
+                            OnCropDataReady(pickedImagePath, finalPath, finalBase64);
+                            if (filePathCallback != null) {
+                                filePathCallback.onReceiveValue(new Uri[]{ Uri.fromFile(outFile) });
+                                filePathCallback = null;
+                            }
+                        } else {
+                            // Crop fail — original return
+                            OnErrorOccurred("⚠️ Crop fail, original file return ho raha hai");
+                            OnFileSelected(pickedImagePath, "");
+                            OnCropDataReady(pickedImagePath, "", "");
+                            if (filePathCallback != null) {
+                                filePathCallback.onReceiveValue(new Uri[]{ sourceUri });
+                                filePathCallback = null;
+                            }
+                        }
+                    }
+                });
+            }
+        }).start();
+    }
+
+    // ══════════════════════════════════════════════════════
+    //  SETUP - WebView create karo kisi bhi arrangement mein
+    // ══════════════════════════════════════════════════════
+    @SimpleFunction(description = "Pehle yeh call karo. Pass karo HorizontalArrangement ya VerticalArrangement")
+    public void SetupWebViewInArrangement(final AndroidViewComponent arrangement) {
+        if (arrangement == null) {
+            OnErrorOccurred("Arrangement null hai!");
+            return;
+        }
+        
+        parentComponent = arrangement;
+        uiHandler.post(new Runnable() {
+            @Override
+            public void run() {
+                createWebViewInArrangement(arrangement);
+            }
+        });
+    }
+
+    private void createWebViewInArrangement(AndroidViewComponent arrangement) {
+        try {
+            View parentView = arrangement.getView();
+            if (parentView == null) {
+                OnErrorOccurred("Arrangement ka view null hai!");
+                return;
+            }
+
+            RelativeLayout mainContainer = new RelativeLayout(activity);
+            mainContainer.setBackgroundColor(backgroundColor);
+            
+            webView = new WebView(activity);
+            webView.setBackgroundColor(backgroundColor);
+            
+            progressBar = new ProgressBar(activity);
+            progressBar.setVisibility(View.GONE);
+            RelativeLayout.LayoutParams progressParams = new RelativeLayout.LayoutParams(
+                RelativeLayout.LayoutParams.WRAP_CONTENT,
+                RelativeLayout.LayoutParams.WRAP_CONTENT
+            );
+            progressParams.addRule(RelativeLayout.CENTER_IN_PARENT);
+            progressBar.setLayoutParams(progressParams);
+            
+            webViewContainer = new FrameLayout(activity);
+            
+            ViewGroup.LayoutParams params = new ViewGroup.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.MATCH_PARENT
+            );
+            webViewContainer.setLayoutParams(params);
+            webViewContainer.addView(webView, params);
+            
+            mainContainer.addView(webViewContainer);
+            mainContainer.addView(progressBar);
+            
+            if (parentView instanceof ViewGroup) {
+                final ViewGroup viewGroup = (ViewGroup) parentView;
+                final RelativeLayout finalMainContainer = mainContainer;
+                activity.runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        viewGroup.addView(finalMainContainer);
+                        isSetupDone = true;
+                        
+                        if (pendingUrl != null) {
+                            String url = pendingUrl;
+                            pendingUrl = null;
+                            webView.loadUrl(url);
+                        }
+                        
+                        OnErrorOccurred("WebView arrangement mein successfully create ho gaya!");
+                    }
+                });
+            } else {
+                OnErrorOccurred("Arrangement ViewGroup nahi hai!");
+                return;
+            }
+            
+            applySettings();
+            applyWebViewClient();
+            applyWebChromeClient();
+            
+        } catch (Exception e) {
+            OnErrorOccurred("WebView create karne mein error: " + e.getMessage());
+        }
+    }
+
+    // ══════════════════════════════════════════════════════
+    //  SIMPLE SETUP - Bina arrangement ke (full screen)
+    // ══════════════════════════════════════════════════════
+    @SimpleFunction(description = "Simple setup - full screen WebView (koi arrangement nahi chahiye)")
+    public void SetupWebViewFullScreen() {
+        uiHandler.post(new Runnable() {
+            @Override
+            public void run() {
+                createFullScreenWebView();
+            }
+        });
+    }
+
+    private void createFullScreenWebView() {
+        try {
+            RelativeLayout mainContainer = new RelativeLayout(activity);
+            mainContainer.setBackgroundColor(backgroundColor);
+            
+            webView = new WebView(activity);
+            webView.setBackgroundColor(backgroundColor);
+            
+            progressBar = new ProgressBar(activity);
+            progressBar.setVisibility(View.GONE);
+            RelativeLayout.LayoutParams progressParams = new RelativeLayout.LayoutParams(
+                RelativeLayout.LayoutParams.WRAP_CONTENT,
+                RelativeLayout.LayoutParams.WRAP_CONTENT
+            );
+            progressParams.addRule(RelativeLayout.CENTER_IN_PARENT);
+            progressBar.setLayoutParams(progressParams);
+            
+            webViewContainer = new FrameLayout(activity);
+            
+            ViewGroup.LayoutParams params = new ViewGroup.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.MATCH_PARENT
+            );
+            webViewContainer.setLayoutParams(params);
+            webViewContainer.addView(webView, params);
+            
+            mainContainer.addView(webViewContainer);
+            mainContainer.addView(progressBar);
+            
+            ViewGroup rootView = (ViewGroup) activity.findViewById(android.R.id.content);
+            rootView.addView(mainContainer);
+            
+            applySettings();
+            applyWebViewClient();
+            applyWebChromeClient();
+            
+            isSetupDone = true;
+            
+            if (pendingUrl != null) {
+                String url = pendingUrl;
+                pendingUrl = null;
+                webView.loadUrl(url);
+            }
+            
+            OnErrorOccurred("Full screen WebView create ho gaya!");
+        } catch (Exception e) {
+            OnErrorOccurred("Error: " + e.getMessage());
+        }
+    }
+
+    // ══════════════════════════════════════════════════════
+    //  DESKTOP MODE
+    // ══════════════════════════════════════════════════════
+    
+    @SimpleFunction(description = "Desktop mode ON/OFF karo - websites desktop jaisi dikhengi")
+    public void SetDesktopMode(boolean enable) {
+        isDesktopMode = enable;
+        if (webView != null) {
+            WebSettings ws = webView.getSettings();
+            if (enable) {
+                String desktopUserAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36";
+                ws.setUserAgentString(desktopUserAgent);
+                ws.setUseWideViewPort(true);
+                ws.setLoadWithOverviewMode(true);
+                OnErrorOccurred("Desktop Mode ON - User Agent changed");
+            } else {
+                String mobileUserAgent = "Mozilla/5.0 (Linux; Android " + Build.VERSION.RELEASE + "; Mobile) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Mobile Safari/537.36";
+                ws.setUserAgentString(mobileUserAgent);
+                ws.setUseWideViewPort(true);
+                ws.setLoadWithOverviewMode(true);
+                OnErrorOccurred("Desktop Mode OFF - Mobile User Agent restored");
+            }
+        }
+    }
+    
+    @SimpleFunction(description = "Check karo desktop mode ON hai ya OFF")
+    public boolean IsDesktopMode() {
+        return isDesktopMode;
+    }
+    
+    @SimpleFunction(description = "Custom User Agent set karo (advanced users)")
+    public void SetCustomUserAgent(String userAgent) {
+        if (webView != null && userAgent != null && !userAgent.isEmpty()) {
+            WebSettings ws = webView.getSettings();
+            ws.setUserAgentString(userAgent);
+            OnErrorOccurred("Custom User Agent set: " + userAgent);
+        }
+    }
+
+    // ══════════════════════════════════════════════════════
+    //  BUTTON CLICK DETECTION
+    // ══════════════════════════════════════════════════════
+    
+    @SimpleFunction(description = "JavaScript se button clicks detect karo")
+    public void EnableButtonClickDetection() {
+        if (webView != null) {
+            String jsCode = 
+                "document.addEventListener('click', function(e) {" +
+                "  var target = e.target;" +
+                "  var elementName = '';" +
+                "  var elementId = '';" +
+                "  var elementClass = '';" +
+                "  var elementType = '';" +
+                "  var elementText = '';" +
+                "  if (target.tagName) elementType = target.tagName.toLowerCase();" +
+                "  if (target.id) elementId = target.id;" +
+                "  if (target.className) elementClass = target.className;" +
+                "  if (target.innerText && target.innerText.length < 100) elementText = target.innerText;" +
+                "  if (target.value) elementText = target.value;" +
+                "  if (target.getAttribute) {" +
+                "    if (target.getAttribute('name')) elementName = target.getAttribute('name');" +
+                "    if (target.getAttribute('aria-label')) elementName = target.getAttribute('aria-label');" +
+                "  }" +
+                "  var output = 'Type:' + elementType + '|Id:' + elementId + '|Class:' + elementClass + '|Name:' + elementName + '|Text:' + elementText;" +
+                "  if (window.AbidWebview) {" +
+                "    window.AbidWebview.onButtonClick(output);" +
+                "  }" +
+                "}, false);";
+            
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
+                webView.evaluateJavascript(jsCode, null);
+            } else {
+                webView.loadUrl("javascript:" + jsCode);
+            }
+            
+            webView.addJavascriptInterface(new Object() {
+                @android.webkit.JavascriptInterface
+                public void onButtonClick(String details) {
+                    uiHandler.post(new Runnable() {
+                        @Override
+                        public void run() {
+                            OnButtonClicked(details);
+                        }
+                    });
+                }
+            }, "AbidWebview");
+            
+            OnErrorOccurred("Button click detection enabled!");
+        }
+    }
+    
+    @SimpleFunction(description = "Button click detection band karo")
+    public void DisableButtonClickDetection() {
+        if (webView != null) {
+            String jsCode = "document.removeEventListener('click', window.buttonClickListener);";
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
+                webView.evaluateJavascript(jsCode, null);
+            } else {
+                webView.loadUrl("javascript:" + jsCode);
+            }
+        }
+    }
+
+    // ══════════════════════════════════════════════════════
+    //  LOADING STOP EVENT
+    // ══════════════════════════════════════════════════════
+    
+    @SimpleFunction(description = "Page loading stop karo aur event fire karo")
+    public void StopLoadingWithEvent() {
+        if (webView != null) {
+            uiHandler.post(new Runnable() {
+                @Override
+                public void run() {
+                    webView.stopLoading();
+                    OnLoadingStopped();
+                    HideProgressBar();
+                }
+            });
+        }
+    }
+    
+    @SimpleFunction(description = "Check karo page loading ho raha hai ya nahi")
+    public boolean IsLoading() {
+        return webView != null && webView.getProgress() < 100;
+    }
+    
+    @SimpleFunction(description = "Get current loading progress")
+    public int GetLoadingProgress() {
+        return webView != null ? webView.getProgress() : 0;
+    }
+
+    // ══════════════════════════════════════════════════════
+    //  ADVANCE FUNCTIONS
+    // ══════════════════════════════════════════════════════
+    
+    @SimpleFunction(description = "Back press handle karo - agar page back ho sakta hai to back karo, nahi to WebView close karo")
+    public void HandleBackPress() {
+        if (webView != null && webView.canGoBack()) {
+            webView.goBack();
+            OnBackPressed();
+        } else {
+            CloseWebView();
+        }
+    }
+    
+    @SimpleFunction(description = "WebView close karo aur screen se hatao")
+    public void CloseWebView() {
+        uiHandler.post(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    if (webViewContainer != null && webViewContainer.getParent() != null) {
+                        ViewGroup parent = (ViewGroup) webViewContainer.getParent();
+                        if (parent != null) {
+                            ViewGroup grandParent = (ViewGroup) parent.getParent();
+                            if (grandParent != null) {
+                                grandParent.removeView(parent);
+                            } else {
+                                parent.removeView(webViewContainer);
+                            }
+                        }
+                    }
+                    if (webView != null) {
+                        webView.stopLoading();
+                        webView.destroy();
+                        webView = null;
+                    }
+                    isSetupDone = false;
+                    OnWebViewClosed();
+                } catch (Exception e) {
+                    OnErrorOccurred("Close error: " + e.getMessage());
+                }
+            }
+        });
+    }
+    
+    @SimpleFunction(description = "White screen hatane ke liye background color set karo (default black)")
+    public void SetBackgroundColor(String colorHex) {
+        try {
+            backgroundColor = Color.parseColor(colorHex);
+            if (webView != null) {
+                webView.setBackgroundColor(backgroundColor);
+                View parent = (View) webView.getParent();
+                if (parent != null) {
+                    parent.setBackgroundColor(backgroundColor);
+                }
+            }
+        } catch (Exception e) {
+            OnErrorOccurred("Color parse error: " + e.getMessage());
+        }
+    }
+    
+    @SimpleFunction(description = "Show loading progress bar")
+    public void ShowProgressBar() {
+        if (progressBar != null) {
+            uiHandler.post(new Runnable() {
+                @Override
+                public void run() {
+                    progressBar.setVisibility(View.VISIBLE);
+                }
+            });
+        }
+    }
+    
+    @SimpleFunction(description = "Hide loading progress bar")
+    public void HideProgressBar() {
+        if (progressBar != null) {
+            uiHandler.post(new Runnable() {
+                @Override
+                public void run() {
+                    progressBar.setVisibility(View.GONE);
+                }
+            });
+        }
+    }
+    
+    @SimpleFunction(description = "Check kar sakte ho ki page back ho sakta hai ya nahi")
+    public boolean CanGoBack() {
+        return webView != null && webView.canGoBack();
+    }
+    
+    @SimpleFunction(description = "Current URL get karo")
+    public String GetCurrentUrl() {
+        return webView != null ? webView.getUrl() : "";
+    }
+    
+    @SimpleFunction(description = "Page title get karo")
+    public String GetTitle() {
+        return webView != null ? webView.getTitle() : "";
+    }
+    
+    @SimpleFunction(description = "Stop loading current page")
+    public void StopLoading() {
+        if (webView != null) {
+            uiHandler.post(new Runnable() {
+                @Override
+                public void run() {
+                    webView.stopLoading();
+                }
+            });
+        }
+    }
+    
+    @SimpleFunction(description = "Zoom enable/disable karo")
+    public void SetZoomEnabled(boolean enabled) {
+        if (webView != null) {
+            WebSettings ws = webView.getSettings();
+            ws.setBuiltInZoomControls(enabled);
+            ws.setSupportZoom(enabled);
+        }
+    }
+
+    // ══════════════════════════════════════════════════════
+    //  SETTINGS
+    // ══════════════════════════════════════════════════════
+    private void applySettings() {
+        WebSettings ws = webView.getSettings();
+        ws.setJavaScriptEnabled(true);
+        ws.setDomStorageEnabled(true);
+        ws.setCacheMode(WebSettings.LOAD_DEFAULT);
+        ws.setUseWideViewPort(true);
+        ws.setLoadWithOverviewMode(true);
+        ws.setAllowFileAccess(true);
+        ws.setAllowContentAccess(true);
+        ws.setMediaPlaybackRequiresUserGesture(false);
+        ws.setJavaScriptCanOpenWindowsAutomatically(true);
+        ws.setBuiltInZoomControls(false);
+        ws.setSupportZoom(false);
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+            ws.setMixedContentMode(WebSettings.MIXED_CONTENT_ALWAYS_ALLOW);
+        }
+
+        ws.setUserAgentString(
+            "Mozilla/5.0 (Linux; Android " + Build.VERSION.RELEASE
+            + "; Mobile) AppleWebKit/537.36 (KHTML, like Gecko)"
+            + " Chrome/124.0.0.0 Mobile Safari/537.36"
+        );
+
+        CookieManager cm = CookieManager.getInstance();
+        cm.setAcceptCookie(true);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+            cm.setAcceptThirdPartyCookies(webView, true);
+        }
+
+        webView.setLayerType(View.LAYER_TYPE_HARDWARE, null);
+
+        // ── CROP BRIDGE: HTML se crop data seedha Java mein aayega ──
+        // Admin.html applyCrop ke baad window.AbidCropBridge.onCropDone(base64, fileName) call karta hai
+        webView.addJavascriptInterface(new Object() {
+
+            @android.webkit.JavascriptInterface
+            public void onCropDone(final String base64DataUrl, final String fileName) {
+                uiHandler.post(new Runnable() {
+                    @Override
+                    public void run() {
+                        cropDataBase64   = (base64DataUrl != null) ? base64DataUrl : "";
+                        pickedImagePath  = (fileName      != null) ? fileName      : "cropped.jpg";
+                        croppedImagePath = pickedImagePath; // HTML crop mein file system path nahi hota
+
+                        OnErrorOccurred("✅ HTML Crop Bridge: file=" + pickedImagePath
+                            + " | base64 len=" + cropDataBase64.length());
+                        OnFileSelected(pickedImagePath, croppedImagePath);
+                        OnCropDataReady(pickedImagePath, croppedImagePath, cropDataBase64);
+                    }
+                });
+            }
+        }, "AbidCropBridge");
+    }
+
+    // ══════════════════════════════════════════════════════
+    //  WEB VIEW CLIENT
+    // ══════════════════════════════════════════════════════
+    private void applyWebViewClient() {
+        webView.setWebViewClient(new WebViewClient() {
+            @Override
+            public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request) {
+                return false;
+            }
+
+            @SuppressWarnings("deprecation")
+            @Override
+            public boolean shouldOverrideUrlLoading(WebView view, String url) {
+                return false;
+            }
+
+            @Override
+            public void onPageFinished(WebView view, String url) {
+                PageLoaded(url);
+                HideProgressBar();
+            }
+
+            @Override
+            public void onPageStarted(WebView view, String url, android.graphics.Bitmap favicon) {
+                super.onPageStarted(view, url, favicon);
+                ShowProgressBar();
+            }
+
+            @Override
+            public void onReceivedError(WebView view, WebResourceRequest request,
+                                        WebResourceError error) {
+                HideProgressBar();
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                    OnErrorOccurred("Error: " + error.getDescription());
+                }
+            }
+
+            @Override
+            public void onReceivedSslError(WebView view, SslErrorHandler handler,
+                                           SslError error) {
+                handler.proceed();
+            }
+        });
+    }
+
+    // ══════════════════════════════════════════════════════
+    //  WEB CHROME CLIENT
+    // ══════════════════════════════════════════════════════
+    private void applyWebChromeClient() {
+        webView.setWebChromeClient(new WebChromeClient() {
+            @Override
+            public void onProgressChanged(WebView view, int newProgress) {
+                ProgressChanged(newProgress);
+            }
+
+            @Override
+            public boolean onShowFileChooser(WebView wv,
+                                             ValueCallback<Uri[]> callback,
+                                             FileChooserParams params) {
+                if (filePathCallback != null) {
+                    filePathCallback.onReceiveValue(null);
+                    filePathCallback = null;
+                }
+
+                if (requestCode == 0) {
+                    requestCode = form.registerForActivityResult(AbidWebview.this);
+                }
+
+                try {
+                    Intent intent = params.createIntent();
+                    intent.addCategory(Intent.CATEGORY_OPENABLE);
+                    filePathCallback = callback;
+                    activity.startActivityForResult(intent, requestCode);
+                    return true;
+                } catch (Exception e) {
+                    filePathCallback = null;
+                    OnErrorOccurred("File chooser error: " + e.getMessage());
+                    return false;
+                }
+            }
+        });
+    }
+
+    // ══════════════════════════════════════════════════════
+    //  LOAD URL
+    // ══════════════════════════════════════════════════════
+    @SimpleFunction(description = "Admin panel ka URL load karo")
+    public void LoadURL(final String url) {
+        if (url == null || url.trim().isEmpty()) {
+            OnErrorOccurred("URL khaali hai!");
+            return;
+        }
+
+        final String finalUrl = normalizeUrl(url.trim());
+
+        if (!isSetupDone || webView == null) {
+            pendingUrl = finalUrl;
+            OnErrorOccurred("Pehle SetupWebViewInArrangement ya SetupWebViewFullScreen call karo!");
+            return;
+        }
+
+        uiHandler.post(new Runnable() {
+            @Override
+            public void run() {
+                webView.loadUrl(finalUrl);
+            }
+        });
+    }
+
+    // ══════════════════════════════════════════════════════
+    //  CONTROLS (Old blocks - kuch nahi hataya)
+    // ══════════════════════════════════════════════════════
+    @SimpleFunction(description = "Peeche jao")
+    public void GoBack() {
+        if (webView != null && webView.canGoBack()) webView.goBack();
+    }
+
+    @SimpleFunction(description = "Aage jao")
+    public void GoForward() {
+        if (webView != null && webView.canGoForward()) webView.goForward();
+    }
+
+    @SimpleFunction(description = "Reload karo")
+    public void Reload() {
+        if (webView != null) {
+            uiHandler.post(new Runnable() {
+                @Override public void run() { webView.reload(); }
+            });
+        }
+    }
+
+    @SimpleFunction(description = "Cache aur cookies clear karo")
+    public void ClearCache() {
+        if (webView != null) {
+            webView.clearCache(true);
+            webView.clearHistory();
+            CookieManager.getInstance().removeAllCookies(null);
+        }
+    }
+
+    @SimpleFunction(description = "WebView hatao screen se")
+    public void RemoveWebView() {
+        if (webViewContainer != null && webViewContainer.getParent() != null) {
+            uiHandler.post(new Runnable() {
+                @Override
+                public void run() {
+                    try {
+                        ViewGroup parent = (ViewGroup) webViewContainer.getParent();
+                        parent.removeView(webViewContainer);
+                        isSetupDone = false;
+                    } catch (Exception e) {
+                        OnErrorOccurred("Remove error: " + e.getMessage());
+                    }
+                }
+            });
+        }
+    }
+
+    // ══════════════════════════════════════════════════════
+    //  EVENTS
+    // ══════════════════════════════════════════════════════
+    @SimpleEvent(description = "Jab page load ho jaye")
+    public void PageLoaded(String url) {
+        EventDispatcher.dispatchEvent(this, "PageLoaded", url);
+    }
+
+    @SimpleEvent(description = "Jab error aaye")
+    public void OnErrorOccurred(String errorMessage) {
+        EventDispatcher.dispatchEvent(this, "OnErrorOccurred", errorMessage);
+    }
+
+    @SimpleEvent(description = "Loading progress 0-100")
+    public void ProgressChanged(int progress) {
+        EventDispatcher.dispatchEvent(this, "ProgressChanged", progress);
+    }
+    
+    @SimpleEvent(description = "Jab back press hota hai")
+    public void OnBackPressed() {
+        EventDispatcher.dispatchEvent(this, "OnBackPressed");
+    }
+    
+    @SimpleEvent(description = "Jab WebView close hota hai")
+    public void OnWebViewClosed() {
+        EventDispatcher.dispatchEvent(this, "OnWebViewClosed");
+    }
+    
+    @SimpleEvent(description = "Jab button click hota hai - returns button details")
+    public void OnButtonClicked(String buttonDetails) {
+        EventDispatcher.dispatchEvent(this, "OnButtonClicked", buttonDetails);
+    }
+    
+    @SimpleEvent(description = "Jab loading stop hota hai manually")
+    public void OnLoadingStopped() {
+        EventDispatcher.dispatchEvent(this, "OnLoadingStopped");
+    }
+    
+    @SimpleEvent(description = "Jab file select hoti hai — pickedPath = picked file ka naam, croppedPath = crop ke baad ka path (agar crop nahi to empty)")
+    public void OnFileSelected(String pickedPath, String croppedPath) {
+        EventDispatcher.dispatchEvent(this, "OnFileSelected", pickedPath, croppedPath);
+    }
+
+    // ══════════════════════════════════════════════════════
+    //  CROP DATA EVENTS + FUNCTIONS  (Android 16+ safe)
+    // ══════════════════════════════════════════════════════
+
+    @SimpleEvent(description = "Crop complete hone ke baad fire hota hai — pickedPath (original file naam), croppedPath (saved crop file path), cropBase64 (data:image/jpeg;base64,... string)")
+    public void OnCropDataReady(String pickedPath, String croppedPath, String cropBase64) {
+        EventDispatcher.dispatchEvent(this, "OnCropDataReady", pickedPath, croppedPath, cropBase64);
+    }
+
+    @SimpleFunction(description = "Last crop ka full Base64 string lo — format: data:image/jpeg;base64,...  (WebView src ya img tag mein seedha use karo)")
+    public String GetCropBase64() {
+        return cropDataBase64;
+    }
+
+    @SimpleFunction(description = "Last crop ka sirf raw Base64 lo (bina data:image/jpeg;base64, prefix ke — API upload ke liye)")
+    public String GetCropBase64Raw() {
+        if (cropDataBase64.contains(",")) {
+            return cropDataBase64.substring(cropDataBase64.indexOf(",") + 1);
+        }
+        return cropDataBase64;
+    }
+
+    @SimpleFunction(description = "Last cropped file ka local path lo (getExternalFilesDir/Pictures/CROP_...jpg)")
+    public String GetCroppedFilePath() {
+        return croppedImagePath;
+    }
+
+    @SimpleFunction(description = "Original picked file ka naam lo (jo user ne select kiya tha)")
+    public String GetPickedFileName() {
+        return pickedImagePath;
+    }
+
+    @SimpleFunction(description = "Crop data aur path clear karo (memory free karne ke liye)")
+    public void ClearCropData() {
+        cropDataBase64   = "";
+        croppedImagePath = "";
+    }
+
+    // ══════════════════════════════════════════════════════
+    //  FILE CHOOSER RESULT  (Android 16+ safe)
+    // ══════════════════════════════════════════════════════
+    @Override
+    public void resultReturned(int requestCode, int resultCode, Intent data) {
+        // Crop ab in-app background thread mein hota hai — yahan koi crop result nahi aata
+
+        if (requestCode != this.requestCode || filePathCallback == null) return;
+
+        Uri[] results = null;
+
+        if (resultCode == Activity.RESULT_OK && data != null) {
+            String dataString = data.getDataString();
+
+            if (dataString != null) {
+                Uri selectedUri = Uri.parse(dataString);
+
+                // Picked label: display name (e.g. photo.jpg) — Android 16+ pe real path restricted
+                pickedImagePath = getPickedLabel(selectedUri);
+
+                if (isCroppingEnabled) {
+                    // in-app background crop — filePathCallback wahan handle hoga
+                    doCropInBackground(selectedUri, filePathCallback);
+                    return;
+                }
+
+                results = new Uri[]{selectedUri};
+                OnFileSelected(pickedImagePath, "");
+
+            } else if (data.getClipData() != null) {
+                int count = data.getClipData().getItemCount();
+                results = new Uri[count];
+                StringBuilder sb = new StringBuilder();
+                for (int i = 0; i < count; i++) {
+                    Uri uri = data.getClipData().getItemAt(i).getUri();
+                    results[i] = uri;
+                    if (i > 0) sb.append(",");
+                    sb.append(getPickedLabel(uri));
+                }
+                pickedImagePath = sb.toString();
+                OnFileSelected(pickedImagePath, "");
+            }
+        }
+
+        filePathCallback.onReceiveValue(results);
+        filePathCallback = null;
+    }
+
+    private String normalizeUrl(String url) {
+        if (!url.startsWith("http://") && !url.startsWith("https://")) {
+            return "https://" + url;
+        }
+        return url;
+    }
+}
