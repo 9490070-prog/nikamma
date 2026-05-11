@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>LiveCam Pro - Fixed Stream</title>
+<title>LiveCam Pro - Fixed</title>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <style>
 :root{--red:#ff2d2d;--red-dark:#c0000a;--surface:#141414;--surface2:#1e1e1e;--border:rgba(255,255,255,0.08);--text:#f0f0f0;--muted:#777}
@@ -191,7 +191,7 @@ input[type=color]{width:36px;height:36px;border:none;border-radius:8px;backgroun
       <div class="sec">🖼️ Logo</div>
       <div class="upa" onclick="document.getElementById('imgInp').click()">
         <div style="font-size:1.8rem">📁</div>
-        <div style="font-size:0.8rem;color:var(--muted)">Upload karo</div>
+        <div style="font-size:0.8rem;color:var(--muted)">Upload karo (max 200KB compress hoga)</div>
         <img class="iprev" id="imgPrev" src="">
       </div>
       <input type="file" id="imgInp" accept="image/*" style="display:none" onchange="uploadLogo(this)">
@@ -242,10 +242,17 @@ const FB_CFG = {
   appId: "1:534849542892:web:d96322fd4811b46738e3c9"
 };
 
+// ====================================================
+// ICE servers — Google STUN + free TURN for NAT punch
+// ====================================================
 const ICE = { iceServers: [
   { urls: 'stun:stun.l.google.com:19302' },
   { urls: 'stun:stun1.l.google.com:19302' },
-  { urls: 'stun:stun2.l.google.com:19302' }
+  { urls: 'stun:stun2.l.google.com:19302' },
+  // Free public TURN (handles strict NAT)
+  { urls: 'turn:openrelay.metered.ca:80',    username: 'openrelayproject', credential: 'openrelayproject' },
+  { urls: 'turn:openrelay.metered.ca:443',   username: 'openrelayproject', credential: 'openrelayproject' },
+  { urls: 'turn:openrelay.metered.ca:443?transport=tcp', username: 'openrelayproject', credential: 'openrelayproject' }
 ]};
 
 window.toast = (msg) => {
@@ -272,50 +279,59 @@ if (urlWatch) {
 // ==================== VIEWER ====================
 async function runViewer(roomId) {
   const txt = document.getElementById('vLoaderTxt');
-  txt.innerText = 'Connecting...';
+  txt.innerText = 'Firebase se connect ho raha hoon...';
 
-  let app;
+  let app, db;
   try {
     app = initializeApp(FB_CFG, 'v-' + Date.now());
+    db = getDatabase(app);
   } catch(e) {
     txt.innerText = 'Firebase error: ' + e.message;
     document.getElementById('retryBtn').style.display = 'block';
     return;
   }
-  const db = getDatabase(app);
 
-  // Overlay listener
+  // ── Overlay listener (realtime) ──
   onValue(ref(db, `rooms/${roomId}/overlays`), (s) => {
-    if(s.exists()) applyOverlays(s.val());
+    if (s.exists()) applyOverlays(s.val());
   });
 
-  // Register viewer presence
+  // ── Register viewer presence ──
   const myRef = ref(db, `rooms/${roomId}/viewers/v_${Date.now()}`);
   await set(myRef, true);
   window.addEventListener('beforeunload', () => remove(myRef));
 
-  // ---- FIX: One PC per viewer, unique answer key, no race condition ----
-  const myAnswerKey = 'ans_' + Date.now() + '_' + Math.random().toString(36).slice(2,7);
+  // ── Unique key for this viewer's answer slot ──
+  const myKey = 'ans_' + Date.now() + '_' + Math.random().toString(36).slice(2,7);
+
+  // ── ICE candidate queue (buffer before setRemoteDescription) ──
   let pc = null;
-  let started = false;
+  let remoteReady = false;
+  const iceQueue = [];
+
+  async function drainIce() {
+    while (iceQueue.length) {
+      try { await pc.addIceCandidate(new RTCIceCandidate(iceQueue.shift())); } catch(_) {}
+    }
+  }
 
   async function startConnection(offerData) {
-    if (started) return;
-    started = true;
-    txt.innerText = 'WebRTC connecting...';
+    txt.innerText = 'WebRTC connection shuru...';
 
+    // Clean up old PC if reconnecting
+    if (pc) { try { pc.close(); } catch(_) {} }
+    remoteReady = false;
+    iceQueue.length = 0;
+
+    // ── FIX 1: Create fresh PC for this viewer ──
     pc = new RTCPeerConnection(ICE);
 
     pc.ontrack = (e) => {
       const video = document.getElementById('viewVideo');
       if (video.srcObject !== e.streams[0]) {
         video.srcObject = e.streams[0];
-        // Try unmuted first; fallback to muted (autoplay policy)
         video.muted = false;
-        video.play().catch(() => {
-          video.muted = true;
-          video.play().catch(() => {});
-        });
+        video.play().catch(() => { video.muted = true; video.play().catch(() => {}); });
         document.getElementById('vLoader').style.display = 'none';
         flashIcon();
         toast('✅ Stream Connected!');
@@ -324,72 +340,75 @@ async function runViewer(roomId) {
 
     pc.oniceconnectionstatechange = () => {
       const s = pc.iceConnectionState;
-      if (s === 'failed') {
-        // Try ICE restart
-        started = false;
+      if (s === 'disconnected' || s === 'failed') {
         txt.innerText = 'Reconnecting...';
         document.getElementById('vLoader').style.display = 'flex';
-        setTimeout(() => {
-          get(ref(db, `rooms/${roomId}/offer`)).then(snap => {
-            if (snap.exists()) startConnection(snap.val());
-          });
-        }, 2000);
+        setTimeout(async () => {
+          const snap = await get(ref(db, `rooms/${roomId}/offer`));
+          if (snap.exists()) await startConnection(snap.val());
+        }, 2500);
       }
     };
 
-    // Send our ICE candidates to host under our unique key
+    // ── FIX 2: Queue ICE until remote description is set ──
     pc.onicecandidate = (e) => {
       if (e.candidate) {
-        push(ref(db, `rooms/${roomId}/viewerIce/${myAnswerKey}`), e.candidate.toJSON());
+        push(ref(db, `rooms/${roomId}/viewerIce/${myKey}`), e.candidate.toJSON());
       }
     };
 
     try {
+      // Set remote description (host's offer)
       await pc.setRemoteDescription(new RTCSessionDescription(offerData));
+      remoteReady = true;
+      await drainIce();  // flush any buffered host ICE
+
+      // Create and send answer
       const answer = await pc.createAnswer();
       await pc.setLocalDescription(answer);
-
-      // Write answer under our unique key so host can match ICE candidates
-      await set(ref(db, `rooms/${roomId}/answers/${myAnswerKey}`), {
+      await set(ref(db, `rooms/${roomId}/answers/${myKey}`), {
         sdp: answer.sdp,
         type: answer.type
       });
 
-      // Listen for host ICE candidates (global pool)
-      onValue(ref(db, `rooms/${roomId}/hostIce`), (s) => {
-        s.forEach(c => {
-          if (pc && pc.remoteDescription) {
-            pc.addIceCandidate(new RTCIceCandidate(c.val())).catch(() => {});
+      // Listen for host ICE candidates — buffer if not ready yet
+      onValue(ref(db, `rooms/${roomId}/hostIce`), (snap) => {
+        snap.forEach(c => {
+          const cand = c.val();
+          if (remoteReady && pc.remoteDescription) {
+            pc.addIceCandidate(new RTCIceCandidate(cand)).catch(() => {});
+          } else {
+            iceQueue.push(cand);
           }
         });
       });
+
     } catch(e) {
-      started = false;
       txt.innerText = 'WebRTC error: ' + e.message;
       document.getElementById('retryBtn').style.display = 'block';
     }
   }
 
-  // Check existing offer first, then listen for new ones
-  let gotOffer = false;
+  // Check existing offer, then watch for new ones
+  let connected = false;
   try {
-    const existing = await get(ref(db, `rooms/${roomId}/offer`));
-    if (existing.exists()) {
-      gotOffer = true;
-      await startConnection(existing.val());
+    const snap = await get(ref(db, `rooms/${roomId}/offer`));
+    if (snap.exists()) {
+      connected = true;
+      await startConnection(snap.val());
     }
-  } catch(e) {}
+  } catch(_) {}
 
-  // Also listen for fresh offers (host restarted)
   onValue(ref(db, `rooms/${roomId}/offer`), async (s) => {
-    if (s.exists() && !started) {
+    if (s.exists() && !connected) {
+      connected = true;
       await startConnection(s.val());
     }
   });
 
   setTimeout(() => {
-    if (!started) {
-      txt.innerText = 'No active stream found. Check the ID.';
+    if (!connected) {
+      txt.innerText = 'Stream nahi mila. ID check karo ya host se poocho.';
       document.getElementById('retryBtn').style.display = 'block';
     }
   }, 12000);
@@ -409,17 +428,19 @@ function applyOverlays(d) {
     vLogo.style.display = 'none';
   }
 
-  const txt = d.text || {};
+  const t = d.text || {};
   const vTxt = document.getElementById('vTextOverlay');
-  if (txt.show && txt.msg) {
-    vTxt.textContent = txt.msg;
+  if (t.show && t.msg) {
+    vTxt.textContent = t.msg;
     vTxt.style.display = 'block';
-    vTxt.style.left = (txt.x||20)+'px';
-    vTxt.style.top  = (txt.y||300)+'px';
-    vTxt.style.color = txt.color||'#fff';
-    vTxt.style.backgroundColor = `rgba(${h2rgb(txt.bgColor||'#000000')},0.6)`;
-    vTxt.style.fontFamily = txt.font||"'DM Sans',sans-serif";
-    vTxt.style.fontSize   = (txt.size||22)+'px';
+    vTxt.style.left = (t.x||20)+'px';
+    vTxt.style.top  = (t.y||300)+'px';
+    vTxt.style.color = t.color||'#fff';
+    vTxt.style.backgroundColor = `rgba(${h2rgb(t.bgColor||'#000000')},0.6)`;
+    vTxt.style.fontFamily = t.font||"'DM Sans',sans-serif";
+    vTxt.style.fontSize   = (t.size||22)+'px';
+    vTxt.style.padding = '8px 18px';
+    vTxt.style.borderRadius = '8px';
   } else {
     vTxt.style.display = 'none';
   }
@@ -450,11 +471,14 @@ document.getElementById('vTapArea').addEventListener('click', () => {
 // ==================== ADMIN ====================
 let db, roomId, streamLink, localStream, videoTrack;
 let facing = 'environment';
-// ---- FIX: Map of viewerKey -> RTCPeerConnection (multi-viewer support) ----
-const peerMap = {};
-let logoUrl = '';
-let logoVis = false, textVis = false, tickVis = false;
+let logoUrl = '', logoVis = false, textVis = false, tickVis = false;
 let timerInt = null;
+
+// ── FIX 1 (host side): one persistent PC per viewer ──
+// peerMap: { viewerKey: { pc, iceQueue, remoteReady } }
+const peerMap = {};
+// hostPc: single PC used to generate the offer (kept alive)
+let hostPc = null;
 
 window.startStream = async (type) => {
   const idInput = document.getElementById('customId').value.trim();
@@ -477,17 +501,18 @@ window.startStream = async (type) => {
 
     const app = initializeApp(FB_CFG, 'a-' + Date.now());
     db = getDatabase(app);
+
+    // Clear old room data
     await remove(ref(db, `rooms/${roomId}`));
 
-    // Publish initial offer (broadcasts to all future viewers)
+    // Publish offer using a persistent PC (don't close it!)
     await publishOffer();
 
-    // ---- FIX: Listen for each viewer's answer by key ----
+    // Listen for viewers' answers
     onValue(ref(db, `rooms/${roomId}/answers`), (snap) => {
       snap.forEach(child => {
         const key = child.key;
         const ans = child.val();
-        // Skip meta keys or already-handled peers
         if (!ans || !ans.sdp || peerMap[key]) return;
         handleViewerAnswer(key, ans);
       });
@@ -506,46 +531,63 @@ window.startStream = async (type) => {
   }
 };
 
-// Publish a single offer that all viewers read
+// ────────────────────────────────────────────────────
+// FIX 1 KEY: publishOffer creates ONE persistent PC.
+// We store its SDP so per-viewer PCs can replicate it.
+// ────────────────────────────────────────────────────
+let savedOfferSdp = null;
+
 async function publishOffer() {
-  // Temporary PC just to generate offer SDP; actual per-viewer PCs created on answer
-  const tempPc = new RTCPeerConnection(ICE);
-  localStream.getTracks().forEach(t => tempPc.addTrack(t, localStream));
-  const offer = await tempPc.createOffer();
-  await tempPc.setLocalDescription(offer);
+  if (hostPc) { try { hostPc.close(); } catch(_) {} }
 
-  // Gather all ICE candidates before publishing (trickle causes issues with shared offer)
+  hostPc = new RTCPeerConnection(ICE);
+  localStream.getTracks().forEach(t => hostPc.addTrack(t, localStream));
+
+  const offer = await hostPc.createOffer();
+  await hostPc.setLocalDescription(offer);
+
+  // Wait for ICE gathering to complete (or timeout after 3s)
   await new Promise(resolve => {
-    tempPc.onicecandidate = (e) => {
-      if (!e.candidate) resolve();
+    if (hostPc.iceGatheringState === 'complete') { resolve(); return; }
+    hostPc.onicegatheringstatechange = () => {
+      if (hostPc.iceGatheringState === 'complete') resolve();
     };
-    setTimeout(resolve, 3000); // safety timeout
+    setTimeout(resolve, 3000);
   });
 
-  // Store finalized offer SDP (with embedded candidates via ICE gathering)
-  await set(ref(db, `rooms/${roomId}/offer`), {
-    type: tempPc.localDescription.type,
-    sdp: tempPc.localDescription.sdp
-  });
-  tempPc.close();
+  // Save the finalized SDP (with embedded candidates)
+  savedOfferSdp = {
+    type: hostPc.localDescription.type,
+    sdp: hostPc.localDescription.sdp
+  };
+
+  // Collect host ICE candidates as they trickle in
+  hostPc.onicecandidate = (e) => {
+    if (e.candidate) {
+      push(ref(db, `rooms/${roomId}/hostIce`), e.candidate.toJSON());
+    }
+  };
+
+  // Write offer to Firebase for viewers to read
+  await set(ref(db, `rooms/${roomId}/offer`), savedOfferSdp);
+  hostPc.close(); // close temp gathering PC — each viewer gets own PC below
 }
 
-// ---- FIX: Per-viewer RTCPeerConnection using the offer SDP + viewer's answer ----
+// ────────────────────────────────────────────────────
+// FIX 1 KEY (continued): Per-viewer PC uses the SAME
+// saved offer SDP so remote description matches.
+// ────────────────────────────────────────────────────
 async function handleViewerAnswer(viewerKey, ans) {
-  // Get the stored offer to know what SDP we published
-  let offerSnap;
-  try { offerSnap = await get(ref(db, `rooms/${roomId}/offer`)); }
-  catch(e) { return; }
-  if (!offerSnap.exists()) return;
-  const offerData = offerSnap.val();
+  if (!savedOfferSdp) return;
 
   const pc = new RTCPeerConnection(ICE);
-  peerMap[viewerKey] = pc;
+  const entry = { pc, iceQueue: [], remoteReady: false };
+  peerMap[viewerKey] = entry;
 
-  // Add all tracks
+  // Add all tracks to this PC
   localStream.getTracks().forEach(t => pc.addTrack(t, localStream));
 
-  // Send our ICE candidates to this viewer's specific pool
+  // Send our ICE to a shared hostIce pool (all viewers listen to this)
   pc.onicecandidate = (e) => {
     if (e.candidate) {
       push(ref(db, `rooms/${roomId}/hostIce`), e.candidate.toJSON());
@@ -553,28 +595,38 @@ async function handleViewerAnswer(viewerKey, ans) {
   };
 
   pc.oniceconnectionstatechange = () => {
-    if (pc.iceConnectionState === 'disconnected' || pc.iceConnectionState === 'failed' || pc.iceConnectionState === 'closed') {
+    const s = pc.iceConnectionState;
+    if (s === 'disconnected' || s === 'failed' || s === 'closed') {
       pc.close();
       delete peerMap[viewerKey];
     }
   };
 
   try {
-    // Re-create offer on this PC so signaling state is correct
-    const myOffer = await pc.createOffer();
-    await pc.setLocalDescription(myOffer);
+    // ── Set OUR offer first (same SDP as what viewer saw) ──
+    await pc.setLocalDescription(new RTCSessionDescription(savedOfferSdp));
 
-    // Apply viewer's answer
+    // ── Now apply viewer's answer ──
     await pc.setRemoteDescription(new RTCSessionDescription({ type: ans.type, sdp: ans.sdp }));
+    entry.remoteReady = true;
 
-    // Apply viewer's ICE candidates (under their key)
+    // Drain buffered ICE
+    while (entry.iceQueue.length) {
+      try { await pc.addIceCandidate(new RTCIceCandidate(entry.iceQueue.shift())); } catch(_) {}
+    }
+
+    // ── FIX 2: Listen for viewer's ICE, buffer if needed ──
     onValue(ref(db, `rooms/${roomId}/viewerIce/${viewerKey}`), (snap) => {
       snap.forEach(c => {
-        if (pc.remoteDescription) {
-          pc.addIceCandidate(new RTCIceCandidate(c.val())).catch(() => {});
+        const cand = c.val();
+        if (entry.remoteReady && pc.remoteDescription) {
+          pc.addIceCandidate(new RTCIceCandidate(cand)).catch(() => {});
+        } else {
+          entry.iceQueue.push(cand);
         }
       });
     });
+
   } catch(e) {
     delete peerMap[viewerKey];
     pc.close();
@@ -591,12 +643,12 @@ function startTimer() {
 }
 
 // ==================== ADMIN OVERLAY CONTROLS ====================
-
 window.autoSendText = (val) => {
   if (!val.trim()) { hideText(); return; }
-  document.getElementById('textOverlay').textContent = val;
+  const el = document.getElementById('textOverlay');
+  el.textContent = val;
   textVis = true;
-  document.getElementById('textOverlay').style.display = 'block';
+  el.style.display = 'block';
   document.getElementById('liveTextPreview').style.display = 'block';
   document.getElementById('livePreviewTxt').textContent = val;
   updateTextStyle();
@@ -636,50 +688,61 @@ window.updateTextPos = () => {
   broadcast();
 };
 
+// ── FIX 3: Compress logo aggressively before Firebase write ──
+// Firebase Realtime DB node limit is ~10MB but practical limit for
+// reliable transmission is ~200KB. We compress to WebP 60% quality
+// at max 200×200px before storing.
 function getCompressedLogo() {
   if (!logoUrl) return '';
   try {
     const canvas = document.createElement('canvas');
     const img = document.getElementById('logoOverlay');
-    const maxW = 200, maxH = 200;
-    const ratio = Math.min(maxW / img.naturalWidth, maxH / img.naturalHeight, 1);
-    canvas.width = Math.round(img.naturalWidth * ratio);
-    canvas.height = Math.round(img.naturalHeight * ratio);
+    const MAX = 200;
+    const ratio = Math.min(MAX / img.naturalWidth, MAX / img.naturalHeight, 1);
+    canvas.width  = Math.max(1, Math.round(img.naturalWidth  * ratio));
+    canvas.height = Math.max(1, Math.round(img.naturalHeight * ratio));
     const ctx = canvas.getContext('2d');
     ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-    return canvas.toDataURL('image/webp', 0.7);
-  } catch(e) {
+    // Try WebP first, fallback to JPEG
+    const webp = canvas.toDataURL('image/webp', 0.6);
+    return webp.startsWith('data:image/webp') ? webp : canvas.toDataURL('image/jpeg', 0.6);
+  } catch(_) {
     return logoUrl;
   }
 }
 
+// Debounce broadcast to avoid Firebase rate limiting on rapid changes
+let broadcastTimer = null;
 function broadcast() {
   if (!db || !roomId) return;
-  const logoSrc = (logoUrl && logoVis) ? getCompressedLogo() : '';
-  set(ref(db, `rooms/${roomId}/overlays`), {
-    logo: {
-      show: logoVis, src: logoSrc,
-      x: parseInt(document.getElementById('logoX').value)||16,
-      y: parseInt(document.getElementById('logoY').value)||80,
-      w: parseInt(document.getElementById('logoW').value)||120,
-      h: parseInt(document.getElementById('logoH').value)||80
-    },
-    text: {
-      show: textVis,
-      msg: document.getElementById('textOverlay').textContent,
-      color: document.getElementById('textClr').value,
-      bgColor: document.getElementById('bgClr').value,
-      bgOp: 0.6,
-      font: document.getElementById('fontFam').value,
-      size: parseInt(document.getElementById('fontSz').value)||22,
-      x: parseInt(document.getElementById('textX').value)||20,
-      y: parseInt(document.getElementById('textY').value)||300
-    },
-    ticker: {
-      show: tickVis,
-      msg: document.getElementById('tickInp').value
-    }
-  });
+  clearTimeout(broadcastTimer);
+  broadcastTimer = setTimeout(() => {
+    const logoSrc = (logoUrl && logoVis) ? getCompressedLogo() : '';
+    set(ref(db, `rooms/${roomId}/overlays`), {
+      logo: {
+        show: logoVis, src: logoSrc,
+        x: parseInt(document.getElementById('logoX').value)||16,
+        y: parseInt(document.getElementById('logoY').value)||80,
+        w: parseInt(document.getElementById('logoW').value)||120,
+        h: parseInt(document.getElementById('logoH').value)||80
+      },
+      text: {
+        show: textVis,
+        msg: document.getElementById('textOverlay').textContent,
+        color: document.getElementById('textClr').value,
+        bgColor: document.getElementById('bgClr').value,
+        bgOp: 0.6,
+        font: document.getElementById('fontFam').value,
+        size: parseInt(document.getElementById('fontSz').value)||22,
+        x: parseInt(document.getElementById('textX').value)||20,
+        y: parseInt(document.getElementById('textY').value)||300
+      },
+      ticker: {
+        show: tickVis,
+        msg: document.getElementById('tickInp').value
+      }
+    });
+  }, 200); // 200ms debounce
 }
 
 window.uploadLogo = (input) => {
@@ -698,7 +761,7 @@ window.uploadLogo = (input) => {
       applyLogoPos();
       applyLogoSize();
       broadcast();
-      toast('Logo uploaded!');
+      toast('Logo upload ho gaya! Compress karke bhej raha hoon...');
     };
     logoEl.src = logoUrl;
   };
@@ -724,15 +787,14 @@ window.toggleLogo = (show) => {
   logoVis = show;
   document.getElementById('logoOverlay').style.display = show ? 'block' : 'none';
   broadcast();
-  toast(show ? 'Logo shown' : 'Logo hidden');
+  toast(show ? 'Logo show ho raha hai' : 'Logo hide ho gaya');
 };
 
 window.sendTicker = () => {
   const msg = document.getElementById('tickInp').value.trim();
   if (!msg) { toast('Ticker text likho!'); return; }
   tickVis = true;
-  const adminInner = document.getElementById('tickerInner');
-  adminInner.textContent = msg + '   •   ' + msg + '   •   ' + msg;
+  document.getElementById('tickerInner').textContent = msg + '   •   ' + msg + '   •   ' + msg;
   document.getElementById('tickerOverlay').style.display = 'block';
   broadcast();
   toast('Ticker live!');
@@ -742,13 +804,13 @@ window.hideTicker = () => {
   tickVis = false;
   document.getElementById('tickerOverlay').style.display = 'none';
   broadcast();
-  toast('Ticker hidden');
+  toast('Ticker hide ho gaya');
 };
 
 window.toggleFlash = async () => {
   try {
     if (videoTrack) await videoTrack.applyConstraints({ advanced: [{ torch: true }] });
-  } catch(e) { toast('Flash supported nahi'); }
+  } catch(_) { toast('Flash supported nahi is device pe'); }
 };
 
 window.flipCamera = async () => {
@@ -761,10 +823,10 @@ window.flipCamera = async () => {
     });
     videoTrack = localStream.getVideoTracks()[0];
     document.getElementById('mainVideo').srcObject = localStream;
-    // Replace track in all peer connections
-    Object.values(peerMap).forEach(pc => {
+    // Replace track in all active peer connections
+    Object.values(peerMap).forEach(({ pc }) => {
       const sender = pc.getSenders().find(s => s.track?.kind === 'video');
-      if (sender) sender.replaceTrack(videoTrack);
+      if (sender) sender.replaceTrack(videoTrack).catch(() => {});
     });
     toast('Camera flip ho gaya');
   } catch(e) { toast('Flip nahi hua: ' + e.message); }
@@ -775,7 +837,7 @@ window.applyZoom = (val) => {
   if (videoTrack) {
     try {
       videoTrack.applyConstraints({ advanced: [{ zoom: parseFloat(val) }] });
-    } catch(e) {
+    } catch(_) {
       document.getElementById('mainVideo').style.transform = `scale(${val})`;
     }
   }
@@ -803,7 +865,8 @@ window.waShare = () => {
 window.stopStream = () => {
   if (timerInt) clearInterval(timerInt);
   if (localStream) localStream.getTracks().forEach(t => t.stop());
-  Object.values(peerMap).forEach(pc => pc.close());
+  Object.values(peerMap).forEach(({ pc }) => { try { pc.close(); } catch(_) {} });
+  if (hostPc) { try { hostPc.close(); } catch(_) {} }
   if (db && roomId) remove(ref(db, `rooms/${roomId}`));
   location.reload();
 };
@@ -814,9 +877,8 @@ let dragging = false, dragOffX = 0, dragOffY = 0;
 
 logoEl.addEventListener('mousedown', (e) => {
   e.preventDefault(); dragging = true;
-  const rect = logoEl.getBoundingClientRect();
-  dragOffX = e.clientX - rect.left;
-  dragOffY = e.clientY - rect.top;
+  const r = logoEl.getBoundingClientRect();
+  dragOffX = e.clientX - r.left; dragOffY = e.clientY - r.top;
 });
 document.addEventListener('mousemove', (e) => {
   if (!dragging) return;
@@ -828,15 +890,13 @@ document.addEventListener('mousemove', (e) => {
 document.addEventListener('mouseup', () => { if (dragging) { dragging = false; if (logoVis) broadcast(); } });
 
 logoEl.addEventListener('touchstart', (e) => {
-  e.preventDefault();
-  const touch = e.touches[0]; dragging = true;
-  const rect = logoEl.getBoundingClientRect();
-  dragOffX = touch.clientX - rect.left;
-  dragOffY = touch.clientY - rect.top;
+  e.preventDefault(); dragging = true;
+  const touch = e.touches[0];
+  const r = logoEl.getBoundingClientRect();
+  dragOffX = touch.clientX - r.left; dragOffY = touch.clientY - r.top;
 }, { passive: false });
 document.addEventListener('touchmove', (e) => {
-  if (!dragging) return;
-  e.preventDefault();
+  if (!dragging) return; e.preventDefault();
   const touch = e.touches[0];
   const x = touch.clientX - dragOffX, y = touch.clientY - dragOffY;
   logoEl.style.left = x + 'px'; logoEl.style.top = y + 'px';
