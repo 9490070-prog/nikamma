@@ -244,28 +244,34 @@ const FB_CFG = {
   appId: "1:534849542892:web:d96322fd4811b46738e3c9"
 };
 
-// CRITICAL FIX: Reliable TURN servers for cross-network connectivity
-// Ye servers different networks ke beech video/audio relay karte hain
-const ICE_CONFIG = { 
+// ============================================================
+// CROSS NETWORK FIX - Multiple reliable TURN server providers
+// STUN = same network pe direct IP discover karta hai
+// TURN = different network (4G <-> WiFi etc) pe RELAY karta hai
+// Bina TURN ke cross-network kabhi nahi chalega
+// ============================================================
+const ICE_CONFIG = {
   iceServers: [
-    // Google STUN servers for local network discovery
+    // STUN — fast direct connection attempt (same network)
     { urls: 'stun:stun.l.google.com:19302' },
     { urls: 'stun:stun1.l.google.com:19302' },
-    { urls: 'stun:stun2.l.google.com:19302' },
-    { urls: 'stun:stun3.l.google.com:19302' },
-    { urls: 'stun:stun4.l.google.com:19302' },
-    { urls: 'stun:stun.ekiga.net' },
-    { urls: 'stun:stun.ideasip.com' },
-    { urls: 'stun:stun.voipgate.com' },
-    // PUBLIC TURN servers - YE CROSS NETWORK KE LIYE SABSE IMPORTANT HAIN!
-    { urls: 'turn:openrelay.metered.ca:80', username: 'openrelayproject', credential: 'openrelayproject' },
-    { urls: 'turn:openrelay.metered.ca:443', username: 'openrelayproject', credential: 'openrelayproject' },
+    // TURN Provider 1: Metered.ca — most reliable free TURN
+    { urls: 'turn:a.relay.metered.ca:80',       username: 'e9a94c93bcc61474fd47f1e7', credential: 'Qdwm+OxSijkY/uNc' },
+    { urls: 'turn:a.relay.metered.ca:80?transport=tcp', username: 'e9a94c93bcc61474fd47f1e7', credential: 'Qdwm+OxSijkY/uNc' },
+    { urls: 'turn:a.relay.metered.ca:443',      username: 'e9a94c93bcc61474fd47f1e7', credential: 'Qdwm+OxSijkY/uNc' },
+    { urls: 'turn:a.relay.metered.ca:443?transport=tcp', username: 'e9a94c93bcc61474fd47f1e7', credential: 'Qdwm+OxSijkY/uNc' },
+    // TURN Provider 2: Cloudflare TURN (via metered fallback)
+    { urls: 'turn:relay1.expressturn.com:3478', username: 'efQZHHBXARPWZBV7Z6', credential: 'E2pMChGHMUDY4pcM' },
+    // TURN Provider 3: openrelay (backup — port 80 TCP always works even behind strict firewall)
+    { urls: 'turn:openrelay.metered.ca:80',     username: 'openrelayproject', credential: 'openrelayproject' },
     { urls: 'turn:openrelay.metered.ca:443?transport=tcp', username: 'openrelayproject', credential: 'openrelayproject' },
-    // Additional TURN server for fallback
-    { urls: 'turn:12.12.12.12:3478', username: 'test', credential: 'test' } // placeholder, will be ignored if fails
   ],
-  iceCandidatePoolSize: 10,
-  iceTransportPolicy: 'all' // 'relay' se 'all' kiya taki direct connection bhi try ho
+  iceCandidatePoolSize: 15,
+  // 'all' = pehle direct try karega, fail hone pe TURN relay use karega
+  iceTransportPolicy: 'all',
+  // Bundles audio+video in single transport = faster connection
+  bundlePolicy: 'max-bundle',
+  rtcpMuxPolicy: 'require',
 };
 
 window.toast = (msg) => { const t = document.getElementById('toast'); t.textContent = msg; t.classList.add('show'); setTimeout(() => t.classList.remove('show'), 2500); };
@@ -304,141 +310,193 @@ viewerMuteBtn.addEventListener('click', () => {
 
 async function initViewer(roomId) {
   const txt = document.getElementById('vLoaderTxt');
+  const loaderEl = document.getElementById('vLoader');
+  const retryBtn = document.getElementById('retryBtn');
   txt.innerText = 'Connecting to stream...';
-  let app, db;
+
+  let app2, db2;
   try {
-    app = initializeApp(FB_CFG, 'viewer'+Date.now());
-    db = getDatabase(app);
-  } catch(e) { txt.innerText = 'Firebase error'; document.getElementById('retryBtn').style.display='block'; return; }
-  
-  onValue(ref(db, `rooms/${roomId}/overlays`), (s) => { if(s.exists()) applyOverlays(s.val()); });
-  
-  const viewerId = 'v_' + Date.now() + '_' + Math.random().toString(36).substr(2,6);
-  await set(ref(db, `rooms/${roomId}/viewers/${viewerId}`), true);
-  window.addEventListener('beforeunload', () => remove(ref(db, `rooms/${roomId}/viewers/${viewerId}`)));
-  
+    app2 = initializeApp(FB_CFG, 'viewer' + Date.now());
+    db2 = getDatabase(app2);
+  } catch(e) {
+    txt.innerText = 'Firebase init error. Retry karo.';
+    retryBtn.style.display = 'block';
+    return;
+  }
+
+  onValue(ref(db2, `rooms/${roomId}/overlays`), (s) => { if(s.exists()) applyOverlays(s.val()); });
+
+  const viewerId = 'v_' + Date.now() + '_' + Math.random().toString(36).substr(2, 8);
+  await set(ref(db2, `rooms/${roomId}/viewers/${viewerId}`), true);
+  window.addEventListener('beforeunload', () => remove(ref(db2, `rooms/${roomId}/viewers/${viewerId}`)));
+
   let pc = null;
   let offerListener = null;
   let videoReceived = false;
-  
+  let retryCount = 0;
+  let retryTimer = null;
+  let connectingPc = false; // guard against double-connect
+
+  function setStatus(icon, msg, color) {
+    connStatusSpan.textContent = icon + ' ' + msg;
+    connStatusSpan.style.background = color;
+  }
+
+  function scheduleRetry(delaySec) {
+    clearTimeout(retryTimer);
+    retryTimer = setTimeout(() => {
+      retryCount++;
+      txt.innerText = `Reconnecting... (attempt ${retryCount})`;
+      loaderEl.style.display = 'flex';
+      retryBtn.style.display = 'none';
+      connectingPc = false;
+      requestOffer();
+    }, delaySec * 1000);
+  }
+
   async function createAndConnect(offerData) {
-    if(pc) { 
-      try { pc.close(); } catch(e){} 
-      pc = null; 
-    }
-    
+    if (connectingPc) return;
+    connectingPc = true;
+
+    // Cleanup old pc
+    if (pc) { try { pc.close(); } catch(e){} pc = null; }
+
     videoReceived = false;
-    connStatusSpan.textContent = '🔄 Establishing P2P connection...';
-    connStatusSpan.style.background = 'rgba(255,100,0,0.7)';
-    
+    setStatus('🔄', 'Establishing connection...', 'rgba(255,140,0,0.75)');
+
     pc = new RTCPeerConnection(ICE_CONFIG);
-    
-    // CRITICAL: Check connection state
-    pc.onconnectionstatechange = () => {
-      console.log('Connection state:', pc.connectionState);
-      if (pc.connectionState === 'connected') {
-        connStatusSpan.textContent = '✅ Connected! Video+Audio Active';
-        connStatusSpan.style.background = 'rgba(0,100,0,0.7)';
-      } else if (pc.connectionState === 'failed') {
-        connStatusSpan.textContent = '❌ Connection failed - retrying...';
-        connStatusSpan.style.background = 'rgba(100,0,0,0.7)';
-        setTimeout(() => { requestOffer(); }, 3000);
+
+    // Buffer host ICE candidates until remoteDesc is set
+    const pendingHostIce = [];
+    let remoteDescSet = false;
+    async function flushHostIce() {
+      for (const c of pendingHostIce) {
+        try { await pc.addIceCandidate(new RTCIceCandidate(c)); } catch(e){}
+      }
+      pendingHostIce.length = 0;
+    }
+
+    // Listen for host ICE candidates — buffer them properly
+    onValue(ref(db2, `rooms/${roomId}/hostIce/${viewerId}`), (snap) => {
+      snap.forEach(child => {
+        const c = child.val();
+        if (!c) return;
+        if (remoteDescSet && pc && pc.remoteDescription) {
+          pc.addIceCandidate(new RTCIceCandidate(c)).catch(() => {});
+        } else {
+          pendingHostIce.push(c);
+        }
+      });
+    });
+
+    // Send our ICE candidates to Firebase for host
+    pc.onicecandidate = (e) => {
+      if (e.candidate) {
+        push(ref(db2, `rooms/${roomId}/viewerIce/${viewerId}`), e.candidate.toJSON());
       }
     };
-    
+
+    pc.oniceconnectionstatechange = () => {
+      const s = pc.iceConnectionState;
+      console.log('ICE state:', s);
+      if (s === 'checking') setStatus('🔄', 'Checking candidates...', 'rgba(255,140,0,0.75)');
+      if (s === 'connected' || s === 'completed') setStatus('✅', 'ICE Connected!', 'rgba(0,120,0,0.8)');
+      if (s === 'disconnected') {
+        setStatus('⚠️', 'Disconnected — retrying in 4s...', 'rgba(180,80,0,0.8)');
+        scheduleRetry(4);
+      }
+      if (s === 'failed') {
+        setStatus('❌', 'ICE failed — retrying...', 'rgba(140,0,0,0.8)');
+        txt.innerText = 'Connection failed. Retry ho raha hai...';
+        loaderEl.style.display = 'flex';
+        scheduleRetry(3);
+      }
+    };
+
+    pc.onconnectionstatechange = () => {
+      const s = pc.connectionState;
+      console.log('Connection state:', s);
+      if (s === 'connected') setStatus('✅', 'Connected! Video+Audio Active', 'rgba(0,120,0,0.8)');
+      if (s === 'failed') { setStatus('❌', 'Failed — retrying...', 'rgba(140,0,0,0.8)'); scheduleRetry(3); }
+    };
+
+    // CRITICAL: always update srcObject on every track event (handles reconnect too)
     pc.ontrack = (e) => {
-      console.log('Track received:', e.track.kind, 'Stream ID:', e.streams[0]?.id);
-      if (!videoReceived && e.track.kind === 'video') {
-        videoReceived = true;
-        const video = document.getElementById('viewVideo');
-        if(video.srcObject !== e.streams[0]) {
+      console.log('Track received:', e.track.kind);
+      const video = document.getElementById('viewVideo');
+      if (e.streams && e.streams[0]) {
+        if (video.srcObject !== e.streams[0]) {
           video.srcObject = e.streams[0];
-          video.muted = false;
-          video.play().catch(err => { 
-            console.log('Play error:', err);
-            video.muted = true; 
-            video.play(); 
-          });
-          document.getElementById('vLoader').style.display = 'none';
-          showPlayIcon();
-          connStatusSpan.textContent = '✅ Video+Audio Active!';
-          connStatusSpan.style.background = 'rgba(0,100,0,0.7)';
-          toast('✅ Stream Connected! Video+Audio cross network working!');
         }
       }
-    };
-    
-    pc.onicecandidate = (e) => {
-      if(e.candidate) {
-        console.log('ICE candidate type:', e.candidate.type, 'protocol:', e.candidate.protocol);
-        push(ref(db, `rooms/${roomId}/viewerIce/${viewerId}`), e.candidate.toJSON());
+      if (e.track.kind === 'video' && !videoReceived) {
+        videoReceived = true;
+        clearTimeout(retryTimer);
+        video.muted = false;
+        video.play().catch(() => { video.muted = true; video.play(); });
+        loaderEl.style.display = 'none';
+        retryBtn.style.display = 'none';
+        showPlayIcon();
+        setStatus('✅', 'Video+Audio Active!', 'rgba(0,120,0,0.8)');
+        toast('✅ Stream connected! Cross network working!');
       }
     };
-    
-    pc.onicegatheringstatechange = () => {
-      console.log('ICE gathering state:', pc.iceGatheringState);
-    };
-    
-    pc.oniceconnectionstatechange = () => {
-      console.log('ICE connection state:', pc.iceConnectionState);
-      if(pc.iceConnectionState === 'failed') {
-        txt.innerText = 'ICE failed - retrying...';
-        document.getElementById('vLoader').style.display = 'flex';
-        connStatusSpan.textContent = '🔄 ICE failed, retrying...';
-        setTimeout(() => { requestOffer(); }, 3000);
-      } else if(pc.iceConnectionState === 'connected') {
-        connStatusSpan.textContent = '✅ ICE Connected!';
-      } else if(pc.iceConnectionState === 'completed') {
-        connStatusSpan.textContent = '✅ Connection Established!';
-      }
-    };
-    
+
     try {
       await pc.setRemoteDescription(new RTCSessionDescription(offerData));
+      remoteDescSet = true;
+      await flushHostIce(); // flush any buffered host ICE candidates
+
       const answer = await pc.createAnswer();
       await pc.setLocalDescription(answer);
-      await set(ref(db, `rooms/${roomId}/answers/${viewerId}`), { sdp: answer.sdp, type: answer.type });
-      
-      onValue(ref(db, `rooms/${roomId}/hostIce/${viewerId}`), (snap) => {
-        snap.forEach(c => { 
-          pc.addIceCandidate(new RTCIceCandidate(c.val())).catch(err => console.log('ICE add error:', err));
-        });
-      });
-      
-      // Set timeout to check if video arrived
+      await set(ref(db2, `rooms/${roomId}/answers/${viewerId}`), { sdp: answer.sdp, type: answer.type });
+
+      // TURN relay notice after 10 sec
       setTimeout(() => {
-        if (!videoReceived && document.getElementById('vLoader').style.display !== 'none') {
-          txt.innerText = 'Video not arriving - using TURN relay...';
-          connStatusSpan.textContent = '⚠️ Using TURN relay...';
+        if (!videoReceived) {
+          txt.innerText = 'TURN relay use ho raha hai... thoda wait karo.';
+          setStatus('⏳', 'TURN relay via server...', 'rgba(100,60,0,0.85)');
         }
-      }, 8000);
-      
-    } catch(e) { 
-      console.error('Connection error:', e);
-      txt.innerText = 'Error: '+e.message; 
-      document.getElementById('retryBtn').style.display='block';
-      connStatusSpan.textContent = '❌ Connection failed';
+      }, 10000);
+
+    } catch(e) {
+      console.error('Connection setup error:', e);
+      txt.innerText = 'Error: ' + e.message;
+      retryBtn.style.display = 'block';
+      setStatus('❌', 'Setup failed', 'rgba(140,0,0,0.8)');
+      connectingPc = false;
     }
   }
-  
+
   async function requestOffer() {
-    await set(ref(db, `rooms/${roomId}/joinRequests/${viewerId}`), { ts: Date.now() });
-    if(offerListener) off(offerListener);
-    offerListener = onValue(ref(db, `rooms/${roomId}/offers/${viewerId}`), (snap) => {
-      if(snap.exists() && (!pc || pc.signalingState === 'stable' || pc.signalingState === 'closed')) {
-        createAndConnect(snap.val());
+    connectingPc = false;
+    // Clear old ICE + answers so host sends fresh offer
+    await remove(ref(db2, `rooms/${roomId}/viewerIce/${viewerId}`));
+    await remove(ref(db2, `rooms/${roomId}/answers/${viewerId}`));
+    await set(ref(db2, `rooms/${roomId}/joinRequests/${viewerId}`), { ts: Date.now() });
+
+    if (offerListener) { off(offerListener); offerListener = null; }
+    offerListener = onValue(ref(db2, `rooms/${roomId}/offers/${viewerId}`), (snap) => {
+      if (snap.exists()) {
+        const data = snap.val();
+        // Accept new offer if pc is not yet active
+        if (!pc || pc.signalingState === 'closed' || pc.connectionState === 'failed' || !connectingPc) {
+          createAndConnect(data);
+        }
       }
     });
   }
+
   await requestOffer();
-  
+
+  // Global timeout — show retry after 45s if nothing received
   setTimeout(() => {
-    if(document.getElementById('vLoader').style.display !== 'none' && !videoReceived) {
-      txt.innerText = 'Cross network may take longer. Check ID or retry.';
-      document.getElementById('retryBtn').style.display = 'block';
-      connStatusSpan.textContent = '❌ Timeout - retry';
+    if (!videoReceived) {
+      txt.innerText = 'Stream nahi mila. Room ID check karo ya retry karo.';
+      retryBtn.style.display = 'block';
+      setStatus('❌', 'Timeout — retry', 'rgba(140,0,0,0.8)');
     }
-  }, 30000);
+  }, 45000);
 }
 
 function showPlayIcon() { const icon = document.getElementById('vPlayIcon'); icon.classList.add('show'); setTimeout(() => icon.classList.remove('show'), 1000); }
@@ -514,7 +572,16 @@ window.startStream = async (type) => {
     await remove(ref(db, `rooms/${roomId}`));
     
     onValue(ref(db, `rooms/${roomId}/joinRequests`), (snap) => {
-      snap.forEach(child => { const key = child.key; if(!peerMap[key] || !peerMap[key].pc) createOfferForViewer(key); });
+      snap.forEach(child => {
+        const key = child.key;
+        const entry = peerMap[key];
+        // Create new offer if: no entry, no pc, or pc is in failed/closed state
+        const needsOffer = !entry || !entry.pc ||
+          entry.pc.connectionState === 'failed' ||
+          entry.pc.connectionState === 'closed' ||
+          entry.pc.iceConnectionState === 'failed';
+        if (needsOffer) createOfferForViewer(key);
+      });
     });
     onValue(ref(db, `rooms/${roomId}/answers`), (snap) => {
       snap.forEach(child => { const key = child.key; const entry = peerMap[key]; if(entry && entry.pc && entry.pc.signalingState === 'have-local-offer' && !entry.answerSet) applyAnswer(key, child.val()); });
@@ -526,29 +593,107 @@ window.startStream = async (type) => {
 };
 
 async function createOfferForViewer(viewerKey) {
-  if(peerMap[viewerKey] && peerMap[viewerKey].pc) { try { peerMap[viewerKey].pc.close(); } catch(e){} }
+  // Close and cleanup any old pc for this viewer
+  if (peerMap[viewerKey] && peerMap[viewerKey].pc) {
+    try { peerMap[viewerKey].pc.close(); } catch(e){}
+  }
+  delete peerMap[viewerKey];
+
+  // Clear stale firebase ICE/offer data for this viewer
+  await remove(ref(db, `rooms/${roomId}/hostIce/${viewerKey}`));
+  await remove(ref(db, `rooms/${roomId}/offers/${viewerKey}`));
+
   const pc = new RTCPeerConnection(ICE_CONFIG);
   peerMap[viewerKey] = { pc, answerSet: false };
+
+  // Add all tracks
   localStream.getTracks().forEach(t => pc.addTrack(t, localStream));
-  pc.onicecandidate = (e) => { if(e.candidate) push(ref(db, `rooms/${roomId}/hostIce/${viewerKey}`), e.candidate.toJSON()); };
-  pc.oniceconnectionstatechange = () => { if(['disconnected','failed','closed'].includes(pc.iceConnectionState)) { try{pc.close();}catch(e){} delete peerMap[viewerKey]; } };
-  try {
-    const offer = await pc.createOffer();
-    await pc.setLocalDescription(offer);
-    await set(ref(db, `rooms/${roomId}/offers/${viewerKey}`), { sdp: pc.localDescription.sdp, type: pc.localDescription.type });
-    onValue(ref(db, `rooms/${roomId}/answers/${viewerKey}`), async (snapAns) => {
-      if(snapAns.exists() && pc.signalingState === 'have-local-offer' && !peerMap[viewerKey]?.answerSet) await applyAnswer(viewerKey, snapAns.val());
+
+  // Send our ICE candidates to viewer
+  pc.onicecandidate = (e) => {
+    if (e.candidate) {
+      push(ref(db, `rooms/${roomId}/hostIce/${viewerKey}`), e.candidate.toJSON());
+    }
+  };
+
+  // Buffer viewer ICE candidates until remote desc is set
+  const pendingViewerIce = [];
+  let remoteDescSet = false;
+  async function flushViewerIce() {
+    for (const c of pendingViewerIce) {
+      try { await pc.addIceCandidate(new RTCIceCandidate(c)); } catch(e){}
+    }
+    pendingViewerIce.length = 0;
+  }
+
+  // Listen for viewer ICE candidates
+  onValue(ref(db, `rooms/${roomId}/viewerIce/${viewerKey}`), (snap) => {
+    snap.forEach(child => {
+      const c = child.val();
+      if (!c) return;
+      if (remoteDescSet && pc.remoteDescription) {
+        pc.addIceCandidate(new RTCIceCandidate(c)).catch(() => {});
+      } else {
+        pendingViewerIce.push(c);
+      }
     });
-  } catch(e) { console.error('offer error', e); delete peerMap[viewerKey]; try{pc.close();}catch(e){} }
+  });
+
+  pc.oniceconnectionstatechange = () => {
+    const s = pc.iceConnectionState;
+    console.log(`Viewer ${viewerKey} ICE:`, s);
+    if (['disconnected', 'failed', 'closed'].includes(s)) {
+      setTimeout(() => {
+        // Only cleanup if still failed/closed (not recovered)
+        if (!pc || ['disconnected','failed','closed'].includes(pc.iceConnectionState)) {
+          try { pc.close(); } catch(e){}
+          delete peerMap[viewerKey];
+        }
+      }, 5000);
+    }
+  };
+
+  pc.onconnectionstatechange = () => {
+    console.log(`Viewer ${viewerKey} conn:`, pc.connectionState);
+  };
+
+  try {
+    // Set bitrate via bandwidth constraint in SDP (helps with slow networks)
+    const offer = await pc.createOffer();
+    let sdp = offer.sdp;
+    // Cap video bitrate at 1.5 Mbps — better for cross-network TURN relay
+    sdp = sdp.replace(/b=AS:\d+/g, ''); // remove existing
+    sdp = sdp.replace(/(m=video.*\r\n)/g, '$1b=AS:1500\r\n');
+
+    await pc.setLocalDescription({ type: offer.type, sdp });
+    await set(ref(db, `rooms/${roomId}/offers/${viewerKey}`), { sdp: pc.localDescription.sdp, type: pc.localDescription.type });
+
+    // Listen for answer from viewer
+    onValue(ref(db, `rooms/${roomId}/answers/${viewerKey}`), async (snapAns) => {
+      if (snapAns.exists() && pc.signalingState === 'have-local-offer' && !peerMap[viewerKey]?.answerSet) {
+        await applyAnswer(viewerKey, snapAns.val());
+      }
+    });
+
+  } catch(e) {
+    console.error('Offer error for', viewerKey, e);
+    delete peerMap[viewerKey];
+    try { pc.close(); } catch(e){}
+  }
 }
 
 async function applyAnswer(viewerKey, ansData) {
   const entry = peerMap[viewerKey];
-  if(!entry || !entry.pc || entry.answerSet) return;
+  if (!entry || !entry.pc || entry.answerSet) return;
   entry.answerSet = true;
   try {
     await entry.pc.setRemoteDescription(new RTCSessionDescription({ type: ansData.type, sdp: ansData.sdp }));
-    onValue(ref(db, `rooms/${roomId}/viewerIce/${viewerKey}`), (snap) => { snap.forEach(c => { entry.pc.addIceCandidate(new RTCIceCandidate(c.val())).catch(()=>{}); }); });
+    // Now remote desc is set — add any viewer ICE candidates that arrived early
+    onValue(ref(db, `rooms/${roomId}/viewerIce/${viewerKey}`), (snap) => {
+      snap.forEach(c => {
+        entry.pc.addIceCandidate(new RTCIceCandidate(c.val())).catch(() => {});
+      });
+    });
   } catch(e) { console.error('apply answer error', e); }
 }
 
