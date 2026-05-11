@@ -6,244 +6,259 @@
 <title>LiveCam Pro</title>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <style>
-:root{--red:#ff2d2d;--red-dark:#c0000a;--bg:#0a0a0a;--surface:#141414;--surface2:#1e1e1e;--border:rgba(255,255,255,0.08);--text:#f0f0f0;--muted:#777}
+:root{--red:#ff2d2d;--red-dark:#c0000a;--surface:#141414;--surface2:#1e1e1e;--border:rgba(255,255,255,0.08);--text:#f0f0f0;--muted:#777}
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body{width:100%;height:100%;overflow:hidden;background:#000;color:var(--text);font-family:'DM Sans',sans-serif}
 
-/* ===== VIEWER PAGE ===== */
+/* VIEWER */
 #viewerPage{display:none;position:fixed;inset:0;background:#000;z-index:1}
 #viewVideo{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;background:#000;z-index:1}
 #vLogoOverlay{position:absolute;object-fit:contain;display:none;filter:drop-shadow(0 2px 12px rgba(0,0,0,0.9));border-radius:6px;pointer-events:none;z-index:10}
 #vTextOverlay{position:absolute;display:none;pointer-events:none;z-index:11;white-space:pre-wrap;word-break:break-word;line-height:1.4}
 #vTickerWrap{position:absolute;left:0;right:0;overflow:hidden;pointer-events:none;display:none;z-index:11}
-.tick-inner{white-space:nowrap;display:inline-block;animation:tick 18s linear infinite;font-weight:600;color:#fff;padding-left:100%}
-@keyframes tick{from{transform:translateX(0)}to{transform:translateX(-100%)}}
+.tick-i{white-space:nowrap;display:inline-block;animation:ticker 18s linear infinite;font-weight:600;color:#fff;padding-left:100%}
+@keyframes ticker{from{transform:translateX(0)}to{transform:translateX(-100%)}}
 #vTapArea{position:absolute;inset:0;z-index:20;cursor:pointer}
 #vPlayIcon{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);z-index:25;pointer-events:none;width:88px;height:88px;border-radius:50%;background:rgba(0,0,0,0.55);backdrop-filter:blur(10px);border:2px solid rgba(255,255,255,0.25);display:flex;align-items:center;justify-content:center;opacity:0;transition:opacity 0.3s ease}
 #vPlayIcon.show{opacity:1}
 #vPlayIcon svg{width:42px;height:42px;fill:#fff}
-#vLoader{position:absolute;inset:0;background:#0a0a0a;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:20px;z-index:30}
+#vLoader{position:absolute;inset:0;background:#0a0a0a;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;z-index:30}
 .vl-logo{font-family:'Bebas Neue',sans-serif;font-size:2.2rem;letter-spacing:3px;color:#fff}
 .vl-logo span{color:var(--red)}
 .spinner{width:46px;height:46px;border:3px solid rgba(255,255,255,0.08);border-top-color:var(--red);border-radius:50%;animation:spin 0.8s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
 .vl-txt{color:var(--muted);font-size:0.85rem;text-align:center;padding:0 30px;line-height:1.6}
-.vl-retry{margin-top:4px;padding:10px 24px;background:var(--red);border:none;border-radius:10px;color:#fff;font-size:0.88rem;cursor:pointer;display:none}
+.retry-btn{padding:10px 24px;background:var(--red);border:none;border-radius:10px;color:#fff;font-size:0.88rem;cursor:pointer;display:none;margin-top:4px}
 
-/* ===== ADMIN PAGE ===== */
+/* ADMIN */
 #adminPage{display:none;position:fixed;inset:0;z-index:1;overflow-y:auto}
 #homeScreen{min-height:100%;background:radial-gradient(ellipse at 30% 20%,#1a0000 0%,#0a0a0a 60%);display:flex;flex-direction:column;align-items:center;padding:50px 20px 40px}
-.logo-title{font-family:'Bebas Neue',sans-serif;font-size:3rem;letter-spacing:4px;text-align:center;line-height:1}
-.logo-title span{color:var(--red)}
+.logo-t{font-family:'Bebas Neue',sans-serif;font-size:3rem;letter-spacing:4px;text-align:center;line-height:1}
+.logo-t span{color:var(--red)}
 .tagline{color:var(--muted);font-size:0.72rem;letter-spacing:2px;text-transform:uppercase;text-align:center;margin-top:4px;margin-bottom:28px}
 .card{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:18px;width:100%;max-width:400px;margin-bottom:12px}
-.card-label{font-size:0.65rem;text-transform:uppercase;letter-spacing:2px;color:var(--muted);margin-bottom:12px}
-.big-btn{width:100%;padding:15px;border:none;border-radius:12px;font-family:'DM Sans',sans-serif;font-size:0.93rem;font-weight:600;cursor:pointer;transition:all 0.15s;display:flex;align-items:center;gap:10px;justify-content:center;margin-bottom:9px}
-.big-btn.red{background:var(--red);color:#fff}
-.big-btn.dark{background:var(--surface2);color:var(--text);border:1px solid var(--border)}
-.big-btn:active{transform:scale(0.97);opacity:0.85}
-.big-btn:last-child{margin-bottom:0}
+.clbl{font-size:0.65rem;text-transform:uppercase;letter-spacing:2px;color:var(--muted);margin-bottom:12px}
+.bbtn{width:100%;padding:15px;border:none;border-radius:12px;font-family:'DM Sans',sans-serif;font-size:0.93rem;font-weight:600;cursor:pointer;transition:all 0.15s;display:flex;align-items:center;gap:10px;justify-content:center;margin-bottom:9px}
+.bbtn.red{background:var(--red);color:#fff}
+.bbtn.dark{background:var(--surface2);color:var(--text);border:1px solid var(--border)}
+.bbtn:active{transform:scale(0.97);opacity:0.85}
+.bbtn:last-child{margin-bottom:0}
 .inp{width:100%;padding:13px 14px;background:var(--surface2);border:1px solid var(--border);border-radius:10px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:0.88rem;outline:none;margin-bottom:8px}
 .inp:focus{border-color:rgba(255,45,45,0.5)}
-.id-hint{font-size:0.72rem;color:var(--muted);margin-bottom:14px}
+.hint{font-size:0.72rem;color:var(--muted);margin-bottom:14px}
+
+/* STREAM SCREEN */
 #streamScreen{display:none;position:fixed;inset:0;background:#000}
 #mainVideo{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
-#overlayCanvas{position:absolute;inset:0;pointer-events:none;z-index:10;overflow:hidden}
+#ovCanvas{position:absolute;inset:0;pointer-events:none;z-index:10;overflow:hidden}
 #logoOverlay{position:absolute;object-fit:contain;display:none;filter:drop-shadow(0 2px 12px rgba(0,0,0,0.9));cursor:move;z-index:12;border-radius:6px;touch-action:none}
 #textOverlay{position:absolute;display:none;pointer-events:none;z-index:11;white-space:pre-wrap;word-break:break-word;line-height:1.4}
 #adminTop{position:absolute;top:0;left:0;right:0;z-index:20;display:flex;align-items:center;justify-content:space-between;padding:12px 16px;background:linear-gradient(to bottom,rgba(0,0,0,0.85) 0%,transparent 100%)}
-.live-pill{display:flex;align-items:center;gap:7px;background:var(--red);padding:5px 13px;border-radius:20px;font-size:0.75rem;font-weight:700;letter-spacing:1px}
+.lpill{display:flex;align-items:center;gap:7px;background:var(--red);padding:5px 13px;border-radius:20px;font-size:0.75rem;font-weight:700;letter-spacing:1px}
 .pulse{width:8px;height:8px;border-radius:50%;background:#fff;animation:p 1.2s ease-in-out infinite;display:inline-block}
 @keyframes p{0%,100%{opacity:1;transform:scale(1)}50%{opacity:0.3;transform:scale(0.7)}}
-.stat-pill{background:rgba(0,0,0,0.65);border:1px solid rgba(255,255,255,0.12);padding:5px 11px;border-radius:20px;font-size:0.76rem;display:flex;align-items:center;gap:5px}
-#adminBottom{position:absolute;bottom:0;left:0;right:0;z-index:20;padding:10px 16px 26px;background:linear-gradient(to top,rgba(0,0,0,0.92) 0%,transparent 100%)}
-.ctrl-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
-.c-btn{width:50px;height:50px;border-radius:50%;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:1.2rem;background:rgba(255,255,255,0.13);backdrop-filter:blur(6px);transition:all 0.15s;flex-shrink:0}
-.c-btn:active{transform:scale(0.88)}
-.c-btn.on{background:var(--red)}
-.stop-c{width:64px;height:64px;border-radius:50%;border:3px solid rgba(255,255,255,0.22);background:var(--red);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:1.45rem;flex-shrink:0}
-.stop-c:active{transform:scale(0.92)}
-.zoom-row{display:flex;align-items:center;gap:10px;padding:0 4px}
-.zoom-lbl{font-size:0.68rem;color:var(--muted);min-width:24px;text-align:center}
+.spill{background:rgba(0,0,0,0.65);border:1px solid rgba(255,255,255,0.12);padding:5px 11px;border-radius:20px;font-size:0.76rem;display:flex;align-items:center;gap:5px}
+#adminBot{position:absolute;bottom:0;left:0;right:0;z-index:20;padding:10px 16px 26px;background:linear-gradient(to top,rgba(0,0,0,0.92) 0%,transparent 100%)}
+.crow{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+.cbtn{width:50px;height:50px;border-radius:50%;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:1.2rem;background:rgba(255,255,255,0.13);backdrop-filter:blur(6px);transition:all 0.15s;flex-shrink:0}
+.cbtn:active{transform:scale(0.88)}
+.cbtn.on{background:var(--red)}
+.stopc{width:64px;height:64px;border-radius:50%;border:3px solid rgba(255,255,255,0.22);background:var(--red);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:1.45rem;flex-shrink:0}
+.stopc:active{transform:scale(0.92)}
+.zrow{display:flex;align-items:center;gap:10px;padding:0 4px}
+.zlbl{font-size:0.68rem;color:var(--muted);min-width:24px;text-align:center}
 input[type=range]{flex:1;height:3px;-webkit-appearance:none;background:rgba(255,255,255,0.18);border-radius:2px;outline:none}
 input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:20px;height:20px;border-radius:50%;background:#fff;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,0.5)}
-.zoom-v{font-size:0.75rem;color:#fff;font-weight:600;min-width:34px}
-#adminDrawer{position:absolute;bottom:0;left:0;right:0;z-index:30;background:var(--surface);border-radius:20px 20px 0 0;border-top:1px solid var(--border);padding:12px 16px 40px;transform:translateY(100%);transition:transform 0.32s cubic-bezier(0.4,0,0.2,1);max-height:86vh;overflow-y:auto}
-#adminDrawer.open{transform:translateY(0)}
-.dhandle{width:36px;height:4px;background:var(--border);border-radius:2px;margin:0 auto 14px}
+.zval{font-size:0.75rem;color:#fff;font-weight:600;min-width:34px}
+
+/* DRAWER */
+#drawer{position:absolute;bottom:0;left:0;right:0;z-index:30;background:var(--surface);border-radius:20px 20px 0 0;border-top:1px solid var(--border);padding:12px 16px 40px;transform:translateY(100%);transition:transform 0.32s cubic-bezier(0.4,0,0.2,1);max-height:86vh;overflow-y:auto}
+#drawer.open{transform:translateY(0)}
+.dh{width:36px;height:4px;background:var(--border);border-radius:2px;margin:0 auto 14px}
 .sec{font-size:0.62rem;text-transform:uppercase;letter-spacing:2px;color:var(--muted);margin-bottom:8px;margin-top:14px}
-.m-row{display:flex;gap:8px;margin-bottom:8px}
-.m-inp{flex:1;padding:11px 13px;background:var(--surface2);border:1px solid var(--border);border-radius:10px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:0.86rem;outline:none}
-.m-inp:focus{border-color:rgba(255,45,45,0.4)}
-.send-b{padding:11px 14px;background:var(--red);border:none;border-radius:10px;color:#fff;font-weight:700;cursor:pointer;font-size:0.86rem;white-space:nowrap}
-.color-row{display:flex;align-items:center;gap:10px;margin-bottom:8px;flex-wrap:wrap}
-.color-row label{font-size:0.78rem;color:var(--muted)}
+.mrow{display:flex;gap:8px;margin-bottom:8px}
+.minp{flex:1;padding:11px 13px;background:var(--surface2);border:1px solid var(--border);border-radius:10px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:0.86rem;outline:none}
+.minp:focus{border-color:rgba(255,45,45,0.4)}
+.sendb{padding:11px 14px;background:var(--red);border:none;border-radius:10px;color:#fff;font-weight:700;cursor:pointer;font-size:0.86rem;white-space:nowrap}
+.crow2{display:flex;align-items:center;gap:10px;margin-bottom:8px;flex-wrap:wrap}
+.crow2 label{font-size:0.78rem;color:var(--muted)}
 input[type=color]{width:36px;height:36px;border:none;border-radius:8px;background:none;cursor:pointer;padding:0}
-.font-row{display:flex;gap:8px;align-items:center;margin-bottom:10px;flex-wrap:wrap}
-.font-row select,.font-row input[type=number]{padding:8px 10px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:0.82rem;outline:none}
-.font-row select{flex:1}
-.grid2{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px}
+.frow{display:flex;gap:8px;align-items:center;margin-bottom:10px;flex-wrap:wrap}
+.frow select,.frow input[type=number]{padding:8px 10px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:0.82rem;outline:none}
+.frow select{flex:1}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px}
 .fi{display:flex;flex-direction:column;gap:3px}
 .fi label{font-size:0.68rem;color:var(--muted)}
 .pi{padding:9px 10px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:0.85rem;outline:none;width:100%}
-.size-row{display:flex;gap:8px;align-items:center;margin-bottom:8px;flex-wrap:wrap}
-.size-row label{font-size:0.75rem;color:var(--muted);white-space:nowrap}
+.szrow{display:flex;gap:8px;align-items:center;margin-bottom:8px;flex-wrap:wrap}
+.szrow label{font-size:0.75rem;color:var(--muted);white-space:nowrap}
 .qtags{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:6px}
 .qtag{padding:6px 12px;background:var(--surface2);border:1px solid var(--border);border-radius:20px;font-size:0.76rem;cursor:pointer;color:var(--text)}
 .qtag:active{background:rgba(255,45,45,0.18);border-color:var(--red)}
-.s-row{display:flex;gap:8px}
-.s-btn{flex:1;padding:12px 8px;background:var(--surface2);border:1px solid var(--border);border-radius:10px;color:var(--text);font-size:0.78rem;font-weight:500;cursor:pointer;text-align:center}
-.s-btn:active{background:#2a2a2a}
-.upload-area{border:1px dashed rgba(255,255,255,0.18);border-radius:12px;padding:14px;text-align:center;cursor:pointer;margin-bottom:8px}
-.img-prev{max-width:100%;max-height:80px;border-radius:8px;margin-top:8px;display:none}
-.ticker-wrap{position:absolute;left:0;right:0;overflow:hidden;z-index:11;pointer-events:none}
-.ticker-inner{white-space:nowrap;display:inline-block;animation:tick 18s linear infinite;font-weight:600;color:#fff;padding-left:100%}
+.srow{display:flex;gap:8px}
+.sbtn{flex:1;padding:12px 8px;background:var(--surface2);border:1px solid var(--border);border-radius:10px;color:var(--text);font-size:0.78rem;font-weight:500;cursor:pointer;text-align:center}
+.sbtn:active{background:#2a2a2a}
+.upa{border:1px dashed rgba(255,255,255,0.18);border-radius:12px;padding:14px;text-align:center;cursor:pointer;margin-bottom:8px}
+.iprev{max-width:100%;max-height:80px;border-radius:8px;margin-top:8px;display:none}
+.tickwrap{position:absolute;left:0;right:0;overflow:hidden;z-index:11;pointer-events:none}
+.ticki{white-space:nowrap;display:inline-block;animation:ticker 18s linear infinite;font-weight:600;color:#fff;padding-left:100%}
+
+/* Live text preview */
+#liveTextPreview{background:rgba(255,45,45,0.12);border:1px solid rgba(255,45,45,0.3);border-radius:10px;padding:10px 12px;font-size:0.8rem;color:#ff9999;margin-bottom:8px;display:none;word-break:break-all}
+
 #toast{position:fixed;top:68px;left:50%;transform:translateX(-50%) translateY(-16px);background:rgba(18,18,18,0.96);border:1px solid var(--border);padding:10px 20px;border-radius:20px;font-size:0.82rem;z-index:9999;opacity:0;transition:all 0.3s;pointer-events:none;backdrop-filter:blur(10px);white-space:nowrap;max-width:90vw;text-align:center}
 #toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
 </style>
 </head>
 <body>
 
-<!-- ===== VIEWER PAGE ===== -->
+<!-- VIEWER PAGE -->
 <div id="viewerPage">
   <div id="vLoader">
     <div class="vl-logo">LIVE<span>CAM</span></div>
     <div class="spinner"></div>
     <div class="vl-txt" id="vLoaderTxt">Stream se connect ho raha hoon...</div>
-    <button class="vl-retry" id="vRetryBtn" onclick="location.reload()">🔄 Retry Karo</button>
+    <button class="retry-btn" id="retryBtn" onclick="location.reload()">🔄 Retry Karo</button>
   </div>
   <video id="viewVideo" autoplay playsinline></video>
   <img id="vLogoOverlay" src="" alt="">
   <div id="vTextOverlay"></div>
-  <div id="vTickerWrap"><div class="tick-inner" id="vTickerInner"></div></div>
+  <div id="vTickerWrap"><div class="tick-i" id="vTickerInner"></div></div>
   <div id="vTapArea" onclick="viewerTap()"></div>
   <div id="vPlayIcon">
     <svg id="vIconSvg" viewBox="0 0 24 24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>
   </div>
 </div>
 
-<!-- ===== ADMIN PAGE ===== -->
+<!-- ADMIN PAGE -->
 <div id="adminPage">
   <div id="homeScreen">
-    <div class="logo-title">LIVE<span>CAM</span> <span style="font-size:1.1rem;color:var(--muted)">PRO</span></div>
+    <div class="logo-t">LIVE<span>CAM</span> <span style="font-size:1.1rem;color:var(--muted)">PRO</span></div>
     <div class="tagline">Professional Live Streaming</div>
     <div class="card">
-      <div class="card-label">🔴 Stream Shuru Karo</div>
-      <div class="sec" style="margin-top:0;margin-bottom:4px">Apna Stream ID likho</div>
-      <input class="inp" id="customIdInput" type="text" placeholder="e.g. ab12345 ya meristream" maxlength="30"
+      <div class="clbl">🔴 Stream Shuru Karo</div>
+      <div class="sec" style="margin-top:0;margin-bottom:4px">Stream ID likho</div>
+      <input class="inp" id="customId" type="text" placeholder="e.g. ab12345" maxlength="30"
         oninput="this.value=this.value.replace(/[^a-z0-9\-_]/gi,'').toLowerCase()">
-      <div class="id-hint">⚠️ Unique ID rakho — warna error aayega.</div>
-      <button class="big-btn red" onclick="startStream('back')">📸 Back Camera Se Live Ho</button>
-      <button class="big-btn dark" onclick="startStream('front')">🤳 Front Camera Se Live Ho</button>
+      <div class="hint">⚠️ Unique ID rakho.</div>
+      <button class="bbtn red" onclick="startStream('back')">📸 Back Camera Live</button>
+      <button class="bbtn dark" onclick="startStream('front')">🤳 Front Camera Live</button>
     </div>
   </div>
 
   <div id="streamScreen">
     <video id="mainVideo" autoplay playsinline muted></video>
-    <div id="overlayCanvas">
-      <img id="logoOverlay" src="" alt="logo" draggable="false">
+    <div id="ovCanvas">
+      <img id="logoOverlay" src="" alt="" draggable="false">
       <div id="textOverlay"></div>
     </div>
     <div id="adminTop">
-      <div class="live-pill"><div class="pulse"></div>LIVE</div>
-      <div class="stat-pill">⏱ <span id="timerDisp">00:00</span></div>
-      <div class="stat-pill">👁 <span id="viewCount">0</span></div>
+      <div class="lpill"><div class="pulse"></div>LIVE</div>
+      <div class="spill">⏱ <span id="timerDisp">00:00</span></div>
+      <div class="spill">👁 <span id="viewCount">0</span></div>
     </div>
-    <div id="adminBottom">
-      <div class="ctrl-row">
-        <button class="c-btn" id="flashBtn" onclick="toggleFlash()">💡</button>
-        <button class="c-btn" id="flipBtn" onclick="flipCamera()">🔄</button>
-        <button class="stop-c" onclick="stopStream()">⏹</button>
-        <button class="c-btn" id="panelBtn" onclick="toggleDrawer()">🎛️</button>
-        <button class="c-btn" onclick="copyLink()">🔗</button>
+    <div id="adminBot">
+      <div class="crow">
+        <button class="cbtn" id="flashBtn" onclick="toggleFlash()">💡</button>
+        <button class="cbtn" id="flipBtn" onclick="flipCamera()">🔄</button>
+        <button class="stopc" onclick="stopStream()">⏹</button>
+        <button class="cbtn" id="panelBtn" onclick="toggleDrawer()">🎛️</button>
+        <button class="cbtn" onclick="copyLink()">🔗</button>
       </div>
-      <div class="zoom-row">
-        <span class="zoom-lbl">🔍</span>
+      <div class="zrow">
+        <span class="zlbl">🔍</span>
         <input type="range" id="zoomSlider" min="1" max="8" step="0.1" value="1" oninput="applyZoom(this.value)">
-        <span class="zoom-v" id="zoomVal">1.0x</span>
+        <span class="zval" id="zoomVal">1.0x</span>
       </div>
     </div>
 
-    <div id="adminDrawer">
-      <div class="dhandle"></div>
+    <div id="drawer">
+      <div class="dh"></div>
+
       <div class="sec" style="margin-top:0">🔗 Viewer Link</div>
-      <div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:10px 12px;font-size:0.72rem;color:#4fc3f7;word-break:break-all;margin-bottom:8px" id="linkDisplay">-</div>
-      <div class="s-row" style="margin-bottom:4px">
-        <button class="s-btn" onclick="copyLink()">📋 Copy</button>
-        <button class="s-btn" onclick="waShare()">📤 WhatsApp</button>
+      <div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:10px 12px;font-size:0.72rem;color:#4fc3f7;word-break:break-all;margin-bottom:8px" id="linkDisp">-</div>
+      <div class="srow" style="margin-bottom:4px">
+        <button class="sbtn" onclick="copyLink()">📋 Copy</button>
+        <button class="sbtn" onclick="waShare()">📤 WhatsApp</button>
       </div>
 
-      <div class="sec">💬 Screen Pe Text</div>
-      <div class="m-row">
-        <input class="m-inp" id="overlayTextInput" type="text" placeholder="Text likho..." maxlength="100">
-        <button class="send-b" onclick="sendText()">SHOW</button>
+      <!-- TEXT — auto live as you type -->
+      <div class="sec">💬 Live Text (Type karo — auto show)</div>
+      <div id="liveTextPreview">Screen pe dikh raha hai: <span id="livePreviewTxt"></span></div>
+      <div class="mrow">
+        <input class="minp" id="textInp" type="text" placeholder="Type karo — viewers ko seedha dikh jayega..." maxlength="100"
+          oninput="autoSendText(this.value)">
+        <button class="sendb" onclick="hideText()">✕</button>
       </div>
-      <div class="font-row">
-        <select id="fontFamily" onchange="updateTextStyle()">
+      <div class="frow">
+        <select id="fontFam" onchange="updateTextStyle()">
           <option value="'DM Sans',sans-serif">DM Sans</option>
           <option value="'Bebas Neue',sans-serif">Bebas Neue</option>
           <option value="Arial,sans-serif">Arial</option>
-          <option value="'Courier New',monospace">Courier New</option>
+          <option value="'Courier New',monospace">Courier</option>
           <option value="Georgia,serif">Georgia</option>
           <option value="Impact,sans-serif">Impact</option>
           <option value="Verdana,sans-serif">Verdana</option>
         </select>
-        <input type="number" id="fontSize" value="22" min="10" max="80" style="width:70px" oninput="updateTextStyle()">
+        <input type="number" id="fontSz" value="22" min="10" max="80" style="width:70px" oninput="updateTextStyle()">
         <span style="font-size:0.72rem;color:var(--muted)">px</span>
       </div>
-      <div class="color-row">
-        <label>Text:</label><input type="color" id="textColor" value="#ffffff" oninput="updateTextStyle()">
-        <label>BG:</label><input type="color" id="textBgColor" value="#000000" oninput="updateTextStyle()">
+      <div class="crow2">
+        <label>Text:</label><input type="color" id="textClr" value="#ffffff" oninput="updateTextStyle()">
+        <label>BG:</label><input type="color" id="bgClr" value="#000000" oninput="updateTextStyle()">
         <label>Opacity:</label>
-        <input type="range" id="textBgOpacity" min="0" max="1" step="0.05" value="0.6" style="width:70px;height:3px" oninput="updateTextStyle()">
+        <input type="range" id="bgOp" min="0" max="1" step="0.05" value="0.6" style="width:70px;height:3px" oninput="updateTextStyle()">
       </div>
-      <div class="grid2">
+      <div class="g2" style="margin-bottom:8px">
         <div class="fi"><label>Text Left (px)</label><input class="pi" type="number" id="textX" value="20" oninput="updateTextPos()"></div>
-        <div class="fi"><label>Text Top (px)</label><input class="pi" type="number" id="textY" value="400" oninput="updateTextPos()"></div>
+        <div class="fi"><label>Text Top (px)</label><input class="pi" type="number" id="textY" value="300" oninput="updateTextPos()"></div>
       </div>
       <div class="qtags">
-        <span class="qtag" onclick="quickText('🙏 Shukriya!')">🙏 Shukriya</span>
-        <span class="qtag" onclick="quickText('👋 Welcome!')">👋 Welcome</span>
-        <span class="qtag" onclick="quickText('🔥 Live hai!')">🔥 Live</span>
-        <span class="qtag" onclick="quickText('📢 Share karo!')">📢 Share</span>
+        <span class="qtag" onclick="setQuickText('🙏 Shukriya!')">🙏 Shukriya</span>
+        <span class="qtag" onclick="setQuickText('👋 Welcome!')">👋 Welcome</span>
+        <span class="qtag" onclick="setQuickText('🔥 Live hai!')">🔥 Live</span>
+        <span class="qtag" onclick="setQuickText('📢 Share karo!')">📢 Share</span>
         <span class="qtag" onclick="hideText()">✕ Hatao</span>
       </div>
 
-      <div class="sec">🖼️ Logo / Image</div>
-      <div class="upload-area" onclick="document.getElementById('imgFileInput').click()">
+      <!-- LOGO — auto show on upload -->
+      <div class="sec">🖼️ Logo (Upload hote hi auto show)</div>
+      <div class="upa" onclick="document.getElementById('imgInp').click()">
         <div style="font-size:1.8rem">📁</div>
-        <div style="font-size:0.8rem;color:var(--muted);margin-top:4px">Tap — image upload karo</div>
-        <img class="img-prev" id="imgPreview" src="" alt="">
+        <div style="font-size:0.8rem;color:var(--muted);margin-top:4px">Tap — image upload karo (auto show hogi)</div>
+        <img class="iprev" id="imgPrev" src="" alt="">
       </div>
-      <input type="file" id="imgFileInput" accept="image/*" style="display:none" onchange="uploadLogo(this)">
-      <div class="size-row">
+      <input type="file" id="imgInp" accept="image/*" style="display:none" onchange="uploadLogo(this)">
+      <div class="szrow">
         <label>W:</label><input type="number" id="logoW" value="120" min="30" max="400" class="pi" style="width:70px" oninput="applyLogoSize()">
         <label>px H:</label><input type="number" id="logoH" value="80" min="20" max="400" class="pi" style="width:70px" oninput="applyLogoSize()">
         <label>px</label>
       </div>
-      <div class="grid2">
+      <div class="g2">
         <div class="fi"><label>Logo Left (px)</label><input class="pi" type="number" id="logoX" value="16" oninput="applyLogoPos()"></div>
         <div class="fi"><label>Logo Top (px)</label><input class="pi" type="number" id="logoY" value="80" oninput="applyLogoPos()"></div>
       </div>
       <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;max-width:180px;margin:0 auto 10px">
-        <div></div><button class="s-btn" onclick="moveLogo(0,-10)" style="padding:10px">▲</button><div></div>
-        <button class="s-btn" onclick="moveLogo(-10,0)" style="padding:10px">◄</button>
+        <div></div><button class="sbtn" onclick="moveLogo(0,-10)" style="padding:10px">▲</button><div></div>
+        <button class="sbtn" onclick="moveLogo(-10,0)" style="padding:10px">◄</button>
         <div style="display:flex;align-items:center;justify-content:center;font-size:0.6rem;color:var(--muted)">MOVE</div>
-        <button class="s-btn" onclick="moveLogo(10,0)" style="padding:10px">►</button>
-        <div></div><button class="s-btn" onclick="moveLogo(0,10)" style="padding:10px">▼</button><div></div>
+        <button class="sbtn" onclick="moveLogo(10,0)" style="padding:10px">►</button>
+        <div></div><button class="sbtn" onclick="moveLogo(0,10)" style="padding:10px">▼</button><div></div>
       </div>
-      <div class="s-row" style="margin-bottom:10px">
-        <button class="s-btn" onclick="toggleLogo(true)">✅ Show</button>
-        <button class="s-btn" onclick="toggleLogo(false)">✕ Hide</button>
+      <div class="srow" style="margin-bottom:10px">
+        <button class="sbtn" onclick="toggleLogo(true)">✅ Show</button>
+        <button class="sbtn" onclick="toggleLogo(false)">✕ Hide</button>
       </div>
 
-      <div class="sec">📢 Ticker Text</div>
-      <div class="m-row">
-        <input class="m-inp" id="tickerInput" type="text" placeholder="Running text..." maxlength="120">
-        <button class="send-b" onclick="sendTicker()">GO</button>
+      <!-- TICKER -->
+      <div class="sec">📢 Ticker (Running Text)</div>
+      <div class="mrow">
+        <input class="minp" id="tickInp" type="text" placeholder="Running ticker text..." maxlength="120">
+        <button class="sendb" onclick="sendTicker()">GO</button>
       </div>
-      <button class="s-btn" style="width:100%;margin-bottom:10px" onclick="hideTicker()">✕ Ticker Hatao</button>
-      <button class="big-btn dark" onclick="toggleDrawer()">✕ Panel Band Karo</button>
+      <button class="sbtn" style="width:100%;margin-bottom:10px" onclick="hideTicker()">✕ Ticker Hatao</button>
+
+      <button class="bbtn dark" onclick="toggleDrawer()">✕ Panel Band Karo</button>
     </div>
   </div>
 </div>
@@ -251,51 +266,47 @@ input[type=color]{width:36px;height:36px;border:none;border-radius:8px;backgroun
 <div id="toast"></div>
 
 <script type="module">
-// ================================================================
-// FIREBASE CONFIG — Nikamma 4k
-// ================================================================
-import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
-import { getDatabase, ref, set, get, onValue, push, remove } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js';
+import { initializeApp }   from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
+import { getDatabase, ref, set, get, onValue, push, remove, serverTimestamp }
+  from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js';
 
-const FB = {
-  apiKey: "AIzaSyCXY_layR4HtlrJTweBB5ER_uc5jkMG0sc",
-  authDomain: "nikamma-4k.firebaseapp.com",
-  databaseURL: "https://nikamma-4k-default-rtdb.firebaseio.com",
-  projectId: "nikamma-4k",
-  storageBucket: "nikamma-4k.firebasestorage.app",
+// ── Firebase ──
+const FB_CFG = {
+  apiKey:            "AIzaSyCXY_layR4HtlrJTweBB5ER_uc5jkMG0sc",
+  authDomain:        "nikamma-4k.firebaseapp.com",
+  databaseURL:       "https://nikamma-4k-default-rtdb.firebaseio.com",
+  projectId:         "nikamma-4k",
+  storageBucket:     "nikamma-4k.firebasestorage.app",
   messagingSenderId: "534849542892",
-  appId: "1:534849542892:web:d96322fd4811b46738e3c9",
-  measurementId: "G-8CCWKYGF4F"
+  appId:             "1:534849542892:web:d96322fd4811b46738e3c9"
 };
 
-const ICE = {
+const ICE_CFG = {
   iceServers: [
-    { urls: 'stun:stun.l.google.com:19302' },
-    { urls: 'stun:stun1.l.google.com:19302' },
-    { urls: 'stun:stun2.l.google.com:19302' },
-    { urls: 'stun:stun3.l.google.com:19302' },
-    { urls: 'stun:stun4.l.google.com:19302' },
+    {urls:'stun:stun.l.google.com:19302'},
+    {urls:'stun:stun1.l.google.com:19302'},
+    {urls:'stun:stun2.l.google.com:19302'},
+    {urls:'stun:stun3.l.google.com:19302'},
   ]
 };
 
-// ── Shared utils ──
-function toast(msg, dur=2500) {
+// ── Helpers ──
+function toast(msg, dur=2800) {
   const t = document.getElementById('toast');
   t.textContent = msg; t.classList.add('show');
   setTimeout(() => t.classList.remove('show'), dur);
 }
-function hexToRgb(hex) {
-  if (!hex || hex.length < 7) return '0,0,0';
+function h2rgb(hex) {
+  if (!hex||hex.length<7) return '0,0,0';
   return `${parseInt(hex.slice(1,3),16)},${parseInt(hex.slice(3,5),16)},${parseInt(hex.slice(5,7),16)}`;
 }
 window.toast = toast;
 
 // ── Route ──
-const watchId = new URLSearchParams(location.search).get('watch');
-
-if (watchId) {
+const WATCH = new URLSearchParams(location.search).get('watch');
+if (WATCH) {
   document.getElementById('viewerPage').style.display = 'block';
-  startViewer(watchId);
+  runViewer(WATCH);
 } else {
   document.getElementById('adminPage').style.display = 'block';
 }
@@ -303,126 +314,141 @@ if (watchId) {
 // ================================================================
 // VIEWER
 // ================================================================
-async function startViewer(roomId) {
-  setVTxt('Firebase se connect ho raha hoon...');
-  let app, db;
+async function runViewer(roomId) {
+  vtxt('Firebase se connect ho raha hoon...');
+  let db;
   try {
-    app = initializeApp(FB, 'viewer_' + Date.now());
+    const app = initializeApp(FB_CFG, 'v'+Date.now());
     db = getDatabase(app);
-  } catch(e) {
-    setVTxt('❌ Firebase connect nahi hua: ' + e.message);
-    showRetry(); return;
-  }
+  } catch(e) { vtxt('❌ Firebase error: '+e.message); showRetry(); return; }
 
-  const pc = new RTCPeerConnection(ICE);
-  const roomRef = ref(db, `rooms/${roomId}`);
-
-  // On receiving stream
-  pc.ontrack = (e) => {
-    const vid = document.getElementById('viewVideo');
-    if (!vid.srcObject) vid.srcObject = e.streams[0];
-    else vid.srcObject.addTrack(e.track);
-    vid.muted = false;
-    vid.play().catch(() => { vid.muted = true; vid.play(); });
-    document.getElementById('vLoader').style.display = 'none';
-    flashIcon();
-  };
-
-  // ICE from host → add to PC
-  onValue(ref(db, `rooms/${roomId}/hostCandidates`), snap => {
-    snap.forEach(child => {
-      const c = child.val();
-      if (c && pc.remoteDescription) {
-        pc.addIceCandidate(new RTCIceCandidate(c)).catch(() => {});
-      }
-    });
-  });
-
-  // Send viewer ICE to Firebase
-  pc.onicecandidate = e => {
-    if (e.candidate) {
-      push(ref(db, `rooms/${roomId}/viewerCandidates`), e.candidate.toJSON());
-    }
-  };
-
-  // Wait for offer
-  setVTxt('Host dhundh raha hoon...');
-  let attempts = 0;
-  const waitOffer = setInterval(async () => {
-    attempts++;
-    if (attempts > 30) {
-      clearInterval(waitOffer);
-      setVTxt('❌ Stream nahi mili. Host online hai? Link sahi hai?');
-      showRetry(); return;
-    }
-    const snap = await get(roomRef).catch(() => null);
-    if (!snap || !snap.exists()) return;
-    const val = snap.val();
-    if (!val || !val.offer) return;
-    clearInterval(waitOffer);
-
-    try {
-      setVTxt('Stream mil gayi! Connect ho raha hoon...');
-      await pc.setRemoteDescription(new RTCSessionDescription(val.offer));
-      const answer = await pc.createAnswer();
-      await pc.setLocalDescription(answer);
-      // Save answer
-      const ansKey = 'ans_' + Date.now();
-      await set(ref(db, `rooms/${roomId}/answers/${ansKey}`), {
-        type: answer.type, sdp: answer.sdp
-      });
-    } catch(e) {
-      setVTxt('❌ Connection error: ' + e.message);
-      showRetry();
-    }
-  }, 2000);
-
-  // Overlays
+  // Watch overlays in real-time
   onValue(ref(db, `rooms/${roomId}/overlays`), snap => {
-    if (snap.exists()) applyViewerOverlays(snap.val());
+    if (snap.exists()) applyOverlays(snap.val());
   });
 
-  // Viewer count
-  const vcRef = ref(db, `rooms/${roomId}/viewers/${Date.now()}`);
-  await set(vcRef, true);
-  window.addEventListener('beforeunload', () => remove(vcRef));
+  // Watch viewer count for host
+  const myRef = ref(db, `rooms/${roomId}/viewers/v${Date.now()}`);
+  await set(myRef, true).catch(()=>{});
+  window.addEventListener('beforeunload', () => remove(myRef));
 
-  // Timeout fallback
+  // ── WebRTC: wait for host offer ──
+  vtxt('Host dhundh raha hoon...');
+  let found = false;
+
+  const unsub = onValue(ref(db, `rooms/${roomId}/offer`), async snap => {
+    if (!snap.exists() || found) return;
+    found = true;
+    vtxt('Stream mil gayi! Connecting...');
+
+    const pc = new RTCPeerConnection(ICE_CFG);
+
+    pc.ontrack = e => {
+      const vid = document.getElementById('viewVideo');
+      vid.srcObject = e.streams[0];
+      vid.muted = false;
+      vid.play().catch(() => { vid.muted = true; vid.play(); });
+      document.getElementById('vLoader').style.display = 'none';
+      flashIcon();
+    };
+
+    // Send my ICE candidates
+    pc.onicecandidate = e => {
+      if (e.candidate) push(ref(db, `rooms/${roomId}/viewerIce`), e.candidate.toJSON());
+    };
+
+    // Get host ICE candidates
+    onValue(ref(db, `rooms/${roomId}/hostIce`), s => {
+      s.forEach(c => {
+        pc.addIceCandidate(new RTCIceCandidate(c.val())).catch(()=>{});
+      });
+    });
+
+    // Set remote description (offer from host)
+    const offer = snap.val();
+    await pc.setRemoteDescription(new RTCSessionDescription(offer));
+
+    // Create answer
+    const answer = await pc.createAnswer();
+    await pc.setLocalDescription(answer);
+
+    // Push answer to Firebase (keyed by timestamp so multiple viewers can answer)
+    const ansKey = 'ans_' + Date.now();
+    await set(ref(db, `rooms/${roomId}/answers/${ansKey}`), {
+      sdp: answer.sdp, type: answer.type
+    });
+
+    // Timeout if no video
+    setTimeout(() => {
+      if (document.getElementById('vLoader').style.display !== 'none') {
+        vtxt('❌ Video nahi aayi. Host online hai? Retry karo.');
+        showRetry();
+      }
+    }, 20000);
+  });
+
+  // If no offer after 30s
   setTimeout(() => {
-    if (document.getElementById('vLoader').style.display !== 'none') {
-      setVTxt('❌ Connect nahi hua. Network check karo ya retry karo.');
+    if (!found) {
+      vtxt('❌ Host online nahi hai ya link galat hai.');
       showRetry();
     }
-  }, 60000);
+  }, 30000);
 }
 
-function setVTxt(msg) { document.getElementById('vLoaderTxt').textContent = msg; }
-function showRetry() { document.getElementById('vRetryBtn').style.display = 'block'; }
+function vtxt(m) { document.getElementById('vLoaderTxt').textContent = m; }
+function showRetry() { document.getElementById('retryBtn').style.display = 'block'; }
 
-function applyViewerOverlays(data) {
+function applyOverlays(d) {
   // Logo
-  const l = data.logo || {}, vl = document.getElementById('vLogoOverlay');
+  const l = d.logo||{}, vl = document.getElementById('vLogoOverlay');
   if (l.show && l.src) {
     vl.src = l.src;
-    vl.style.cssText = `display:block;position:absolute;left:${l.x||0}px;top:${l.y||0}px;width:${l.w||120}px;height:${l.h||80}px;object-fit:contain;filter:drop-shadow(0 2px 12px rgba(0,0,0,0.9));border-radius:6px;pointer-events:none;z-index:10`;
-  } else { vl.style.display = 'none'; }
+    Object.assign(vl.style, {
+      display:'block', position:'absolute',
+      left:l.x+'px', top:l.y+'px',
+      width:l.w+'px', height:l.h+'px',
+      objectFit:'contain', borderRadius:'6px',
+      filter:'drop-shadow(0 2px 12px rgba(0,0,0,0.9))',
+      pointerEvents:'none', zIndex:'10'
+    });
+  } else { vl.style.display='none'; }
+
   // Text
-  const t = data.text || {}, vt = document.getElementById('vTextOverlay');
+  const t = d.text||{}, vt = document.getElementById('vTextOverlay');
   if (t.show && t.msg) {
     vt.textContent = t.msg;
-    vt.style.cssText = `display:block;position:absolute;left:${t.x||20}px;top:${t.y||400}px;color:${t.color||'#fff'};background:rgba(${hexToRgb(t.bgColor||'#000000')},${t.bgOpacity||0.6});font-family:${t.font||'sans-serif'};font-size:${t.size||22}px;padding:8px 18px;border-radius:8px;line-height:1.4;white-space:pre-wrap;word-break:break-word;pointer-events:none;z-index:11`;
-  } else { vt.style.display = 'none'; }
+    Object.assign(vt.style, {
+      display:'block', position:'absolute',
+      left:t.x+'px', top:t.y+'px',
+      color:t.color||'#fff',
+      background:`rgba(${h2rgb(t.bgColor||'#000000')},${t.bgOp||0.6})`,
+      fontFamily:t.font||'sans-serif',
+      fontSize:(t.size||22)+'px',
+      padding:'8px 18px', borderRadius:'8px',
+      lineHeight:'1.4', whiteSpace:'pre-wrap',
+      wordBreak:'break-word', pointerEvents:'none', zIndex:'11'
+    });
+  } else { vt.style.display='none'; }
+
   // Ticker
-  const tk = data.ticker || {}, tw = document.getElementById('vTickerWrap'), ti = document.getElementById('vTickerInner');
+  const tk = d.ticker||{};
+  const tw = document.getElementById('vTickerWrap');
+  const ti = document.getElementById('vTickerInner');
   if (tk.show && tk.msg) {
     ti.textContent = tk.msg + ' • ' + tk.msg + ' • ' + tk.msg;
-    tw.style.cssText = 'display:block;position:absolute;bottom:0;left:0;right:0;overflow:hidden;background:rgba(200,0,0,0.88);padding:8px 0;z-index:11;pointer-events:none';
-  } else { tw.style.display = 'none'; }
+    Object.assign(tw.style, {
+      display:'block', position:'absolute',
+      bottom:'0', left:'0', right:'0',
+      background:'rgba(200,0,0,0.88)',
+      padding:'8px 0', zIndex:'11', pointerEvents:'none'
+    });
+  } else { tw.style.display='none'; }
 }
 
-// Viewer play/pause
+// Viewer tap — play/pause
 let iconTimer;
-window.viewerTap = function() { flashIcon(); };
+window.viewerTap = () => flashIcon();
 function flashIcon() {
   updateVIcon();
   const b = document.getElementById('vPlayIcon');
@@ -431,46 +457,46 @@ function flashIcon() {
   iconTimer = setTimeout(() => b.classList.remove('show'), 1800);
 }
 function updateVIcon() {
-  const vid = document.getElementById('viewVideo');
-  document.getElementById('vIconSvg').innerHTML = vid.paused
+  const v = document.getElementById('viewVideo');
+  document.getElementById('vIconSvg').innerHTML = v.paused
     ? '<path d="M8 5v14l11-7z"/>'
     : '<path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/>';
 }
 document.getElementById('vPlayIcon').addEventListener('click', e => {
   e.stopPropagation();
-  const vid = document.getElementById('viewVideo');
-  if (vid.paused) vid.play(); else vid.pause();
+  const v = document.getElementById('viewVideo');
+  if (v.paused) v.play(); else v.pause();
   updateVIcon(); flashIcon();
 });
 
 // ================================================================
 // ADMIN
 // ================================================================
-let adminApp, adminDb;
+let db, roomId = '', streamLink = '';
 let localStream, videoTrack;
-let streamLink = '', roomId = '';
-let flashOn = false, currentFacing = 'environment';
+let flashOn=false, facing='environment';
 let timerInt, startTime;
-let drawerOpen = false;
-let logoDataUrl = '', logoVisible = false, textVisible = false, tickerVisible = false;
-let isDragging = false, dragSX = 0, dragSY = 0, logoSX = 0, logoSY = 0;
-let pc_list = [], viewerCount = 0;
+let drawerOpen=false;
+let logoUrl='', logoVis=false, textVis=false, tickVis=false;
+let isDrag=false, dsx=0, dsy=0, lsx=0, lsy=0;
+let hostPC = null; // single PC for broadcasting
+let textDebounce;
 
-window.startStream = async function(facing) {
-  const rawId = document.getElementById('customIdInput').value.trim();
-  roomId = rawId || ('stream' + Math.random().toString(36).substr(2,6));
-  currentFacing = facing === 'front' ? 'user' : 'environment';
+window.startStream = async function(f) {
+  const rawId = document.getElementById('customId').value.trim();
+  roomId = rawId || ('s'+Math.random().toString(36).substr(2,7));
+  facing = f==='front' ? 'user' : 'environment';
 
   document.getElementById('homeScreen').style.display = 'none';
   toast('Camera shuru ho rahi hai...');
 
   try {
     localStream = await navigator.mediaDevices.getUserMedia({
-      video: { facingMode: currentFacing, width: { ideal: 1920 }, height: { ideal: 1080 } },
-      audio: true
+      video:{facingMode:facing, width:{ideal:1920}, height:{ideal:1080}},
+      audio:true
     });
   } catch(e) {
-    document.getElementById('homeScreen').style.display = 'flex';
+    document.getElementById('homeScreen').style.display='flex';
     toast('❌ Camera permission nahi mili!'); return;
   }
 
@@ -479,296 +505,295 @@ window.startStream = async function(facing) {
   document.getElementById('streamScreen').style.display = 'block';
 
   streamLink = location.href.split('?')[0] + '?watch=' + roomId;
-  document.getElementById('linkDisplay').textContent = streamLink;
+  document.getElementById('linkDisp').textContent = streamLink;
   startTimer();
-  initLogoDrag();
+  initDrag();
 
-  // Init Firebase for admin
+  // Firebase init
   try {
-    adminApp = initializeApp(FB, 'admin_' + Date.now());
-    adminDb = getDatabase(adminApp);
-  } catch(e) {
-    toast('⚠️ Firebase error: ' + e.message); return;
-  }
+    const app = initializeApp(FB_CFG, 'a'+Date.now());
+    db = getDatabase(app);
+  } catch(e) { toast('❌ Firebase error: '+e.message); return; }
 
-  // Clean old room
-  await remove(ref(adminDb, `rooms/${roomId}`)).catch(() => {});
+  // Clean old room data
+  await remove(ref(db, `rooms/${roomId}`)).catch(()=>{});
 
-  // Create offer & start WebRTC hosting
-  await createHostOffer();
+  // Create WebRTC offer
+  await createOffer();
 
-  toast('🔴 Live! ID: ' + roomId);
-
-  // Listen for new viewer answers
-  onValue(ref(adminDb, `rooms/${roomId}/answers`), async snap => {
+  // Listen for answers from viewers
+  onValue(ref(db, `rooms/${roomId}/answers`), snap => {
     if (!snap.exists()) return;
-    snap.forEach(async child => {
+    snap.forEach(child => {
       const ans = child.val();
-      if (!ans || ans._processed) return;
-      // Mark processed
-      set(ref(adminDb, `rooms/${roomId}/answers/${child.key}/_processed`), true);
-      // Create new PC for this viewer
-      await addViewerPC(ans);
+      if (!ans||!ans.sdp||ans._done) return;
+      // Mark done
+      set(ref(db, `rooms/${roomId}/answers/${child.key}/_done`), true);
+      handleViewerAnswer(ans);
     });
   });
 
-  // Watch viewer count
-  onValue(ref(adminDb, `rooms/${roomId}/viewers`), snap => {
-    viewerCount = snap.exists() ? Object.keys(snap.val()).length : 0;
-    document.getElementById('viewCount').textContent = viewerCount;
+  // Viewer ICE candidates
+  onValue(ref(db, `rooms/${roomId}/viewerIce`), snap => {
+    snap.forEach(c => {
+      if (hostPC && hostPC.remoteDescription) {
+        hostPC.addIceCandidate(new RTCIceCandidate(c.val())).catch(()=>{});
+      }
+    });
   });
+
+  // Viewer count
+  onValue(ref(db, `rooms/${roomId}/viewers`), snap => {
+    document.getElementById('viewCount').textContent = snap.exists() ? Object.keys(snap.val()).length : 0;
+  });
+
+  toast('🔴 Live! ID: ' + roomId);
 };
 
-async function createHostOffer() {
-  const pc = new RTCPeerConnection(ICE);
-  // Add local tracks
-  localStream.getTracks().forEach(track => pc.addTrack(track, localStream));
+async function createOffer() {
+  hostPC = new RTCPeerConnection(ICE_CFG);
+  localStream.getTracks().forEach(t => hostPC.addTrack(t, localStream));
 
-  // ICE candidates → Firebase
-  pc.onicecandidate = e => {
-    if (e.candidate) {
-      push(ref(adminDb, `rooms/${roomId}/hostCandidates`), e.candidate.toJSON());
+  hostPC.onicecandidate = e => {
+    if (e.candidate) push(ref(db, `rooms/${roomId}/hostIce`), e.candidate.toJSON());
+  };
+
+  hostPC.onconnectionstatechange = () => {
+    const s = hostPC.connectionState;
+    if (s==='connected') toast('✅ Viewer connected!');
+    else if (s==='disconnected'||s==='failed') {
+      // Recreate offer for next viewer
+      createOffer();
     }
   };
 
-  const offer = await pc.createOffer();
-  await pc.setLocalDescription(offer);
+  const offer = await hostPC.createOffer({offerToReceiveAudio:false, offerToReceiveVideo:false});
+  await hostPC.setLocalDescription(offer);
 
-  // Save offer to Firebase
-  await set(ref(adminDb, `rooms/${roomId}/offer`), {
-    type: offer.type, sdp: offer.sdp
-  });
-
-  pc_list.push(pc);
-  return pc;
+  await set(ref(db, `rooms/${roomId}/offer`), {type:offer.type, sdp:offer.sdp});
 }
 
-async function addViewerPC(answerData) {
-  // Create fresh PC for this viewer
-  const pc = new RTCPeerConnection(ICE);
-  localStream.getTracks().forEach(track => pc.addTrack(track, localStream));
-  pc.onicecandidate = e => {
-    if (e.candidate) push(ref(adminDb, `rooms/${roomId}/hostCandidates`), e.candidate.toJSON());
-  };
-
-  // Rebuild offer/answer exchange
-  const offer = await pc.createOffer();
-  await pc.setLocalDescription(offer);
+async function handleViewerAnswer(ans) {
+  if (!hostPC || hostPC.signalingState === 'stable') return;
   try {
-    await pc.setRemoteDescription(new RTCSessionDescription({ type: answerData.type, sdp: answerData.sdp }));
-  } catch(e) {}
-
-  // Viewer ICE → this PC
-  onValue(ref(adminDb, `rooms/${roomId}/viewerCandidates`), snap => {
-    snap.forEach(child => {
-      const c = child.val();
-      if (c) pc.addIceCandidate(new RTCIceCandidate(c)).catch(() => {});
-    });
-  });
-
-  pc_list.push(pc);
+    await hostPC.setRemoteDescription(new RTCSessionDescription({type:ans.type, sdp:ans.sdp}));
+  } catch(e) {
+    // If already stable, create new offer for this viewer
+    await createOffer();
+  }
 }
 
-// Overlays → Firebase
-function broadcastOverlays() {
-  if (!adminDb) return;
-  const s = getOverlayState();
-  set(ref(adminDb, `rooms/${roomId}/overlays`), s).catch(() => {});
-}
-function getOverlayState() {
-  return {
-    logo: { show: logoVisible, src: logoDataUrl,
-      x: parseInt(document.getElementById('logoX').value)||16,
-      y: parseInt(document.getElementById('logoY').value)||80,
-      w: parseInt(document.getElementById('logoW').value)||120,
-      h: parseInt(document.getElementById('logoH').value)||80 },
-    text: { show: textVisible,
-      msg: document.getElementById('textOverlay').textContent,
-      color: document.getElementById('textColor').value,
-      bgColor: document.getElementById('textBgColor').value,
-      bgOpacity: parseFloat(document.getElementById('textBgOpacity').value),
-      font: document.getElementById('fontFamily').value,
-      size: document.getElementById('fontSize').value,
-      x: parseInt(document.getElementById('textX').value)||20,
-      y: parseInt(document.getElementById('textY').value)||400 },
-    ticker: { show: tickerVisible, msg: document.getElementById('tickerInput').value }
-  };
+// Broadcast overlays to Firebase (viewers watch in real-time)
+function broadcastOvs() {
+  if (!db) return;
+  set(ref(db, `rooms/${roomId}/overlays`), {
+    logo: {
+      show:logoVis, src:logoUrl,
+      x:parseInt(document.getElementById('logoX').value)||16,
+      y:parseInt(document.getElementById('logoY').value)||80,
+      w:parseInt(document.getElementById('logoW').value)||120,
+      h:parseInt(document.getElementById('logoH').value)||80
+    },
+    text: {
+      show:textVis,
+      msg:document.getElementById('textOverlay').textContent,
+      color:document.getElementById('textClr').value,
+      bgColor:document.getElementById('bgClr').value,
+      bgOp:parseFloat(document.getElementById('bgOp').value),
+      font:document.getElementById('fontFam').value,
+      size:parseInt(document.getElementById('fontSz').value)||22,
+      x:parseInt(document.getElementById('textX').value)||20,
+      y:parseInt(document.getElementById('textY').value)||300
+    },
+    ticker: {
+      show:tickVis,
+      msg:document.getElementById('tickInp').value
+    }
+  }).catch(()=>{});
 }
 
 function startTimer() {
-  startTime = Date.now();
-  timerInt = setInterval(() => {
-    const s = Math.floor((Date.now()-startTime)/1000), m = Math.floor(s/60), sec = s%60;
-    document.getElementById('timerDisp').textContent = String(m).padStart(2,'0')+':'+String(sec).padStart(2,'0');
-  }, 1000);
+  startTime=Date.now();
+  timerInt=setInterval(()=>{
+    const s=Math.floor((Date.now()-startTime)/1000),m=Math.floor(s/60),sec=s%60;
+    document.getElementById('timerDisp').textContent=String(m).padStart(2,'0')+':'+String(sec).padStart(2,'0');
+  },1000);
 }
 
-function initLogoDrag() {
-  const el = document.getElementById('logoOverlay');
-  el.style.pointerEvents = 'auto';
-  el.addEventListener('touchstart', e => {
-    isDragging=true; dragSX=e.touches[0].clientX; dragSY=e.touches[0].clientY;
-    logoSX=parseInt(document.getElementById('logoX').value)||16;
-    logoSY=parseInt(document.getElementById('logoY').value)||80;
+function initDrag() {
+  const el=document.getElementById('logoOverlay');
+  el.style.pointerEvents='auto';
+  el.addEventListener('touchstart',e=>{
+    isDrag=true;dsx=e.touches[0].clientX;dsy=e.touches[0].clientY;
+    lsx=parseInt(document.getElementById('logoX').value)||16;
+    lsy=parseInt(document.getElementById('logoY').value)||80;
     e.preventDefault();
-  }, {passive:false});
-  el.addEventListener('touchmove', e => {
-    if(!isDragging)return;
-    document.getElementById('logoX').value = Math.round(logoSX+(e.touches[0].clientX-dragSX));
-    document.getElementById('logoY').value = Math.round(logoSY+(e.touches[0].clientY-dragSY));
-    applyLogoPos(); e.preventDefault();
-  }, {passive:false});
-  el.addEventListener('touchend', () => { isDragging=false; broadcastOverlays(); });
+  },{passive:false});
+  el.addEventListener('touchmove',e=>{
+    if(!isDrag)return;
+    document.getElementById('logoX').value=Math.round(lsx+(e.touches[0].clientX-dsx));
+    document.getElementById('logoY').value=Math.round(lsy+(e.touches[0].clientY-dsy));
+    applyLogoPos();e.preventDefault();
+  },{passive:false});
+  el.addEventListener('touchend',()=>{isDrag=false;broadcastOvs();});
 }
 
-// Camera
-window.toggleFlash = async function() {
+// Camera controls
+window.toggleFlash = async()=>{
   if(!videoTrack)return;
-  try {
-    flashOn=!flashOn;
-    await videoTrack.applyConstraints({advanced:[{torch:flashOn}]});
-    document.getElementById('flashBtn').classList.toggle('on',flashOn);
-    toast(flashOn?'💡 Flash ON':'💡 Flash OFF');
-  } catch(e){toast('❌ Flash support nahi');flashOn=false;}
+  try{flashOn=!flashOn;await videoTrack.applyConstraints({advanced:[{torch:flashOn}]});document.getElementById('flashBtn').classList.toggle('on',flashOn);toast(flashOn?'💡 Flash ON':'💡 Flash OFF');}
+  catch(e){toast('❌ Flash support nahi');flashOn=false;}
 };
-window.flipCamera = async function() {
-  currentFacing = currentFacing==='environment'?'user':'environment';
+window.flipCamera = async()=>{
+  facing=facing==='environment'?'user':'environment';
   if(localStream)localStream.getTracks().forEach(t=>t.stop());
-  try {
-    localStream = await navigator.mediaDevices.getUserMedia({
-      video:{facingMode:currentFacing,width:{ideal:1920},height:{ideal:1080}},audio:true
-    });
-    videoTrack = localStream.getVideoTracks()[0];
-    document.getElementById('mainVideo').srcObject = localStream;
-    pc_list.forEach(pc => {
-      const sender = pc.getSenders().find(s=>s.track?.kind==='video');
-      if(sender)sender.replaceTrack(videoTrack);
-    });
+  try{
+    localStream=await navigator.mediaDevices.getUserMedia({video:{facingMode:facing,width:{ideal:1920},height:{ideal:1080}},audio:true});
+    videoTrack=localStream.getVideoTracks()[0];
+    document.getElementById('mainVideo').srcObject=localStream;
+    if(hostPC){const s=hostPC.getSenders().find(s=>s.track?.kind==='video');if(s)s.replaceTrack(videoTrack);}
     toast('🔄 Camera flip');
-  } catch(e){toast('❌ Flip nahi hua');}
+  }catch(e){toast('❌ Flip nahi hua');}
 };
-window.applyZoom = function(val) {
-  document.getElementById('zoomVal').textContent = parseFloat(val).toFixed(1)+'x';
+window.applyZoom=val=>{
+  document.getElementById('zoomVal').textContent=parseFloat(val).toFixed(1)+'x';
   if(!videoTrack)return;
   try{videoTrack.applyConstraints({advanced:[{zoom:parseFloat(val)}]});}
   catch(e){const v=document.getElementById('mainVideo');v.style.transform=`scale(${val})`;v.style.transformOrigin='center center';}
 };
-window.toggleDrawer = function() {
+window.toggleDrawer=()=>{
   drawerOpen=!drawerOpen;
-  document.getElementById('adminDrawer').classList.toggle('open',drawerOpen);
+  document.getElementById('drawer').classList.toggle('open',drawerOpen);
   document.getElementById('panelBtn').classList.toggle('on',drawerOpen);
 };
 
-// Text
-window.updateTextStyle = function() {
-  const el=document.getElementById('textOverlay');
-  el.style.color=document.getElementById('textColor').value;
-  el.style.background=`rgba(${hexToRgb(document.getElementById('textBgColor').value)},${parseFloat(document.getElementById('textBgOpacity').value)})`;
-  el.style.fontFamily=document.getElementById('fontFamily').value;
-  el.style.fontSize=document.getElementById('fontSize').value+'px';
-  el.style.padding='8px 18px';el.style.borderRadius='8px';
-  if(textVisible)broadcastOverlays();
+// ── TEXT — auto as you type ──
+window.autoSendText = val => {
+  clearTimeout(textDebounce);
+  if (!val.trim()) { hideText(); return; }
+  textDebounce = setTimeout(() => {
+    document.getElementById('textOverlay').textContent = val;
+    textVis = true;
+    document.getElementById('textOverlay').style.display = 'block';
+    document.getElementById('liveTextPreview').style.display = 'block';
+    document.getElementById('livePreviewTxt').textContent = val;
+    updateTextStyle();
+    updateTextPos();
+    broadcastOvs();
+  }, 400); // 400ms debounce
 };
-window.updateTextPos = function() {
+window.setQuickText = msg => {
+  document.getElementById('textInp').value = msg;
+  window.autoSendText(msg);
+};
+window.hideText = () => {
+  textVis=false;
+  document.getElementById('textOverlay').style.display='none';
+  document.getElementById('liveTextPreview').style.display='none';
+  document.getElementById('textInp').value='';
+  broadcastOvs();
+};
+window.updateTextStyle = () => {
+  const el=document.getElementById('textOverlay');
+  el.style.color=document.getElementById('textClr').value;
+  el.style.background=`rgba(${h2rgb(document.getElementById('bgClr').value)},${parseFloat(document.getElementById('bgOp').value)})`;
+  el.style.fontFamily=document.getElementById('fontFam').value;
+  el.style.fontSize=document.getElementById('fontSz').value+'px';
+  el.style.padding='8px 18px';el.style.borderRadius='8px';
+  if(textVis)broadcastOvs();
+};
+window.updateTextPos = () => {
   const el=document.getElementById('textOverlay');
   el.style.left=(parseInt(document.getElementById('textX').value)||0)+'px';
   el.style.top=(parseInt(document.getElementById('textY').value)||0)+'px';
-  if(textVisible)broadcastOverlays();
+  if(textVis)broadcastOvs();
 };
-window.sendText = function() {
-  const msg=document.getElementById('overlayTextInput').value.trim();
-  if(!msg){toast('Text likho!');return;}
-  document.getElementById('textOverlay').textContent=msg;
-  textVisible=true;document.getElementById('textOverlay').style.display='block';
-  window.updateTextStyle();window.updateTextPos();broadcastOverlays();
-  toast('✅ Text live pe dikh raha hai!');
-};
-window.quickText = function(msg){document.getElementById('overlayTextInput').value=msg;window.sendText();};
-window.hideText = function(){textVisible=false;document.getElementById('textOverlay').style.display='none';broadcastOverlays();toast('Text hataya');};
 
-// Logo
-window.uploadLogo = function(input) {
+// ── LOGO — auto show on upload ──
+window.uploadLogo = input => {
   const file=input.files[0];if(!file)return;
   const reader=new FileReader();
   reader.onload=e=>{
-    logoDataUrl=e.target.result;
-    document.getElementById('imgPreview').src=logoDataUrl;
-    document.getElementById('imgPreview').style.display='block';
-    document.getElementById('logoOverlay').src=logoDataUrl;
-    toast('✅ Image load! "Show" dabao.');
+    logoUrl=e.target.result;
+    document.getElementById('imgPrev').src=logoUrl;
+    document.getElementById('imgPrev').style.display='block';
+    document.getElementById('logoOverlay').src=logoUrl;
+    // AUTO SHOW
+    logoVis=true;
+    document.getElementById('logoOverlay').style.display='block';
+    applyLogoPos();applyLogoSize();
+    broadcastOvs();
+    toast('🖼️ Logo upload aur auto show ho gaya!');
   };
   reader.readAsDataURL(file);
 };
-window.applyLogoPos = function() {
+window.applyLogoPos=()=>{
   const el=document.getElementById('logoOverlay');
   el.style.left=(parseInt(document.getElementById('logoX').value)||0)+'px';
   el.style.top=(parseInt(document.getElementById('logoY').value)||0)+'px';
 };
-window.applyLogoSize = function() {
+window.applyLogoSize=()=>{
   const el=document.getElementById('logoOverlay');
   el.style.width=(parseInt(document.getElementById('logoW').value)||120)+'px';
   el.style.height=(parseInt(document.getElementById('logoH').value)||80)+'px';
 };
-window.moveLogo = function(dx,dy) {
+window.moveLogo=(dx,dy)=>{
   const lx=document.getElementById('logoX'),ly=document.getElementById('logoY');
   lx.value=(parseInt(lx.value)||0)+dx;ly.value=(parseInt(ly.value)||0)+dy;
-  window.applyLogoPos();if(logoVisible)broadcastOverlays();
+  applyLogoPos();if(logoVis)broadcastOvs();
 };
-window.toggleLogo = function(show) {
-  if(show&&!logoDataUrl){toast('Pehle image upload karo!');return;}
-  logoVisible=show;
-  const el=document.getElementById('logoOverlay');
-  el.style.display=show?'block':'none';
-  if(show){window.applyLogoPos();window.applyLogoSize();}
-  broadcastOverlays();toast(show?'🖼️ Logo live!':'🖼️ Logo hataya');
+window.toggleLogo=show=>{
+  if(show&&!logoUrl){toast('Pehle image upload karo!');return;}
+  logoVis=show;
+  document.getElementById('logoOverlay').style.display=show?'block':'none';
+  if(show){applyLogoPos();applyLogoSize();}
+  broadcastOvs();toast(show?'🖼️ Logo show!':'🖼️ Logo hide');
 };
 
-// Ticker
-window.sendTicker = function() {
-  const msg=document.getElementById('tickerInput').value.trim();
+// ── TICKER ──
+window.sendTicker=()=>{
+  const msg=document.getElementById('tickInp').value.trim();
   if(!msg){toast('Ticker text likho!');return;}
-  tickerVisible=true;showTickerAdmin(msg);broadcastOverlays();toast('📢 Ticker live!');
+  tickVis=true;showTickerAdmin(msg);broadcastOvs();toast('📢 Ticker live!');
 };
-function showTickerAdmin(msg) {
-  let tb=document.getElementById('adminTickerWrap');
+function showTickerAdmin(msg){
+  let tb=document.getElementById('adminTicker');
   if(!tb){
-    tb=document.createElement('div');tb.id='adminTickerWrap';tb.className='ticker-wrap';
+    tb=document.createElement('div');tb.id='adminTicker';tb.className='tickwrap';
     tb.style.cssText='position:absolute;bottom:0;left:0;right:0;background:rgba(200,0,0,0.88);padding:8px 0';
-    const inner=document.createElement('div');inner.className='ticker-inner';inner.id='adminTickerInner';
-    tb.appendChild(inner);document.getElementById('overlayCanvas').appendChild(tb);
+    const i=document.createElement('div');i.className='ticki';i.id='adminTickerInner';
+    tb.appendChild(i);document.getElementById('ovCanvas').appendChild(tb);
   }
   document.getElementById('adminTickerInner').textContent=msg+' • '+msg+' • '+msg;
   tb.style.display='block';
 }
-window.hideTicker = function() {
-  tickerVisible=false;
-  const tb=document.getElementById('adminTickerWrap');if(tb)tb.style.display='none';
-  broadcastOverlays();toast('Ticker hataya');
+window.hideTicker=()=>{
+  tickVis=false;
+  const tb=document.getElementById('adminTicker');if(tb)tb.style.display='none';
+  broadcastOvs();toast('Ticker hataya');
 };
 
-// Share
-window.copyLink = function() {
+// ── SHARE ──
+window.copyLink=()=>{
   if(!streamLink){toast('Pehle live ho jao!');return;}
   navigator.clipboard.writeText(streamLink).then(()=>toast('✅ Link copy ho gaya!')).catch(()=>prompt('Copy karo:',streamLink));
 };
-window.waShare = function() {
+window.waShare=()=>{
   if(!streamLink){toast('Pehle live ho jao!');return;}
   window.open('https://wa.me/?text='+encodeURIComponent('📺 Meri live stream dekho!\n'+streamLink));
 };
-window.stopStream = function() {
+window.stopStream=()=>{
   if(timerInt)clearInterval(timerInt);
   if(localStream)localStream.getTracks().forEach(t=>t.stop());
-  if(adminDb)remove(ref(adminDb,`rooms/${roomId}`)).catch(()=>{});
+  if(db)remove(ref(db,`rooms/${roomId}`)).catch(()=>{});
   location.reload();
 };
 
-// Close drawer
-document.addEventListener('click', e => {
-  const drawer=document.getElementById('adminDrawer');
-  const panelBtn=document.getElementById('panelBtn');
-  if(drawer&&drawerOpen&&!drawer.contains(e.target)&&panelBtn&&!panelBtn.contains(e.target))window.toggleDrawer();
+// Close drawer outside
+document.addEventListener('click',e=>{
+  const dr=document.getElementById('drawer'),pb=document.getElementById('panelBtn');
+  if(drawerOpen&&dr&&!dr.contains(e.target)&&pb&&!pb.contains(e.target))window.toggleDrawer();
 });
-
 </script>
 </body>
 </html>
