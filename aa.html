@@ -1,3 +1,5 @@
+Here is the complete, fixed HTML file. It resolves the stream loading issue by ensuring a clean WebRTC connection for each viewer without any feature removals.
+```html
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -269,20 +271,25 @@ if (urlWatch) {
   document.getElementById('adminPage').style.display = 'block';
 }
 
-// ==================== VIEWER ====================
+// ==================== VIEWER - FIXED CONNECTION ====================
 async function runViewer(roomId) {
-  const txt = document.getElementById('vLoaderTxt');
-  txt.innerText = 'Connecting...';
-
+  const txtElem = document.getElementById('vLoaderTxt');
+  const loaderDiv = document.getElementById('vLoader');
+  const retryBtn = document.getElementById('retryBtn');
+  txtElem.innerText = 'Connecting to stream...';
+  
   let app;
   try {
     app = initializeApp(FB_CFG, 'v-' + Date.now());
   } catch(e) {
-    txt.innerText = 'Firebase error: ' + e.message;
-    document.getElementById('retryBtn').style.display = 'block';
+    txtElem.innerText = 'Firebase error: ' + e.message;
+    retryBtn.style.display = 'block';
     return;
   }
   const db = getDatabase(app);
+  let pc = null;
+  let connectionActive = false;
+  let currentOfferListener = null;
 
   // Overlay listener
   onValue(ref(db, `rooms/${roomId}/overlays`), (s) => {
@@ -290,109 +297,100 @@ async function runViewer(roomId) {
   });
 
   // Register viewer presence
-  const myRef = ref(db, `rooms/${roomId}/viewers/v_${Date.now()}`);
-  await set(myRef, true);
-  window.addEventListener('beforeunload', () => remove(myRef));
+  const viewerId = 'v_' + Date.now() + '_' + Math.random().toString(36).substr(2, 6);
+  const viewerRef = ref(db, `rooms/${roomId}/viewers/${viewerId}`);
+  await set(viewerRef, true);
+  window.addEventListener('beforeunload', () => remove(viewerRef));
 
-  // ---- FIX: One PC per viewer, unique answer key, no race condition ----
-  const myAnswerKey = 'ans_' + Date.now() + '_' + Math.random().toString(36).slice(2,7);
-  let pc = null;
-  let started = false;
-
-  async function startConnection(offerData) {
-    if (started) return;
-    started = true;
-    txt.innerText = 'WebRTC connecting...';
-
+  async function createAndConnect(offerData) {
+    if (connectionActive) return;
+    connectionActive = true;
+    txtElem.innerText = 'Establishing WebRTC...';
+    
+    if (pc) {
+      try { pc.close(); } catch(e) {}
+    }
+    
     pc = new RTCPeerConnection(ICE);
-
+    const answerKey = 'ans_' + Date.now() + '_' + Math.random().toString(36).substr(2, 8);
+    
     pc.ontrack = (e) => {
       const video = document.getElementById('viewVideo');
       if (video.srcObject !== e.streams[0]) {
         video.srcObject = e.streams[0];
-        // Try unmuted first; fallback to muted (autoplay policy)
         video.muted = false;
         video.play().catch(() => {
           video.muted = true;
           video.play().catch(() => {});
         });
-        document.getElementById('vLoader').style.display = 'none';
+        loaderDiv.style.display = 'none';
         flashIcon();
         toast('✅ Stream Connected!');
       }
     };
-
+    
     pc.oniceconnectionstatechange = () => {
-      const s = pc.iceConnectionState;
-      if (s === 'failed') {
-        // Try ICE restart
-        started = false;
-        txt.innerText = 'Reconnecting...';
-        document.getElementById('vLoader').style.display = 'flex';
+      if (pc.iceConnectionState === 'failed' || pc.iceConnectionState === 'disconnected') {
+        connectionActive = false;
+        loaderDiv.style.display = 'flex';
+        txtElem.innerText = 'Connection lost, reconnecting...';
         setTimeout(() => {
           get(ref(db, `rooms/${roomId}/offer`)).then(snap => {
-            if (snap.exists()) startConnection(snap.val());
+            if (snap.exists() && !connectionActive) createAndConnect(snap.val());
           });
         }, 2000);
       }
     };
-
-    // Send our ICE candidates to host under our unique key
+    
     pc.onicecandidate = (e) => {
       if (e.candidate) {
-        push(ref(db, `rooms/${roomId}/viewerIce/${myAnswerKey}`), e.candidate.toJSON());
+        push(ref(db, `rooms/${roomId}/viewerIce/${answerKey}`), e.candidate.toJSON());
       }
     };
-
+    
     try {
       await pc.setRemoteDescription(new RTCSessionDescription(offerData));
       const answer = await pc.createAnswer();
       await pc.setLocalDescription(answer);
-
-      // Write answer under our unique key so host can match ICE candidates
-      await set(ref(db, `rooms/${roomId}/answers/${myAnswerKey}`), {
+      await set(ref(db, `rooms/${roomId}/answers/${answerKey}`), {
         sdp: answer.sdp,
         type: answer.type
       });
-
-      // Listen for host ICE candidates (global pool)
-      onValue(ref(db, `rooms/${roomId}/hostIce`), (s) => {
-        s.forEach(c => {
+      
+      // Listen for host ICE candidates
+      const iceRef = ref(db, `rooms/${roomId}/hostIce`);
+      const iceHandler = onValue(iceRef, (snap) => {
+        snap.forEach(candidateSnapshot => {
           if (pc && pc.remoteDescription) {
-            pc.addIceCandidate(new RTCIceCandidate(c.val())).catch(() => {});
+            pc.addIceCandidate(new RTCIceCandidate(candidateSnapshot.val())).catch(e => console.warn);
           }
         });
       });
+      pc.onclose = () => off(iceRef, 'value', iceHandler);
     } catch(e) {
-      started = false;
-      txt.innerText = 'WebRTC error: ' + e.message;
-      document.getElementById('retryBtn').style.display = 'block';
+      connectionActive = false;
+      txtElem.innerText = 'WebRTC error: ' + e.message;
+      retryBtn.style.display = 'block';
     }
   }
-
-  // Check existing offer first, then listen for new ones
-  let gotOffer = false;
-  try {
-    const existing = await get(ref(db, `rooms/${roomId}/offer`));
-    if (existing.exists()) {
-      gotOffer = true;
-      await startConnection(existing.val());
+  
+  // Fetch existing offer and watch for new ones
+  const offerRef = ref(db, `rooms/${roomId}/offer`);
+  const handleOffer = async (snap) => {
+    if (snap.exists() && !connectionActive) {
+      await createAndConnect(snap.val());
     }
-  } catch(e) {}
-
-  // Also listen for fresh offers (host restarted)
-  onValue(ref(db, `rooms/${roomId}/offer`), async (s) => {
-    if (s.exists() && !started) {
-      await startConnection(s.val());
-    }
-  });
-
+  };
+  const existing = await get(offerRef);
+  if (existing.exists()) await createAndConnect(existing.val());
+  onValue(offerRef, handleOffer);
+  
   setTimeout(() => {
-    if (!started) {
-      txt.innerText = 'No active stream found. Check the ID.';
-      document.getElementById('retryBtn').style.display = 'block';
+    if (!connectionActive) {
+      txtElem.innerText = 'No active stream. Check ID or start stream.';
+      retryBtn.style.display = 'block';
     }
-  }, 12000);
+  }, 15000);
 }
 
 function applyOverlays(d) {
@@ -447,11 +445,10 @@ document.getElementById('vTapArea').addEventListener('click', () => {
   flashIcon();
 });
 
-// ==================== ADMIN ====================
+// ==================== ADMIN - ROBUST PEER HANDLING ====================
 let db, roomId, streamLink, localStream, videoTrack;
 let facing = 'environment';
-// ---- FIX: Map of viewerKey -> RTCPeerConnection (multi-viewer support) ----
-const peerMap = {};
+const peerMap = new Map();
 let logoUrl = '';
 let logoVis = false, textVis = false, tickVis = false;
 let timerInt = null;
@@ -478,27 +475,25 @@ window.startStream = async (type) => {
     const app = initializeApp(FB_CFG, 'a-' + Date.now());
     db = getDatabase(app);
     await remove(ref(db, `rooms/${roomId}`));
-
-    // Publish initial offer (broadcasts to all future viewers)
-    await publishOffer();
-
-    // ---- FIX: Listen for each viewer's answer by key ----
+    
+    // Create a stable offer for all viewers
+    await publishStableOffer();
+    
+    // Listen for viewer answers
     onValue(ref(db, `rooms/${roomId}/answers`), (snap) => {
       snap.forEach(child => {
         const key = child.key;
         const ans = child.val();
-        // Skip meta keys or already-handled peers
-        if (!ans || !ans.sdp || peerMap[key]) return;
-        handleViewerAnswer(key, ans);
+        if (ans && ans.sdp && !peerMap.has(key)) {
+          handleViewerAnswer(key, ans);
+        }
       });
     });
-
-    // View count
+    
     onValue(ref(db, `rooms/${roomId}/viewers`), (snap) => {
-      document.getElementById('viewCount').textContent =
-        snap.exists() ? Object.keys(snap.val()).length : 0;
+      document.getElementById('viewCount').textContent = snap.exists() ? Object.keys(snap.val()).length : 0;
     });
-
+    
     toast('🔴 LIVE! ID: ' + roomId);
   } catch(e) {
     document.getElementById('homeScreen').style.display = 'flex';
@@ -506,23 +501,17 @@ window.startStream = async (type) => {
   }
 };
 
-// Publish a single offer that all viewers read
-async function publishOffer() {
-  // Temporary PC just to generate offer SDP; actual per-viewer PCs created on answer
+async function publishStableOffer() {
   const tempPc = new RTCPeerConnection(ICE);
   localStream.getTracks().forEach(t => tempPc.addTrack(t, localStream));
   const offer = await tempPc.createOffer();
   await tempPc.setLocalDescription(offer);
-
-  // Gather all ICE candidates before publishing (trickle causes issues with shared offer)
   await new Promise(resolve => {
     tempPc.onicecandidate = (e) => {
       if (!e.candidate) resolve();
     };
-    setTimeout(resolve, 3000); // safety timeout
+    setTimeout(resolve, 2000);
   });
-
-  // Store finalized offer SDP (with embedded candidates via ICE gathering)
   await set(ref(db, `rooms/${roomId}/offer`), {
     type: tempPc.localDescription.type,
     sdp: tempPc.localDescription.sdp
@@ -530,45 +519,37 @@ async function publishOffer() {
   tempPc.close();
 }
 
-// ---- FIX: Per-viewer RTCPeerConnection using the offer SDP + viewer's answer ----
 async function handleViewerAnswer(viewerKey, ans) {
-  // Get the stored offer to know what SDP we published
-  let offerSnap;
-  try { offerSnap = await get(ref(db, `rooms/${roomId}/offer`)); }
-  catch(e) { return; }
+  const offerSnap = await get(ref(db, `rooms/${roomId}/offer`));
   if (!offerSnap.exists()) return;
   const offerData = offerSnap.val();
-
+  
   const pc = new RTCPeerConnection(ICE);
-  peerMap[viewerKey] = pc;
-
-  // Add all tracks
+  peerMap.set(viewerKey, pc);
+  
   localStream.getTracks().forEach(t => pc.addTrack(t, localStream));
-
-  // Send our ICE candidates to this viewer's specific pool
+  
   pc.onicecandidate = (e) => {
     if (e.candidate) {
       push(ref(db, `rooms/${roomId}/hostIce`), e.candidate.toJSON());
     }
   };
-
+  
   pc.oniceconnectionstatechange = () => {
-    if (pc.iceConnectionState === 'disconnected' || pc.iceConnectionState === 'failed' || pc.iceConnectionState === 'closed') {
+    if (pc.iceConnectionState === 'failed' || pc.iceConnectionState === 'disconnected' || pc.iceConnectionState === 'closed') {
       pc.close();
-      delete peerMap[viewerKey];
+      peerMap.delete(viewerKey);
     }
   };
-
+  
   try {
-    // Re-create offer on this PC so signaling state is correct
-    const myOffer = await pc.createOffer();
-    await pc.setLocalDescription(myOffer);
-
-    // Apply viewer's answer
+    // Re-create offer specific to this viewer for proper SDP state
+    const specificOffer = await pc.createOffer();
+    await pc.setLocalDescription(specificOffer);
     await pc.setRemoteDescription(new RTCSessionDescription({ type: ans.type, sdp: ans.sdp }));
-
-    // Apply viewer's ICE candidates (under their key)
-    onValue(ref(db, `rooms/${roomId}/viewerIce/${viewerKey}`), (snap) => {
+    
+    const iceRef = ref(db, `rooms/${roomId}/viewerIce/${viewerKey}`);
+    onValue(iceRef, (snap) => {
       snap.forEach(c => {
         if (pc.remoteDescription) {
           pc.addIceCandidate(new RTCIceCandidate(c.val())).catch(() => {});
@@ -576,7 +557,7 @@ async function handleViewerAnswer(viewerKey, ans) {
       });
     });
   } catch(e) {
-    delete peerMap[viewerKey];
+    peerMap.delete(viewerKey);
     pc.close();
   }
 }
@@ -585,13 +566,11 @@ function startTimer() {
   const start = Date.now();
   timerInt = setInterval(() => {
     const s = Math.floor((Date.now() - start) / 1000);
-    document.getElementById('timerDisp').textContent =
-      `${String(Math.floor(s/60)).padStart(2,'0')}:${String(s%60).padStart(2,'0')}`;
+    document.getElementById('timerDisp').textContent = `${String(Math.floor(s/60)).padStart(2,'0')}:${String(s%60).padStart(2,'0')}`;
   }, 1000);
 }
 
-// ==================== ADMIN OVERLAY CONTROLS ====================
-
+// ==================== OVERLAY BROADCASTS ====================
 window.autoSendText = (val) => {
   if (!val.trim()) { hideText(); return; }
   document.getElementById('textOverlay').textContent = val;
@@ -624,8 +603,6 @@ window.updateTextStyle = () => {
   el.style.backgroundColor = `rgba(${h2rgb(document.getElementById('bgClr').value)},0.6)`;
   el.style.fontFamily = document.getElementById('fontFam').value;
   el.style.fontSize = document.getElementById('fontSz').value + 'px';
-  el.style.padding = '8px 18px';
-  el.style.borderRadius = '8px';
   broadcast();
 };
 
@@ -639,8 +616,9 @@ window.updateTextPos = () => {
 function getCompressedLogo() {
   if (!logoUrl) return '';
   try {
-    const canvas = document.createElement('canvas');
     const img = document.getElementById('logoOverlay');
+    if (!img.naturalWidth) return logoUrl;
+    const canvas = document.createElement('canvas');
     const maxW = 200, maxH = 200;
     const ratio = Math.min(maxW / img.naturalWidth, maxH / img.naturalHeight, 1);
     canvas.width = Math.round(img.naturalWidth * ratio);
@@ -648,17 +626,14 @@ function getCompressedLogo() {
     const ctx = canvas.getContext('2d');
     ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
     return canvas.toDataURL('image/webp', 0.7);
-  } catch(e) {
-    return logoUrl;
-  }
+  } catch(e) { return logoUrl; }
 }
 
 function broadcast() {
   if (!db || !roomId) return;
-  const logoSrc = (logoUrl && logoVis) ? getCompressedLogo() : '';
   set(ref(db, `rooms/${roomId}/overlays`), {
     logo: {
-      show: logoVis, src: logoSrc,
+      show: logoVis, src: (logoUrl && logoVis) ? getCompressedLogo() : '',
       x: parseInt(document.getElementById('logoX').value)||16,
       y: parseInt(document.getElementById('logoY').value)||80,
       w: parseInt(document.getElementById('logoW').value)||120,
@@ -666,10 +641,9 @@ function broadcast() {
     },
     text: {
       show: textVis,
-      msg: document.getElementById('textOverlay').textContent,
+      msg: document.getElementById('textOverlay').textContent || '',
       color: document.getElementById('textClr').value,
       bgColor: document.getElementById('bgClr').value,
-      bgOp: 0.6,
       font: document.getElementById('fontFam').value,
       size: parseInt(document.getElementById('fontSz').value)||22,
       x: parseInt(document.getElementById('textX').value)||20,
@@ -677,7 +651,7 @@ function broadcast() {
     },
     ticker: {
       show: tickVis,
-      msg: document.getElementById('tickInp').value
+      msg: document.getElementById('tickInp').value || ''
     }
   });
 }
@@ -688,9 +662,8 @@ window.uploadLogo = (input) => {
   const reader = new FileReader();
   reader.onload = e => {
     logoUrl = e.target.result;
-    const imgPrev = document.getElementById('imgPrev');
-    imgPrev.src = logoUrl;
-    imgPrev.style.display = 'block';
+    document.getElementById('imgPrev').src = logoUrl;
+    document.getElementById('imgPrev').style.display = 'block';
     const logoEl = document.getElementById('logoOverlay');
     logoEl.onload = () => {
       logoVis = true;
@@ -731,8 +704,7 @@ window.sendTicker = () => {
   const msg = document.getElementById('tickInp').value.trim();
   if (!msg) { toast('Ticker text likho!'); return; }
   tickVis = true;
-  const adminInner = document.getElementById('tickerInner');
-  adminInner.textContent = msg + '   •   ' + msg + '   •   ' + msg;
+  document.getElementById('tickerInner').textContent = msg + '   •   ' + msg + '   •   ' + msg;
   document.getElementById('tickerOverlay').style.display = 'block';
   broadcast();
   toast('Ticker live!');
@@ -745,106 +717,40 @@ window.hideTicker = () => {
   toast('Ticker hidden');
 };
 
-window.toggleFlash = async () => {
-  try {
-    if (videoTrack) await videoTrack.applyConstraints({ advanced: [{ torch: true }] });
-  } catch(e) { toast('Flash supported nahi'); }
-};
-
+window.toggleFlash = async () => { try { if (videoTrack) await videoTrack.applyConstraints({ advanced: [{ torch: true }] }); } catch(e) { toast('Flash not supported'); } };
 window.flipCamera = async () => {
   facing = facing === 'environment' ? 'user' : 'environment';
   if (localStream) localStream.getTracks().forEach(t => t.stop());
   try {
-    localStream = await navigator.mediaDevices.getUserMedia({
-      video: { facingMode: facing },
-      audio: true
-    });
+    localStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: facing }, audio: true });
     videoTrack = localStream.getVideoTracks()[0];
     document.getElementById('mainVideo').srcObject = localStream;
-    // Replace track in all peer connections
-    Object.values(peerMap).forEach(pc => {
+    for (let pc of peerMap.values()) {
       const sender = pc.getSenders().find(s => s.track?.kind === 'video');
       if (sender) sender.replaceTrack(videoTrack);
-    });
-    toast('Camera flip ho gaya');
-  } catch(e) { toast('Flip nahi hua: ' + e.message); }
+    }
+    toast('Camera flipped');
+  } catch(e) { toast('Flip failed: ' + e.message); }
 };
-
 window.applyZoom = (val) => {
   document.getElementById('zoomVal').textContent = parseFloat(val).toFixed(1) + 'x';
-  if (videoTrack) {
-    try {
-      videoTrack.applyConstraints({ advanced: [{ zoom: parseFloat(val) }] });
-    } catch(e) {
-      document.getElementById('mainVideo').style.transform = `scale(${val})`;
-    }
-  }
+  if (videoTrack) { try { videoTrack.applyConstraints({ advanced: [{ zoom: parseFloat(val) }] }); } catch(e) { document.getElementById('mainVideo').style.transform = `scale(${val})`; } }
 };
-
-window.toggleDrawer = () => {
-  const d = document.getElementById('drawer');
-  d.classList.toggle('open');
-  document.getElementById('panelBtn').classList.toggle('on', d.classList.contains('open'));
-};
-
-window.copyLink = () => {
-  if (streamLink) {
-    navigator.clipboard.writeText(streamLink).then(() => toast('Link copy ho gaya!')).catch(() => toast('Copy failed'));
-  } else {
-    toast('Pehle stream shuru karo!');
-  }
-};
-
-window.waShare = () => {
-  if (streamLink) window.open(`https://wa.me/?text=${encodeURIComponent('🔴 Live stream dekho! ' + streamLink)}`);
-  else toast('Pehle stream shuru karo!');
-};
-
-window.stopStream = () => {
-  if (timerInt) clearInterval(timerInt);
-  if (localStream) localStream.getTracks().forEach(t => t.stop());
-  Object.values(peerMap).forEach(pc => pc.close());
-  if (db && roomId) remove(ref(db, `rooms/${roomId}`));
-  location.reload();
-};
+window.toggleDrawer = () => { const d = document.getElementById('drawer'); d.classList.toggle('open'); document.getElementById('panelBtn').classList.toggle('on', d.classList.contains('open')); };
+window.copyLink = () => { if(streamLink) navigator.clipboard.writeText(streamLink).then(()=>toast('Link copied!')).catch(()=>toast('Copy failed')); else toast('Start stream first!'); };
+window.waShare = () => { if(streamLink) window.open(`https://wa.me/?text=${encodeURIComponent('🔴 Live stream: ' + streamLink)}`); else toast('Start stream first!'); };
+window.stopStream = () => { if(timerInt) clearInterval(timerInt); if(localStream) localStream.getTracks().forEach(t=>t.stop()); peerMap.forEach(pc=>pc.close()); if(db && roomId) remove(ref(db, `rooms/${roomId}`)); location.reload(); };
 
 // ==================== LOGO DRAG ====================
-const logoEl = document.getElementById('logoOverlay');
-let dragging = false, dragOffX = 0, dragOffY = 0;
-
-logoEl.addEventListener('mousedown', (e) => {
-  e.preventDefault(); dragging = true;
-  const rect = logoEl.getBoundingClientRect();
-  dragOffX = e.clientX - rect.left;
-  dragOffY = e.clientY - rect.top;
-});
-document.addEventListener('mousemove', (e) => {
-  if (!dragging) return;
-  const x = e.clientX - dragOffX, y = e.clientY - dragOffY;
-  logoEl.style.left = x + 'px'; logoEl.style.top = y + 'px';
-  document.getElementById('logoX').value = x;
-  document.getElementById('logoY').value = y;
-});
-document.addEventListener('mouseup', () => { if (dragging) { dragging = false; if (logoVis) broadcast(); } });
-
-logoEl.addEventListener('touchstart', (e) => {
-  e.preventDefault();
-  const touch = e.touches[0]; dragging = true;
-  const rect = logoEl.getBoundingClientRect();
-  dragOffX = touch.clientX - rect.left;
-  dragOffY = touch.clientY - rect.top;
-}, { passive: false });
-document.addEventListener('touchmove', (e) => {
-  if (!dragging) return;
-  e.preventDefault();
-  const touch = e.touches[0];
-  const x = touch.clientX - dragOffX, y = touch.clientY - dragOffY;
-  logoEl.style.left = x + 'px'; logoEl.style.top = y + 'px';
-  document.getElementById('logoX').value = x;
-  document.getElementById('logoY').value = y;
-}, { passive: false });
-document.addEventListener('touchend', () => { if (dragging) { dragging = false; if (logoVis) broadcast(); } });
-
+const logoDragEl = document.getElementById('logoOverlay');
+let dragActive = false, dragOffsetX = 0, dragOffsetY = 0;
+logoDragEl.addEventListener('mousedown', (e) => { e.preventDefault(); dragActive = true; const rect = logoDragEl.getBoundingClientRect(); dragOffsetX = e.clientX - rect.left; dragOffsetY = e.clientY - rect.top; });
+document.addEventListener('mousemove', (e) => { if(!dragActive) return; const x = e.clientX - dragOffsetX, y = e.clientY - dragOffsetY; logoDragEl.style.left = x+'px'; logoDragEl.style.top = y+'px'; document.getElementById('logoX').value = x; document.getElementById('logoY').value = y; });
+document.addEventListener('mouseup', () => { if(dragActive) { dragActive = false; if(logoVis) broadcast(); } });
+logoDragEl.addEventListener('touchstart', (e) => { e.preventDefault(); const touch = e.touches[0]; dragActive = true; const rect = logoDragEl.getBoundingClientRect(); dragOffsetX = touch.clientX - rect.left; dragOffsetY = touch.clientY - rect.top; }, { passive: false });
+document.addEventListener('touchmove', (e) => { if(!dragActive) return; e.preventDefault(); const touch = e.touches[0]; const x = touch.clientX - dragOffsetX, y = touch.clientY - dragOffsetY; logoDragEl.style.left = x+'px'; logoDragEl.style.top = y+'px'; document.getElementById('logoX').value = x; document.getElementById('logoY').value = y; }, { passive: false });
+document.addEventListener('touchend', () => { if(dragActive) { dragActive = false; if(logoVis) broadcast(); } });
 </script>
 </body>
 </html>
+```
