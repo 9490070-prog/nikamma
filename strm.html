@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>LiveCam Pro</title>
+<title>LiveCam Pro - Fixed Stream</title>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <style>
 :root{--red:#ff2d2d;--red-dark:#c0000a;--surface:#141414;--surface2:#1e1e1e;--border:rgba(255,255,255,0.08);--text:#f0f0f0;--muted:#777}
@@ -102,10 +102,7 @@ input[type=color]{width:36px;height:36px;border:none;border-radius:8px;backgroun
 .iprev{max-width:100%;max-height:80px;border-radius:8px;margin-top:8px;display:none}
 .tickwrap{position:absolute;left:0;right:0;overflow:hidden;z-index:11;pointer-events:none}
 .ticki{white-space:nowrap;display:inline-block;animation:ticker 18s linear infinite;font-weight:600;color:#fff;padding-left:100%}
-
-/* Live text preview */
 #liveTextPreview{background:rgba(255,45,45,0.12);border:1px solid rgba(255,45,45,0.3);border-radius:10px;padding:10px 12px;font-size:0.8rem;color:#ff9999;margin-bottom:8px;display:none;word-break:break-all}
-
 #toast{position:fixed;top:68px;left:50%;transform:translateX(-50%) translateY(-16px);background:rgba(18,18,18,0.96);border:1px solid var(--border);padding:10px 20px;border-radius:20px;font-size:0.82rem;z-index:9999;opacity:0;transition:all 0.3s;pointer-events:none;backdrop-filter:blur(10px);white-space:nowrap;max-width:90vw;text-align:center}
 #toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
 </style>
@@ -126,7 +123,7 @@ input[type=color]{width:36px;height:36px;border:none;border-radius:8px;backgroun
   <div id="vTickerWrap"><div class="tick-i" id="vTickerInner"></div></div>
   <div id="vTapArea" onclick="viewerTap()"></div>
   <div id="vPlayIcon">
-    <svg id="vIconSvg" viewBox="0 0 24 24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>
+    <svg id="vIconSvg" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
   </div>
 </div>
 
@@ -174,7 +171,6 @@ input[type=color]{width:36px;height:36px;border:none;border-radius:8px;backgroun
 
     <div id="drawer">
       <div class="dh"></div>
-
       <div class="sec" style="margin-top:0">🔗 Viewer Link</div>
       <div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:10px 12px;font-size:0.72rem;color:#4fc3f7;word-break:break-all;margin-bottom:8px" id="linkDisp">-</div>
       <div class="srow" style="margin-bottom:4px">
@@ -182,12 +178,10 @@ input[type=color]{width:36px;height:36px;border:none;border-radius:8px;backgroun
         <button class="sbtn" onclick="waShare()">📤 WhatsApp</button>
       </div>
 
-      <!-- TEXT — auto live as you type -->
       <div class="sec">💬 Live Text (Type karo — auto show)</div>
       <div id="liveTextPreview">Screen pe dikh raha hai: <span id="livePreviewTxt"></span></div>
       <div class="mrow">
-        <input class="minp" id="textInp" type="text" placeholder="Type karo — viewers ko seedha dikh jayega..." maxlength="100"
-          oninput="autoSendText(this.value)">
+        <input class="minp" id="textInp" type="text" placeholder="Type karo — viewers ko seedha dikh jayega..." maxlength="100" oninput="autoSendText(this.value)">
         <button class="sendb" onclick="hideText()">✕</button>
       </div>
       <div class="frow">
@@ -221,7 +215,6 @@ input[type=color]{width:36px;height:36px;border:none;border-radius:8px;backgroun
         <span class="qtag" onclick="hideText()">✕ Hatao</span>
       </div>
 
-      <!-- LOGO — auto show on upload -->
       <div class="sec">🖼️ Logo (Upload hote hi auto show)</div>
       <div class="upa" onclick="document.getElementById('imgInp').click()">
         <div style="font-size:1.8rem">📁</div>
@@ -250,14 +243,12 @@ input[type=color]{width:36px;height:36px;border:none;border-radius:8px;backgroun
         <button class="sbtn" onclick="toggleLogo(false)">✕ Hide</button>
       </div>
 
-      <!-- TICKER -->
       <div class="sec">📢 Ticker (Running Text)</div>
       <div class="mrow">
         <input class="minp" id="tickInp" type="text" placeholder="Running ticker text..." maxlength="120">
         <button class="sendb" onclick="sendTicker()">GO</button>
       </div>
       <button class="sbtn" style="width:100%;margin-bottom:10px" onclick="hideTicker()">✕ Ticker Hatao</button>
-
       <button class="bbtn dark" onclick="toggleDrawer()">✕ Panel Band Karo</button>
     </div>
   </div>
@@ -265,410 +256,447 @@ input[type=color]{width:36px;height:36px;border:none;border-radius:8px;backgroun
 
 <div id="toast"></div>
 
-<script type="module">
-import { initializeApp }   from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
-import { getDatabase, ref, set, get, onValue, push, remove, serverTimestamp }
-  from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js';
+<script type="importmap">
+  {
+    "imports": {
+      "firebase/app": "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js",
+      "firebase/database": "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js"
+    }
+  }
+</script>
 
-// ── Firebase ──
+<script type="module">
+import { initializeApp } from 'firebase/app';
+import { getDatabase, ref, set, get, onValue, push, remove, serverTimestamp } from 'firebase/database';
+
+// Firebase Config
 const FB_CFG = {
-  apiKey:            "AIzaSyCXY_layR4HtlrJTweBB5ER_uc5jkMG0sc",
-  authDomain:        "nikamma-4k.firebaseapp.com",
-  databaseURL:       "https://nikamma-4k-default-rtdb.firebaseio.com",
-  projectId:         "nikamma-4k",
-  storageBucket:     "nikamma-4k.firebasestorage.app",
+  apiKey: "AIzaSyCXY_layR4HtlrJTweBB5ER_uc5jkMG0sc",
+  authDomain: "nikamma-4k.firebaseapp.com",
+  databaseURL: "https://nikamma-4k-default-rtdb.firebaseio.com",
+  projectId: "nikamma-4k",
+  storageBucket: "nikamma-4k.firebasestorage.app",
   messagingSenderId: "534849542892",
-  appId:             "1:534849542892:web:d96322fd4811b46738e3c9"
+  appId: "1:534849542892:web:d96322fd4811b46738e3c9"
 };
 
-const ICE_CFG = {
+const ICE_CONFIG = {
   iceServers: [
-    {urls:'stun:stun.l.google.com:19302'},
-    {urls:'stun:stun1.l.google.com:19302'},
-    {urls:'stun:stun2.l.google.com:19302'},
-    {urls:'stun:stun3.l.google.com:19302'},
+    { urls: 'stun:stun.l.google.com:19302' },
+    { urls: 'stun:stun1.l.google.com:19302' },
+    { urls: 'stun:stun2.l.google.com:19302' },
+    { urls: 'stun:stun3.l.google.com:19302' }
   ]
 };
 
-// ── Helpers ──
-function toast(msg, dur=2800) {
+// Helper
+window.toast = function(msg, dur = 2800) {
   const t = document.getElementById('toast');
-  t.textContent = msg; t.classList.add('show');
+  t.textContent = msg;
+  t.classList.add('show');
   setTimeout(() => t.classList.remove('show'), dur);
-}
+};
+
 function h2rgb(hex) {
-  if (!hex||hex.length<7) return '0,0,0';
+  if (!hex || hex.length < 7) return '0,0,0';
   return `${parseInt(hex.slice(1,3),16)},${parseInt(hex.slice(3,5),16)},${parseInt(hex.slice(5,7),16)}`;
 }
-window.toast = toast;
 
-// ── Route ──
-const WATCH = new URLSearchParams(location.search).get('watch');
-if (WATCH) {
+// Routing
+const urlParams = new URLSearchParams(location.search);
+const watchId = urlParams.get('watch');
+if (watchId) {
   document.getElementById('viewerPage').style.display = 'block';
-  runViewer(WATCH);
+  runViewer(watchId);
 } else {
   document.getElementById('adminPage').style.display = 'block';
 }
 
-// ================================================================
-// VIEWER
-// ================================================================
+// ======================= VIEWER FIXED =======================
 async function runViewer(roomId) {
-  vtxt('Firebase se connect ho raha hoon...');
-  let db;
+  const vLoaderTxt = document.getElementById('vLoaderTxt');
+  vLoaderTxt.innerText = 'Connecting to stream...';
+  
+  let app;
   try {
-    const app = initializeApp(FB_CFG, 'v'+Date.now());
-    db = getDatabase(app);
-  } catch(e) { vtxt('❌ Firebase error: '+e.message); showRetry(); return; }
-
-  // Watch overlays in real-time
-  onValue(ref(db, `rooms/${roomId}/overlays`), snap => {
+    app = initializeApp(FB_CFG, 'viewer-' + Date.now());
+  } catch (e) {
+    vLoaderTxt.innerText = 'Firebase error: ' + e.message;
+    document.getElementById('retryBtn').style.display = 'block';
+    return;
+  }
+  const db = getDatabase(app);
+  
+  // Listen for overlays
+  onValue(ref(db, `rooms/${roomId}/overlays`), (snap) => {
     if (snap.exists()) applyOverlays(snap.val());
   });
-
-  // Watch viewer count for host
-  const myRef = ref(db, `rooms/${roomId}/viewers/v${Date.now()}`);
-  await set(myRef, true).catch(()=>{});
-  window.addEventListener('beforeunload', () => remove(myRef));
-
-  // ── WebRTC: wait for host offer ──
-  vtxt('Host dhundh raha hoon...');
-  let found = false;
-
-  const unsub = onValue(ref(db, `rooms/${roomId}/offer`), async snap => {
-    if (!snap.exists() || found) return;
-    found = true;
-    vtxt('Stream mil gayi! Connecting...');
-
-    const pc = new RTCPeerConnection(ICE_CFG);
-
-    pc.ontrack = e => {
-      const vid = document.getElementById('viewVideo');
-      vid.srcObject = e.streams[0];
-      vid.muted = false;
-      vid.play().catch(() => { vid.muted = true; vid.play(); });
-      document.getElementById('vLoader').style.display = 'none';
-      flashIcon();
+  
+  // Register viewer for count
+  const viewerRef = ref(db, `rooms/${roomId}/viewers/v_${Date.now()}_${Math.random()}`);
+  await set(viewerRef, true).catch(() => {});
+  window.addEventListener('beforeunload', () => remove(viewerRef));
+  
+  let pc = null;
+  let hasStarted = false;
+  
+  // Watch for host offer
+  const offerUnsub = onValue(ref(db, `rooms/${roomId}/offer`), async (snap) => {
+    if (!snap.exists() || hasStarted) return;
+    hasStarted = true;
+    vLoaderTxt.innerText = 'Stream found! Establishing connection...';
+    
+    pc = new RTCPeerConnection(ICE_CONFIG);
+    
+    pc.ontrack = (event) => {
+      const videoEl = document.getElementById('viewVideo');
+      if (videoEl.srcObject !== event.streams[0]) {
+        videoEl.srcObject = event.streams[0];
+        videoEl.muted = false;
+        videoEl.play().catch(e => {
+          console.warn("Autoplay blocked?", e);
+          videoEl.muted = true;
+          videoEl.play();
+        });
+        document.getElementById('vLoader').style.display = 'none';
+        flashIcon();
+        toast('Stream connected!');
+      }
     };
-
-    // Send my ICE candidates
-    pc.onicecandidate = e => {
-      if (e.candidate) push(ref(db, `rooms/${roomId}/viewerIce`), e.candidate.toJSON());
+    
+    pc.onicecandidate = (event) => {
+      if (event.candidate) {
+        push(ref(db, `rooms/${roomId}/viewerIce`), event.candidate.toJSON());
+      }
     };
-
-    // Get host ICE candidates
-    onValue(ref(db, `rooms/${roomId}/hostIce`), s => {
-      s.forEach(c => {
-        pc.addIceCandidate(new RTCIceCandidate(c.val())).catch(()=>{});
+    
+    pc.oniceconnectionstatechange = () => {
+      if (pc.iceConnectionState === 'failed') {
+        vLoaderTxt.innerText = 'Connection failed. Retry?';
+        document.getElementById('retryBtn').style.display = 'block';
+      }
+    };
+    
+    // Add host ICE candidates
+    onValue(ref(db, `rooms/${roomId}/hostIce`), (snap) => {
+      snap.forEach((childSnap) => {
+        if (pc && pc.remoteDescription) {
+          pc.addIceCandidate(new RTCIceCandidate(childSnap.val())).catch(e => console.warn("ICE error", e));
+        }
       });
     });
-
-    // Set remote description (offer from host)
-    const offer = snap.val();
-    await pc.setRemoteDescription(new RTCSessionDescription(offer));
-
-    // Create answer
-    const answer = await pc.createAnswer();
-    await pc.setLocalDescription(answer);
-
-    // Push answer to Firebase (keyed by timestamp so multiple viewers can answer)
-    const ansKey = 'ans_' + Date.now();
-    await set(ref(db, `rooms/${roomId}/answers/${ansKey}`), {
-      sdp: answer.sdp, type: answer.type
-    });
-
-    // Timeout if no video
-    setTimeout(() => {
-      if (document.getElementById('vLoader').style.display !== 'none') {
-        vtxt('❌ Video nahi aayi. Host online hai? Retry karo.');
-        showRetry();
-      }
-    }, 20000);
-  });
-
-  // If no offer after 30s
-  setTimeout(() => {
-    if (!found) {
-      vtxt('❌ Host online nahi hai ya link galat hai.');
-      showRetry();
+    
+    try {
+      const offer = snap.val();
+      await pc.setRemoteDescription(new RTCSessionDescription(offer));
+      const answer = await pc.createAnswer();
+      await pc.setLocalDescription(answer);
+      const answerKey = `ans_${Date.now()}_${Math.random().toString(36).substr(2, 4)}`;
+      await set(ref(db, `rooms/${roomId}/answers/${answerKey}`), {
+        sdp: answer.sdp,
+        type: answer.type
+      });
+    } catch (err) {
+      console.error("Offer handling error", err);
+      vLoaderTxt.innerText = 'Error connecting: ' + err.message;
+      document.getElementById('retryBtn').style.display = 'block';
     }
-  }, 30000);
+  });
+  
+  setTimeout(() => {
+    if (!hasStarted) {
+      vLoaderTxt.innerText = 'No active stream found. Check ID or start live.';
+      document.getElementById('retryBtn').style.display = 'block';
+    }
+  }, 25000);
 }
-
-function vtxt(m) { document.getElementById('vLoaderTxt').textContent = m; }
-function showRetry() { document.getElementById('retryBtn').style.display = 'block'; }
 
 function applyOverlays(d) {
   // Logo
-  const l = d.logo||{}, vl = document.getElementById('vLogoOverlay');
+  const l = d.logo || {};
+  const vLogo = document.getElementById('vLogoOverlay');
   if (l.show && l.src) {
-    vl.src = l.src;
-    Object.assign(vl.style, {
-      display:'block', position:'absolute',
-      left:l.x+'px', top:l.y+'px',
-      width:l.w+'px', height:l.h+'px',
-      objectFit:'contain', borderRadius:'6px',
-      filter:'drop-shadow(0 2px 12px rgba(0,0,0,0.9))',
-      pointerEvents:'none', zIndex:'10'
-    });
-  } else { vl.style.display='none'; }
-
+    vLogo.src = l.src;
+    vLogo.style.display = 'block';
+    vLogo.style.left = (l.x || 16) + 'px';
+    vLogo.style.top = (l.y || 80) + 'px';
+    vLogo.style.width = (l.w || 120) + 'px';
+    vLogo.style.height = (l.h || 80) + 'px';
+  } else {
+    vLogo.style.display = 'none';
+  }
+  
   // Text
-  const t = d.text||{}, vt = document.getElementById('vTextOverlay');
-  if (t.show && t.msg) {
-    vt.textContent = t.msg;
-    Object.assign(vt.style, {
-      display:'block', position:'absolute',
-      left:t.x+'px', top:t.y+'px',
-      color:t.color||'#fff',
-      background:`rgba(${h2rgb(t.bgColor||'#000000')},${t.bgOp||0.6})`,
-      fontFamily:t.font||'sans-serif',
-      fontSize:(t.size||22)+'px',
-      padding:'8px 18px', borderRadius:'8px',
-      lineHeight:'1.4', whiteSpace:'pre-wrap',
-      wordBreak:'break-word', pointerEvents:'none', zIndex:'11'
-    });
-  } else { vt.style.display='none'; }
-
+  const t = d.text || {};
+  const vText = document.getElementById('vTextOverlay');
+  if (t.show && t.msg && t.msg.trim()) {
+    vText.textContent = t.msg;
+    vText.style.display = 'block';
+    vText.style.left = (t.x || 20) + 'px';
+    vText.style.top = (t.y || 300) + 'px';
+    vText.style.color = t.color || '#ffffff';
+    vText.style.backgroundColor = `rgba(${h2rgb(t.bgColor || '#000000')}, ${t.bgOp || 0.6})`;
+    vText.style.fontFamily = t.font || "'DM Sans', sans-serif";
+    vText.style.fontSize = (t.size || 22) + 'px';
+    vText.style.padding = '8px 18px';
+    vText.style.borderRadius = '8px';
+  } else {
+    vText.style.display = 'none';
+  }
+  
   // Ticker
-  const tk = d.ticker||{};
-  const tw = document.getElementById('vTickerWrap');
-  const ti = document.getElementById('vTickerInner');
+  const tk = d.ticker || {};
+  const wrap = document.getElementById('vTickerWrap');
+  const inner = document.getElementById('vTickerInner');
   if (tk.show && tk.msg) {
-    ti.textContent = tk.msg + ' • ' + tk.msg + ' • ' + tk.msg;
-    Object.assign(tw.style, {
-      display:'block', position:'absolute',
-      bottom:'0', left:'0', right:'0',
-      background:'rgba(200,0,0,0.88)',
-      padding:'8px 0', zIndex:'11', pointerEvents:'none'
-    });
-  } else { tw.style.display='none'; }
+    inner.textContent = tk.msg + ' • ' + tk.msg + ' • ' + tk.msg;
+    wrap.style.display = 'block';
+    wrap.style.bottom = '0px';
+    wrap.style.background = 'rgba(200,0,0,0.88)';
+    wrap.style.padding = '8px 0';
+  } else {
+    wrap.style.display = 'none';
+  }
 }
 
-// Viewer tap — play/pause
-let iconTimer;
 window.viewerTap = () => flashIcon();
+let iconTimer;
 function flashIcon() {
-  updateVIcon();
-  const b = document.getElementById('vPlayIcon');
-  b.classList.add('show');
+  const iconDiv = document.getElementById('vPlayIcon');
+  const video = document.getElementById('viewVideo');
+  const svgIcon = document.getElementById('vIconSvg');
+  if (video.paused) {
+    svgIcon.innerHTML = '<path d="M8 5v14l11-7z"/>';
+  } else {
+    svgIcon.innerHTML = '<path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/>';
+  }
+  iconDiv.classList.add('show');
   clearTimeout(iconTimer);
-  iconTimer = setTimeout(() => b.classList.remove('show'), 1800);
+  iconTimer = setTimeout(() => iconDiv.classList.remove('show'), 1500);
 }
-function updateVIcon() {
-  const v = document.getElementById('viewVideo');
-  document.getElementById('vIconSvg').innerHTML = v.paused
-    ? '<path d="M8 5v14l11-7z"/>'
-    : '<path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/>';
-}
-document.getElementById('vPlayIcon').addEventListener('click', e => {
+document.getElementById('vPlayIcon').addEventListener('click', (e) => {
   e.stopPropagation();
   const v = document.getElementById('viewVideo');
   if (v.paused) v.play(); else v.pause();
-  updateVIcon(); flashIcon();
+  flashIcon();
 });
 
-// ================================================================
-// ADMIN
-// ================================================================
+// ======================= ADMIN (full fix) =======================
 let db, roomId = '', streamLink = '';
 let localStream, videoTrack;
-let flashOn=false, facing='environment';
+let flashOn = false, facing = 'environment';
 let timerInt, startTime;
-let drawerOpen=false;
-let logoUrl='', logoVis=false, textVis=false, tickVis=false;
-let isDrag=false, dsx=0, dsy=0, lsx=0, lsy=0;
-let hostPC = null; // single PC for broadcasting
+let drawerOpen = false;
+let logoUrl = '', logoVis = false, textVis = false, tickVis = false;
+let hostPC = null;
 let textDebounce;
 
-window.startStream = async function(f) {
+// Admin global functions
+window.startStream = async function(type) {
   const rawId = document.getElementById('customId').value.trim();
-  roomId = rawId || ('s'+Math.random().toString(36).substr(2,7));
-  facing = f==='front' ? 'user' : 'environment';
-
+  roomId = rawId || ('s' + Math.random().toString(36).substr(2, 8));
+  facing = type === 'front' ? 'user' : 'environment';
+  
   document.getElementById('homeScreen').style.display = 'none';
-  toast('Camera shuru ho rahi hai...');
-
+  toast('Starting camera...');
+  
   try {
     localStream = await navigator.mediaDevices.getUserMedia({
-      video:{facingMode:facing, width:{ideal:1920}, height:{ideal:1080}},
-      audio:true
+      video: { facingMode: facing, width: { ideal: 1280 }, height: { ideal: 720 } },
+      audio: true
     });
   } catch(e) {
-    document.getElementById('homeScreen').style.display='flex';
-    toast('❌ Camera permission nahi mili!'); return;
+    document.getElementById('homeScreen').style.display = 'flex';
+    toast('Camera permission denied!');
+    return;
   }
-
+  
   videoTrack = localStream.getVideoTracks()[0];
   document.getElementById('mainVideo').srcObject = localStream;
   document.getElementById('streamScreen').style.display = 'block';
-
+  
   streamLink = location.href.split('?')[0] + '?watch=' + roomId;
   document.getElementById('linkDisp').textContent = streamLink;
   startTimer();
   initDrag();
-
-  // Firebase init
-  try {
-    const app = initializeApp(FB_CFG, 'a'+Date.now());
-    db = getDatabase(app);
-  } catch(e) { toast('❌ Firebase error: '+e.message); return; }
-
-  // Clean old room data
-  await remove(ref(db, `rooms/${roomId}`)).catch(()=>{});
-
-  // Create WebRTC offer
+  
+  // Firebase
+  const app = initializeApp(FB_CFG, 'admin-' + Date.now());
+  db = getDatabase(app);
+  
+  await remove(ref(db, `rooms/${roomId}`)).catch(() => {});
   await createOffer();
-
-  // Listen for answers from viewers
-  onValue(ref(db, `rooms/${roomId}/answers`), snap => {
+  
+  onValue(ref(db, `rooms/${roomId}/answers`), (snap) => {
     if (!snap.exists()) return;
     snap.forEach(child => {
       const ans = child.val();
-      if (!ans||!ans.sdp||ans._done) return;
-      // Mark done
-      set(ref(db, `rooms/${roomId}/answers/${child.key}/_done`), true);
-      handleViewerAnswer(ans);
-    });
-  });
-
-  // Viewer ICE candidates
-  onValue(ref(db, `rooms/${roomId}/viewerIce`), snap => {
-    snap.forEach(c => {
-      if (hostPC && hostPC.remoteDescription) {
-        hostPC.addIceCandidate(new RTCIceCandidate(c.val())).catch(()=>{});
+      if (ans && ans.sdp && !ans._done) {
+        set(ref(db, `rooms/${roomId}/answers/${child.key}/_done`), true);
+        handleViewerAnswer(ans);
       }
     });
   });
-
-  // Viewer count
-  onValue(ref(db, `rooms/${roomId}/viewers`), snap => {
-    document.getElementById('viewCount').textContent = snap.exists() ? Object.keys(snap.val()).length : 0;
+  
+  onValue(ref(db, `rooms/${roomId}/viewerIce`), (snap) => {
+    snap.forEach(c => {
+      if (hostPC && hostPC.remoteDescription) {
+        hostPC.addIceCandidate(new RTCIceCandidate(c.val())).catch(() => {});
+      }
+    });
   });
-
-  toast('🔴 Live! ID: ' + roomId);
+  
+  onValue(ref(db, `rooms/${roomId}/viewers`), (snap) => {
+    const count = snap.exists() ? Object.keys(snap.val()).length : 0;
+    document.getElementById('viewCount').textContent = count;
+  });
+  
+  toast('🔴 LIVE! ID: ' + roomId);
 };
 
 async function createOffer() {
-  hostPC = new RTCPeerConnection(ICE_CFG);
+  if (hostPC) {
+    hostPC.close();
+  }
+  hostPC = new RTCPeerConnection(ICE_CONFIG);
   localStream.getTracks().forEach(t => hostPC.addTrack(t, localStream));
-
-  hostPC.onicecandidate = e => {
+  
+  hostPC.onicecandidate = (e) => {
     if (e.candidate) push(ref(db, `rooms/${roomId}/hostIce`), e.candidate.toJSON());
   };
-
+  
   hostPC.onconnectionstatechange = () => {
-    const s = hostPC.connectionState;
-    if (s==='connected') toast('✅ Viewer connected!');
-    else if (s==='disconnected'||s==='failed') {
-      // Recreate offer for next viewer
+    const state = hostPC.connectionState;
+    if (state === 'connected') toast('✅ Viewer connected!');
+    else if (state === 'failed' || state === 'disconnected') {
+      // Recreate offer for new viewers without breaking existing ones (just refresh)
       createOffer();
     }
   };
-
-  const offer = await hostPC.createOffer({offerToReceiveAudio:false, offerToReceiveVideo:false});
+  
+  const offer = await hostPC.createOffer({ offerToReceiveAudio: false, offerToReceiveVideo: false });
   await hostPC.setLocalDescription(offer);
-
-  await set(ref(db, `rooms/${roomId}/offer`), {type:offer.type, sdp:offer.sdp});
+  await set(ref(db, `rooms/${roomId}/offer`), { type: offer.type, sdp: offer.sdp });
 }
 
 async function handleViewerAnswer(ans) {
-  if (!hostPC || hostPC.signalingState === 'stable') return;
-  try {
-    await hostPC.setRemoteDescription(new RTCSessionDescription({type:ans.type, sdp:ans.sdp}));
-  } catch(e) {
-    // If already stable, create new offer for this viewer
+  if (!hostPC) return;
+  if (hostPC.signalingState === 'stable') {
     await createOffer();
+    setTimeout(() => handleViewerAnswer(ans), 500);
+    return;
+  }
+  try {
+    await hostPC.setRemoteDescription(new RTCSessionDescription({ type: ans.type, sdp: ans.sdp }));
+  } catch(e) {
+    console.warn("Answer set failed", e);
   }
 }
 
-// Broadcast overlays to Firebase (viewers watch in real-time)
 function broadcastOvs() {
   if (!db) return;
   set(ref(db, `rooms/${roomId}/overlays`), {
     logo: {
-      show:logoVis, src:logoUrl,
-      x:parseInt(document.getElementById('logoX').value)||16,
-      y:parseInt(document.getElementById('logoY').value)||80,
-      w:parseInt(document.getElementById('logoW').value)||120,
-      h:parseInt(document.getElementById('logoH').value)||80
+      show: logoVis,
+      src: logoUrl,
+      x: parseInt(document.getElementById('logoX').value) || 16,
+      y: parseInt(document.getElementById('logoY').value) || 80,
+      w: parseInt(document.getElementById('logoW').value) || 120,
+      h: parseInt(document.getElementById('logoH').value) || 80
     },
     text: {
-      show:textVis,
-      msg:document.getElementById('textOverlay').textContent,
-      color:document.getElementById('textClr').value,
-      bgColor:document.getElementById('bgClr').value,
-      bgOp:parseFloat(document.getElementById('bgOp').value),
-      font:document.getElementById('fontFam').value,
-      size:parseInt(document.getElementById('fontSz').value)||22,
-      x:parseInt(document.getElementById('textX').value)||20,
-      y:parseInt(document.getElementById('textY').value)||300
+      show: textVis,
+      msg: document.getElementById('textOverlay').textContent,
+      color: document.getElementById('textClr').value,
+      bgColor: document.getElementById('bgClr').value,
+      bgOp: parseFloat(document.getElementById('bgOp').value),
+      font: document.getElementById('fontFam').value,
+      size: parseInt(document.getElementById('fontSz').value) || 22,
+      x: parseInt(document.getElementById('textX').value) || 20,
+      y: parseInt(document.getElementById('textY').value) || 300
     },
     ticker: {
-      show:tickVis,
-      msg:document.getElementById('tickInp').value
+      show: tickVis,
+      msg: document.getElementById('tickInp').value
     }
-  }).catch(()=>{});
+  }).catch(console.warn);
 }
 
 function startTimer() {
-  startTime=Date.now();
-  timerInt=setInterval(()=>{
-    const s=Math.floor((Date.now()-startTime)/1000),m=Math.floor(s/60),sec=s%60;
-    document.getElementById('timerDisp').textContent=String(m).padStart(2,'0')+':'+String(sec).padStart(2,'0');
-  },1000);
+  startTime = Date.now();
+  timerInt = setInterval(() => {
+    const elapsed = Math.floor((Date.now() - startTime) / 1000);
+    const m = Math.floor(elapsed / 60);
+    const s = elapsed % 60;
+    document.getElementById('timerDisp').textContent = `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+  }, 1000);
 }
 
 function initDrag() {
-  const el=document.getElementById('logoOverlay');
-  el.style.pointerEvents='auto';
-  el.addEventListener('touchstart',e=>{
-    isDrag=true;dsx=e.touches[0].clientX;dsy=e.touches[0].clientY;
-    lsx=parseInt(document.getElementById('logoX').value)||16;
-    lsy=parseInt(document.getElementById('logoY').value)||80;
+  const logoEl = document.getElementById('logoOverlay');
+  logoEl.style.pointerEvents = 'auto';
+  let dragActive = false, startX = 0, startY = 0, origLeft = 0, origTop = 0;
+  logoEl.addEventListener('touchstart', (e) => {
+    dragActive = true;
+    startX = e.touches[0].clientX;
+    startY = e.touches[0].clientY;
+    origLeft = parseInt(document.getElementById('logoX').value) || 16;
+    origTop = parseInt(document.getElementById('logoY').value) || 80;
     e.preventDefault();
-  },{passive:false});
-  el.addEventListener('touchmove',e=>{
-    if(!isDrag)return;
-    document.getElementById('logoX').value=Math.round(lsx+(e.touches[0].clientX-dsx));
-    document.getElementById('logoY').value=Math.round(lsy+(e.touches[0].clientY-dsy));
-    applyLogoPos();e.preventDefault();
-  },{passive:false});
-  el.addEventListener('touchend',()=>{isDrag=false;broadcastOvs();});
+  }, { passive: false });
+  logoEl.addEventListener('touchmove', (e) => {
+    if (!dragActive) return;
+    const dx = e.touches[0].clientX - startX;
+    const dy = e.touches[0].clientY - startY;
+    document.getElementById('logoX').value = Math.round(origLeft + dx);
+    document.getElementById('logoY').value = Math.round(origTop + dy);
+    applyLogoPos();
+    e.preventDefault();
+  }, { passive: false });
+  logoEl.addEventListener('touchend', () => {
+    dragActive = false;
+    if (logoVis) broadcastOvs();
+  });
 }
 
-// Camera controls
-window.toggleFlash = async()=>{
-  if(!videoTrack)return;
-  try{flashOn=!flashOn;await videoTrack.applyConstraints({advanced:[{torch:flashOn}]});document.getElementById('flashBtn').classList.toggle('on',flashOn);toast(flashOn?'💡 Flash ON':'💡 Flash OFF');}
-  catch(e){toast('❌ Flash support nahi');flashOn=false;}
+window.toggleFlash = async () => {
+  if (!videoTrack) return;
+  try {
+    flashOn = !flashOn;
+    await videoTrack.applyConstraints({ advanced: [{ torch: flashOn }] });
+    document.getElementById('flashBtn').classList.toggle('on', flashOn);
+    toast(flashOn ? 'Flash ON' : 'Flash OFF');
+  } catch(e) { toast('Flash not supported'); flashOn = false; }
 };
-window.flipCamera = async()=>{
-  facing=facing==='environment'?'user':'environment';
-  if(localStream)localStream.getTracks().forEach(t=>t.stop());
-  try{
-    localStream=await navigator.mediaDevices.getUserMedia({video:{facingMode:facing,width:{ideal:1920},height:{ideal:1080}},audio:true});
-    videoTrack=localStream.getVideoTracks()[0];
-    document.getElementById('mainVideo').srcObject=localStream;
-    if(hostPC){const s=hostPC.getSenders().find(s=>s.track?.kind==='video');if(s)s.replaceTrack(videoTrack);}
-    toast('🔄 Camera flip');
-  }catch(e){toast('❌ Flip nahi hua');}
+window.flipCamera = async () => {
+  facing = facing === 'environment' ? 'user' : 'environment';
+  if (localStream) localStream.getTracks().forEach(t => t.stop());
+  try {
+    localStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: facing, width: { ideal: 1280 }, height: { ideal: 720 } }, audio: true });
+    videoTrack = localStream.getVideoTracks()[0];
+    document.getElementById('mainVideo').srcObject = localStream;
+    if (hostPC) {
+      const sender = hostPC.getSenders().find(s => s.track?.kind === 'video');
+      if (sender) sender.replaceTrack(videoTrack);
+    }
+    toast('Camera flipped');
+  } catch(e) { toast('Flip failed'); }
 };
-window.applyZoom=val=>{
-  document.getElementById('zoomVal').textContent=parseFloat(val).toFixed(1)+'x';
-  if(!videoTrack)return;
-  try{videoTrack.applyConstraints({advanced:[{zoom:parseFloat(val)}]});}
-  catch(e){const v=document.getElementById('mainVideo');v.style.transform=`scale(${val})`;v.style.transformOrigin='center center';}
+window.applyZoom = (val) => {
+  document.getElementById('zoomVal').textContent = parseFloat(val).toFixed(1) + 'x';
+  if (!videoTrack) return;
+  try { videoTrack.applyConstraints({ advanced: [{ zoom: parseFloat(val) }] }); } catch(e) {
+    document.getElementById('mainVideo').style.transform = `scale(${val})`;
+  }
 };
-window.toggleDrawer=()=>{
-  drawerOpen=!drawerOpen;
-  document.getElementById('drawer').classList.toggle('open',drawerOpen);
-  document.getElementById('panelBtn').classList.toggle('on',drawerOpen);
+window.toggleDrawer = () => {
+  drawerOpen = !drawerOpen;
+  document.getElementById('drawer').classList.toggle('open', drawerOpen);
+  document.getElementById('panelBtn').classList.toggle('on', drawerOpen);
 };
 
-// ── TEXT — auto as you type ──
-window.autoSendText = val => {
+// Text with debounce
+window.autoSendText = (val) => {
   clearTimeout(textDebounce);
   if (!val.trim()) { hideText(); return; }
   textDebounce = setTimeout(() => {
@@ -680,119 +708,110 @@ window.autoSendText = val => {
     updateTextStyle();
     updateTextPos();
     broadcastOvs();
-  }, 400); // 400ms debounce
+  }, 300);
 };
-window.setQuickText = msg => {
+window.setQuickText = (msg) => {
   document.getElementById('textInp').value = msg;
   window.autoSendText(msg);
 };
 window.hideText = () => {
-  textVis=false;
-  document.getElementById('textOverlay').style.display='none';
-  document.getElementById('liveTextPreview').style.display='none';
-  document.getElementById('textInp').value='';
+  textVis = false;
+  document.getElementById('textOverlay').style.display = 'none';
+  document.getElementById('liveTextPreview').style.display = 'none';
+  document.getElementById('textInp').value = '';
   broadcastOvs();
 };
 window.updateTextStyle = () => {
-  const el=document.getElementById('textOverlay');
-  el.style.color=document.getElementById('textClr').value;
-  el.style.background=`rgba(${h2rgb(document.getElementById('bgClr').value)},${parseFloat(document.getElementById('bgOp').value)})`;
-  el.style.fontFamily=document.getElementById('fontFam').value;
-  el.style.fontSize=document.getElementById('fontSz').value+'px';
-  el.style.padding='8px 18px';el.style.borderRadius='8px';
-  if(textVis)broadcastOvs();
+  const el = document.getElementById('textOverlay');
+  if (!textVis) return;
+  el.style.color = document.getElementById('textClr').value;
+  el.style.backgroundColor = `rgba(${h2rgb(document.getElementById('bgClr').value)},${parseFloat(document.getElementById('bgOp').value)})`;
+  el.style.fontFamily = document.getElementById('fontFam').value;
+  el.style.fontSize = document.getElementById('fontSz').value + 'px';
+  broadcastOvs();
 };
 window.updateTextPos = () => {
-  const el=document.getElementById('textOverlay');
-  el.style.left=(parseInt(document.getElementById('textX').value)||0)+'px';
-  el.style.top=(parseInt(document.getElementById('textY').value)||0)+'px';
-  if(textVis)broadcastOvs();
+  if (!textVis) return;
+  const el = document.getElementById('textOverlay');
+  el.style.left = (parseInt(document.getElementById('textX').value) || 0) + 'px';
+  el.style.top = (parseInt(document.getElementById('textY').value) || 0) + 'px';
+  broadcastOvs();
 };
 
-// ── LOGO — auto show on upload ──
-window.uploadLogo = input => {
-  const file=input.files[0];if(!file)return;
-  const reader=new FileReader();
-  reader.onload=e=>{
-    logoUrl=e.target.result;
-    document.getElementById('imgPrev').src=logoUrl;
-    document.getElementById('imgPrev').style.display='block';
-    document.getElementById('logoOverlay').src=logoUrl;
-    // AUTO SHOW
-    logoVis=true;
-    document.getElementById('logoOverlay').style.display='block';
-    applyLogoPos();applyLogoSize();
+window.uploadLogo = (input) => {
+  const file = input.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    logoUrl = e.target.result;
+    document.getElementById('imgPrev').src = logoUrl;
+    document.getElementById('imgPrev').style.display = 'block';
+    document.getElementById('logoOverlay').src = logoUrl;
+    logoVis = true;
+    document.getElementById('logoOverlay').style.display = 'block';
+    applyLogoPos();
+    applyLogoSize();
     broadcastOvs();
-    toast('🖼️ Logo upload aur auto show ho gaya!');
+    toast('Logo uploaded & auto-shown!');
   };
   reader.readAsDataURL(file);
 };
-window.applyLogoPos=()=>{
-  const el=document.getElementById('logoOverlay');
-  el.style.left=(parseInt(document.getElementById('logoX').value)||0)+'px';
-  el.style.top=(parseInt(document.getElementById('logoY').value)||0)+'px';
+window.applyLogoPos = () => {
+  const el = document.getElementById('logoOverlay');
+  el.style.left = (parseInt(document.getElementById('logoX').value) || 0) + 'px';
+  el.style.top = (parseInt(document.getElementById('logoY').value) || 0) + 'px';
 };
-window.applyLogoSize=()=>{
-  const el=document.getElementById('logoOverlay');
-  el.style.width=(parseInt(document.getElementById('logoW').value)||120)+'px';
-  el.style.height=(parseInt(document.getElementById('logoH').value)||80)+'px';
+window.applyLogoSize = () => {
+  const el = document.getElementById('logoOverlay');
+  el.style.width = (parseInt(document.getElementById('logoW').value) || 120) + 'px';
+  el.style.height = (parseInt(document.getElementById('logoH').value) || 80) + 'px';
+  if (logoVis) broadcastOvs();
 };
-window.moveLogo=(dx,dy)=>{
-  const lx=document.getElementById('logoX'),ly=document.getElementById('logoY');
-  lx.value=(parseInt(lx.value)||0)+dx;ly.value=(parseInt(ly.value)||0)+dy;
-  applyLogoPos();if(logoVis)broadcastOvs();
+window.moveLogo = (dx, dy) => {
+  const lx = document.getElementById('logoX'), ly = document.getElementById('logoY');
+  lx.value = (parseInt(lx.value) || 0) + dx;
+  ly.value = (parseInt(ly.value) || 0) + dy;
+  applyLogoPos();
+  if (logoVis) broadcastOvs();
 };
-window.toggleLogo=show=>{
-  if(show&&!logoUrl){toast('Pehle image upload karo!');return;}
-  logoVis=show;
-  document.getElementById('logoOverlay').style.display=show?'block':'none';
-  if(show){applyLogoPos();applyLogoSize();}
-  broadcastOvs();toast(show?'🖼️ Logo show!':'🖼️ Logo hide');
-};
-
-// ── TICKER ──
-window.sendTicker=()=>{
-  const msg=document.getElementById('tickInp').value.trim();
-  if(!msg){toast('Ticker text likho!');return;}
-  tickVis=true;showTickerAdmin(msg);broadcastOvs();toast('📢 Ticker live!');
-};
-function showTickerAdmin(msg){
-  let tb=document.getElementById('adminTicker');
-  if(!tb){
-    tb=document.createElement('div');tb.id='adminTicker';tb.className='tickwrap';
-    tb.style.cssText='position:absolute;bottom:0;left:0;right:0;background:rgba(200,0,0,0.88);padding:8px 0';
-    const i=document.createElement('div');i.className='ticki';i.id='adminTickerInner';
-    tb.appendChild(i);document.getElementById('ovCanvas').appendChild(tb);
-  }
-  document.getElementById('adminTickerInner').textContent=msg+' • '+msg+' • '+msg;
-  tb.style.display='block';
-}
-window.hideTicker=()=>{
-  tickVis=false;
-  const tb=document.getElementById('adminTicker');if(tb)tb.style.display='none';
-  broadcastOvs();toast('Ticker hataya');
+window.toggleLogo = (show) => {
+  if (show && !logoUrl) { toast('Upload image first!'); return; }
+  logoVis = show;
+  document.getElementById('logoOverlay').style.display = show ? 'block' : 'none';
+  if (show) broadcastOvs();
+  toast(show ? 'Logo shown' : 'Logo hidden');
 };
 
-// ── SHARE ──
-window.copyLink=()=>{
-  if(!streamLink){toast('Pehle live ho jao!');return;}
-  navigator.clipboard.writeText(streamLink).then(()=>toast('✅ Link copy ho gaya!')).catch(()=>prompt('Copy karo:',streamLink));
+window.sendTicker = () => {
+  const msg = document.getElementById('tickInp').value.trim();
+  if (!msg) { toast('Enter ticker text'); return; }
+  tickVis = true;
+  broadcastOvs();
+  toast('Ticker live!');
 };
-window.waShare=()=>{
-  if(!streamLink){toast('Pehle live ho jao!');return;}
-  window.open('https://wa.me/?text='+encodeURIComponent('📺 Meri live stream dekho!\n'+streamLink));
+window.hideTicker = () => {
+  tickVis = false;
+  broadcastOvs();
+  toast('Ticker hidden');
 };
-window.stopStream=()=>{
-  if(timerInt)clearInterval(timerInt);
-  if(localStream)localStream.getTracks().forEach(t=>t.stop());
-  if(db)remove(ref(db,`rooms/${roomId}`)).catch(()=>{});
+
+window.copyLink = () => {
+  if (!streamLink) { toast('Start live first!'); return; }
+  navigator.clipboard.writeText(streamLink).then(() => toast('Link copied!')).catch(() => prompt('Copy:', streamLink));
+};
+window.waShare = () => {
+  if (!streamLink) { toast('Start live first!'); return; }
+  window.open(`https://wa.me/?text=${encodeURIComponent('🔴 Watch my live stream!\n' + streamLink)}`);
+};
+window.stopStream = () => {
+  if (timerInt) clearInterval(timerInt);
+  if (localStream) localStream.getTracks().forEach(t => t.stop());
+  if (db && roomId) remove(ref(db, `rooms/${roomId}`)).catch(() => {});
   location.reload();
 };
-
-// Close drawer outside
-document.addEventListener('click',e=>{
-  const dr=document.getElementById('drawer'),pb=document.getElementById('panelBtn');
-  if(drawerOpen&&dr&&!dr.contains(e.target)&&pb&&!pb.contains(e.target))window.toggleDrawer();
+document.addEventListener('click', (e) => {
+  const dr = document.getElementById('drawer'), pb = document.getElementById('panelBtn');
+  if (drawerOpen && dr && !dr.contains(e.target) && pb && !pb.contains(e.target)) window.toggleDrawer();
 });
 </script>
 </body>
