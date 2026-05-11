@@ -3,14 +3,12 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>LiveCam Pro - Fast Connect</title>
+<title>LiveCam Pro - Fixed Stream</title>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <style>
 :root{--red:#ff2d2d;--red-dark:#c0000a;--surface:#141414;--surface2:#1e1e1e;--border:rgba(255,255,255,0.08);--text:#f0f0f0;--muted:#777}
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body{width:100%;height:100%;overflow:hidden;background:#000;color:var(--text);font-family:'DM Sans',sans-serif}
-
-/* VIEWER */
 #viewerPage{display:none;position:fixed;inset:0;background:#000;z-index:1}
 #viewVideo{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;background:#000;z-index:1}
 #vLogoOverlay{position:absolute;object-fit:contain;display:none;filter:drop-shadow(0 2px 12px rgba(0,0,0,0.9));border-radius:6px;pointer-events:none;z-index:10}
@@ -29,9 +27,6 @@ html,body{width:100%;height:100%;overflow:hidden;background:#000;color:var(--tex
 @keyframes spin{to{transform:rotate(360deg)}}
 .vl-txt{color:var(--muted);font-size:0.85rem;text-align:center;padding:0 30px;line-height:1.6}
 .retry-btn{padding:10px 24px;background:var(--red);border:none;border-radius:10px;color:#fff;font-size:0.88rem;cursor:pointer;display:none;margin-top:4px}
-.connecting-status{font-size:0.7rem;color:#ffaa44;margin-top:5px}
-
-/* ADMIN */
 #adminPage{display:none;position:fixed;inset:0;z-index:1;overflow-y:auto}
 #homeScreen{min-height:100%;background:radial-gradient(ellipse at 30% 20%,#1a0000 0%,#0a0a0a 60%);display:flex;flex-direction:column;align-items:center;padding:50px 20px 40px}
 .logo-t{font-family:'Bebas Neue',sans-serif;font-size:3rem;letter-spacing:4px;text-align:center;line-height:1}
@@ -42,20 +37,17 @@ html,body{width:100%;height:100%;overflow:hidden;background:#000;color:var(--tex
 .bbtn{width:100%;padding:15px;border:none;border-radius:12px;font-family:'DM Sans',sans-serif;font-size:0.93rem;font-weight:600;cursor:pointer;transition:all 0.15s;display:flex;align-items:center;gap:10px;justify-content:center;margin-bottom:9px}
 .bbtn.red{background:var(--red);color:#fff}
 .bbtn.dark{background:var(--surface2);color:var(--text);border:1px solid var(--border)}
-.bbtn:active{transform:scale(0.97);opacity:0.85}
-.bbtn:last-child{margin-bottom:0}
+.bbtn:active{transform:scale(0.97)}
 .inp{width:100%;padding:13px 14px;background:var(--surface2);border:1px solid var(--border);border-radius:10px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:0.88rem;outline:none;margin-bottom:8px}
 .inp:focus{border-color:rgba(255,45,45,0.5)}
 .hint{font-size:0.72rem;color:var(--muted);margin-bottom:14px}
-
-/* STREAM SCREEN */
 #streamScreen{display:none;position:fixed;inset:0;background:#000}
 #mainVideo{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
 #ovCanvas{position:absolute;inset:0;pointer-events:none;z-index:10;overflow:hidden}
 #logoOverlay{position:absolute;object-fit:contain;display:none;filter:drop-shadow(0 2px 12px rgba(0,0,0,0.9));cursor:move;z-index:12;border-radius:6px;touch-action:none}
 #textOverlay{position:absolute;display:none;pointer-events:none;z-index:11;white-space:pre-wrap;word-break:break-word;line-height:1.4}
 #adminTop{position:absolute;top:0;left:0;right:0;z-index:20;display:flex;align-items:center;justify-content:space-between;padding:12px 16px;background:linear-gradient(to bottom,rgba(0,0,0,0.85) 0%,transparent 100%)}
-.lpill{display:flex;align-items:center;gap:7px;background:var(--red);padding:5px 13px;border-radius:20px;font-size:0.75rem;font-weight:700;letter-spacing:1px}
+.lpill{display:flex;align-items:center;gap:7px;background:var(--red);padding:5px 13px;border-radius:20px;font-size:0.75rem;font-weight:700}
 .pulse{width:8px;height:8px;border-radius:50%;background:#fff;animation:p 1.2s ease-in-out infinite;display:inline-block}
 @keyframes p{0%,100%{opacity:1;transform:scale(1)}50%{opacity:0.3;transform:scale(0.7)}}
 .spill{background:rgba(0,0,0,0.65);border:1px solid rgba(255,255,255,0.12);padding:5px 11px;border-radius:20px;font-size:0.76rem;display:flex;align-items:center;gap:5px}
@@ -67,69 +59,57 @@ html,body{width:100%;height:100%;overflow:hidden;background:#000;color:var(--tex
 .stopc{width:64px;height:64px;border-radius:50%;border:3px solid rgba(255,255,255,0.22);background:var(--red);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:1.45rem;flex-shrink:0}
 .stopc:active{transform:scale(0.92)}
 .zrow{display:flex;align-items:center;gap:10px;padding:0 4px}
-.zlbl{font-size:0.68rem;color:var(--muted);min-width:24px;text-align:center}
-input[type=range]{flex:1;height:3px;-webkit-appearance:none;background:rgba(255,255,255,0.18);border-radius:2px;outline:none}
-input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:20px;height:20px;border-radius:50%;background:#fff;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,0.5)}
+.zlbl{font-size:0.68rem;color:var(--muted);min-width:24px}
+input[type=range]{flex:1;height:3px;-webkit-appearance:none;background:rgba(255,255,255,0.18);border-radius:2px}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:20px;height:20px;border-radius:50%;background:#fff;cursor:pointer}
 .zval{font-size:0.75rem;color:#fff;font-weight:600;min-width:34px}
-
-/* DRAWER */
 #drawer{position:absolute;bottom:0;left:0;right:0;z-index:30;background:var(--surface);border-radius:20px 20px 0 0;border-top:1px solid var(--border);padding:12px 16px 40px;transform:translateY(100%);transition:transform 0.32s cubic-bezier(0.4,0,0.2,1);max-height:86vh;overflow-y:auto}
 #drawer.open{transform:translateY(0)}
 .dh{width:36px;height:4px;background:var(--border);border-radius:2px;margin:0 auto 14px}
 .sec{font-size:0.62rem;text-transform:uppercase;letter-spacing:2px;color:var(--muted);margin-bottom:8px;margin-top:14px}
 .mrow{display:flex;gap:8px;margin-bottom:8px}
 .minp{flex:1;padding:11px 13px;background:var(--surface2);border:1px solid var(--border);border-radius:10px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:0.86rem;outline:none}
-.minp:focus{border-color:rgba(255,45,45,0.4)}
-.sendb{padding:11px 14px;background:var(--red);border:none;border-radius:10px;color:#fff;font-weight:700;cursor:pointer;font-size:0.86rem;white-space:nowrap}
+.sendb{padding:11px 14px;background:var(--red);border:none;border-radius:10px;color:#fff;font-weight:700;cursor:pointer}
 .crow2{display:flex;align-items:center;gap:10px;margin-bottom:8px;flex-wrap:wrap}
 .crow2 label{font-size:0.78rem;color:var(--muted)}
-input[type=color]{width:36px;height:36px;border:none;border-radius:8px;background:none;cursor:pointer;padding:0}
+input[type=color]{width:36px;height:36px;border:none;border-radius:8px;background:none;cursor:pointer}
 .frow{display:flex;gap:8px;align-items:center;margin-bottom:10px;flex-wrap:wrap}
-.frow select,.frow input[type=number]{padding:8px 10px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:0.82rem;outline:none}
-.frow select{flex:1}
+.frow select,.frow input[type=number]{padding:8px 10px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:0.82rem}
 .g2{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px}
 .fi{display:flex;flex-direction:column;gap:3px}
 .fi label{font-size:0.68rem;color:var(--muted)}
-.pi{padding:9px 10px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:0.85rem;outline:none;width:100%}
+.pi{padding:9px 10px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:0.85rem;width:100%}
 .szrow{display:flex;gap:8px;align-items:center;margin-bottom:8px;flex-wrap:wrap}
-.szrow label{font-size:0.75rem;color:var(--muted);white-space:nowrap}
 .qtags{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:6px}
-.qtag{padding:6px 12px;background:var(--surface2);border:1px solid var(--border);border-radius:20px;font-size:0.76rem;cursor:pointer;color:var(--text)}
-.qtag:active{background:rgba(255,45,45,0.18);border-color:var(--red)}
+.qtag{padding:6px 12px;background:var(--surface2);border:1px solid var(--border);border-radius:20px;font-size:0.76rem;cursor:pointer}
 .srow{display:flex;gap:8px}
 .sbtn{flex:1;padding:12px 8px;background:var(--surface2);border:1px solid var(--border);border-radius:10px;color:var(--text);font-size:0.78rem;font-weight:500;cursor:pointer;text-align:center}
-.sbtn:active{background:#2a2a2a}
 .upa{border:1px dashed rgba(255,255,255,0.18);border-radius:12px;padding:14px;text-align:center;cursor:pointer;margin-bottom:8px}
 .iprev{max-width:100%;max-height:80px;border-radius:8px;margin-top:8px;display:none}
-.tickwrap{position:absolute;left:0;right:0;overflow:hidden;z-index:11;pointer-events:none}
-.ticki{white-space:nowrap;display:inline-block;animation:ticker 18s linear infinite;font-weight:600;color:#fff;padding-left:100%}
-#liveTextPreview{background:rgba(255,45,45,0.12);border:1px solid rgba(255,45,45,0.3);border-radius:10px;padding:10px 12px;font-size:0.8rem;color:#ff9999;margin-bottom:8px;display:none;word-break:break-all}
-#toast{position:fixed;top:68px;left:50%;transform:translateX(-50%) translateY(-16px);background:rgba(18,18,18,0.96);border:1px solid var(--border);padding:10px 20px;border-radius:20px;font-size:0.82rem;z-index:9999;opacity:0;transition:all 0.3s;pointer-events:none;backdrop-filter:blur(10px);white-space:nowrap;max-width:90vw;text-align:center}
+#liveTextPreview{background:rgba(255,45,45,0.12);border:1px solid rgba(255,45,45,0.3);border-radius:10px;padding:10px 12px;font-size:0.8rem;color:#ff9999;margin-bottom:8px;display:none}
+#toast{position:fixed;top:68px;left:50%;transform:translateX(-50%) translateY(-16px);background:rgba(18,18,18,0.96);border:1px solid var(--border);padding:10px 20px;border-radius:20px;font-size:0.82rem;z-index:9999;opacity:0;transition:all 0.3s;pointer-events:none;backdrop-filter:blur(10px);white-space:nowrap;max-width:90vw}
 #toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
 </style>
 </head>
 <body>
 
-<!-- VIEWER PAGE -->
 <div id="viewerPage">
   <div id="vLoader">
     <div class="vl-logo">LIVE<span>CAM</span></div>
     <div class="spinner"></div>
-    <div class="vl-txt" id="vLoaderTxt">Connecting to stream...</div>
-    <div class="connecting-status" id="connStatus">⏳ Waiting for host</div>
-    <button class="retry-btn" id="retryBtn" onclick="location.reload()">🔄 Retry Karo</button>
+    <div class="vl-txt" id="vLoaderTxt">Stream se connect ho raha hoon...</div>
+    <button class="retry-btn" id="retryBtn" onclick="window.location.reload()">🔄 Retry Karo</button>
   </div>
-  <video id="viewVideo" autoplay playsinline></video>
+  <video id="viewVideo" autoplay playsinline muted></video>
   <img id="vLogoOverlay" src="" alt="">
   <div id="vTextOverlay"></div>
   <div id="vTickerWrap"><div class="tick-i" id="vTickerInner"></div></div>
-  <div id="vTapArea" onclick="viewerTap()"></div>
+  <div id="vTapArea"></div>
   <div id="vPlayIcon">
     <svg id="vIconSvg" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
   </div>
 </div>
 
-<!-- ADMIN PAGE -->
 <div id="adminPage">
   <div id="homeScreen">
     <div class="logo-t">LIVE<span>CAM</span> <span style="font-size:1.1rem;color:var(--muted)">PRO</span></div>
@@ -137,8 +117,7 @@ input[type=color]{width:36px;height:36px;border:none;border-radius:8px;backgroun
     <div class="card">
       <div class="clbl">🔴 Stream Shuru Karo</div>
       <div class="sec" style="margin-top:0;margin-bottom:4px">Stream ID likho</div>
-      <input class="inp" id="customId" type="text" placeholder="e.g. ab12345" maxlength="30"
-        oninput="this.value=this.value.replace(/[^a-z0-9\-_]/gi,'').toLowerCase()">
+      <input class="inp" id="customId" type="text" placeholder="e.g. ab12345" maxlength="30">
       <div class="hint">⚠️ Unique ID rakho.</div>
       <button class="bbtn red" onclick="startStream('back')">📸 Back Camera Live</button>
       <button class="bbtn dark" onclick="startStream('front')">🤳 Front Camera Live</button>
@@ -179,11 +158,10 @@ input[type=color]{width:36px;height:36px;border:none;border-radius:8px;backgroun
         <button class="sbtn" onclick="copyLink()">📋 Copy</button>
         <button class="sbtn" onclick="waShare()">📤 WhatsApp</button>
       </div>
-
-      <div class="sec">💬 Live Text (Type karo — auto show)</div>
-      <div id="liveTextPreview">Screen pe dikh raha hai: <span id="livePreviewTxt"></span></div>
+      <div class="sec">💬 Live Text</div>
+      <div id="liveTextPreview">Screen pe: <span id="livePreviewTxt"></span></div>
       <div class="mrow">
-        <input class="minp" id="textInp" type="text" placeholder="Type karo — viewers ko seedha dikh jayega..." maxlength="100" oninput="autoSendText(this.value)">
+        <input class="minp" id="textInp" type="text" placeholder="Type karo..." maxlength="100" oninput="autoSendText(this.value)">
         <button class="sendb" onclick="hideText()">✕</button>
       </div>
       <div class="frow">
@@ -191,71 +169,51 @@ input[type=color]{width:36px;height:36px;border:none;border-radius:8px;backgroun
           <option value="'DM Sans',sans-serif">DM Sans</option>
           <option value="'Bebas Neue',sans-serif">Bebas Neue</option>
           <option value="Arial,sans-serif">Arial</option>
-          <option value="'Courier New',monospace">Courier</option>
-          <option value="Georgia,serif">Georgia</option>
-          <option value="Impact,sans-serif">Impact</option>
-          <option value="Verdana,sans-serif">Verdana</option>
         </select>
         <input type="number" id="fontSz" value="22" min="10" max="80" style="width:70px" oninput="updateTextStyle()">
-        <span style="font-size:0.72rem;color:var(--muted)">px</span>
       </div>
       <div class="crow2">
         <label>Text:</label><input type="color" id="textClr" value="#ffffff" oninput="updateTextStyle()">
         <label>BG:</label><input type="color" id="bgClr" value="#000000" oninput="updateTextStyle()">
-        <label>Opacity:</label>
-        <input type="range" id="bgOp" min="0" max="1" step="0.05" value="0.6" style="width:70px;height:3px" oninput="updateTextStyle()">
       </div>
-      <div class="g2" style="margin-bottom:8px">
-        <div class="fi"><label>Text Left (px)</label><input class="pi" type="number" id="textX" value="20" oninput="updateTextPos()"></div>
-        <div class="fi"><label>Text Top (px)</label><input class="pi" type="number" id="textY" value="300" oninput="updateTextPos()"></div>
+      <div class="g2">
+        <div class="fi"><label>X (px)</label><input class="pi" type="number" id="textX" value="20" oninput="updateTextPos()"></div>
+        <div class="fi"><label>Y (px)</label><input class="pi" type="number" id="textY" value="300" oninput="updateTextPos()"></div>
       </div>
       <div class="qtags">
         <span class="qtag" onclick="setQuickText('🙏 Shukriya!')">🙏 Shukriya</span>
-        <span class="qtag" onclick="setQuickText('👋 Welcome!')">👋 Welcome</span>
-        <span class="qtag" onclick="setQuickText('🔥 Live hai!')">🔥 Live</span>
-        <span class="qtag" onclick="setQuickText('📢 Share karo!')">📢 Share</span>
+        <span class="qtag" onclick="setQuickText('🔥 Live!')">🔥 Live</span>
         <span class="qtag" onclick="hideText()">✕ Hatao</span>
       </div>
-
-      <div class="sec">🖼️ Logo (Upload hote hi auto show)</div>
+      <div class="sec">🖼️ Logo</div>
       <div class="upa" onclick="document.getElementById('imgInp').click()">
         <div style="font-size:1.8rem">📁</div>
-        <div style="font-size:0.8rem;color:var(--muted);margin-top:4px">Tap — image upload karo (auto show hogi)</div>
-        <img class="iprev" id="imgPrev" src="" alt="">
+        <div style="font-size:0.8rem;color:var(--muted)">Upload karo</div>
+        <img class="iprev" id="imgPrev" src="">
       </div>
       <input type="file" id="imgInp" accept="image/*" style="display:none" onchange="uploadLogo(this)">
       <div class="szrow">
         <label>W:</label><input type="number" id="logoW" value="120" min="30" max="400" class="pi" style="width:70px" oninput="applyLogoSize()">
-        <label>px H:</label><input type="number" id="logoH" value="80" min="20" max="400" class="pi" style="width:70px" oninput="applyLogoSize()">
-        <label>px</label>
+        <label>H:</label><input type="number" id="logoH" value="80" min="20" max="400" class="pi" style="width:70px" oninput="applyLogoSize()">
       </div>
       <div class="g2">
-        <div class="fi"><label>Logo Left (px)</label><input class="pi" type="number" id="logoX" value="16" oninput="applyLogoPos()"></div>
-        <div class="fi"><label>Logo Top (px)</label><input class="pi" type="number" id="logoY" value="80" oninput="applyLogoPos()"></div>
+        <div class="fi"><label>X</label><input class="pi" type="number" id="logoX" value="16" oninput="applyLogoPos()"></div>
+        <div class="fi"><label>Y</label><input class="pi" type="number" id="logoY" value="80" oninput="applyLogoPos()"></div>
       </div>
-      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;max-width:180px;margin:0 auto 10px">
-        <div></div><button class="sbtn" onclick="moveLogo(0,-10)" style="padding:10px">▲</button><div></div>
-        <button class="sbtn" onclick="moveLogo(-10,0)" style="padding:10px">◄</button>
-        <div style="display:flex;align-items:center;justify-content:center;font-size:0.6rem;color:var(--muted)">MOVE</div>
-        <button class="sbtn" onclick="moveLogo(10,0)" style="padding:10px">►</button>
-        <div></div><button class="sbtn" onclick="moveLogo(0,10)" style="padding:10px">▼</button><div></div>
-      </div>
-      <div class="srow" style="margin-bottom:10px">
+      <div class="srow">
         <button class="sbtn" onclick="toggleLogo(true)">✅ Show</button>
         <button class="sbtn" onclick="toggleLogo(false)">✕ Hide</button>
       </div>
-
-      <div class="sec">📢 Ticker (Running Text)</div>
+      <div class="sec">📢 Ticker</div>
       <div class="mrow">
-        <input class="minp" id="tickInp" type="text" placeholder="Running ticker text..." maxlength="120">
+        <input class="minp" id="tickInp" type="text" placeholder="Ticker text...">
         <button class="sendb" onclick="sendTicker()">GO</button>
       </div>
-      <button class="sbtn" style="width:100%;margin-bottom:10px" onclick="hideTicker()">✕ Ticker Hatao</button>
-      <button class="bbtn dark" onclick="toggleDrawer()">✕ Panel Band Karo</button>
+      <button class="sbtn" onclick="hideTicker()">✕ Ticker Hatao</button>
+      <button class="bbtn dark" style="margin-top:12px" onclick="toggleDrawer()">✕ Panel Band Karo</button>
     </div>
   </div>
 </div>
-
 <div id="toast"></div>
 
 <script type="importmap">
@@ -269,7 +227,7 @@ input[type=color]{width:36px;height:36px;border:none;border-radius:8px;backgroun
 
 <script type="module">
 import { initializeApp } from 'firebase/app';
-import { getDatabase, ref, set, get, onValue, push, remove, serverTimestamp } from 'firebase/database';
+import { getDatabase, ref, set, onValue, push, remove } from 'firebase/database';
 
 const FB_CFG = {
   apiKey: "AIzaSyCXY_layR4HtlrJTweBB5ER_uc5jkMG0sc",
@@ -281,363 +239,235 @@ const FB_CFG = {
   appId: "1:534849542892:web:d96322fd4811b46738e3c9"
 };
 
-const ICE_CONFIG = {
-  iceServers: [
-    { urls: 'stun:stun.l.google.com:19302' },
-    { urls: 'stun:stun1.l.google.com:19302' },
-    { urls: 'stun:stun2.l.google.com:19302' }
-  ],
-  iceCandidatePoolSize: 10
-};
+const ICE = { iceServers: [{ urls: 'stun:stun.l.google.com:19302' }, { urls: 'stun:stun1.l.google.com:19302' }] };
 
-window.toast = function(msg, dur = 2000) {
-  const t = document.getElementById('toast');
-  t.textContent = msg;
-  t.classList.add('show');
-  setTimeout(() => t.classList.remove('show'), dur);
-};
+window.toast = (msg) => { const t = document.getElementById('toast'); t.textContent = msg; t.classList.add('show'); setTimeout(() => t.classList.remove('show'), 2000); };
+function h2rgb(h) { return `${parseInt(h.slice(1,3),16)},${parseInt(h.slice(3,5),16)},${parseInt(h.slice(5,7),16)}`; }
 
-function h2rgb(hex) {
-  if (!hex || hex.length < 7) return '0,0,0';
-  return `${parseInt(hex.slice(1,3),16)},${parseInt(hex.slice(3,5),16)},${parseInt(hex.slice(5,7),16)}`;
-}
-
-const urlParams = new URLSearchParams(location.search);
-const watchId = urlParams.get('watch');
-if (watchId) {
+const urlWatch = new URLSearchParams(location.search).get('watch');
+if (urlWatch) {
   document.getElementById('viewerPage').style.display = 'block';
-  runViewer(watchId);
+  runViewer(urlWatch);
 } else {
   document.getElementById('adminPage').style.display = 'block';
 }
 
-// ========== FAST VIEWER CONNECTION ==========
+// ==================== VIEWER (FIXED VIDEO) ====================
 async function runViewer(roomId) {
-  const statusDiv = document.getElementById('connStatus');
-  const loaderTxt = document.getElementById('vLoaderTxt');
+  const txt = document.getElementById('vLoaderTxt');
+  txt.innerText = 'Connecting...';
   
   let app;
-  try {
-    app = initializeApp(FB_CFG, 'viewer-' + Date.now());
-  } catch (e) {
-    loaderTxt.innerText = 'Firebase error';
-    statusDiv.innerText = '❌ ' + e.message;
-    document.getElementById('retryBtn').style.display = 'block';
-    return;
-  }
+  try { app = initializeApp(FB_CFG, 'v-' + Date.now()); } catch(e) { txt.innerText = 'Firebase error'; document.getElementById('retryBtn').style.display = 'block'; return; }
   const db = getDatabase(app);
   
-  onValue(ref(db, `rooms/${roomId}/overlays`), (snap) => {
-    if (snap.exists()) applyOverlays(snap.val());
-  });
+  onValue(ref(db, `rooms/${roomId}/overlays`), (s) => { if(s.exists()) applyOverlays(s.val()); });
   
-  const viewerRef = ref(db, `rooms/${roomId}/viewers/v_${Date.now()}_${Math.random()}`);
-  await set(viewerRef, true).catch(() => {});
-  window.addEventListener('beforeunload', () => remove(viewerRef));
+  const myRef = ref(db, `rooms/${roomId}/viewers/v_${Date.now()}`);
+  await set(myRef, true);
+  window.addEventListener('beforeunload', () => remove(myRef));
   
   let pc = null;
   let connected = false;
-  let offerListener = null;
   
-  const connectToOffer = async (offerData) => {
-    if (connected) return;
+  const startConnection = async (offerData) => {
+    if(connected) return;
     connected = true;
-    statusDiv.innerText = '📡 Establishing WebRTC...';
-    loaderTxt.innerText = 'Connecting to broadcaster...';
+    txt.innerText = 'Establishing WebRTC...';
     
-    pc = new RTCPeerConnection(ICE_CONFIG);
+    pc = new RTCPeerConnection(ICE);
     
-    pc.ontrack = (event) => {
-      const videoEl = document.getElementById('viewVideo');
-      if (videoEl.srcObject !== event.streams[0]) {
-        videoEl.srcObject = event.streams[0];
-        videoEl.play().catch(e => { videoEl.muted = true; videoEl.play(); });
+    pc.ontrack = (e) => {
+      const video = document.getElementById('viewVideo');
+      if(video.srcObject !== e.streams[0]) {
+        video.srcObject = e.streams[0];
+        video.muted = false;
+        video.play().catch(() => { video.muted = true; video.play(); });
         document.getElementById('vLoader').style.display = 'none';
         flashIcon();
-        toast('✅ Stream connected!');
-        statusDiv.innerText = '✅ Live';
+        toast('✅ Stream Connected!');
       }
     };
     
-    pc.onicecandidate = (event) => {
-      if (event.candidate) {
-        push(ref(db, `rooms/${roomId}/viewerIce`), event.candidate.toJSON());
-      }
-    };
+    pc.onicecandidate = (e) => { if(e.candidate) push(ref(db, `rooms/${roomId}/viewerIce`), e.candidate.toJSON()); };
     
-    pc.oniceconnectionstatechange = () => {
-      if (pc.iceConnectionState === 'connected') {
-        statusDiv.innerText = '✅ Connected';
-      } else if (pc.iceConnectionState === 'failed') {
-        statusDiv.innerText = '❌ Connection failed';
-        document.getElementById('retryBtn').style.display = 'block';
-      }
-    };
+    await pc.setRemoteDescription(new RTCSessionDescription(offerData));
+    const answer = await pc.createAnswer();
+    await pc.setLocalDescription(answer);
+    await set(ref(db, `rooms/${roomId}/answers/ans_${Date.now()}`), { sdp: answer.sdp, type: answer.type });
     
-    // Add host ICE candidates as they arrive
-    const iceUnsub = onValue(ref(db, `rooms/${roomId}/hostIce`), (snap) => {
-      snap.forEach((childSnap) => {
-        if (pc && pc.remoteDescription) {
-          pc.addIceCandidate(new RTCIceCandidate(childSnap.val())).catch(() => {});
-        }
-      });
+    onValue(ref(db, `rooms/${roomId}/hostIce`), (s) => {
+      s.forEach(c => { if(pc && pc.remoteDescription) pc.addIceCandidate(new RTCIceCandidate(c.val())).catch(()=>{}); });
     });
-    
-    try {
-      await pc.setRemoteDescription(new RTCSessionDescription(offerData));
-      const answer = await pc.createAnswer();
-      await pc.setLocalDescription(answer);
-      const answerKey = `ans_${Date.now()}_${Math.random().toString(36).substr(2, 6)}`;
-      await set(ref(db, `rooms/${roomId}/answers/${answerKey}`), {
-        sdp: answer.sdp,
-        type: answer.type
-      });
-      statusDiv.innerText = '🎥 Waiting for video...';
-    } catch (err) {
-      console.error("Offer error", err);
-      statusDiv.innerText = '❌ Error: ' + err.message;
-      document.getElementById('retryBtn').style.display = 'block';
-    }
-    
-    // Store unsub for cleanup
-    window._iceUnsub = iceUnsub;
   };
   
-  // Watch for host offer with immediate response
-  offerListener = onValue(ref(db, `rooms/${roomId}/offer`), async (snap) => {
-    if (snap.exists() && !connected) {
-      await connectToOffer(snap.val());
-    }
+  // Check existing offer first (fast)
+  const existing = await get(ref(db, `rooms/${roomId}/offer`));
+  if(existing.exists()) await startConnection(existing.val());
+  
+  // Listen for future offers
+  onValue(ref(db, `rooms/${roomId}/offer`), async (s) => {
+    if(s.exists() && !connected) await startConnection(s.val());
   });
   
-  // If host already has offer (race condition), check once
-  const existingOffer = await get(ref(db, `rooms/${roomId}/offer`));
-  if (existingOffer.exists() && !connected) {
-    await connectToOffer(existingOffer.val());
-  }
-  
-  // Timeout after 15 seconds (faster)
-  setTimeout(() => {
-    if (!connected) {
-      statusDiv.innerText = '⏰ No active stream found';
-      loaderTxt.innerText = 'Host offline ya wrong ID';
-      document.getElementById('retryBtn').style.display = 'block';
-    }
-  }, 15000);
+  setTimeout(() => { if(!connected) { txt.innerText = 'No active stream found'; document.getElementById('retryBtn').style.display = 'block'; } }, 12000);
 }
 
 function applyOverlays(d) {
-  const l = d.logo || {};
+  const logo = d.logo || {};
   const vLogo = document.getElementById('vLogoOverlay');
-  if (l.show && l.src) {
-    vLogo.src = l.src;
+  if(logo.show && logo.src) {
+    vLogo.src = logo.src;
     vLogo.style.display = 'block';
-    vLogo.style.left = (l.x || 16) + 'px';
-    vLogo.style.top = (l.y || 80) + 'px';
-    vLogo.style.width = (l.w || 120) + 'px';
-    vLogo.style.height = (l.h || 80) + 'px';
-  } else { vLogo.style.display = 'none'; }
+    vLogo.style.left = (logo.x||16)+'px';
+    vLogo.style.top = (logo.y||80)+'px';
+    vLogo.style.width = (logo.w||120)+'px';
+    vLogo.style.height = (logo.h||80)+'px';
+  } else vLogo.style.display = 'none';
   
-  const t = d.text || {};
-  const vText = document.getElementById('vTextOverlay');
-  if (t.show && t.msg && t.msg.trim()) {
-    vText.textContent = t.msg;
-    vText.style.display = 'block';
-    vText.style.left = (t.x || 20) + 'px';
-    vText.style.top = (t.y || 300) + 'px';
-    vText.style.color = t.color || '#ffffff';
-    vText.style.backgroundColor = `rgba(${h2rgb(t.bgColor || '#000000')}, ${t.bgOp || 0.6})`;
-    vText.style.fontFamily = t.font || "'DM Sans', sans-serif";
-    vText.style.fontSize = (t.size || 22) + 'px';
-  } else { vText.style.display = 'none'; }
+  const txt = d.text || {};
+  const vTxt = document.getElementById('vTextOverlay');
+  if(txt.show && txt.msg) {
+    vTxt.textContent = txt.msg;
+    vTxt.style.display = 'block';
+    vTxt.style.left = (txt.x||20)+'px';
+    vTxt.style.top = (txt.y||300)+'px';
+    vTxt.style.color = txt.color||'#fff';
+    vTxt.style.backgroundColor = `rgba(${h2rgb(txt.bgColor||'#000')},0.6)`;
+    vTxt.style.fontFamily = txt.font||"'DM Sans',sans-serif";
+    vTxt.style.fontSize = (txt.size||22)+'px';
+    vTxt.style.padding = '8px 18px';
+    vTxt.style.borderRadius = '8px';
+  } else vTxt.style.display = 'none';
   
-  const tk = d.ticker || {};
+  const tick = d.ticker || {};
   const wrap = document.getElementById('vTickerWrap');
   const inner = document.getElementById('vTickerInner');
-  if (tk.show && tk.msg) {
-    inner.textContent = tk.msg + ' • ' + tk.msg + ' • ' + tk.msg;
+  if(tick.show && tick.msg) {
+    inner.textContent = tick.msg + ' • ' + tick.msg;
     wrap.style.display = 'block';
-  } else { wrap.style.display = 'none'; }
+    wrap.style.backgroundColor = 'rgba(200,0,0,0.88)';
+    wrap.style.padding = '8px 0';
+  } else wrap.style.display = 'none';
 }
 
-window.viewerTap = () => flashIcon();
-let iconTimer;
-function flashIcon() {
-  const iconDiv = document.getElementById('vPlayIcon');
-  const video = document.getElementById('viewVideo');
-  const svgIcon = document.getElementById('vIconSvg');
-  if (video.paused) {
-    svgIcon.innerHTML = '<path d="M8 5v14l11-7z"/>';
-  } else {
-    svgIcon.innerHTML = '<path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/>';
-  }
-  iconDiv.classList.add('show');
-  clearTimeout(iconTimer);
-  iconTimer = setTimeout(() => iconDiv.classList.remove('show'), 1200);
-}
-document.getElementById('vPlayIcon').addEventListener('click', (e) => {
-  e.stopPropagation();
+window.flashIcon = () => {
+  const icon = document.getElementById('vPlayIcon');
+  icon.classList.add('show');
+  setTimeout(() => icon.classList.remove('show'), 1000);
+};
+document.getElementById('vTapArea').addEventListener('click', () => {
   const v = document.getElementById('viewVideo');
-  if (v.paused) v.play(); else v.pause();
+  if(v.paused) v.play(); else v.pause();
   flashIcon();
 });
 
-// ========== ADMIN (optimized) ==========
-let db, roomId = '', streamLink = '';
-let localStream, videoTrack;
-let flashOn = false, facing = 'environment';
-let timerInt, startTime;
-let drawerOpen = false;
-let logoUrl = '', logoVis = false, textVis = false, tickVis = false;
-let hostPC = null;
-let textDebounce;
+// ==================== ADMIN ====================
+let db, roomId, streamLink, localStream, videoTrack, facing = 'environment', hostPC, logoUrl='', logoVis=false, textVis=false, tickVis=false, timerInt;
 
-window.startStream = async function(type) {
-  const rawId = document.getElementById('customId').value.trim();
-  roomId = rawId || ('s' + Math.random().toString(36).substr(2, 8));
+window.startStream = async (type) => {
+  const id = document.getElementById('customId').value.trim();
+  roomId = id || ('s'+Math.random().toString(36).substr(2,8));
   facing = type === 'front' ? 'user' : 'environment';
-  
   document.getElementById('homeScreen').style.display = 'none';
-  toast('Starting camera...');
-  
   try {
-    localStream = await navigator.mediaDevices.getUserMedia({
-      video: { facingMode: facing, width: { ideal: 1280 }, height: { ideal: 720 } },
-      audio: true
+    localStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: facing, width: 1280, height: 720 }, audio: true });
+    videoTrack = localStream.getVideoTracks()[0];
+    document.getElementById('mainVideo').srcObject = localStream;
+    document.getElementById('streamScreen').style.display = 'block';
+    streamLink = location.href.split('?')[0] + '?watch=' + roomId;
+    document.getElementById('linkDisp').textContent = streamLink;
+    startTimer();
+    
+    const app = initializeApp(FB_CFG, 'a-'+Date.now());
+    db = getDatabase(app);
+    await remove(ref(db, `rooms/${roomId}`));
+    await createOffer();
+    
+    onValue(ref(db, `rooms/${roomId}/answers`), (snap) => {
+      snap.forEach(child => {
+        const ans = child.val();
+        if(ans && ans.sdp && !ans._done) {
+          set(ref(db, `rooms/${roomId}/answers/${child.key}/_done`), true);
+          handleAnswer(ans);
+        }
+      });
     });
-  } catch(e) {
-    document.getElementById('homeScreen').style.display = 'flex';
-    toast('❌ Camera permission denied');
-    return;
-  }
-  
-  videoTrack = localStream.getVideoTracks()[0];
-  document.getElementById('mainVideo').srcObject = localStream;
-  document.getElementById('streamScreen').style.display = 'block';
-  
-  streamLink = location.href.split('?')[0] + '?watch=' + roomId;
-  document.getElementById('linkDisp').textContent = streamLink;
-  startTimer();
-  initDrag();
-  
-  const app = initializeApp(FB_CFG, 'admin-' + Date.now());
-  db = getDatabase(app);
-  
-  await remove(ref(db, `rooms/${roomId}`)).catch(() => {});
-  await createOffer();
-  
-  onValue(ref(db, `rooms/${roomId}/answers`), (snap) => {
-    if (!snap.exists()) return;
-    snap.forEach(child => {
-      const ans = child.val();
-      if (ans && ans.sdp && !ans._done) {
-        set(ref(db, `rooms/${roomId}/answers/${child.key}/_done`), true);
-        handleViewerAnswer(ans);
-      }
+    onValue(ref(db, `rooms/${roomId}/viewerIce`), (snap) => {
+      snap.forEach(c => { if(hostPC && hostPC.remoteDescription) hostPC.addIceCandidate(new RTCIceCandidate(c.val())).catch(()=>{}); });
     });
-  });
-  
-  onValue(ref(db, `rooms/${roomId}/viewerIce`), (snap) => {
-    snap.forEach(c => {
-      if (hostPC && hostPC.remoteDescription) {
-        hostPC.addIceCandidate(new RTCIceCandidate(c.val())).catch(() => {});
-      }
-    });
-  });
-  
-  onValue(ref(db, `rooms/${roomId}/viewers`), (snap) => {
-    const count = snap.exists() ? Object.keys(snap.val()).length : 0;
-    document.getElementById('viewCount').textContent = count;
-  });
-  
-  toast('🔴 LIVE! ID: ' + roomId);
+    onValue(ref(db, `rooms/${roomId}/viewers`), (snap) => { document.getElementById('viewCount').textContent = snap.exists() ? Object.keys(snap.val()).length : 0; });
+    toast('🔴 LIVE! ID: '+roomId);
+  } catch(e) { document.getElementById('homeScreen').style.display = 'flex'; toast('Camera error: '+e.message); }
 };
 
 async function createOffer() {
-  if (hostPC) hostPC.close();
-  hostPC = new RTCPeerConnection(ICE_CONFIG);
+  if(hostPC) hostPC.close();
+  hostPC = new RTCPeerConnection(ICE);
   localStream.getTracks().forEach(t => hostPC.addTrack(t, localStream));
-  
-  hostPC.onicecandidate = (e) => {
-    if (e.candidate) push(ref(db, `rooms/${roomId}/hostIce`), e.candidate.toJSON());
-  };
-  
+  hostPC.onicecandidate = e => { if(e.candidate) push(ref(db, `rooms/${roomId}/hostIce`), e.candidate.toJSON()); };
   const offer = await hostPC.createOffer({ offerToReceiveAudio: false, offerToReceiveVideo: false });
   await hostPC.setLocalDescription(offer);
   await set(ref(db, `rooms/${roomId}/offer`), { type: offer.type, sdp: offer.sdp });
 }
 
-async function handleViewerAnswer(ans) {
-  if (!hostPC) return;
-  if (hostPC.signalingState === 'stable') {
-    await createOffer();
-    setTimeout(() => handleViewerAnswer(ans), 300);
-    return;
-  }
-  try {
-    await hostPC.setRemoteDescription(new RTCSessionDescription({ type: ans.type, sdp: ans.sdp }));
-  } catch(e) {}
+async function handleAnswer(ans) {
+  if(!hostPC) return;
+  if(hostPC.signalingState === 'stable') { await createOffer(); setTimeout(() => handleAnswer(ans), 500); return; }
+  try { await hostPC.setRemoteDescription(new RTCSessionDescription({ type: ans.type, sdp: ans.sdp })); } catch(e) {}
 }
 
-function broadcastOvs() {
-  if (!db) return;
+function broadcast() {
+  if(!db) return;
   set(ref(db, `rooms/${roomId}/overlays`), {
     logo: { show: logoVis, src: logoUrl, x: parseInt(document.getElementById('logoX').value)||16, y: parseInt(document.getElementById('logoY').value)||80, w: parseInt(document.getElementById('logoW').value)||120, h: parseInt(document.getElementById('logoH').value)||80 },
-    text: { show: textVis, msg: document.getElementById('textOverlay').textContent, color: document.getElementById('textClr').value, bgColor: document.getElementById('bgClr').value, bgOp: parseFloat(document.getElementById('bgOp').value), font: document.getElementById('fontFam').value, size: parseInt(document.getElementById('fontSz').value)||22, x: parseInt(document.getElementById('textX').value)||20, y: parseInt(document.getElementById('textY').value)||300 },
+    text: { show: textVis, msg: document.getElementById('textOverlay').textContent, color: document.getElementById('textClr').value, bgColor: document.getElementById('bgClr').value, bgOp: 0.6, font: document.getElementById('fontFam').value, size: parseInt(document.getElementById('fontSz').value)||22, x: parseInt(document.getElementById('textX').value)||20, y: parseInt(document.getElementById('textY').value)||300 },
     ticker: { show: tickVis, msg: document.getElementById('tickInp').value }
-  }).catch(()=>{});
+  });
 }
 
 function startTimer() {
-  startTime = Date.now();
+  const start = Date.now();
   timerInt = setInterval(() => {
-    const elapsed = Math.floor((Date.now() - startTime) / 1000);
-    document.getElementById('timerDisp').textContent = `${String(Math.floor(elapsed/60)).padStart(2,'0')}:${String(elapsed%60).padStart(2,'0')}`;
+    const s = Math.floor((Date.now()-start)/1000);
+    document.getElementById('timerDisp').textContent = `${String(Math.floor(s/60)).padStart(2,'0')}:${String(s%60).padStart(2,'0')}`;
   }, 1000);
 }
 
-function initDrag() {
-  const logoEl = document.getElementById('logoOverlay');
-  logoEl.style.pointerEvents = 'auto';
-  let dragActive = false, startX=0, startY=0, origLeft=0, origTop=0;
-  logoEl.addEventListener('touchstart', (e) => {
-    dragActive = true;
-    startX = e.touches[0].clientX;
-    startY = e.touches[0].clientY;
-    origLeft = parseInt(document.getElementById('logoX').value)||16;
-    origTop = parseInt(document.getElementById('logoY').value)||80;
-    e.preventDefault();
-  }, { passive: false });
-  logoEl.addEventListener('touchmove', (e) => {
-    if(!dragActive) return;
-    document.getElementById('logoX').value = Math.round(origLeft + (e.touches[0].clientX - startX));
-    document.getElementById('logoY').value = Math.round(origTop + (e.touches[0].clientY - startY));
-    applyLogoPos();
-    e.preventDefault();
-  });
-  logoEl.addEventListener('touchend', () => { dragActive=false; if(logoVis) broadcastOvs(); });
-}
-
-window.toggleFlash = async () => { try { flashOn=!flashOn; await videoTrack?.applyConstraints({advanced:[{torch:flashOn}]}); document.getElementById('flashBtn').classList.toggle('on',flashOn); toast(flashOn?'Flash ON':'Flash OFF'); } catch(e){ toast('Flash N/A'); } };
-window.flipCamera = async () => { facing = facing==='environment'?'user':'environment'; localStream?.getTracks().forEach(t=>t.stop()); try { localStream = await navigator.mediaDevices.getUserMedia({video:{facingMode:facing}, audio:true}); videoTrack=localStream.getVideoTracks()[0]; document.getElementById('mainVideo').srcObject=localStream; if(hostPC){ const s=hostPC.getSenders().find(s=>s.track?.kind==='video'); if(s) s.replaceTrack(videoTrack); } toast('Camera flipped'); } catch(e){ toast('Flip failed'); } };
-window.applyZoom = (val) => { document.getElementById('zoomVal').textContent=parseFloat(val).toFixed(1)+'x'; if(videoTrack) try{ videoTrack.applyConstraints({advanced:[{zoom:parseFloat(val)}]}); } catch(e){ document.getElementById('mainVideo').style.transform=`scale(${val})`; } };
-window.toggleDrawer = () => { drawerOpen=!drawerOpen; document.getElementById('drawer').classList.toggle('open',drawerOpen); document.getElementById('panelBtn').classList.toggle('on',drawerOpen); };
-window.autoSendText = (val) => { clearTimeout(textDebounce); if(!val.trim()){ hideText(); return; } textDebounce = setTimeout(() => { document.getElementById('textOverlay').textContent=val; textVis=true; document.getElementById('textOverlay').style.display='block'; document.getElementById('liveTextPreview').style.display='block'; document.getElementById('livePreviewTxt').textContent=val; updateTextStyle(); updateTextPos(); broadcastOvs(); }, 200); };
-window.setQuickText = (msg) => { document.getElementById('textInp').value=msg; window.autoSendText(msg); };
-window.hideText = () => { textVis=false; document.getElementById('textOverlay').style.display='none'; document.getElementById('liveTextPreview').style.display='none'; document.getElementById('textInp').value=''; broadcastOvs(); };
-window.updateTextStyle = () => { if(!textVis) return; const el=document.getElementById('textOverlay'); el.style.color=document.getElementById('textClr').value; el.style.backgroundColor=`rgba(${h2rgb(document.getElementById('bgClr').value)},${parseFloat(document.getElementById('bgOp').value)})`; el.style.fontFamily=document.getElementById('fontFam').value; el.style.fontSize=document.getElementById('fontSz').value+'px'; broadcastOvs(); };
-window.updateTextPos = () => { if(!textVis) return; const el=document.getElementById('textOverlay'); el.style.left=(parseInt(document.getElementById('textX').value)||0)+'px'; el.style.top=(parseInt(document.getElementById('textY').value)||0)+'px'; broadcastOvs(); };
-window.uploadLogo = (input) => { const file=input.files[0]; if(!file) return; const reader=new FileReader(); reader.onload=e=>{ logoUrl=e.target.result; document.getElementById('imgPrev').src=logoUrl; document.getElementById('imgPrev').style.display='block'; document.getElementById('logoOverlay').src=logoUrl; logoVis=true; document.getElementById('logoOverlay').style.display='block'; applyLogoPos(); applyLogoSize(); broadcastOvs(); toast('Logo uploaded!'); }; reader.readAsDataURL(file); };
-window.applyLogoPos = () => { const el=document.getElementById('logoOverlay'); el.style.left=(parseInt(document.getElementById('logoX').value)||0)+'px'; el.style.top=(parseInt(document.getElementById('logoY').value)||0)+'px'; };
-window.applyLogoSize = () => { const el=document.getElementById('logoOverlay'); el.style.width=(parseInt(document.getElementById('logoW').value)||120)+'px'; el.style.height=(parseInt(document.getElementById('logoH').value)||80)+'px'; if(logoVis) broadcastOvs(); };
-window.moveLogo = (dx,dy) => { const lx=document.getElementById('logoX'), ly=document.getElementById('logoY'); lx.value=(parseInt(lx.value)||0)+dx; ly.value=(parseInt(ly.value)||0)+dy; applyLogoPos(); if(logoVis) broadcastOvs(); };
-window.toggleLogo = (show) => { if(show && !logoUrl){ toast('Upload image first!'); return; } logoVis=show; document.getElementById('logoOverlay').style.display=show?'block':'none'; if(show) broadcastOvs(); toast(show?'Logo shown':'Logo hidden'); };
-window.sendTicker = () => { const msg=document.getElementById('tickInp').value.trim(); if(!msg){ toast('Enter text'); return; } tickVis=true; broadcastOvs(); toast('Ticker live!'); };
-window.hideTicker = () => { tickVis=false; broadcastOvs(); toast('Ticker hidden'); };
-window.copyLink = () => { if(!streamLink){ toast('Start live first!'); return; } navigator.clipboard.writeText(streamLink).then(()=>toast('Link copied!')).catch(()=>prompt('Copy:',streamLink)); };
-window.waShare = () => { if(!streamLink){ toast('Start live first!'); return; } window.open(`https://wa.me/?text=${encodeURIComponent('🔴 Live stream!\n'+streamLink)}`); };
-window.stopStream = () => { if(timerInt) clearInterval(timerInt); if(localStream) localStream.getTracks().forEach(t=>t.stop()); if(db && roomId) remove(ref(db,`rooms/${roomId}`)).catch(()=>{}); location.reload(); };
-document.addEventListener('click', (e) => { const dr=document.getElementById('drawer'), pb=document.getElementById('panelBtn'); if(drawerOpen && dr && !dr.contains(e.target) && pb && !pb.contains(e.target)) window.toggleDrawer(); });
+window.autoSendText = (val) => {
+  if(!val.trim()) { hideText(); return; }
+  document.getElementById('textOverlay').textContent = val;
+  textVis = true;
+  document.getElementById('textOverlay').style.display = 'block';
+  document.getElementById('liveTextPreview').style.display = 'block';
+  document.getElementById('livePreviewTxt').textContent = val;
+  updateTextStyle();
+  updateTextPos();
+  broadcast();
+};
+window.setQuickText = (msg) => { document.getElementById('textInp').value = msg; window.autoSendText(msg); };
+window.hideText = () => { textVis=false; document.getElementById('textOverlay').style.display='none'; document.getElementById('liveTextPreview').style.display='none'; document.getElementById('textInp').value=''; broadcast(); };
+window.updateTextStyle = () => { if(!textVis) return; const el=document.getElementById('textOverlay'); el.style.color=document.getElementById('textClr').value; el.style.backgroundColor=`rgba(${h2rgb(document.getElementById('bgClr').value)},0.6)`; el.style.fontFamily=document.getElementById('fontFam').value; el.style.fontSize=document.getElementById('fontSz').value+'px'; broadcast(); };
+window.updateTextPos = () => { if(!textVis) return; document.getElementById('textOverlay').style.left=(parseInt(document.getElementById('textX').value)||0)+'px'; document.getElementById('textOverlay').style.top=(parseInt(document.getElementById('textY').value)||0)+'px'; broadcast(); };
+window.uploadLogo = (input) => {
+  const file = input.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = e => { logoUrl = e.target.result; document.getElementById('imgPrev').src = logoUrl; document.getElementById('imgPrev').style.display='block'; document.getElementById('logoOverlay').src = logoUrl; logoVis=true; document.getElementById('logoOverlay').style.display='block'; applyLogoPos(); applyLogoSize(); broadcast(); toast('Logo uploaded!'); };
+  reader.readAsDataURL(file);
+};
+window.applyLogoPos = () => { document.getElementById('logoOverlay').style.left=(parseInt(document.getElementById('logoX').value)||0)+'px'; document.getElementById('logoOverlay').style.top=(parseInt(document.getElementById('logoY').value)||0)+'px'; if(logoVis) broadcast(); };
+window.applyLogoSize = () => { document.getElementById('logoOverlay').style.width=(parseInt(document.getElementById('logoW').value)||120)+'px'; document.getElementById('logoOverlay').style.height=(parseInt(document.getElementById('logoH').value)||80)+'px'; if(logoVis) broadcast(); };
+window.toggleLogo = (show) => { if(show && !logoUrl){ toast('Upload image first!'); return; } logoVis=show; document.getElementById('logoOverlay').style.display=show?'block':'none'; if(show) broadcast(); toast(show?'Logo shown':'Logo hidden'); };
+window.sendTicker = () => { const msg=document.getElementById('tickInp').value.trim(); if(!msg) return; tickVis=true; broadcast(); toast('Ticker live!'); };
+window.hideTicker = () => { tickVis=false; broadcast(); toast('Ticker hidden'); };
+window.toggleFlash = async () => { try { if(videoTrack) await videoTrack.applyConstraints({ advanced: [{ torch: true }] }); } catch(e) { toast('Flash not supported'); } };
+window.flipCamera = async () => { facing = facing==='environment'?'user':'environment'; if(localStream) localStream.getTracks().forEach(t=>t.stop()); try { localStream = await navigator.mediaDevices.getUserMedia({ video:{facingMode:facing}, audio:true }); videoTrack=localStream.getVideoTracks()[0]; document.getElementById('mainVideo').srcObject=localStream; if(hostPC) { const s=hostPC.getSenders().find(s=>s.track?.kind==='video'); if(s) s.replaceTrack(videoTrack); } toast('Camera flipped'); } catch(e){ toast('Flip failed'); } };
+window.applyZoom = (val) => { document.getElementById('zoomVal').textContent=parseFloat(val).toFixed(1)+'x'; if(videoTrack) try{ videoTrack.applyConstraints({ advanced:[{zoom:parseFloat(val)}] }); } catch(e){ document.getElementById('mainVideo').style.transform=`scale(${val})`; } };
+window.toggleDrawer = () => { const d=document.getElementById('drawer'); d.classList.toggle('open'); document.getElementById('panelBtn').classList.toggle('on',d.classList.contains('open')); };
+window.copyLink = () => { if(streamLink) { navigator.clipboard.writeText(streamLink); toast('Link copied!'); } else toast('Start live first!'); };
+window.waShare = () => { if(streamLink) window.open(`https://wa.me/?text=${encodeURIComponent('🔴 Live stream! '+streamLink)}`); };
+window.stopStream = () => { if(timerInt) clearInterval(timerInt); if(localStream) localStream.getTracks().forEach(t=>t.stop()); if(db && roomId) remove(ref(db,`rooms/${roomId}`)); location.reload(); };
 </script>
 </body>
 </html>
