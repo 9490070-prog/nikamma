@@ -99,8 +99,8 @@ input[type=color]{width:36px;height:36px;border:none;border-radius:8px;backgroun
   <div id="vLoader">
     <div class="vl-logo">LIVE<span>CAM</span></div>
     <div class="spinner"></div>
-    <div class="vl-txt" id="vLoaderTxt">Stream se connect ho raha hai...</div>
-    <button class="retry-btn" id="retryBtn" onclick="window.location.reload()">🔄 Retry Karen</button>
+    <div class="vl-txt" id="vLoaderTxt">Stream se connect ho raha hoon...</div>
+    <button class="retry-btn" id="retryBtn" onclick="window.location.reload()">🔄 Retry Karo</button>
   </div>
   <video id="viewVideo" autoplay playsinline muted></video>
   <img id="vLogoOverlay" src="" alt="">
@@ -117,10 +117,10 @@ input[type=color]{width:36px;height:36px;border:none;border-radius:8px;backgroun
     <div class="logo-t">LIVE<span>CAM</span> <span style="font-size:1.1rem;color:var(--muted)">PRO</span></div>
     <div class="tagline">Professional Live Streaming</div>
     <div class="card">
-      <div class="clbl">🔴 Stream Shuru Karein</div>
-      <div class="sec" style="margin-top:0;margin-bottom:4px">Stream ID likhein</div>
+      <div class="clbl">🔴 Stream Shuru Karo</div>
+      <div class="sec" style="margin-top:0;margin-bottom:4px">Stream ID likho</div>
       <input class="inp" id="customId" type="text" placeholder="e.g. ab12345" maxlength="30" value="ab12345">
-      <div class="hint">⚠️ Unique ID rakhein. Default: ab12345</div>
+      <div class="hint">⚠️ Unique ID rakho. Default: ab12345</div>
       <button class="bbtn red" onclick="startStream('back')">📸 Back Camera Live</button>
       <button class="bbtn dark" onclick="startStream('front')">🤳 Front Camera Live</button>
     </div>
@@ -164,7 +164,7 @@ input[type=color]{width:36px;height:36px;border:none;border-radius:8px;backgroun
       <div class="sec">💬 Live Text</div>
       <div id="liveTextPreview">Screen pe: <span id="livePreviewTxt"></span></div>
       <div class="mrow">
-        <input class="minp" id="textInp" type="text" placeholder="Type karein..." maxlength="100" oninput="autoSendText(this.value)">
+        <input class="minp" id="textInp" type="text" placeholder="Type karo..." maxlength="100" oninput="autoSendText(this.value)">
         <button class="sendb" onclick="hideText()">✕</button>
       </div>
       <div class="frow">
@@ -191,7 +191,7 @@ input[type=color]{width:36px;height:36px;border:none;border-radius:8px;backgroun
       <div class="sec">🖼️ Logo</div>
       <div class="upa" onclick="document.getElementById('imgInp').click()">
         <div style="font-size:1.8rem">📁</div>
-        <div style="font-size:0.8rem;color:var(--muted)">Upload karein</div>
+        <div style="font-size:0.8rem;color:var(--muted)">Upload karo</div>
         <img class="iprev" id="imgPrev" src="">
       </div>
       <input type="file" id="imgInp" accept="image/*" style="display:none" onchange="uploadLogo(this)">
@@ -213,7 +213,7 @@ input[type=color]{width:36px;height:36px;border:none;border-radius:8px;backgroun
         <button class="sendb" onclick="sendTicker()">GO</button>
       </div>
       <button class="sbtn" onclick="hideTicker()">✕ Ticker Hatao</button>
-      <button class="bbtn dark" style="margin-top:12px" onclick="toggleDrawer()">✕ Panel Band Karein</button>
+      <button class="bbtn dark" style="margin-top:12px" onclick="toggleDrawer()">✕ Panel Band Karo</button>
     </div>
   </div>
 </div>
@@ -230,7 +230,7 @@ input[type=color]{width:36px;height:36px;border:none;border-radius:8px;backgroun
 
 <script type="module">
 import { initializeApp } from 'firebase/app';
-import { getDatabase, ref, set, get, onValue, push, remove } from 'firebase/database';
+import { getDatabase, ref, set, get, onValue, push, remove, off } from 'firebase/database';
 
 const FB_CFG = {
   apiKey: "AIzaSyCXY_layR4HtlrJTweBB5ER_uc5jkMG0sc",
@@ -245,8 +245,7 @@ const FB_CFG = {
 const ICE = { iceServers: [
   { urls: 'stun:stun.l.google.com:19302' },
   { urls: 'stun:stun1.l.google.com:19302' },
-  { urls: 'stun:stun2.l.google.com:19302' },
-  { urls: 'stun:stun3.l.google.com:19302' }
+  { urls: 'stun:stun2.l.google.com:19302' }
 ]};
 
 window.toast = (msg) => {
@@ -270,24 +269,20 @@ if (urlWatch) {
   document.getElementById('adminPage').style.display = 'block';
 }
 
-// ==================== VIEWER - FIXED ====================
+// ==================== VIEWER ====================
 async function runViewer(roomId) {
-  const txtElem = document.getElementById('vLoaderTxt');
-  const loaderDiv = document.getElementById('vLoader');
-  const retryBtn = document.getElementById('retryBtn');
-  txtElem.innerText = 'Connecting to stream...';
-  
+  const txt = document.getElementById('vLoaderTxt');
+  txt.innerText = 'Connecting...';
+
   let app;
   try {
     app = initializeApp(FB_CFG, 'v-' + Date.now());
   } catch(e) {
-    txtElem.innerText = 'Firebase error: ' + e.message;
-    retryBtn.style.display = 'block';
+    txt.innerText = 'Firebase error: ' + e.message;
+    document.getElementById('retryBtn').style.display = 'block';
     return;
   }
   const db = getDatabase(app);
-  let pc = null;
-  let connectionActive = false;
 
   // Overlay listener
   onValue(ref(db, `rooms/${roomId}/overlays`), (s) => {
@@ -295,128 +290,115 @@ async function runViewer(roomId) {
   });
 
   // Register viewer presence
-  const viewerId = 'v_' + Date.now() + '_' + Math.random().toString(36).substr(2, 6);
-  const viewerRef = ref(db, `rooms/${roomId}/viewers/${viewerId}`);
-  await set(viewerRef, true);
-  window.addEventListener('beforeunload', () => remove(viewerRef));
+  const myRef = ref(db, `rooms/${roomId}/viewers/v_${Date.now()}`);
+  await set(myRef, true);
+  window.addEventListener('beforeunload', () => remove(myRef));
 
-  async function createConnection(offerData) {
-    if (connectionActive) return;
-    connectionActive = true;
-    txtElem.innerText = 'Establishing WebRTC connection...';
-    
-    if (pc) {
-      try { pc.close(); } catch(e) {}
-    }
-    
+  // ---- FIX: One PC per viewer, unique answer key, no race condition ----
+  const myAnswerKey = 'ans_' + Date.now() + '_' + Math.random().toString(36).slice(2,7);
+  let pc = null;
+  let started = false;
+
+  async function startConnection(offerData) {
+    if (started) return;
+    started = true;
+    txt.innerText = 'WebRTC connecting...';
+
     pc = new RTCPeerConnection(ICE);
-    const answerKey = 'ans_' + Date.now() + '_' + Math.random().toString(36).substr(2, 8);
-    
+
     pc.ontrack = (e) => {
-      console.log('Got track!');
       const video = document.getElementById('viewVideo');
       if (video.srcObject !== e.streams[0]) {
         video.srcObject = e.streams[0];
+        // Try unmuted first; fallback to muted (autoplay policy)
         video.muted = false;
-        video.play().then(() => {
-          console.log('Video playing');
-          loaderDiv.style.display = 'none';
-          flashIcon();
-          toast('✅ Stream Connected!');
-        }).catch(err => {
-          console.log('Autoplay blocked, trying muted');
+        video.play().catch(() => {
           video.muted = true;
-          video.play();
-          loaderDiv.style.display = 'none';
-          toast('✅ Stream Connected (muted)');
+          video.play().catch(() => {});
         });
+        document.getElementById('vLoader').style.display = 'none';
+        flashIcon();
+        toast('✅ Stream Connected!');
       }
     };
-    
+
     pc.oniceconnectionstatechange = () => {
-      console.log('ICE state:', pc.iceConnectionState);
-      if (pc.iceConnectionState === 'failed') {
-        connectionActive = false;
-        loaderDiv.style.display = 'flex';
-        txtElem.innerText = 'Connection lost, reconnecting...';
+      const s = pc.iceConnectionState;
+      if (s === 'failed') {
+        // Try ICE restart
+        started = false;
+        txt.innerText = 'Reconnecting...';
+        document.getElementById('vLoader').style.display = 'flex';
         setTimeout(() => {
           get(ref(db, `rooms/${roomId}/offer`)).then(snap => {
-            if (snap.exists() && !connectionActive) createConnection(snap.val());
+            if (snap.exists()) startConnection(snap.val());
           });
         }, 2000);
-      } else if (pc.iceConnectionState === 'connected') {
-        console.log('Connected!');
       }
     };
-    
+
+    // Send our ICE candidates to host under our unique key
     pc.onicecandidate = (e) => {
       if (e.candidate) {
-        push(ref(db, `rooms/${roomId}/viewerIce/${answerKey}`), e.candidate.toJSON());
+        push(ref(db, `rooms/${roomId}/viewerIce/${myAnswerKey}`), e.candidate.toJSON());
       }
     };
-    
-    pc.onsignalingstatechange = () => {
-      console.log('Signaling state:', pc.signalingState);
-    };
-    
+
     try {
       await pc.setRemoteDescription(new RTCSessionDescription(offerData));
-      console.log('Remote description set');
       const answer = await pc.createAnswer();
       await pc.setLocalDescription(answer);
-      console.log('Local description set');
-      await set(ref(db, `rooms/${roomId}/answers/${answerKey}`), {
+
+      // Write answer under our unique key so host can match ICE candidates
+      await set(ref(db, `rooms/${roomId}/answers/${myAnswerKey}`), {
         sdp: answer.sdp,
         type: answer.type
       });
-      console.log('Answer sent');
-      
-      // Listen for host ICE candidates
-      const iceRef = ref(db, `rooms/${roomId}/hostIce`);
-      onValue(iceRef, (snap) => {
-        snap.forEach(candidateSnapshot => {
-          if (pc && pc.remoteDescription && pc.signalingState !== 'closed') {
-            pc.addIceCandidate(new RTCIceCandidate(candidateSnapshot.val())).catch(e => console.warn('ICE add failed', e));
+
+      // Listen for host ICE candidates (global pool)
+      onValue(ref(db, `rooms/${roomId}/hostIce`), (s) => {
+        s.forEach(c => {
+          if (pc && pc.remoteDescription) {
+            pc.addIceCandidate(new RTCIceCandidate(c.val())).catch(() => {});
           }
         });
       });
     } catch(e) {
-      console.error('Connection error:', e);
-      connectionActive = false;
-      txtElem.innerText = 'WebRTC error: ' + e.message;
-      retryBtn.style.display = 'block';
+      started = false;
+      txt.innerText = 'WebRTC error: ' + e.message;
+      document.getElementById('retryBtn').style.display = 'block';
     }
   }
-  
-  // Wait for offer from host
-  const offerRef = ref(db, `rooms/${roomId}/offer`);
-  
-  // Check for existing offer
-  const existing = await get(offerRef);
-  if (existing.exists()) {
-    await createConnection(existing.val());
-  }
-  
-  // Listen for new offers
-  onValue(offerRef, async (snap) => {
-    if (snap.exists() && !connectionActive) {
-      await createConnection(snap.val());
+
+  // Check existing offer first, then listen for new ones
+  let gotOffer = false;
+  try {
+    const existing = await get(ref(db, `rooms/${roomId}/offer`));
+    if (existing.exists()) {
+      gotOffer = true;
+      await startConnection(existing.val());
+    }
+  } catch(e) {}
+
+  // Also listen for fresh offers (host restarted)
+  onValue(ref(db, `rooms/${roomId}/offer`), async (s) => {
+    if (s.exists() && !started) {
+      await startConnection(s.val());
     }
   });
-  
-  // Timeout after 15 seconds
+
   setTimeout(() => {
-    if (!connectionActive) {
-      txtElem.innerText = 'No active stream found. Check ID or start stream first.';
-      retryBtn.style.display = 'block';
+    if (!started) {
+      txt.innerText = 'No active stream found. Check the ID.';
+      document.getElementById('retryBtn').style.display = 'block';
     }
-  }, 15000);
+  }, 12000);
 }
 
 function applyOverlays(d) {
   const logo = d.logo || {};
   const vLogo = document.getElementById('vLogoOverlay');
-  if (logo.show && logo.src && logo.src !== '') {
+  if (logo.show && logo.src) {
     vLogo.src = logo.src;
     vLogo.style.display = 'block';
     vLogo.style.left   = (logo.x||16)+'px';
@@ -429,7 +411,7 @@ function applyOverlays(d) {
 
   const txt = d.text || {};
   const vTxt = document.getElementById('vTextOverlay');
-  if (txt.show && txt.msg && txt.msg.trim()) {
+  if (txt.show && txt.msg) {
     vTxt.textContent = txt.msg;
     vTxt.style.display = 'block';
     vTxt.style.left = (txt.x||20)+'px';
@@ -438,8 +420,6 @@ function applyOverlays(d) {
     vTxt.style.backgroundColor = `rgba(${h2rgb(txt.bgColor||'#000000')},0.6)`;
     vTxt.style.fontFamily = txt.font||"'DM Sans',sans-serif";
     vTxt.style.fontSize   = (txt.size||22)+'px';
-    vTxt.style.borderRadius = '8px';
-    vTxt.style.padding = '8px 18px';
   } else {
     vTxt.style.display = 'none';
   }
@@ -447,7 +427,7 @@ function applyOverlays(d) {
   const tick = d.ticker || {};
   const wrap  = document.getElementById('vTickerWrap');
   const inner = document.getElementById('vTickerInner');
-  if (tick.show && tick.msg && tick.msg.trim()) {
+  if (tick.show && tick.msg) {
     inner.textContent = tick.msg + '   •   ' + tick.msg + '   •   ' + tick.msg;
     wrap.style.display = 'block';
   } else {
@@ -470,7 +450,8 @@ document.getElementById('vTapArea').addEventListener('click', () => {
 // ==================== ADMIN ====================
 let db, roomId, streamLink, localStream, videoTrack;
 let facing = 'environment';
-const peerMap = new Map();
+// ---- FIX: Map of viewerKey -> RTCPeerConnection (multi-viewer support) ----
+const peerMap = {};
 let logoUrl = '';
 let logoVis = false, textVis = false, tickVis = false;
 let timerInt = null;
@@ -496,135 +477,106 @@ window.startStream = async (type) => {
 
     const app = initializeApp(FB_CFG, 'a-' + Date.now());
     db = getDatabase(app);
-    
-    // Clean up previous room data
     await remove(ref(db, `rooms/${roomId}`));
-    
-    // Create and publish offer
+
+    // Publish initial offer (broadcasts to all future viewers)
     await publishOffer();
-    
-    // Listen for viewer answers
+
+    // ---- FIX: Listen for each viewer's answer by key ----
     onValue(ref(db, `rooms/${roomId}/answers`), (snap) => {
       snap.forEach(child => {
         const key = child.key;
         const ans = child.val();
-        if (ans && ans.sdp && !peerMap.has(key)) {
-          handleViewerAnswer(key, ans);
-        }
+        // Skip meta keys or already-handled peers
+        if (!ans || !ans.sdp || peerMap[key]) return;
+        handleViewerAnswer(key, ans);
       });
     });
-    
-    // Update viewer count
+
+    // View count
     onValue(ref(db, `rooms/${roomId}/viewers`), (snap) => {
-      const count = snap.exists() ? Object.keys(snap.val()).filter(k => !k.startsWith('ans_')).length : 0;
-      document.getElementById('viewCount').textContent = count;
+      document.getElementById('viewCount').textContent =
+        snap.exists() ? Object.keys(snap.val()).length : 0;
     });
-    
-    toast('🔴 LIVE! Stream ID: ' + roomId);
+
+    toast('🔴 LIVE! ID: ' + roomId);
   } catch(e) {
-    console.error(e);
     document.getElementById('homeScreen').style.display = 'flex';
     toast('Camera error: ' + e.message);
   }
 };
 
+// Publish a single offer that all viewers read
 async function publishOffer() {
-  const pc = new RTCPeerConnection(ICE);
-  
-  // Add all tracks
-  localStream.getTracks().forEach(track => {
-    pc.addTrack(track, localStream);
+  // Temporary PC just to generate offer SDP; actual per-viewer PCs created on answer
+  const tempPc = new RTCPeerConnection(ICE);
+  localStream.getTracks().forEach(t => tempPc.addTrack(t, localStream));
+  const offer = await tempPc.createOffer();
+  await tempPc.setLocalDescription(offer);
+
+  // Gather all ICE candidates before publishing (trickle causes issues with shared offer)
+  await new Promise(resolve => {
+    tempPc.onicecandidate = (e) => {
+      if (!e.candidate) resolve();
+    };
+    setTimeout(resolve, 3000); // safety timeout
   });
-  
-  // Create offer
-  const offer = await pc.createOffer();
-  await pc.setLocalDescription(offer);
-  
-  // Wait for ICE gathering to complete
-  await new Promise((resolve) => {
-    if (pc.iceGatheringState === 'complete') {
-      resolve();
-    } else {
-      pc.onicegatheringstatechange = () => {
-        if (pc.iceGatheringState === 'complete') resolve();
-      };
-      setTimeout(resolve, 3000);
-    }
-  });
-  
-  // Store the offer in Firebase
+
+  // Store finalized offer SDP (with embedded candidates via ICE gathering)
   await set(ref(db, `rooms/${roomId}/offer`), {
-    type: pc.localDescription.type,
-    sdp: pc.localDescription.sdp
+    type: tempPc.localDescription.type,
+    sdp: tempPc.localDescription.sdp
   });
-  
-  console.log('Offer published');
-  
-  // Keep this PC for host ICE candidates (but we'll create new PCs per viewer)
-  // Actually we need to close this after offer is stored? No, we keep it for now
-  // But we'll store its ICE candidates separately
-  pc.onicecandidate = (e) => {
-    if (e.candidate) {
-      push(ref(db, `rooms/${roomId}/hostIce`), e.candidate.toJSON());
-    }
-  };
-  
-  // Store this PC for later use (to forward ICE candidates)
-  peerMap.set('host', pc);
+  tempPc.close();
 }
 
+// ---- FIX: Per-viewer RTCPeerConnection using the offer SDP + viewer's answer ----
 async function handleViewerAnswer(viewerKey, ans) {
-  console.log('Handling answer from:', viewerKey);
-  
-  // Create a new peer connection for this viewer
+  // Get the stored offer to know what SDP we published
+  let offerSnap;
+  try { offerSnap = await get(ref(db, `rooms/${roomId}/offer`)); }
+  catch(e) { return; }
+  if (!offerSnap.exists()) return;
+  const offerData = offerSnap.val();
+
   const pc = new RTCPeerConnection(ICE);
-  peerMap.set(viewerKey, pc);
-  
+  peerMap[viewerKey] = pc;
+
   // Add all tracks
-  localStream.getTracks().forEach(track => {
-    pc.addTrack(track, localStream);
-  });
-  
-  // Send ICE candidates to this viewer
+  localStream.getTracks().forEach(t => pc.addTrack(t, localStream));
+
+  // Send our ICE candidates to this viewer's specific pool
   pc.onicecandidate = (e) => {
     if (e.candidate) {
       push(ref(db, `rooms/${roomId}/hostIce`), e.candidate.toJSON());
     }
   };
-  
+
   pc.oniceconnectionstatechange = () => {
-    console.log(`Viewer ${viewerKey} ICE state:`, pc.iceConnectionState);
-    if (pc.iceConnectionState === 'failed' || pc.iceConnectionState === 'disconnected') {
+    if (pc.iceConnectionState === 'disconnected' || pc.iceConnectionState === 'failed' || pc.iceConnectionState === 'closed') {
       pc.close();
-      peerMap.delete(viewerKey);
+      delete peerMap[viewerKey];
     }
   };
-  
+
   try {
-    // Set remote description with viewer's answer
-    await pc.setRemoteDescription(new RTCSessionDescription({
-      type: ans.type,
-      sdp: ans.sdp
-    }));
-    
-    // Create and set local offer (needed for complete handshake)
-    const offer = await pc.createOffer();
-    await pc.setLocalDescription(offer);
-    
-    console.log(`Answer processed for ${viewerKey}`);
-    
-    // Listen for viewer's ICE candidates
-    const iceRef = ref(db, `rooms/${roomId}/viewerIce/${viewerKey}`);
-    onValue(iceRef, (snap) => {
+    // Re-create offer on this PC so signaling state is correct
+    const myOffer = await pc.createOffer();
+    await pc.setLocalDescription(myOffer);
+
+    // Apply viewer's answer
+    await pc.setRemoteDescription(new RTCSessionDescription({ type: ans.type, sdp: ans.sdp }));
+
+    // Apply viewer's ICE candidates (under their key)
+    onValue(ref(db, `rooms/${roomId}/viewerIce/${viewerKey}`), (snap) => {
       snap.forEach(c => {
-        if (pc && pc.remoteDescription && pc.signalingState !== 'closed') {
-          pc.addIceCandidate(new RTCIceCandidate(c.val())).catch(e => console.warn('ICE add failed'));
+        if (pc.remoteDescription) {
+          pc.addIceCandidate(new RTCIceCandidate(c.val())).catch(() => {});
         }
       });
     });
   } catch(e) {
-    console.error('Error handling answer:', e);
-    peerMap.delete(viewerKey);
+    delete peerMap[viewerKey];
     pc.close();
   }
 }
@@ -633,11 +585,12 @@ function startTimer() {
   const start = Date.now();
   timerInt = setInterval(() => {
     const s = Math.floor((Date.now() - start) / 1000);
-    document.getElementById('timerDisp').textContent = `${String(Math.floor(s/60)).padStart(2,'0')}:${String(s%60).padStart(2,'0')}`;
+    document.getElementById('timerDisp').textContent =
+      `${String(Math.floor(s/60)).padStart(2,'0')}:${String(s%60).padStart(2,'0')}`;
   }, 1000);
 }
 
-// ==================== OVERLAY FUNCTIONS ====================
+// ==================== ADMIN OVERLAY CONTROLS ====================
 
 window.autoSendText = (val) => {
   if (!val.trim()) { hideText(); return; }
@@ -671,6 +624,8 @@ window.updateTextStyle = () => {
   el.style.backgroundColor = `rgba(${h2rgb(document.getElementById('bgClr').value)},0.6)`;
   el.style.fontFamily = document.getElementById('fontFam').value;
   el.style.fontSize = document.getElementById('fontSz').value + 'px';
+  el.style.padding = '8px 18px';
+  el.style.borderRadius = '8px';
   broadcast();
 };
 
@@ -684,9 +639,8 @@ window.updateTextPos = () => {
 function getCompressedLogo() {
   if (!logoUrl) return '';
   try {
-    const img = document.getElementById('logoOverlay');
-    if (!img.naturalWidth) return logoUrl;
     const canvas = document.createElement('canvas');
+    const img = document.getElementById('logoOverlay');
     const maxW = 200, maxH = 200;
     const ratio = Math.min(maxW / img.naturalWidth, maxH / img.naturalHeight, 1);
     canvas.width = Math.round(img.naturalWidth * ratio);
@@ -694,14 +648,17 @@ function getCompressedLogo() {
     const ctx = canvas.getContext('2d');
     ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
     return canvas.toDataURL('image/webp', 0.7);
-  } catch(e) { return logoUrl; }
+  } catch(e) {
+    return logoUrl;
+  }
 }
 
 function broadcast() {
   if (!db || !roomId) return;
+  const logoSrc = (logoUrl && logoVis) ? getCompressedLogo() : '';
   set(ref(db, `rooms/${roomId}/overlays`), {
     logo: {
-      show: logoVis, src: (logoUrl && logoVis) ? getCompressedLogo() : '',
+      show: logoVis, src: logoSrc,
       x: parseInt(document.getElementById('logoX').value)||16,
       y: parseInt(document.getElementById('logoY').value)||80,
       w: parseInt(document.getElementById('logoW').value)||120,
@@ -709,9 +666,10 @@ function broadcast() {
     },
     text: {
       show: textVis,
-      msg: document.getElementById('textOverlay').textContent || '',
+      msg: document.getElementById('textOverlay').textContent,
       color: document.getElementById('textClr').value,
       bgColor: document.getElementById('bgClr').value,
+      bgOp: 0.6,
       font: document.getElementById('fontFam').value,
       size: parseInt(document.getElementById('fontSz').value)||22,
       x: parseInt(document.getElementById('textX').value)||20,
@@ -719,7 +677,7 @@ function broadcast() {
     },
     ticker: {
       show: tickVis,
-      msg: document.getElementById('tickInp').value || ''
+      msg: document.getElementById('tickInp').value
     }
   });
 }
@@ -730,8 +688,9 @@ window.uploadLogo = (input) => {
   const reader = new FileReader();
   reader.onload = e => {
     logoUrl = e.target.result;
-    document.getElementById('imgPrev').src = logoUrl;
-    document.getElementById('imgPrev').style.display = 'block';
+    const imgPrev = document.getElementById('imgPrev');
+    imgPrev.src = logoUrl;
+    imgPrev.style.display = 'block';
     const logoEl = document.getElementById('logoOverlay');
     logoEl.onload = () => {
       logoVis = true;
@@ -761,18 +720,19 @@ window.applyLogoSize = () => {
 };
 
 window.toggleLogo = (show) => {
-  if (show && !logoUrl) { toast('Pehle image upload karein!'); return; }
+  if (show && !logoUrl) { toast('Pehle image upload karo!'); return; }
   logoVis = show;
   document.getElementById('logoOverlay').style.display = show ? 'block' : 'none';
   broadcast();
-  toast(show ? 'Logo dikh raha hai' : 'Logo chhup gaya');
+  toast(show ? 'Logo shown' : 'Logo hidden');
 };
 
 window.sendTicker = () => {
   const msg = document.getElementById('tickInp').value.trim();
-  if (!msg) { toast('Ticker text likhein!'); return; }
+  if (!msg) { toast('Ticker text likho!'); return; }
   tickVis = true;
-  document.getElementById('tickerInner').textContent = msg + '   •   ' + msg + '   •   ' + msg;
+  const adminInner = document.getElementById('tickerInner');
+  adminInner.textContent = msg + '   •   ' + msg + '   •   ' + msg;
   document.getElementById('tickerOverlay').style.display = 'block';
   broadcast();
   toast('Ticker live!');
@@ -785,119 +745,105 @@ window.hideTicker = () => {
   toast('Ticker hidden');
 };
 
-window.toggleFlash = async () => { 
-  try { 
-    if (videoTrack) await videoTrack.applyConstraints({ advanced: [{ torch: true }] }); 
-  } catch(e) { 
-    toast('Flash supported nahi hai'); 
-  } 
+window.toggleFlash = async () => {
+  try {
+    if (videoTrack) await videoTrack.applyConstraints({ advanced: [{ torch: true }] });
+  } catch(e) { toast('Flash supported nahi'); }
 };
 
 window.flipCamera = async () => {
   facing = facing === 'environment' ? 'user' : 'environment';
   if (localStream) localStream.getTracks().forEach(t => t.stop());
   try {
-    localStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: facing }, audio: true });
+    localStream = await navigator.mediaDevices.getUserMedia({
+      video: { facingMode: facing },
+      audio: true
+    });
     videoTrack = localStream.getVideoTracks()[0];
     document.getElementById('mainVideo').srcObject = localStream;
-    for (let [key, pc] of peerMap) {
-      if (key !== 'host') {
-        const sender = pc.getSenders().find(s => s.track?.kind === 'video');
-        if (sender) sender.replaceTrack(videoTrack);
-      }
-    }
+    // Replace track in all peer connections
+    Object.values(peerMap).forEach(pc => {
+      const sender = pc.getSenders().find(s => s.track?.kind === 'video');
+      if (sender) sender.replaceTrack(videoTrack);
+    });
     toast('Camera flip ho gaya');
-  } catch(e) { toast('Flip nahi ho paaya: ' + e.message); }
+  } catch(e) { toast('Flip nahi hua: ' + e.message); }
 };
 
 window.applyZoom = (val) => {
   document.getElementById('zoomVal').textContent = parseFloat(val).toFixed(1) + 'x';
-  if (videoTrack) { 
-    try { videoTrack.applyConstraints({ advanced: [{ zoom: parseFloat(val) }] }); } 
-    catch(e) { document.getElementById('mainVideo').style.transform = `scale(${val})`; } 
+  if (videoTrack) {
+    try {
+      videoTrack.applyConstraints({ advanced: [{ zoom: parseFloat(val) }] });
+    } catch(e) {
+      document.getElementById('mainVideo').style.transform = `scale(${val})`;
+    }
   }
 };
 
-window.toggleDrawer = () => { 
-  const d = document.getElementById('drawer'); 
-  d.classList.toggle('open'); 
-  document.getElementById('panelBtn').classList.toggle('on', d.classList.contains('open')); 
+window.toggleDrawer = () => {
+  const d = document.getElementById('drawer');
+  d.classList.toggle('open');
+  document.getElementById('panelBtn').classList.toggle('on', d.classList.contains('open'));
 };
 
-window.copyLink = () => { 
-  if(streamLink) navigator.clipboard.writeText(streamLink).then(()=>toast('Link copy ho gaya!')).catch(()=>toast('Copy fail')); 
-  else toast('Pehle stream shuru karein!'); 
+window.copyLink = () => {
+  if (streamLink) {
+    navigator.clipboard.writeText(streamLink).then(() => toast('Link copy ho gaya!')).catch(() => toast('Copy failed'));
+  } else {
+    toast('Pehle stream shuru karo!');
+  }
 };
 
-window.waShare = () => { 
-  if(streamLink) window.open(`https://wa.me/?text=${encodeURIComponent('🔴 Live stream dekhein! ' + streamLink)}`); 
-  else toast('Pehle stream shuru karein!'); 
+window.waShare = () => {
+  if (streamLink) window.open(`https://wa.me/?text=${encodeURIComponent('🔴 Live stream dekho! ' + streamLink)}`);
+  else toast('Pehle stream shuru karo!');
 };
 
-window.stopStream = () => { 
-  if(timerInt) clearInterval(timerInt); 
-  if(localStream) localStream.getTracks().forEach(t=>t.stop()); 
-  peerMap.forEach(pc=>pc.close()); 
-  if(db && roomId) remove(ref(db, `rooms/${roomId}`)); 
-  location.reload(); 
+window.stopStream = () => {
+  if (timerInt) clearInterval(timerInt);
+  if (localStream) localStream.getTracks().forEach(t => t.stop());
+  Object.values(peerMap).forEach(pc => pc.close());
+  if (db && roomId) remove(ref(db, `rooms/${roomId}`));
+  location.reload();
 };
 
 // ==================== LOGO DRAG ====================
-const logoDragEl = document.getElementById('logoOverlay');
-let dragActive = false, dragOffsetX = 0, dragOffsetY = 0;
+const logoEl = document.getElementById('logoOverlay');
+let dragging = false, dragOffX = 0, dragOffY = 0;
 
-logoDragEl.addEventListener('mousedown', (e) => { 
-  e.preventDefault(); 
-  dragActive = true; 
-  const rect = logoDragEl.getBoundingClientRect(); 
-  dragOffsetX = e.clientX - rect.left; 
-  dragOffsetY = e.clientY - rect.top; 
+logoEl.addEventListener('mousedown', (e) => {
+  e.preventDefault(); dragging = true;
+  const rect = logoEl.getBoundingClientRect();
+  dragOffX = e.clientX - rect.left;
+  dragOffY = e.clientY - rect.top;
 });
-
-document.addEventListener('mousemove', (e) => { 
-  if(!dragActive) return; 
-  const x = e.clientX - dragOffsetX; 
-  const y = e.clientY - dragOffsetY; 
-  logoDragEl.style.left = x+'px'; 
-  logoDragEl.style.top = y+'px'; 
-  document.getElementById('logoX').value = Math.round(x); 
-  document.getElementById('logoY').value = Math.round(y); 
+document.addEventListener('mousemove', (e) => {
+  if (!dragging) return;
+  const x = e.clientX - dragOffX, y = e.clientY - dragOffY;
+  logoEl.style.left = x + 'px'; logoEl.style.top = y + 'px';
+  document.getElementById('logoX').value = x;
+  document.getElementById('logoY').value = y;
 });
+document.addEventListener('mouseup', () => { if (dragging) { dragging = false; if (logoVis) broadcast(); } });
 
-document.addEventListener('mouseup', () => { 
-  if(dragActive) { 
-    dragActive = false; 
-    if(logoVis) broadcast(); 
-  } 
-});
-
-logoDragEl.addEventListener('touchstart', (e) => { 
-  e.preventDefault(); 
-  const touch = e.touches[0]; 
-  dragActive = true; 
-  const rect = logoDragEl.getBoundingClientRect(); 
-  dragOffsetX = touch.clientX - rect.left; 
-  dragOffsetY = touch.clientY - rect.top; 
+logoEl.addEventListener('touchstart', (e) => {
+  e.preventDefault();
+  const touch = e.touches[0]; dragging = true;
+  const rect = logoEl.getBoundingClientRect();
+  dragOffX = touch.clientX - rect.left;
+  dragOffY = touch.clientY - rect.top;
 }, { passive: false });
-
-document.addEventListener('touchmove', (e) => { 
-  if(!dragActive) return; 
-  e.preventDefault(); 
-  const touch = e.touches[0]; 
-  const x = touch.clientX - dragOffsetX; 
-  const y = touch.clientY - dragOffsetY; 
-  logoDragEl.style.left = x+'px'; 
-  logoDragEl.style.top = y+'px'; 
-  document.getElementById('logoX').value = Math.round(x); 
-  document.getElementById('logoY').value = Math.round(y); 
+document.addEventListener('touchmove', (e) => {
+  if (!dragging) return;
+  e.preventDefault();
+  const touch = e.touches[0];
+  const x = touch.clientX - dragOffX, y = touch.clientY - dragOffY;
+  logoEl.style.left = x + 'px'; logoEl.style.top = y + 'px';
+  document.getElementById('logoX').value = x;
+  document.getElementById('logoY').value = y;
 }, { passive: false });
-
-document.addEventListener('touchend', () => { 
-  if(dragActive) { 
-    dragActive = false; 
-    if(logoVis) broadcast(); 
-  } 
-});
+document.addEventListener('touchend', () => { if (dragging) { dragging = false; if (logoVis) broadcast(); } });
 
 </script>
 </body>
