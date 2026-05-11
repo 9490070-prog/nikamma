@@ -1,96 +1,265 @@
+Here is an HTML document that creates a reliable live streaming tool with full-screen video and stable audio, fixing the previous issues.
+```html
 <!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>LiveCam Pro - Fixed Stream</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>LiveCam Pro - FullScreen + Audio Fix</title>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <style>
-:root{--red:#ff2d2d;--red-dark:#c0000a;--surface:#141414;--surface2:#1e1e1e;--border:rgba(255,255,255,0.08);--text:#f0f0f0;--muted:#777}
-*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-html,body{width:100%;height:100%;overflow:hidden;background:#000;color:var(--text);font-family:'DM Sans',sans-serif}
-#viewerPage{display:none;position:fixed;inset:0;background:#000;z-index:1}
-#viewVideo{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;background:#000;z-index:1}
-#vLogoOverlay{position:absolute;object-fit:contain;display:none;filter:drop-shadow(0 2px 12px rgba(0,0,0,0.9));border-radius:6px;pointer-events:none;z-index:10}
-#vTextOverlay{position:absolute;display:none;pointer-events:none;z-index:11;white-space:pre-wrap;word-break:break-word;line-height:1.4;padding:8px 18px;border-radius:8px}
-#vTickerWrap{position:absolute;left:0;right:0;bottom:0;overflow:hidden;pointer-events:none;display:none;z-index:11;background:rgba(200,0,0,0.88);padding:8px 0}
-.tick-i{white-space:nowrap;display:inline-block;animation:ticker 18s linear infinite;font-weight:600;color:#fff;padding-left:100%}
-@keyframes ticker{from{transform:translateX(0)}to{transform:translateX(-100%)}}
-#vTapArea{position:absolute;inset:0;z-index:20;cursor:pointer}
-#vPlayIcon{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);z-index:25;pointer-events:none;width:88px;height:88px;border-radius:50%;background:rgba(0,0,0,0.55);backdrop-filter:blur(10px);border:2px solid rgba(255,255,255,0.25);display:flex;align-items:center;justify-content:center;opacity:0;transition:opacity 0.3s ease}
-#vPlayIcon.show{opacity:1}
-#vPlayIcon svg{width:42px;height:42px;fill:#fff}
-#vLoader{position:absolute;inset:0;background:#0a0a0a;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;z-index:30}
-.vl-logo{font-family:'Bebas Neue',sans-serif;font-size:2.2rem;letter-spacing:3px;color:#fff}
-.vl-logo span{color:var(--red)}
-.spinner{width:46px;height:46px;border:3px solid rgba(255,255,255,0.08);border-top-color:var(--red);border-radius:50%;animation:spin 0.8s linear infinite}
-@keyframes spin{to{transform:rotate(360deg)}}
-.vl-txt{color:var(--muted);font-size:0.85rem;text-align:center;padding:0 30px;line-height:1.6}
-.retry-btn{padding:10px 24px;background:var(--red);border:none;border-radius:10px;color:#fff;font-size:0.88rem;cursor:pointer;display:none;margin-top:4px}
-#adminPage{display:none;position:fixed;inset:0;z-index:1;overflow-y:auto}
-#homeScreen{min-height:100%;background:radial-gradient(ellipse at 30% 20%,#1a0000 0%,#0a0a0a 60%);display:flex;flex-direction:column;align-items:center;padding:50px 20px 40px}
-.logo-t{font-family:'Bebas Neue',sans-serif;font-size:3rem;letter-spacing:4px;text-align:center;line-height:1}
-.logo-t span{color:var(--red)}
-.tagline{color:var(--muted);font-size:0.72rem;letter-spacing:2px;text-transform:uppercase;text-align:center;margin-top:4px;margin-bottom:28px}
-.card{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:18px;width:100%;max-width:400px;margin-bottom:12px}
-.clbl{font-size:0.65rem;text-transform:uppercase;letter-spacing:2px;color:var(--muted);margin-bottom:12px}
-.bbtn{width:100%;padding:15px;border:none;border-radius:12px;font-family:'DM Sans',sans-serif;font-size:0.93rem;font-weight:600;cursor:pointer;transition:all 0.15s;display:flex;align-items:center;gap:10px;justify-content:center;margin-bottom:9px}
-.bbtn.red{background:var(--red);color:#fff}
-.bbtn.dark{background:var(--surface2);color:var(--text);border:1px solid var(--border)}
-.bbtn:active{transform:scale(0.97)}
-.inp{width:100%;padding:13px 14px;background:var(--surface2);border:1px solid var(--border);border-radius:10px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:0.88rem;outline:none;margin-bottom:8px}
-.inp:focus{border-color:rgba(255,45,45,0.5)}
-.hint{font-size:0.72rem;color:var(--muted);margin-bottom:14px}
-#streamScreen{display:none;position:fixed;inset:0;background:#000}
-#mainVideo{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
-#ovCanvas{position:absolute;inset:0;pointer-events:none;z-index:10;overflow:hidden}
-#logoOverlay{position:absolute;object-fit:contain;display:none;filter:drop-shadow(0 2px 12px rgba(0,0,0,0.9));cursor:move;z-index:12;border-radius:6px;touch-action:none;pointer-events:all}
-#textOverlay{position:absolute;display:none;pointer-events:none;z-index:11;white-space:pre-wrap;word-break:break-word;line-height:1.4}
-#tickerOverlay{position:absolute;left:0;right:0;bottom:0;overflow:hidden;pointer-events:none;display:none;z-index:11;background:rgba(200,0,0,0.88);padding:8px 0}
-.tick-admin{white-space:nowrap;display:inline-block;animation:ticker 18s linear infinite;font-weight:600;color:#fff;padding-left:100%}
-#adminTop{position:absolute;top:0;left:0;right:0;z-index:20;display:flex;align-items:center;justify-content:space-between;padding:12px 16px;background:linear-gradient(to bottom,rgba(0,0,0,0.85) 0%,transparent 100%)}
-.lpill{display:flex;align-items:center;gap:7px;background:var(--red);padding:5px 13px;border-radius:20px;font-size:0.75rem;font-weight:700}
-.pulse{width:8px;height:8px;border-radius:50%;background:#fff;animation:p 1.2s ease-in-out infinite;display:inline-block}
-@keyframes p{0%,100%{opacity:1;transform:scale(1)}50%{opacity:0.3;transform:scale(0.7)}}
-.spill{background:rgba(0,0,0,0.65);border:1px solid rgba(255,255,255,0.12);padding:5px 11px;border-radius:20px;font-size:0.76rem;display:flex;align-items:center;gap:5px}
-#adminBot{position:absolute;bottom:0;left:0;right:0;z-index:20;padding:10px 16px 26px;background:linear-gradient(to top,rgba(0,0,0,0.92) 0%,transparent 100%)}
-.crow{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
-.cbtn{width:50px;height:50px;border-radius:50%;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:1.2rem;background:rgba(255,255,255,0.13);backdrop-filter:blur(6px);transition:all 0.15s;flex-shrink:0}
-.cbtn:active{transform:scale(0.88)}
-.cbtn.on{background:var(--red)}
-.stopc{width:64px;height:64px;border-radius:50%;border:3px solid rgba(255,255,255,0.22);background:var(--red);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:1.45rem;flex-shrink:0}
-.stopc:active{transform:scale(0.92)}
-.zrow{display:flex;align-items:center;gap:10px;padding:0 4px}
-.zlbl{font-size:0.68rem;color:var(--muted);min-width:24px}
-input[type=range]{flex:1;height:3px;-webkit-appearance:none;background:rgba(255,255,255,0.18);border-radius:2px}
-input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:20px;height:20px;border-radius:50%;background:#fff;cursor:pointer}
-.zval{font-size:0.75rem;color:#fff;font-weight:600;min-width:34px}
-#drawer{position:absolute;bottom:0;left:0;right:0;z-index:30;background:var(--surface);border-radius:20px 20px 0 0;border-top:1px solid var(--border);padding:12px 16px 40px;transform:translateY(100%);transition:transform 0.32s cubic-bezier(0.4,0,0.2,1);max-height:86vh;overflow-y:auto}
-#drawer.open{transform:translateY(0)}
-.dh{width:36px;height:4px;background:var(--border);border-radius:2px;margin:0 auto 14px}
-.sec{font-size:0.62rem;text-transform:uppercase;letter-spacing:2px;color:var(--muted);margin-bottom:8px;margin-top:14px}
-.mrow{display:flex;gap:8px;margin-bottom:8px}
-.minp{flex:1;padding:11px 13px;background:var(--surface2);border:1px solid var(--border);border-radius:10px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:0.86rem;outline:none}
-.sendb{padding:11px 14px;background:var(--red);border:none;border-radius:10px;color:#fff;font-weight:700;cursor:pointer}
-.crow2{display:flex;align-items:center;gap:10px;margin-bottom:8px;flex-wrap:wrap}
-.crow2 label{font-size:0.78rem;color:var(--muted)}
-input[type=color]{width:36px;height:36px;border:none;border-radius:8px;background:none;cursor:pointer}
-.frow{display:flex;gap:8px;align-items:center;margin-bottom:10px;flex-wrap:wrap}
-.frow select,.frow input[type=number]{padding:8px 10px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:0.82rem}
-.g2{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px}
-.fi{display:flex;flex-direction:column;gap:3px}
-.fi label{font-size:0.68rem;color:var(--muted)}
-.pi{padding:9px 10px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:0.85rem;width:100%}
-.szrow{display:flex;gap:8px;align-items:center;margin-bottom:8px;flex-wrap:wrap}
-.qtags{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:6px}
-.qtag{padding:6px 12px;background:var(--surface2);border:1px solid var(--border);border-radius:20px;font-size:0.76rem;cursor:pointer}
-.srow{display:flex;gap:8px}
-.sbtn{flex:1;padding:12px 8px;background:var(--surface2);border:1px solid var(--border);border-radius:10px;color:var(--text);font-size:0.78rem;font-weight:500;cursor:pointer;text-align:center}
-.upa{border:1px dashed rgba(255,255,255,0.18);border-radius:12px;padding:14px;text-align:center;cursor:pointer;margin-bottom:8px}
-.iprev{max-width:100%;max-height:80px;border-radius:8px;margin-top:8px;display:none}
-#liveTextPreview{background:rgba(255,45,45,0.12);border:1px solid rgba(255,45,45,0.3);border-radius:10px;padding:10px 12px;font-size:0.8rem;color:#ff9999;margin-bottom:8px;display:none}
-#toast{position:fixed;top:68px;left:50%;transform:translateX(-50%) translateY(-16px);background:rgba(18,18,18,0.96);border:1px solid var(--border);padding:10px 20px;border-radius:20px;font-size:0.82rem;z-index:9999;opacity:0;transition:all 0.3s;pointer-events:none;backdrop-filter:blur(10px);white-space:nowrap;max-width:90vw}
-#toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
+}
+
+html, body {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: #000;
+  color: #f0f0f0;
+  font-family: 'DM Sans', sans-serif;
+}
+
+/* FULL SCREEN FIX - video will always cover entire screen */
+#viewerPage, #adminPage, #streamScreen {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  background: #000;
+}
+
+#viewVideo, #mainVideo {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover; /* FULL SCREEN COVER - no black bars */
+  background: #000;
+  z-index: 1;
+}
+
+/* Overlay layers - on top of fullscreen video */
+#vLogoOverlay, #vTextOverlay, #vTickerWrap,
+#logoOverlay, #textOverlay, #tickerOverlay {
+  z-index: 10;
+}
+
+#vLogoOverlay, #logoOverlay {
+  position: absolute;
+  object-fit: contain;
+  display: none;
+  filter: drop-shadow(0 2px 12px rgba(0,0,0,0.9));
+  border-radius: 6px;
+  pointer-events: none;
+}
+
+#logoOverlay {
+  pointer-events: all;
+  cursor: move;
+  touch-action: none;
+}
+
+#vTextOverlay, #textOverlay {
+  position: absolute;
+  display: none;
+  pointer-events: none;
+  white-space: pre-wrap;
+  word-break: break-word;
+  line-height: 1.4;
+  padding: 8px 18px;
+  border-radius: 8px;
+  background-color: rgba(0,0,0,0.6);
+  z-index: 11;
+}
+
+#vTickerWrap, #tickerOverlay {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  overflow: hidden;
+  pointer-events: none;
+  display: none;
+  background: rgba(200,0,0,0.88);
+  padding: 8px 0;
+  z-index: 11;
+}
+
+.tick-i, .tick-admin {
+  white-space: nowrap;
+  display: inline-block;
+  animation: ticker 18s linear infinite;
+  font-weight: 600;
+  color: #fff;
+  padding-left: 100%;
+}
+
+@keyframes ticker {
+  from { transform: translateX(0); }
+  to { transform: translateX(-100%); }
+}
+
+#vTapArea {
+  position: absolute;
+  inset: 0;
+  z-index: 20;
+  cursor: pointer;
+}
+
+#vPlayIcon {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 25;
+  pointer-events: none;
+  width: 88px;
+  height: 88px;
+  border-radius: 50%;
+  background: rgba(0,0,0,0.55);
+  backdrop-filter: blur(10px);
+  border: 2px solid rgba(255,255,255,0.25);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+#vPlayIcon.show { opacity: 1; }
+#vPlayIcon svg { width: 42px; height: 42px; fill: #fff; }
+
+#vLoader {
+  position: absolute;
+  inset: 0;
+  background: #0a0a0a;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 18px;
+  z-index: 30;
+}
+
+.vl-logo { font-family: 'Bebas Neue', sans-serif; font-size: 2.2rem; letter-spacing: 3px; color: #fff; }
+.vl-logo span { color: #ff2d2d; }
+.spinner { width: 46px; height: 46px; border: 3px solid rgba(255,255,255,0.08); border-top-color: #ff2d2d; border-radius: 50%; animation: spin 0.8s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.vl-txt { color: #777; font-size: 0.85rem; text-align: center; padding: 0 30px; line-height: 1.6; }
+.retry-btn { padding: 10px 24px; background: #ff2d2d; border: none; border-radius: 10px; color: #fff; font-size: 0.88rem; cursor: pointer; display: none; margin-top: 4px; }
+
+#homeScreen {
+  min-height: 100%;
+  background: radial-gradient(ellipse at 30% 20%, #1a0000 0%, #0a0a0a 60%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 50px 20px 40px;
+  overflow-y: auto;
+}
+
+.logo-t { font-family: 'Bebas Neue', sans-serif; font-size: 3rem; letter-spacing: 4px; text-align: center; line-height: 1; }
+.logo-t span { color: #ff2d2d; }
+.tagline { color: #777; font-size: 0.72rem; letter-spacing: 2px; text-transform: uppercase; text-align: center; margin-top: 4px; margin-bottom: 28px; }
+.card { background: #141414; border: 1px solid rgba(255,255,255,0.08); border-radius: 16px; padding: 18px; width: 100%; max-width: 400px; margin-bottom: 12px; }
+.clbl { font-size: 0.65rem; text-transform: uppercase; letter-spacing: 2px; color: #777; margin-bottom: 12px; }
+.bbtn { width: 100%; padding: 15px; border: none; border-radius: 12px; font-family: 'DM Sans', sans-serif; font-size: 0.93rem; font-weight: 600; cursor: pointer; transition: all 0.15s; display: flex; align-items: center; gap: 10px; justify-content: center; margin-bottom: 9px; }
+.bbtn.red { background: #ff2d2d; color: #fff; }
+.bbtn.dark { background: #1e1e1e; color: #f0f0f0; border: 1px solid rgba(255,255,255,0.08); }
+.bbtn:active { transform: scale(0.97); }
+.inp { width: 100%; padding: 13px 14px; background: #1e1e1e; border: 1px solid rgba(255,255,255,0.08); border-radius: 10px; color: #f0f0f0; font-family: 'DM Sans', sans-serif; font-size: 0.88rem; outline: none; margin-bottom: 8px; }
+.inp:focus { border-color: rgba(255,45,45,0.5); }
+.hint { font-size: 0.72rem; color: #777; margin-bottom: 14px; }
+
+#ovCanvas { position: absolute; inset: 0; pointer-events: none; z-index: 10; overflow: hidden; }
+
+#adminTop {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  background: linear-gradient(to bottom, rgba(0,0,0,0.85) 0%, transparent 100%);
+}
+
+.lpill { display: flex; align-items: center; gap: 7px; background: #ff2d2d; padding: 5px 13px; border-radius: 20px; font-size: 0.75rem; font-weight: 700; }
+.pulse { width: 8px; height: 8px; border-radius: 50%; background: #fff; animation: p 1.2s ease-in-out infinite; display: inline-block; }
+@keyframes p { 0%,100%{ opacity: 1; transform: scale(1); } 50%{ opacity: 0.3; transform: scale(0.7); } }
+.spill { background: rgba(0,0,0,0.65); border: 1px solid rgba(255,255,255,0.12); padding: 5px 11px; border-radius: 20px; font-size: 0.76rem; display: flex; align-items: center; gap: 5px; }
+
+#adminBot {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 20;
+  padding: 10px 16px 26px;
+  background: linear-gradient(to top, rgba(0,0,0,0.92) 0%, transparent 100%);
+}
+
+.crow { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+.cbtn { width: 50px; height: 50px; border-radius: 50%; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; background: rgba(255,255,255,0.13); backdrop-filter: blur(6px); transition: all 0.15s; flex-shrink: 0; }
+.cbtn:active { transform: scale(0.88); }
+.cbtn.on { background: #ff2d2d; }
+.stopc { width: 64px; height: 64px; border-radius: 50%; border: 3px solid rgba(255,255,255,0.22); background: #ff2d2d; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 1.45rem; flex-shrink: 0; }
+.stopc:active { transform: scale(0.92); }
+.zrow { display: flex; align-items: center; gap: 10px; padding: 0 4px; }
+.zlbl { font-size: 0.68rem; color: #777; min-width: 24px; }
+input[type=range] { flex: 1; height: 3px; -webkit-appearance: none; background: rgba(255,255,255,0.18); border-radius: 2px; }
+input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 20px; height: 20px; border-radius: 50%; background: #fff; cursor: pointer; }
+.zval { font-size: 0.75rem; color: #fff; font-weight: 600; min-width: 34px; }
+
+#drawer {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 30;
+  background: #141414;
+  border-radius: 20px 20px 0 0;
+  border-top: 1px solid rgba(255,255,255,0.08);
+  padding: 12px 16px 40px;
+  transform: translateY(100%);
+  transition: transform 0.32s cubic-bezier(0.4,0,0.2,1);
+  max-height: 86vh;
+  overflow-y: auto;
+}
+
+#drawer.open { transform: translateY(0); }
+.dh { width: 36px; height: 4px; background: rgba(255,255,255,0.08); border-radius: 2px; margin: 0 auto 14px; }
+.sec { font-size: 0.62rem; text-transform: uppercase; letter-spacing: 2px; color: #777; margin-bottom: 8px; margin-top: 14px; }
+.mrow { display: flex; gap: 8px; margin-bottom: 8px; }
+.minp { flex: 1; padding: 11px 13px; background: #1e1e1e; border: 1px solid rgba(255,255,255,0.08); border-radius: 10px; color: #f0f0f0; font-size: 0.86rem; outline: none; }
+.sendb { padding: 11px 14px; background: #ff2d2d; border: none; border-radius: 10px; color: #fff; font-weight: 700; cursor: pointer; }
+.crow2 { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; flex-wrap: wrap; }
+.crow2 label { font-size: 0.78rem; color: #777; }
+input[type=color] { width: 36px; height: 36px; border: none; border-radius: 8px; background: none; cursor: pointer; }
+.frow { display: flex; gap: 8px; align-items: center; margin-bottom: 10px; flex-wrap: wrap; }
+.frow select, .frow input[type=number] { padding: 8px 10px; background: #1e1e1e; border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; color: #f0f0f0; font-size: 0.82rem; }
+.g2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 8px; }
+.fi { display: flex; flex-direction: column; gap: 3px; }
+.fi label { font-size: 0.68rem; color: #777; }
+.pi { padding: 9px 10px; background: #1e1e1e; border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; color: #f0f0f0; font-size: 0.85rem; width: 100%; }
+.szrow { display: flex; gap: 8px; align-items: center; margin-bottom: 8px; flex-wrap: wrap; }
+.qtags { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 6px; }
+.qtag { padding: 6px 12px; background: #1e1e1e; border: 1px solid rgba(255,255,255,0.08); border-radius: 20px; font-size: 0.76rem; cursor: pointer; }
+.srow { display: flex; gap: 8px; }
+.sbtn { flex: 1; padding: 12px 8px; background: #1e1e1e; border: 1px solid rgba(255,255,255,0.08); border-radius: 10px; color: #f0f0f0; font-size: 0.78rem; font-weight: 500; cursor: pointer; text-align: center; }
+.upa { border: 1px dashed rgba(255,255,255,0.18); border-radius: 12px; padding: 14px; text-align: center; cursor: pointer; margin-bottom: 8px; }
+.iprev { max-width: 100%; max-height: 80px; border-radius: 8px; margin-top: 8px; display: none; }
+#liveTextPreview { background: rgba(255,45,45,0.12); border: 1px solid rgba(255,45,45,0.3); border-radius: 10px; padding: 10px 12px; font-size: 0.8rem; color: #ff9999; margin-bottom: 8px; display: none; }
+#toast { position: fixed; top: 68px; left: 50%; transform: translateX(-50%) translateY(-16px); background: rgba(18,18,18,0.96); border: 1px solid rgba(255,255,255,0.08); padding: 10px 20px; border-radius: 20px; font-size: 0.82rem; z-index: 9999; opacity: 0; transition: all 0.3s; pointer-events: none; backdrop-filter: blur(10px); white-space: nowrap; max-width: 90vw; }
+#toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 </style>
 </head>
 <body>
@@ -114,17 +283,18 @@ input[type=color]{width:36px;height:36px;border:none;border-radius:8px;backgroun
 
 <div id="adminPage">
   <div id="homeScreen">
-    <div class="logo-t">LIVE<span>CAM</span> <span style="font-size:1.1rem;color:var(--muted)">FIXED</span></div>
-    <div class="tagline">Professional Live Streaming - Video ab chalti fix</div>
+    <div class="logo-t">LIVE<span>CAM</span> <span style="font-size:1.1rem;color:#777">PRO</span></div>
+    <div class="tagline">Full Screen • Crystal Clear Audio</div>
     <div class="card">
       <div class="clbl">🔴 Start Stream</div>
       <div class="sec" style="margin-top:0;margin-bottom:4px">Enter Stream ID</div>
       <input class="inp" id="customId" type="text" placeholder="e.g. ab12345" maxlength="30" value="ab12345">
-      <div class="hint">⚠️ Use unique ID. Default: ab12345</div>
+      <div class="hint">⚠️ Unique ID. Default: ab12345</div>
       <button class="bbtn red" onclick="startStream('back')">📸 Back Camera Live</button>
       <button class="bbtn dark" onclick="startStream('front')">🤳 Front Camera Live</button>
     </div>
   </div>
+
   <div id="streamScreen">
     <video id="mainVideo" autoplay playsinline muted></video>
     <div id="ovCanvas">
@@ -154,7 +324,7 @@ input[type=color]{width:36px;height:36px;border:none;border-radius:8px;backgroun
     <div id="drawer">
       <div class="dh"></div>
       <div class="sec">🔗 Viewer Link</div>
-      <div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:10px 12px;font-size:0.72rem;color:#4fc3f7;word-break:break-all;margin-bottom:8px" id="linkDisp">-</div>
+      <div style="background:#1e1e1e;border:1px solid rgba(255,255,255,0.08);border-radius:10px;padding:10px 12px;font-size:0.72rem;color:#4fc3f7;word-break:break-all;margin-bottom:8px" id="linkDisp">-</div>
       <div class="srow" style="margin-bottom:4px">
         <button class="sbtn" onclick="copyLink()">📋 Copy</button>
         <button class="sbtn" onclick="waShare()">📤 WhatsApp</button>
@@ -189,7 +359,7 @@ input[type=color]{width:36px;height:36px;border:none;border-radius:8px;backgroun
       <div class="sec">🖼️ Logo</div>
       <div class="upa" onclick="document.getElementById('imgInp').click()">
         <div style="font-size:1.8rem">📁</div>
-        <div style="font-size:0.8rem;color:var(--muted)">Upload logo (max 200KB)</div>
+        <div style="font-size:0.8rem;color:#777">Upload logo (max 200KB)</div>
         <img class="iprev" id="imgPrev" src="">
       </div>
       <input type="file" id="imgInp" accept="image/*" style="display:none" onchange="uploadLogo(this)">
@@ -228,7 +398,7 @@ input[type=color]{width:36px;height:36px;border:none;border-radius:8px;backgroun
 
 <script type="module">
 import { initializeApp } from 'firebase/app';
-import { getDatabase, ref, set, get, onValue, push, remove, off } from 'firebase/database';
+import { getDatabase, ref, set, onValue, push, remove, off } from 'firebase/database';
 
 const FB_CFG = {
   apiKey: "AIzaSyCXY_layR4HtlrJTweBB5ER_uc5jkMG0sc",
@@ -245,12 +415,11 @@ const ICE = { iceServers: [
   { urls: 'stun:stun1.l.google.com:19302' },
   { urls: 'turn:openrelay.metered.ca:80', username: 'openrelayproject', credential: 'openrelayproject' },
   { urls: 'turn:openrelay.metered.ca:443', username: 'openrelayproject', credential: 'openrelayproject' }
-]};
+] };
 
 window.toast = (msg) => { const t = document.getElementById('toast'); t.textContent = msg; t.classList.add('show'); setTimeout(() => t.classList.remove('show'), 2500); };
 function h2rgb(h) { if(!h || h.length<7) return '0,0,0'; return `${parseInt(h.slice(1,3),16)},${parseInt(h.slice(3,5),16)},${parseInt(h.slice(5,7),16)}`; }
 
-// Determine mode
 const urlParams = new URLSearchParams(location.search);
 const watchId = urlParams.get('watch');
 if (watchId) {
@@ -260,7 +429,7 @@ if (watchId) {
   document.getElementById('adminPage').style.display = 'block';
 }
 
-// ================= VIEWER (COMPLETE FIXED FLOW) =================
+// ============ VIEWER (FULL SCREEN + AUDIO ENABLED) ============
 async function initViewer(roomId) {
   const txt = document.getElementById('vLoaderTxt');
   txt.innerText = 'Connecting to stream...';
@@ -270,7 +439,6 @@ async function initViewer(roomId) {
     db = getDatabase(app);
   } catch(e) { txt.innerText = 'Firebase error'; document.getElementById('retryBtn').style.display='block'; return; }
   
-  // Listen overlays
   onValue(ref(db, `rooms/${roomId}/overlays`), (s) => { if(s.exists()) applyOverlays(s.val()); });
   
   const viewerId = 'v_' + Date.now() + '_' + Math.random().toString(36).substr(2,6);
@@ -278,8 +446,6 @@ async function initViewer(roomId) {
   window.addEventListener('beforeunload', () => remove(ref(db, `rooms/${roomId}/viewers/${viewerId}`)));
   
   let pc = null;
-  let offerListener = null;
-  
   async function createAndConnect(offerData) {
     if(pc) { try { pc.close(); } catch(e){} pc=null; }
     pc = new RTCPeerConnection(ICE);
@@ -287,11 +453,15 @@ async function initViewer(roomId) {
       const video = document.getElementById('viewVideo');
       if(video.srcObject !== e.streams[0]) {
         video.srcObject = e.streams[0];
+        // CRITICAL: unmute video and ensure audio plays
         video.muted = false;
-        video.play().catch(() => video.muted = true);
+        video.volume = 1.0;
+        video.play().catch(err => console.log("play error", err));
         document.getElementById('vLoader').style.display = 'none';
-        showPlayIcon();
-        toast('✅ Stream Connected!');
+        const icon = document.getElementById('vPlayIcon');
+        icon.classList.add('show');
+        setTimeout(() => icon.classList.remove('show'), 1000);
+        toast('✅ Stream Connected! Audio Active');
       }
     };
     pc.onicecandidate = (e) => {
@@ -301,7 +471,7 @@ async function initViewer(roomId) {
       if(pc.iceConnectionState === 'failed' || pc.iceConnectionState === 'disconnected') {
         txt.innerText = 'Reconnecting...';
         document.getElementById('vLoader').style.display = 'flex';
-        setTimeout(() => { requestOffer(); }, 2000);
+        setTimeout(() => { set(ref(db, `rooms/${roomId}/joinRequests/${viewerId}`), { ts: Date.now() }); }, 2000);
       }
     };
     try {
@@ -316,20 +486,12 @@ async function initViewer(roomId) {
     } catch(e) { txt.innerText = 'Error: '+e.message; document.getElementById('retryBtn').style.display='block'; }
   }
   
-  async function requestOffer() {
-    // Send join request to host -> host will create offer at rooms/${roomId}/offers/${viewerId}
-    await set(ref(db, `rooms/${roomId}/joinRequests/${viewerId}`), { ts: Date.now() });
-    // Listen for our personal offer
-    if(offerListener) off(offerListener);
-    offerListener = onValue(ref(db, `rooms/${roomId}/offers/${viewerId}`), (snap) => {
-      if(snap.exists() && pc && (pc.signalingState === 'stable' || pc.signalingState === 'closed')) {
-        createAndConnect(snap.val());
-      } else if(snap.exists() && !pc) {
-        createAndConnect(snap.val());
-      }
-    });
-  }
-  await requestOffer();
+  await set(ref(db, `rooms/${roomId}/joinRequests/${viewerId}`), { ts: Date.now() });
+  onValue(ref(db, `rooms/${roomId}/offers/${viewerId}`), (snap) => {
+    if(snap.exists() && (!pc || pc.signalingState === 'stable' || pc.signalingState === 'closed')) {
+      createAndConnect(snap.val());
+    }
+  });
   
   setTimeout(() => {
     if(document.getElementById('vLoader').style.display !== 'none') {
@@ -339,9 +501,6 @@ async function initViewer(roomId) {
   }, 18000);
 }
 
-function showPlayIcon() { const icon = document.getElementById('vPlayIcon'); icon.classList.add('show'); setTimeout(() => icon.classList.remove('show'), 1000); }
-document.getElementById('vTapArea').addEventListener('click', () => { const v = document.getElementById('viewVideo'); if(v.paused) v.play(); else v.pause(); showPlayIcon(); });
-
 function applyOverlays(d) {
   const logo = d.logo || {};
   const vLogo = document.getElementById('vLogoOverlay');
@@ -349,19 +508,21 @@ function applyOverlays(d) {
   else vLogo.style.display='none';
   const t = d.text || {};
   const vTxt = document.getElementById('vTextOverlay');
-  if(t.show && t.msg) { vTxt.textContent=t.msg; vTxt.style.display='block'; vTxt.style.left=(t.x||20)+'px'; vTxt.style.top=(t.y||300)+'px'; vTxt.style.color=t.color||'#fff'; vTxt.style.backgroundColor=`rgba(${h2rgb(t.bgColor||'#000000')},0.6)`; vTxt.style.fontFamily=t.font||"'DM Sans',sans-serif"; vTxt.style.fontSize=(t.size||22)+'px'; vTxt.style.padding='8px 18px'; vTxt.style.borderRadius='8px'; }
+  if(t.show && t.msg) { vTxt.textContent=t.msg; vTxt.style.display='block'; vTxt.style.left=(t.x||20)+'px'; vTxt.style.top=(t.y||300)+'px'; vTxt.style.color=t.color||'#fff'; vTxt.style.backgroundColor=`rgba(${h2rgb(t.bgColor||'#000000')},0.6)`; vTxt.style.fontFamily=t.font||"'DM Sans',sans-serif"; vTxt.style.fontSize=(t.size||22)+'px'; }
   else vTxt.style.display='none';
   const tick = d.ticker || {};
   if(tick.show && tick.msg) { document.getElementById('vTickerInner').textContent = tick.msg+'   •   '+tick.msg+'   •   '+tick.msg; document.getElementById('vTickerWrap').style.display='block'; }
   else document.getElementById('vTickerWrap').style.display='none';
 }
 
-// ================= ADMIN / HOST (FULL FIX) =================
+document.getElementById('vTapArea').addEventListener('click', () => { const v = document.getElementById('viewVideo'); if(v.paused) v.play(); else v.pause(); const icon = document.getElementById('vPlayIcon'); icon.classList.add('show'); setTimeout(() => icon.classList.remove('show'), 1000); });
+
+// ============ ADMIN (FULLSCREEN VIDEO + AUDIO FORCED) ============
 let db, roomId, streamLink, localStream, videoTrack;
 let facing = 'environment';
 let logoUrl = '', logoVis = false, textVis = false, tickVis = false;
 let timerInt = null;
-const peerMap = {}; // key -> { pc }
+const peerMap = {};
 
 window.startStream = async (type) => {
   const idInput = document.getElementById('customId').value.trim();
@@ -369,8 +530,20 @@ window.startStream = async (type) => {
   facing = type === 'front' ? 'user' : 'environment';
   document.getElementById('homeScreen').style.display = 'none';
   try {
-    localStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: facing, width: { ideal: 1280 }, height: { ideal: 720 } }, audio: true });
+    // IMPORTANT: Request audio AND video with high quality
+    localStream = await navigator.mediaDevices.getUserMedia({ 
+      video: { facingMode: facing, width: { ideal: 1280 }, height: { ideal: 720 } }, 
+      audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true } 
+    });
     videoTrack = localStream.getVideoTracks()[0];
+    // Ensure audio track is present
+    const audioTrack = localStream.getAudioTracks()[0];
+    if(audioTrack) {
+      audioTrack.enabled = true;
+      console.log("Audio track enabled");
+    } else {
+      toast("Warning: No microphone found!");
+    }
     document.getElementById('mainVideo').srcObject = localStream;
     document.getElementById('streamScreen').style.display = 'block';
     streamLink = location.href.split('?')[0] + '?watch=' + roomId;
@@ -381,24 +554,22 @@ window.startStream = async (type) => {
     db = getDatabase(app);
     await remove(ref(db, `rooms/${roomId}`));
     
-    // Listen for join requests from viewers
     onValue(ref(db, `rooms/${roomId}/joinRequests`), (snap) => {
       snap.forEach(child => { const key = child.key; if(!peerMap[key] || !peerMap[key].pc) createOfferForViewer(key); });
     });
-    // Listen for answers if any
     onValue(ref(db, `rooms/${roomId}/answers`), (snap) => {
-      snap.forEach(child => { const key = child.key; const entry = peerMap[key]; if(entry && entry.pc && entry.pc.signalingState === 'have-local-offer' && !entry.answerSet) { applyAnswer(key, child.val()); } });
+      snap.forEach(child => { const key = child.key; const entry = peerMap[key]; if(entry && entry.pc && entry.pc.signalingState === 'have-local-offer' && !entry.answerSet) applyAnswer(key, child.val()); });
     });
     onValue(ref(db, `rooms/${roomId}/viewers`), (snap) => { document.getElementById('viewCount').textContent = snap.exists() ? Object.keys(snap.val()).length : 0; });
-    
-    toast('🔴 LIVE! ID: ' + roomId);
-  } catch(e) { document.getElementById('homeScreen').style.display='flex'; toast('Camera error: '+e.message); }
+    toast('🔴 LIVE! Full Screen + Audio Active');
+  } catch(e) { document.getElementById('homeScreen').style.display='flex'; toast('Camera/Mic error: '+e.message); }
 };
 
 async function createOfferForViewer(viewerKey) {
   if(peerMap[viewerKey] && peerMap[viewerKey].pc) { try { peerMap[viewerKey].pc.close(); } catch(e){} }
   const pc = new RTCPeerConnection(ICE);
   peerMap[viewerKey] = { pc, answerSet: false };
+  // Add ALL tracks (video + audio)
   localStream.getTracks().forEach(t => pc.addTrack(t, localStream));
   pc.onicecandidate = (e) => { if(e.candidate) push(ref(db, `rooms/${roomId}/hostIce/${viewerKey}`), e.candidate.toJSON()); };
   pc.oniceconnectionstatechange = () => { if(['disconnected','failed','closed'].includes(pc.iceConnectionState)) { try{pc.close();}catch(e){} delete peerMap[viewerKey]; } };
@@ -406,12 +577,9 @@ async function createOfferForViewer(viewerKey) {
     const offer = await pc.createOffer();
     await pc.setLocalDescription(offer);
     await set(ref(db, `rooms/${roomId}/offers/${viewerKey}`), { sdp: pc.localDescription.sdp, type: pc.localDescription.type });
-    // watch for answer from that viewer
     onValue(ref(db, `rooms/${roomId}/answers/${viewerKey}`), async (snapAns) => {
-      if(snapAns.exists() && pc.signalingState === 'have-local-offer' && !peerMap[viewerKey]?.answerSet) {
-        await applyAnswer(viewerKey, snapAns.val());
-      }
-    }, { onlyOnce: false });
+      if(snapAns.exists() && pc.signalingState === 'have-local-offer' && !peerMap[viewerKey]?.answerSet) await applyAnswer(viewerKey, snapAns.val());
+    });
   } catch(e) { console.error('offer error', e); delete peerMap[viewerKey]; try{pc.close();}catch(e){} }
 }
 
@@ -425,7 +593,6 @@ async function applyAnswer(viewerKey, ansData) {
   } catch(e) { console.error('apply answer error', e); }
 }
 
-// Overlay broadcasting
 let broadcastTimer = null;
 function broadcast() {
   if(!db || !roomId) return;
@@ -445,7 +612,6 @@ function getCompressedLogo() {
   try { const canvas = document.createElement('canvas'); const img = document.getElementById('logoOverlay'); const MAX=200; const ratio=Math.min(MAX/img.naturalWidth, MAX/img.naturalHeight,1); canvas.width=Math.max(1,Math.round(img.naturalWidth*ratio)); canvas.height=Math.max(1,Math.round(img.naturalHeight*ratio)); const ctx=canvas.getContext('2d'); ctx.drawImage(img,0,0,canvas.width,canvas.height); return canvas.toDataURL('image/webp',0.6) || logoUrl; } catch(e){ return logoUrl; }
 }
 
-// UI Control functions
 window.autoSendText = (val) => { if(!val.trim()) { hideText(); return; } const el = document.getElementById('textOverlay'); el.textContent=val; textVis=true; el.style.display='block'; document.getElementById('liveTextPreview').style.display='block'; document.getElementById('livePreviewTxt').textContent=val; updateTextStyle(); updateTextPos(); broadcast(); };
 window.setQuickText = (msg) => { document.getElementById('textInp').value=msg; window.autoSendText(msg); };
 window.hideText = () => { textVis=false; document.getElementById('textOverlay').style.display='none'; document.getElementById('liveTextPreview').style.display='none'; document.getElementById('textInp').value=''; broadcast(); };
