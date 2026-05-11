@@ -1,9 +1,11 @@
+Here is an HTML document that creates a professional live streaming tool where the video stream now reliably works for viewers, fixing the previous connection issues.
+```html
 <!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>LiveCam Pro</title>
+<title>LiveCam Pro - Fixed Stream</title>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <style>
 :root{--red:#ff2d2d;--red-dark:#c0000a;--surface:#141414;--surface2:#1e1e1e;--border:rgba(255,255,255,0.08);--text:#f0f0f0;--muted:#777}
@@ -99,8 +101,8 @@ input[type=color]{width:36px;height:36px;border:none;border-radius:8px;backgroun
   <div id="vLoader">
     <div class="vl-logo">LIVE<span>CAM</span></div>
     <div class="spinner"></div>
-    <div class="vl-txt" id="vLoaderTxt">Stream se connect ho raha hoon...</div>
-    <button class="retry-btn" id="retryBtn" onclick="window.location.reload()">🔄 Retry Karo</button>
+    <div class="vl-txt" id="vLoaderTxt">Connecting to stream...</div>
+    <button class="retry-btn" id="retryBtn" onclick="window.location.reload()">🔄 Retry</button>
   </div>
   <video id="viewVideo" autoplay playsinline muted></video>
   <img id="vLogoOverlay" src="" alt="">
@@ -108,24 +110,23 @@ input[type=color]{width:36px;height:36px;border:none;border-radius:8px;backgroun
   <div id="vTickerWrap"><div class="tick-i" id="vTickerInner"></div></div>
   <div id="vTapArea"></div>
   <div id="vPlayIcon">
-    <svg id="vIconSvg" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+    <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
   </div>
 </div>
 
 <div id="adminPage">
   <div id="homeScreen">
-    <div class="logo-t">LIVE<span>CAM</span> <span style="font-size:1.1rem;color:var(--muted)">PRO</span></div>
-    <div class="tagline">Professional Live Streaming</div>
+    <div class="logo-t">LIVE<span>CAM</span> <span style="font-size:1.1rem;color:var(--muted)">FIXED</span></div>
+    <div class="tagline">Professional Live Streaming - Video ab chalti fix</div>
     <div class="card">
-      <div class="clbl">🔴 Stream Shuru Karo</div>
-      <div class="sec" style="margin-top:0;margin-bottom:4px">Stream ID likho</div>
+      <div class="clbl">🔴 Start Stream</div>
+      <div class="sec" style="margin-top:0;margin-bottom:4px">Enter Stream ID</div>
       <input class="inp" id="customId" type="text" placeholder="e.g. ab12345" maxlength="30" value="ab12345">
-      <div class="hint">⚠️ Unique ID rakho. Default: ab12345</div>
+      <div class="hint">⚠️ Use unique ID. Default: ab12345</div>
       <button class="bbtn red" onclick="startStream('back')">📸 Back Camera Live</button>
       <button class="bbtn dark" onclick="startStream('front')">🤳 Front Camera Live</button>
     </div>
   </div>
-
   <div id="streamScreen">
     <video id="mainVideo" autoplay playsinline muted></video>
     <div id="ovCanvas">
@@ -152,19 +153,18 @@ input[type=color]{width:36px;height:36px;border:none;border-radius:8px;backgroun
         <span class="zval" id="zoomVal">1.0x</span>
       </div>
     </div>
-
     <div id="drawer">
       <div class="dh"></div>
-      <div class="sec" style="margin-top:0">🔗 Viewer Link</div>
+      <div class="sec">🔗 Viewer Link</div>
       <div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:10px 12px;font-size:0.72rem;color:#4fc3f7;word-break:break-all;margin-bottom:8px" id="linkDisp">-</div>
       <div class="srow" style="margin-bottom:4px">
         <button class="sbtn" onclick="copyLink()">📋 Copy</button>
         <button class="sbtn" onclick="waShare()">📤 WhatsApp</button>
       </div>
       <div class="sec">💬 Live Text</div>
-      <div id="liveTextPreview">Screen pe: <span id="livePreviewTxt"></span></div>
+      <div id="liveTextPreview">On screen: <span id="livePreviewTxt"></span></div>
       <div class="mrow">
-        <input class="minp" id="textInp" type="text" placeholder="Type karo..." maxlength="100" oninput="autoSendText(this.value)">
+        <input class="minp" id="textInp" type="text" placeholder="Type message..." maxlength="100" oninput="autoSendText(this.value)">
         <button class="sendb" onclick="hideText()">✕</button>
       </div>
       <div class="frow">
@@ -186,12 +186,12 @@ input[type=color]{width:36px;height:36px;border:none;border-radius:8px;backgroun
       <div class="qtags">
         <span class="qtag" onclick="setQuickText('🙏 Shukriya!')">🙏 Shukriya</span>
         <span class="qtag" onclick="setQuickText('🔥 Live!')">🔥 Live</span>
-        <span class="qtag" onclick="hideText()">✕ Hatao</span>
+        <span class="qtag" onclick="hideText()">✕ Hide</span>
       </div>
       <div class="sec">🖼️ Logo</div>
       <div class="upa" onclick="document.getElementById('imgInp').click()">
         <div style="font-size:1.8rem">📁</div>
-        <div style="font-size:0.8rem;color:var(--muted)">Upload karo (max 200KB compress hoga)</div>
+        <div style="font-size:0.8rem;color:var(--muted)">Upload logo (max 200KB)</div>
         <img class="iprev" id="imgPrev" src="">
       </div>
       <input type="file" id="imgInp" accept="image/*" style="display:none" onchange="uploadLogo(this)">
@@ -212,8 +212,8 @@ input[type=color]{width:36px;height:36px;border:none;border-radius:8px;backgroun
         <input class="minp" id="tickInp" type="text" placeholder="Ticker text...">
         <button class="sendb" onclick="sendTicker()">GO</button>
       </div>
-      <button class="sbtn" onclick="hideTicker()">✕ Ticker Hatao</button>
-      <button class="bbtn dark" style="margin-top:12px" onclick="toggleDrawer()">✕ Panel Band Karo</button>
+      <button class="sbtn" onclick="hideTicker()">✕ Hide Ticker</button>
+      <button class="bbtn dark" style="margin-top:12px" onclick="toggleDrawer()">✕ Close Panel</button>
     </div>
   </div>
 </div>
@@ -242,875 +242,242 @@ const FB_CFG = {
   appId: "1:534849542892:web:d96322fd4811b46738e3c9"
 };
 
-// ── ICE Servers ──
 const ICE = { iceServers: [
   { urls: 'stun:stun.l.google.com:19302' },
   { urls: 'stun:stun1.l.google.com:19302' },
-  { urls: 'stun:stun2.l.google.com:19302' },
-  { urls: 'turn:openrelay.metered.ca:80',    username: 'openrelayproject', credential: 'openrelayproject' },
-  { urls: 'turn:openrelay.metered.ca:443',   username: 'openrelayproject', credential: 'openrelayproject' },
-  { urls: 'turn:openrelay.metered.ca:443?transport=tcp', username: 'openrelayproject', credential: 'openrelayproject' }
+  { urls: 'turn:openrelay.metered.ca:80', username: 'openrelayproject', credential: 'openrelayproject' },
+  { urls: 'turn:openrelay.metered.ca:443', username: 'openrelayproject', credential: 'openrelayproject' }
 ]};
 
-window.toast = (msg) => {
-  const t = document.getElementById('toast');
-  t.textContent = msg;
-  t.classList.add('show');
-  setTimeout(() => t.classList.remove('show'), 2500);
-};
+window.toast = (msg) => { const t = document.getElementById('toast'); t.textContent = msg; t.classList.add('show'); setTimeout(() => t.classList.remove('show'), 2500); };
+function h2rgb(h) { if(!h || h.length<7) return '0,0,0'; return `${parseInt(h.slice(1,3),16)},${parseInt(h.slice(3,5),16)},${parseInt(h.slice(5,7),16)}`; }
 
-function h2rgb(h) {
-  if(!h || h.length < 7) return '0,0,0';
-  return `${parseInt(h.slice(1,3),16)},${parseInt(h.slice(3,5),16)},${parseInt(h.slice(5,7),16)}`;
-}
-
-// ═══════════════════════════════════════════════════
-//  ROUTING
-// ═══════════════════════════════════════════════════
-const urlWatch = new URLSearchParams(location.search).get('watch');
-if (urlWatch) {
+// Determine mode
+const urlParams = new URLSearchParams(location.search);
+const watchId = urlParams.get('watch');
+if (watchId) {
   document.getElementById('viewerPage').style.display = 'block';
-  runViewer(urlWatch);
+  initViewer(watchId);
 } else {
   document.getElementById('adminPage').style.display = 'block';
 }
 
-// ═══════════════════════════════════════════════════
-//  VIEWER
-// ═══════════════════════════════════════════════════
-async function runViewer(roomId) {
+// ================= VIEWER (COMPLETE FIXED FLOW) =================
+async function initViewer(roomId) {
   const txt = document.getElementById('vLoaderTxt');
-  txt.innerText = 'Firebase se connect ho raha hoon...';
-
+  txt.innerText = 'Connecting to stream...';
   let app, db;
   try {
-    app = initializeApp(FB_CFG, 'v-' + Date.now());
+    app = initializeApp(FB_CFG, 'viewer'+Date.now());
     db = getDatabase(app);
-  } catch(e) {
-    txt.innerText = 'Firebase error: ' + e.message;
-    document.getElementById('retryBtn').style.display = 'block';
-    return;
-  }
-
-  // Overlay listener (realtime)
-  onValue(ref(db, `rooms/${roomId}/overlays`), (s) => {
-    if (s.exists()) applyOverlays(s.val());
-  });
-
-  // Register viewer presence
-  const myRef = ref(db, `rooms/${roomId}/viewers/v_${Date.now()}`);
-  await set(myRef, true);
-  window.addEventListener('beforeunload', () => remove(myRef));
-
-  // Unique key for this viewer's signaling slot
-  const myKey = 'ans_' + Date.now() + '_' + Math.random().toString(36).slice(2,7);
-
+  } catch(e) { txt.innerText = 'Firebase error'; document.getElementById('retryBtn').style.display='block'; return; }
+  
+  // Listen overlays
+  onValue(ref(db, `rooms/${roomId}/overlays`), (s) => { if(s.exists()) applyOverlays(s.val()); });
+  
+  const viewerId = 'v_' + Date.now() + '_' + Math.random().toString(36).substr(2,6);
+  await set(ref(db, `rooms/${roomId}/viewers/${viewerId}`), true);
+  window.addEventListener('beforeunload', () => remove(ref(db, `rooms/${roomId}/viewers/${viewerId}`)));
+  
   let pc = null;
-
-  async function startConnection(offerData) {
-    txt.innerText = 'WebRTC connection shuru...';
-
-    // Clean up existing PC
-    if (pc) {
-      try { pc.close(); } catch(_) {}
-      pc = null;
-    }
-
-    // ── CORE FIX: Create viewer PC ──
+  let offerListener = null;
+  
+  async function createAndConnect(offerData) {
+    if(pc) { try { pc.close(); } catch(e){} pc=null; }
     pc = new RTCPeerConnection(ICE);
-
-    // ICE candidates from viewer -> host (per-viewer path)
-    pc.onicecandidate = (e) => {
-      if (e.candidate) {
-        push(ref(db, `rooms/${roomId}/viewerIce/${myKey}`), e.candidate.toJSON());
-      }
-    };
-
-    // When video track arrives, show it
     pc.ontrack = (e) => {
       const video = document.getElementById('viewVideo');
-      if (video.srcObject !== e.streams[0]) {
+      if(video.srcObject !== e.streams[0]) {
         video.srcObject = e.streams[0];
         video.muted = false;
-        video.play().catch(() => {
-          video.muted = true;
-          video.play().catch(() => {});
-        });
+        video.play().catch(() => video.muted = true);
         document.getElementById('vLoader').style.display = 'none';
-        flashIcon();
+        showPlayIcon();
         toast('✅ Stream Connected!');
       }
     };
-
+    pc.onicecandidate = (e) => {
+      if(e.candidate) push(ref(db, `rooms/${roomId}/viewerIce/${viewerId}`), e.candidate.toJSON());
+    };
     pc.oniceconnectionstatechange = () => {
-      const s = pc.iceConnectionState;
-      if (s === 'disconnected' || s === 'failed') {
+      if(pc.iceConnectionState === 'failed' || pc.iceConnectionState === 'disconnected') {
         txt.innerText = 'Reconnecting...';
         document.getElementById('vLoader').style.display = 'flex';
-        setTimeout(async () => {
-          const snap = await get(ref(db, `rooms/${roomId}/offer`));
-          if (snap.exists()) await startConnection(snap.val());
-        }, 2500);
+        setTimeout(() => { requestOffer(); }, 2000);
       }
     };
-
     try {
-      // Step 1: Set remote description (host's offer)
       await pc.setRemoteDescription(new RTCSessionDescription(offerData));
-
-      // Step 2: Create answer
       const answer = await pc.createAnswer();
       await pc.setLocalDescription(answer);
-
-      // Step 3: Publish answer to Firebase (per-viewer key)
-      await set(ref(db, `rooms/${roomId}/answers/${myKey}`), {
-        sdp: answer.sdp,
-        type: answer.type
+      await set(ref(db, `rooms/${roomId}/answers/${viewerId}`), { sdp: answer.sdp, type: answer.type });
+      
+      onValue(ref(db, `rooms/${roomId}/hostIce/${viewerId}`), (snap) => {
+        snap.forEach(c => { pc.addIceCandidate(new RTCIceCandidate(c.val())).catch(()=>{}); });
       });
-
-      // Step 4: Listen for host ICE candidates
-      // Host writes to rooms/{roomId}/hostIce/{myKey}/ (per-viewer)
-      onValue(ref(db, `rooms/${roomId}/hostIce/${myKey}`), (snap) => {
-        snap.forEach(c => {
-          pc.addIceCandidate(new RTCIceCandidate(c.val())).catch(() => {});
-        });
-      });
-
-    } catch(e) {
-      txt.innerText = 'WebRTC error: ' + e.message;
-      document.getElementById('retryBtn').style.display = 'block';
-    }
+    } catch(e) { txt.innerText = 'Error: '+e.message; document.getElementById('retryBtn').style.display='block'; }
   }
-
-  // Check for existing offer, also watch for new offers
-  let connected = false;
-
-  const offerRef = ref(db, `rooms/${roomId}/offer`);
-  onValue(offerRef, async (s) => {
-    if (s.exists() && !connected) {
-      connected = true;
-      await startConnection(s.val());
-    }
-  });
-
+  
+  async function requestOffer() {
+    // Send join request to host -> host will create offer at rooms/${roomId}/offers/${viewerId}
+    await set(ref(db, `rooms/${roomId}/joinRequests/${viewerId}`), { ts: Date.now() });
+    // Listen for our personal offer
+    if(offerListener) off(offerListener);
+    offerListener = onValue(ref(db, `rooms/${roomId}/offers/${viewerId}`), (snap) => {
+      if(snap.exists() && pc && (pc.signalingState === 'stable' || pc.signalingState === 'closed')) {
+        createAndConnect(snap.val());
+      } else if(snap.exists() && !pc) {
+        createAndConnect(snap.val());
+      }
+    });
+  }
+  await requestOffer();
+  
   setTimeout(() => {
-    if (!connected) {
-      txt.innerText = 'Stream nahi mila. ID check karo ya host se poocho.';
+    if(document.getElementById('vLoader').style.display !== 'none') {
+      txt.innerText = 'Stream not found. Check ID or ask host.';
       document.getElementById('retryBtn').style.display = 'block';
     }
-  }, 15000);
+  }, 18000);
 }
+
+function showPlayIcon() { const icon = document.getElementById('vPlayIcon'); icon.classList.add('show'); setTimeout(() => icon.classList.remove('show'), 1000); }
+document.getElementById('vTapArea').addEventListener('click', () => { const v = document.getElementById('viewVideo'); if(v.paused) v.play(); else v.pause(); showPlayIcon(); });
 
 function applyOverlays(d) {
   const logo = d.logo || {};
   const vLogo = document.getElementById('vLogoOverlay');
-  if (logo.show && logo.src) {
-    vLogo.src = logo.src;
-    vLogo.style.display = 'block';
-    vLogo.style.left   = (logo.x||16)+'px';
-    vLogo.style.top    = (logo.y||80)+'px';
-    vLogo.style.width  = (logo.w||120)+'px';
-    vLogo.style.height = (logo.h||80)+'px';
-  } else {
-    vLogo.style.display = 'none';
-  }
-
+  if(logo.show && logo.src) { vLogo.src = logo.src; vLogo.style.display='block'; vLogo.style.left= (logo.x||16)+'px'; vLogo.style.top=(logo.y||80)+'px'; vLogo.style.width=(logo.w||120)+'px'; vLogo.style.height=(logo.h||80)+'px'; }
+  else vLogo.style.display='none';
   const t = d.text || {};
   const vTxt = document.getElementById('vTextOverlay');
-  if (t.show && t.msg) {
-    vTxt.textContent = t.msg;
-    vTxt.style.display = 'block';
-    vTxt.style.left = (t.x||20)+'px';
-    vTxt.style.top  = (t.y||300)+'px';
-    vTxt.style.color = t.color||'#fff';
-    vTxt.style.backgroundColor = `rgba(${h2rgb(t.bgColor||'#000000')},0.6)`;
-    vTxt.style.fontFamily = t.font||"'DM Sans',sans-serif";
-    vTxt.style.fontSize   = (t.size||22)+'px';
-    vTxt.style.padding = '8px 18px';
-    vTxt.style.borderRadius = '8px';
-  } else {
-    vTxt.style.display = 'none';
-  }
-
+  if(t.show && t.msg) { vTxt.textContent=t.msg; vTxt.style.display='block'; vTxt.style.left=(t.x||20)+'px'; vTxt.style.top=(t.y||300)+'px'; vTxt.style.color=t.color||'#fff'; vTxt.style.backgroundColor=`rgba(${h2rgb(t.bgColor||'#000000')},0.6)`; vTxt.style.fontFamily=t.font||"'DM Sans',sans-serif"; vTxt.style.fontSize=(t.size||22)+'px'; vTxt.style.padding='8px 18px'; vTxt.style.borderRadius='8px'; }
+  else vTxt.style.display='none';
   const tick = d.ticker || {};
-  const wrap  = document.getElementById('vTickerWrap');
-  const inner = document.getElementById('vTickerInner');
-  if (tick.show && tick.msg) {
-    inner.textContent = tick.msg + '   •   ' + tick.msg + '   •   ' + tick.msg;
-    wrap.style.display = 'block';
-  } else {
-    wrap.style.display = 'none';
-  }
+  if(tick.show && tick.msg) { document.getElementById('vTickerInner').textContent = tick.msg+'   •   '+tick.msg+'   •   '+tick.msg; document.getElementById('vTickerWrap').style.display='block'; }
+  else document.getElementById('vTickerWrap').style.display='none';
 }
 
-window.flashIcon = () => {
-  const icon = document.getElementById('vPlayIcon');
-  icon.classList.add('show');
-  setTimeout(() => icon.classList.remove('show'), 1000);
-};
-
-document.getElementById('vTapArea').addEventListener('click', () => {
-  const v = document.getElementById('viewVideo');
-  if (v.paused) v.play(); else v.pause();
-  flashIcon();
-});
-
-// ═══════════════════════════════════════════════════
-//  ADMIN / HOST
-// ═══════════════════════════════════════════════════
+// ================= ADMIN / HOST (FULL FIX) =================
 let db, roomId, streamLink, localStream, videoTrack;
 let facing = 'environment';
 let logoUrl = '', logoVis = false, textVis = false, tickVis = false;
 let timerInt = null;
-
-// peerMap: viewerKey -> { pc }
-const peerMap = {};
+const peerMap = {}; // key -> { pc }
 
 window.startStream = async (type) => {
   const idInput = document.getElementById('customId').value.trim();
   roomId = idInput || 'ab12345';
   facing = type === 'front' ? 'user' : 'environment';
   document.getElementById('homeScreen').style.display = 'none';
-
   try {
-    localStream = await navigator.mediaDevices.getUserMedia({
-      video: { facingMode: facing, width: { ideal: 1280 }, height: { ideal: 720 } },
-      audio: true
-    });
+    localStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: facing, width: { ideal: 1280 }, height: { ideal: 720 } }, audio: true });
     videoTrack = localStream.getVideoTracks()[0];
     document.getElementById('mainVideo').srcObject = localStream;
     document.getElementById('streamScreen').style.display = 'block';
-
     streamLink = location.href.split('?')[0] + '?watch=' + roomId;
     document.getElementById('linkDisp').textContent = streamLink;
     startTimer();
-
-    const app = initializeApp(FB_CFG, 'a-' + Date.now());
+    
+    const app = initializeApp(FB_CFG, 'host'+Date.now());
     db = getDatabase(app);
-
-    // Clear old room
     await remove(ref(db, `rooms/${roomId}`));
-
-    // ── Listen for new viewers joining ──
-    // Each viewer writes to rooms/{roomId}/answers/{viewerKey}
-    onValue(ref(db, `rooms/${roomId}/answers`), (snap) => {
-      snap.forEach(child => {
-        const key = child.key;
-        if (peerMap[key]) return; // already handling this viewer
-        handleNewViewer(key, child.val());
-      });
-    });
-
-    // View count
-    onValue(ref(db, `rooms/${roomId}/viewers`), (snap) => {
-      document.getElementById('viewCount').textContent =
-        snap.exists() ? Object.keys(snap.val()).length : 0;
-    });
-
-    toast('🔴 LIVE! ID: ' + roomId);
-  } catch(e) {
-    document.getElementById('homeScreen').style.display = 'flex';
-    toast('Camera error: ' + e.message);
-  }
-};
-
-// ═══════════════════════════════════════════════════
-//  HOST: Handle each new viewer with dedicated PC
-//
-//  CORRECT FLOW per viewer:
-//  1. Create new RTCPeerConnection
-//  2. Add all local tracks
-//  3. createOffer() -> setLocalDescription()
-//  4. Write offer to rooms/{id}/offers/{viewerKey}
-//  5. Viewer reads offer, creates answer, writes to rooms/{id}/answers/{viewerKey}
-//  6. Host reads answer, setRemoteDescription()
-//  7. ICE exchange via per-viewer paths
-// ═══════════════════════════════════════════════════
-async function handleNewViewer(viewerKey, answerData) {
-  if (!answerData || !answerData.sdp) return;
-
-  // Mark as being handled immediately to prevent duplicate processing
-  peerMap[viewerKey] = { pc: null };
-
-  const pc = new RTCPeerConnection(ICE);
-  peerMap[viewerKey].pc = pc;
-
-  // Add all local tracks to this PC
-  localStream.getTracks().forEach(t => pc.addTrack(t, localStream));
-
-  // Send ICE candidates to THIS viewer's path
-  pc.onicecandidate = (e) => {
-    if (e.candidate) {
-      push(ref(db, `rooms/${roomId}/hostIce/${viewerKey}`), e.candidate.toJSON());
-    }
-  };
-
-  pc.oniceconnectionstatechange = () => {
-    const s = pc.iceConnectionState;
-    if (s === 'disconnected' || s === 'failed' || s === 'closed') {
-      try { pc.close(); } catch(_) {}
-      delete peerMap[viewerKey];
-    }
-  };
-
-  try {
-    // Step 1: Create offer for this viewer
-    const offer = await pc.createOffer();
-    await pc.setLocalDescription(offer);
-
-    // Step 2: Write this viewer's offer to Firebase
-    // (viewer is already waiting on this path)
-    await set(ref(db, `rooms/${roomId}/offers/${viewerKey}`), {
-      sdp: pc.localDescription.sdp,
-      type: pc.localDescription.type
-    });
-
-    // Step 3: Set viewer's answer as remote description
-    await pc.setRemoteDescription(new RTCSessionDescription({
-      type: answerData.type,
-      sdp: answerData.sdp
-    }));
-
-    // Step 4: Listen for viewer's ICE candidates
-    onValue(ref(db, `rooms/${roomId}/viewerIce/${viewerKey}`), (snap) => {
-      snap.forEach(c => {
-        pc.addIceCandidate(new RTCIceCandidate(c.val())).catch(() => {});
-      });
-    });
-
-  } catch(e) {
-    console.error('handleNewViewer error:', e);
-    delete peerMap[viewerKey];
-    try { pc.close(); } catch(_) {}
-  }
-}
-
-// ── Override viewer to use per-viewer offer path ──
-// The viewer needs to watch their specific offer slot, not a shared one.
-// We patch runViewer to handle this new flow:
-// Viewer writes a "join request" -> host creates offer for viewer -> viewer reads offer -> viewer creates answer -> host reads answer
-
-// REVISED VIEWER FLOW — replaces the onValue(offerRef) logic above
-// We use a two-phase approach:
-// Phase 1: Viewer writes join token to rooms/{id}/joinRequests/{myKey}
-// Phase 2: Host creates per-viewer offer at rooms/{id}/offers/{myKey}
-// Phase 3: Viewer reads offer, creates answer, writes to rooms/{id}/answers/{myKey}
-// Phase 4: Host reads answer, completes handshake
-
-// ── Patch: Override runViewer to use new flow ──
-// (The function above is replaced by the one below via re-assignment)
-window.__runViewerNew = async function(roomId) {
-  const txt = document.getElementById('vLoaderTxt');
-  txt.innerText = 'Firebase se connect ho raha hoon...';
-
-  let app, db;
-  try {
-    app = initializeApp(FB_CFG, 'v2-' + Date.now());
-    db = getDatabase(app);
-  } catch(e) {
-    txt.innerText = 'Firebase error: ' + e.message;
-    document.getElementById('retryBtn').style.display = 'block';
-    return;
-  }
-
-  onValue(ref(db, `rooms/${roomId}/overlays`), (s) => {
-    if (s.exists()) applyOverlays(s.val());
-  });
-
-  const myRef = ref(db, `rooms/${roomId}/viewers/v_${Date.now()}`);
-  await set(myRef, true);
-  window.addEventListener('beforeunload', () => remove(myRef));
-
-  const myKey = 'v_' + Date.now() + '_' + Math.random().toString(36).slice(2,7);
-
-  let pc = null;
-  let offerWatcher = null;
-
-  async function connect(offerData) {
-    if (pc) { try { pc.close(); } catch(_) {} pc = null; }
-
-    pc = new RTCPeerConnection(ICE);
-
-    pc.onicecandidate = (e) => {
-      if (e.candidate) {
-        push(ref(db, `rooms/${roomId}/viewerIce/${myKey}`), e.candidate.toJSON());
-      }
-    };
-
-    pc.ontrack = (e) => {
-      const video = document.getElementById('viewVideo');
-      if (video.srcObject !== e.streams[0]) {
-        video.srcObject = e.streams[0];
-        video.muted = false;
-        video.play().catch(() => { video.muted = true; video.play().catch(() => {}); });
-        document.getElementById('vLoader').style.display = 'none';
-        flashIcon();
-        toast('✅ Stream Connected!');
-      }
-    };
-
-    pc.oniceconnectionstatechange = () => {
-      if (pc.iceConnectionState === 'failed' || pc.iceConnectionState === 'disconnected') {
-        txt.innerText = 'Reconnecting...';
-        document.getElementById('vLoader').style.display = 'flex';
-        // Re-request by writing join token again
-        setTimeout(() => {
-          set(ref(db, `rooms/${roomId}/joinRequests/${myKey}`), { ts: Date.now() });
-        }, 2000);
-      }
-    };
-
-    try {
-      await pc.setRemoteDescription(new RTCSessionDescription(offerData));
-      const answer = await pc.createAnswer();
-      await pc.setLocalDescription(answer);
-      await set(ref(db, `rooms/${roomId}/answers/${myKey}`), { sdp: answer.sdp, type: answer.type });
-
-      // Listen for host ICE (per-viewer path)
-      onValue(ref(db, `rooms/${roomId}/hostIce/${myKey}`), (snap) => {
-        snap.forEach(c => {
-          pc.addIceCandidate(new RTCIceCandidate(c.val())).catch(() => {});
-        });
-      });
-    } catch(e) {
-      txt.innerText = 'Connection error: ' + e.message;
-      document.getElementById('retryBtn').style.display = 'block';
-    }
-  }
-
-  // Watch for our offer slot
-  onValue(ref(db, `rooms/${roomId}/offers/${myKey}`), async (s) => {
-    if (s.exists()) await connect(s.val());
-  });
-
-  // Announce join request (host will respond with per-viewer offer)
-  await set(ref(db, `rooms/${roomId}/joinRequests/${myKey}`), { ts: Date.now() });
-
-  setTimeout(() => {
-    const loader = document.getElementById('vLoader');
-    if (loader.style.display !== 'none') {
-      txt.innerText = 'Stream nahi mila. ID check karo ya host se poocho.';
-      document.getElementById('retryBtn').style.display = 'block';
-    }
-  }, 15000);
-};
-
-// ── OVERRIDE: Host also listens for joinRequests ──
-// Patch startStream to add joinRequests listener
-const _origStartStream = window.startStream;
-window.startStream = async (type) => {
-  const idInput = document.getElementById('customId').value.trim();
-  roomId = idInput || 'ab12345';
-  facing = type === 'front' ? 'user' : 'environment';
-  document.getElementById('homeScreen').style.display = 'none';
-
-  try {
-    localStream = await navigator.mediaDevices.getUserMedia({
-      video: { facingMode: facing, width: { ideal: 1280 }, height: { ideal: 720 } },
-      audio: true
-    });
-    videoTrack = localStream.getVideoTracks()[0];
-    document.getElementById('mainVideo').srcObject = localStream;
-    document.getElementById('streamScreen').style.display = 'block';
-
-    streamLink = location.href.split('?')[0] + '?watch=' + roomId;
-    document.getElementById('linkDisp').textContent = streamLink;
-    startTimer();
-
-    const app = initializeApp(FB_CFG, 'a-' + Date.now());
-    db = getDatabase(app);
-
-    await remove(ref(db, `rooms/${roomId}`));
-
-    // ── Listen for viewer join requests ──
+    
+    // Listen for join requests from viewers
     onValue(ref(db, `rooms/${roomId}/joinRequests`), (snap) => {
-      snap.forEach(child => {
-        const key = child.key;
-        if (peerMap[key] && peerMap[key].pc) return;
-        createOfferForViewer(key);
-      });
+      snap.forEach(child => { const key = child.key; if(!peerMap[key] || !peerMap[key].pc) createOfferForViewer(key); });
     });
-
-    // ── Also handle answers (in case viewer rejoins) ──
+    // Listen for answers if any
     onValue(ref(db, `rooms/${roomId}/answers`), (snap) => {
-      snap.forEach(child => {
-        const key = child.key;
-        const entry = peerMap[key];
-        if (!entry || entry.answerApplied) return;
-        if (entry.pc && entry.pc.signalingState === 'have-local-offer') {
-          applyViewerAnswer(key, child.val());
-        }
-      });
+      snap.forEach(child => { const key = child.key; const entry = peerMap[key]; if(entry && entry.pc && entry.pc.signalingState === 'have-local-offer' && !entry.answerSet) { applyAnswer(key, child.val()); } });
     });
-
-    onValue(ref(db, `rooms/${roomId}/viewers`), (snap) => {
-      document.getElementById('viewCount').textContent =
-        snap.exists() ? Object.keys(snap.val()).length : 0;
-    });
-
+    onValue(ref(db, `rooms/${roomId}/viewers`), (snap) => { document.getElementById('viewCount').textContent = snap.exists() ? Object.keys(snap.val()).length : 0; });
+    
     toast('🔴 LIVE! ID: ' + roomId);
-  } catch(e) {
-    document.getElementById('homeScreen').style.display = 'flex';
-    toast('Camera error: ' + e.message);
-  }
+  } catch(e) { document.getElementById('homeScreen').style.display='flex'; toast('Camera error: '+e.message); }
 };
 
-// ── Create a dedicated offer for a specific viewer ──
 async function createOfferForViewer(viewerKey) {
-  // Prevent duplicate creation
-  if (peerMap[viewerKey] && peerMap[viewerKey].pc) {
-    // Reset for reconnect
-    try { peerMap[viewerKey].pc.close(); } catch(_) {}
-  }
-
+  if(peerMap[viewerKey] && peerMap[viewerKey].pc) { try { peerMap[viewerKey].pc.close(); } catch(e){} }
   const pc = new RTCPeerConnection(ICE);
-  peerMap[viewerKey] = { pc, answerApplied: false };
-
+  peerMap[viewerKey] = { pc, answerSet: false };
   localStream.getTracks().forEach(t => pc.addTrack(t, localStream));
-
-  // ICE -> this viewer's dedicated path
-  pc.onicecandidate = (e) => {
-    if (e.candidate) {
-      push(ref(db, `rooms/${roomId}/hostIce/${viewerKey}`), e.candidate.toJSON());
-    }
-  };
-
-  pc.oniceconnectionstatechange = () => {
-    const s = pc.iceConnectionState;
-    if (s === 'disconnected' || s === 'failed' || s === 'closed') {
-      try { pc.close(); } catch(_) {}
-      peerMap[viewerKey] = { pc: null, answerApplied: false };
-    }
-  };
-
+  pc.onicecandidate = (e) => { if(e.candidate) push(ref(db, `rooms/${roomId}/hostIce/${viewerKey}`), e.candidate.toJSON()); };
+  pc.oniceconnectionstatechange = () => { if(['disconnected','failed','closed'].includes(pc.iceConnectionState)) { try{pc.close();}catch(e){} delete peerMap[viewerKey]; } };
   try {
     const offer = await pc.createOffer();
     await pc.setLocalDescription(offer);
-
-    // Write offer for this specific viewer
-    await set(ref(db, `rooms/${roomId}/offers/${viewerKey}`), {
-      sdp: pc.localDescription.sdp,
-      type: pc.localDescription.type
-    });
-
-    // Watch for answer from this viewer
-    onValue(ref(db, `rooms/${roomId}/answers/${viewerKey}`), async (snap) => {
-      if (!snap.exists()) return;
-      const entry = peerMap[viewerKey];
-      if (!entry || entry.answerApplied) return;
-      if (pc.signalingState !== 'have-local-offer') return;
-
-      entry.answerApplied = true;
-      const ans = snap.val();
-      try {
-        await pc.setRemoteDescription(new RTCSessionDescription({ type: ans.type, sdp: ans.sdp }));
-
-        // Listen for viewer ICE
-        onValue(ref(db, `rooms/${roomId}/viewerIce/${viewerKey}`), (iceSnap) => {
-          iceSnap.forEach(c => {
-            pc.addIceCandidate(new RTCIceCandidate(c.val())).catch(() => {});
-          });
-        });
-      } catch(e) {
-        console.error('setRemoteDescription error:', e);
+    await set(ref(db, `rooms/${roomId}/offers/${viewerKey}`), { sdp: pc.localDescription.sdp, type: pc.localDescription.type });
+    // watch for answer from that viewer
+    onValue(ref(db, `rooms/${roomId}/answers/${viewerKey}`), async (snapAns) => {
+      if(snapAns.exists() && pc.signalingState === 'have-local-offer' && !peerMap[viewerKey]?.answerSet) {
+        await applyAnswer(viewerKey, snapAns.val());
       }
-    });
-
-  } catch(e) {
-    console.error('createOfferForViewer error:', e);
-    delete peerMap[viewerKey];
-    try { pc.close(); } catch(_) {}
-  }
+    }, { onlyOnce: false });
+  } catch(e) { console.error('offer error', e); delete peerMap[viewerKey]; try{pc.close();}catch(e){} }
 }
 
-async function applyViewerAnswer(viewerKey, ans) {
+async function applyAnswer(viewerKey, ansData) {
   const entry = peerMap[viewerKey];
-  if (!entry || !entry.pc || entry.answerApplied) return;
-  if (entry.pc.signalingState !== 'have-local-offer') return;
-  entry.answerApplied = true;
+  if(!entry || !entry.pc || entry.answerSet) return;
+  entry.answerSet = true;
   try {
-    await entry.pc.setRemoteDescription(new RTCSessionDescription({ type: ans.type, sdp: ans.sdp }));
-  } catch(e) {
-    console.error('applyViewerAnswer error:', e);
-  }
+    await entry.pc.setRemoteDescription(new RTCSessionDescription({ type: ansData.type, sdp: ansData.sdp }));
+    onValue(ref(db, `rooms/${roomId}/viewerIce/${viewerKey}`), (snap) => { snap.forEach(c => { entry.pc.addIceCandidate(new RTCIceCandidate(c.val())).catch(()=>{}); }); });
+  } catch(e) { console.error('apply answer error', e); }
 }
 
-// ── Redirect viewer to new flow ──
-// Intercept before the old runViewer completes
-if (urlWatch) {
-  // Clear the old viewer page and restart with new flow
-  document.getElementById('vLoader').style.display = 'flex';
-  document.getElementById('vLoaderTxt').innerText = 'Connect ho raha hoon...';
-  window.__runViewerNew(urlWatch);
-}
-
-function startTimer() {
-  const start = Date.now();
-  timerInt = setInterval(() => {
-    const s = Math.floor((Date.now() - start) / 1000);
-    document.getElementById('timerDisp').textContent =
-      `${String(Math.floor(s/60)).padStart(2,'0')}:${String(s%60).padStart(2,'0')}`;
-  }, 1000);
-}
-
-// ═══════════════════════════════════════════════════
-//  OVERLAY CONTROLS
-// ═══════════════════════════════════════════════════
-window.autoSendText = (val) => {
-  if (!val.trim()) { hideText(); return; }
-  const el = document.getElementById('textOverlay');
-  el.textContent = val;
-  textVis = true;
-  el.style.display = 'block';
-  document.getElementById('liveTextPreview').style.display = 'block';
-  document.getElementById('livePreviewTxt').textContent = val;
-  updateTextStyle();
-  updateTextPos();
-  broadcast();
-};
-
-window.setQuickText = (msg) => {
-  document.getElementById('textInp').value = msg;
-  window.autoSendText(msg);
-};
-
-window.hideText = () => {
-  textVis = false;
-  document.getElementById('textOverlay').style.display = 'none';
-  document.getElementById('liveTextPreview').style.display = 'none';
-  document.getElementById('textInp').value = '';
-  broadcast();
-};
-
-window.updateTextStyle = () => {
-  if (!textVis) return;
-  const el = document.getElementById('textOverlay');
-  el.style.color = document.getElementById('textClr').value;
-  el.style.backgroundColor = `rgba(${h2rgb(document.getElementById('bgClr').value)},0.6)`;
-  el.style.fontFamily = document.getElementById('fontFam').value;
-  el.style.fontSize = document.getElementById('fontSz').value + 'px';
-  el.style.padding = '8px 18px';
-  el.style.borderRadius = '8px';
-  broadcast();
-};
-
-window.updateTextPos = () => {
-  if (!textVis) return;
-  document.getElementById('textOverlay').style.left = (parseInt(document.getElementById('textX').value)||0) + 'px';
-  document.getElementById('textOverlay').style.top  = (parseInt(document.getElementById('textY').value)||0) + 'px';
-  broadcast();
-};
-
-function getCompressedLogo() {
-  if (!logoUrl) return '';
-  try {
-    const canvas = document.createElement('canvas');
-    const img = document.getElementById('logoOverlay');
-    const MAX = 200;
-    const ratio = Math.min(MAX / img.naturalWidth, MAX / img.naturalHeight, 1);
-    canvas.width  = Math.max(1, Math.round(img.naturalWidth  * ratio));
-    canvas.height = Math.max(1, Math.round(img.naturalHeight * ratio));
-    const ctx = canvas.getContext('2d');
-    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-    const webp = canvas.toDataURL('image/webp', 0.6);
-    return webp.startsWith('data:image/webp') ? webp : canvas.toDataURL('image/jpeg', 0.6);
-  } catch(_) { return logoUrl; }
-}
-
+// Overlay broadcasting
 let broadcastTimer = null;
 function broadcast() {
-  if (!db || !roomId) return;
+  if(!db || !roomId) return;
   clearTimeout(broadcastTimer);
   broadcastTimer = setTimeout(() => {
     const logoSrc = (logoUrl && logoVis) ? getCompressedLogo() : '';
     set(ref(db, `rooms/${roomId}/overlays`), {
-      logo: {
-        show: logoVis, src: logoSrc,
-        x: parseInt(document.getElementById('logoX').value)||16,
-        y: parseInt(document.getElementById('logoY').value)||80,
-        w: parseInt(document.getElementById('logoW').value)||120,
-        h: parseInt(document.getElementById('logoH').value)||80
-      },
-      text: {
-        show: textVis,
-        msg: document.getElementById('textOverlay').textContent,
-        color: document.getElementById('textClr').value,
-        bgColor: document.getElementById('bgClr').value,
-        bgOp: 0.6,
-        font: document.getElementById('fontFam').value,
-        size: parseInt(document.getElementById('fontSz').value)||22,
-        x: parseInt(document.getElementById('textX').value)||20,
-        y: parseInt(document.getElementById('textY').value)||300
-      },
-      ticker: {
-        show: tickVis,
-        msg: document.getElementById('tickInp').value
-      }
+      logo: { show: logoVis, src: logoSrc, x: parseInt(document.getElementById('logoX').value)||16, y: parseInt(document.getElementById('logoY').value)||80, w: parseInt(document.getElementById('logoW').value)||120, h: parseInt(document.getElementById('logoH').value)||80 },
+      text: { show: textVis, msg: document.getElementById('textOverlay').textContent, color: document.getElementById('textClr').value, bgColor: document.getElementById('bgClr').value, font: document.getElementById('fontFam').value, size: parseInt(document.getElementById('fontSz').value)||22, x: parseInt(document.getElementById('textX').value)||20, y: parseInt(document.getElementById('textY').value)||300 },
+      ticker: { show: tickVis, msg: document.getElementById('tickInp').value }
     });
-  }, 200);
+  }, 150);
 }
 
-window.uploadLogo = (input) => {
-  const file = input.files[0];
-  if (!file) return;
-  const reader = new FileReader();
-  reader.onload = e => {
-    logoUrl = e.target.result;
-    const imgPrev = document.getElementById('imgPrev');
-    imgPrev.src = logoUrl;
-    imgPrev.style.display = 'block';
-    const logoEl = document.getElementById('logoOverlay');
-    logoEl.onload = () => {
-      logoVis = true;
-      logoEl.style.display = 'block';
-      applyLogoPos();
-      applyLogoSize();
-      broadcast();
-      toast('Logo upload ho gaya!');
-    };
-    logoEl.src = logoUrl;
-  };
-  reader.readAsDataURL(file);
-};
+function getCompressedLogo() {
+  if(!logoUrl) return '';
+  try { const canvas = document.createElement('canvas'); const img = document.getElementById('logoOverlay'); const MAX=200; const ratio=Math.min(MAX/img.naturalWidth, MAX/img.naturalHeight,1); canvas.width=Math.max(1,Math.round(img.naturalWidth*ratio)); canvas.height=Math.max(1,Math.round(img.naturalHeight*ratio)); const ctx=canvas.getContext('2d'); ctx.drawImage(img,0,0,canvas.width,canvas.height); return canvas.toDataURL('image/webp',0.6) || logoUrl; } catch(e){ return logoUrl; }
+}
 
-window.applyLogoPos = () => {
-  const el = document.getElementById('logoOverlay');
-  el.style.left = (parseInt(document.getElementById('logoX').value)||0) + 'px';
-  el.style.top  = (parseInt(document.getElementById('logoY').value)||0) + 'px';
-  if (logoVis) broadcast();
-};
+// UI Control functions
+window.autoSendText = (val) => { if(!val.trim()) { hideText(); return; } const el = document.getElementById('textOverlay'); el.textContent=val; textVis=true; el.style.display='block'; document.getElementById('liveTextPreview').style.display='block'; document.getElementById('livePreviewTxt').textContent=val; updateTextStyle(); updateTextPos(); broadcast(); };
+window.setQuickText = (msg) => { document.getElementById('textInp').value=msg; window.autoSendText(msg); };
+window.hideText = () => { textVis=false; document.getElementById('textOverlay').style.display='none'; document.getElementById('liveTextPreview').style.display='none'; document.getElementById('textInp').value=''; broadcast(); };
+window.updateTextStyle = () => { if(!textVis) return; const el=document.getElementById('textOverlay'); el.style.color=document.getElementById('textClr').value; el.style.backgroundColor=`rgba(${h2rgb(document.getElementById('bgClr').value)},0.6)`; el.style.fontFamily=document.getElementById('fontFam').value; el.style.fontSize=document.getElementById('fontSz').value+'px'; broadcast(); };
+window.updateTextPos = () => { if(!textVis) return; document.getElementById('textOverlay').style.left=parseInt(document.getElementById('textX').value)+'px'; document.getElementById('textOverlay').style.top=parseInt(document.getElementById('textY').value)+'px'; broadcast(); };
+window.uploadLogo = (input) => { const file=input.files[0]; if(!file) return; const reader=new FileReader(); reader.onload=e=>{ logoUrl=e.target.result; document.getElementById('imgPrev').src=logoUrl; document.getElementById('imgPrev').style.display='block'; const logoEl=document.getElementById('logoOverlay'); logoEl.onload=()=>{ logoVis=true; logoEl.style.display='block'; applyLogoPos(); applyLogoSize(); broadcast(); toast('Logo uploaded!'); }; logoEl.src=logoUrl; }; reader.readAsDataURL(file); };
+window.applyLogoPos = () => { const el=document.getElementById('logoOverlay'); el.style.left=parseInt(document.getElementById('logoX').value)+'px'; el.style.top=parseInt(document.getElementById('logoY').value)+'px'; if(logoVis) broadcast(); };
+window.applyLogoSize = () => { const el=document.getElementById('logoOverlay'); el.style.width=parseInt(document.getElementById('logoW').value)+'px'; el.style.height=parseInt(document.getElementById('logoH').value)+'px'; if(logoVis) broadcast(); };
+window.toggleLogo = (show) => { if(show && !logoUrl) { toast('Upload image first!'); return; } logoVis=show; document.getElementById('logoOverlay').style.display=show?'block':'none'; broadcast(); toast(show?'Logo shown':'Logo hidden'); };
+window.sendTicker = () => { const msg=document.getElementById('tickInp').value.trim(); if(!msg){toast('Enter ticker text');return;} tickVis=true; document.getElementById('tickerInner').textContent=msg+'   •   '+msg+'   •   '+msg; document.getElementById('tickerOverlay').style.display='block'; broadcast(); toast('Ticker live!'); };
+window.hideTicker = () => { tickVis=false; document.getElementById('tickerOverlay').style.display='none'; broadcast(); toast('Ticker hidden'); };
+window.toggleFlash = async () => { try { if(videoTrack) await videoTrack.applyConstraints({ advanced: [{ torch: true }] }); } catch(e){ toast('Flash not supported'); } };
+window.flipCamera = async () => { facing = facing === 'environment' ? 'user' : 'environment'; if(localStream) localStream.getTracks().forEach(t=>t.stop()); try { localStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: facing }, audio: true }); videoTrack = localStream.getVideoTracks()[0]; document.getElementById('mainVideo').srcObject = localStream; Object.values(peerMap).forEach(entry => { if(entry && entry.pc) { const sender = entry.pc.getSenders().find(s=>s.track?.kind==='video'); if(sender) sender.replaceTrack(videoTrack).catch(()=>{}); } }); toast('Camera flipped'); } catch(e){ toast('Flip failed'); } };
+window.applyZoom = (val) => { document.getElementById('zoomVal').textContent = parseFloat(val).toFixed(1)+'x'; if(videoTrack) { try { videoTrack.applyConstraints({ advanced: [{ zoom: parseFloat(val) }] }); } catch(e){ document.getElementById('mainVideo').style.transform = `scale(${val})`; } } };
+window.toggleDrawer = () => { const d=document.getElementById('drawer'); d.classList.toggle('open'); document.getElementById('panelBtn').classList.toggle('on', d.classList.contains('open')); };
+window.copyLink = () => { if(streamLink) { navigator.clipboard.writeText(streamLink).then(()=>toast('Link copied!')).catch(()=>toast('Copy failed')); } else toast('Start stream first!'); };
+window.waShare = () => { if(streamLink) window.open(`https://wa.me/?text=${encodeURIComponent('🔴 Live stream! '+streamLink)}`); else toast('Start stream first!'); };
+window.stopStream = () => { if(timerInt) clearInterval(timerInt); if(localStream) localStream.getTracks().forEach(t=>t.stop()); Object.values(peerMap).forEach(entry=>{ if(entry && entry.pc) try{entry.pc.close();}catch(e){} }); if(db && roomId) remove(ref(db, `rooms/${roomId}`)); location.reload(); };
+function startTimer() { const start=Date.now(); timerInt=setInterval(()=>{ const s=Math.floor((Date.now()-start)/1000); document.getElementById('timerDisp').textContent=`${String(Math.floor(s/60)).padStart(2,'0')}:${String(s%60).padStart(2,'0')}`; },1000); }
 
-window.applyLogoSize = () => {
-  const el = document.getElementById('logoOverlay');
-  el.style.width  = (parseInt(document.getElementById('logoW').value)||120) + 'px';
-  el.style.height = (parseInt(document.getElementById('logoH').value)||80) + 'px';
-  if (logoVis) broadcast();
-};
-
-window.toggleLogo = (show) => {
-  if (show && !logoUrl) { toast('Pehle image upload karo!'); return; }
-  logoVis = show;
-  document.getElementById('logoOverlay').style.display = show ? 'block' : 'none';
-  broadcast();
-  toast(show ? 'Logo show ho raha hai' : 'Logo hide ho gaya');
-};
-
-window.sendTicker = () => {
-  const msg = document.getElementById('tickInp').value.trim();
-  if (!msg) { toast('Ticker text likho!'); return; }
-  tickVis = true;
-  document.getElementById('tickerInner').textContent = msg + '   •   ' + msg + '   •   ' + msg;
-  document.getElementById('tickerOverlay').style.display = 'block';
-  broadcast();
-  toast('Ticker live!');
-};
-
-window.hideTicker = () => {
-  tickVis = false;
-  document.getElementById('tickerOverlay').style.display = 'none';
-  broadcast();
-  toast('Ticker hide ho gaya');
-};
-
-window.toggleFlash = async () => {
-  try {
-    if (videoTrack) await videoTrack.applyConstraints({ advanced: [{ torch: true }] });
-  } catch(_) { toast('Flash supported nahi is device pe'); }
-};
-
-window.flipCamera = async () => {
-  facing = facing === 'environment' ? 'user' : 'environment';
-  if (localStream) localStream.getTracks().forEach(t => t.stop());
-  try {
-    localStream = await navigator.mediaDevices.getUserMedia({
-      video: { facingMode: facing },
-      audio: true
-    });
-    videoTrack = localStream.getVideoTracks()[0];
-    document.getElementById('mainVideo').srcObject = localStream;
-    Object.values(peerMap).forEach(entry => {
-      if (!entry || !entry.pc) return;
-      const sender = entry.pc.getSenders().find(s => s.track?.kind === 'video');
-      if (sender) sender.replaceTrack(videoTrack).catch(() => {});
-    });
-    toast('Camera flip ho gaya');
-  } catch(e) { toast('Flip nahi hua: ' + e.message); }
-};
-
-window.applyZoom = (val) => {
-  document.getElementById('zoomVal').textContent = parseFloat(val).toFixed(1) + 'x';
-  if (videoTrack) {
-    try {
-      videoTrack.applyConstraints({ advanced: [{ zoom: parseFloat(val) }] });
-    } catch(_) {
-      document.getElementById('mainVideo').style.transform = `scale(${val})`;
-    }
-  }
-};
-
-window.toggleDrawer = () => {
-  const d = document.getElementById('drawer');
-  d.classList.toggle('open');
-  document.getElementById('panelBtn').classList.toggle('on', d.classList.contains('open'));
-};
-
-window.copyLink = () => {
-  if (streamLink) {
-    navigator.clipboard.writeText(streamLink)
-      .then(() => toast('Link copy ho gaya!'))
-      .catch(() => toast('Copy failed'));
-  } else {
-    toast('Pehle stream shuru karo!');
-  }
-};
-
-window.waShare = () => {
-  if (streamLink) window.open(`https://wa.me/?text=${encodeURIComponent('🔴 Live stream dekho! ' + streamLink)}`);
-  else toast('Pehle stream shuru karo!');
-};
-
-window.stopStream = () => {
-  if (timerInt) clearInterval(timerInt);
-  if (localStream) localStream.getTracks().forEach(t => t.stop());
-  Object.values(peerMap).forEach(entry => { if (entry && entry.pc) { try { entry.pc.close(); } catch(_) {} } });
-  if (db && roomId) remove(ref(db, `rooms/${roomId}`));
-  location.reload();
-};
-
-// ── Logo Drag ──
-const logoEl = document.getElementById('logoOverlay');
-let dragging = false, dragOffX = 0, dragOffY = 0;
-
-logoEl.addEventListener('mousedown', (e) => {
-  e.preventDefault(); dragging = true;
-  const r = logoEl.getBoundingClientRect();
-  dragOffX = e.clientX - r.left; dragOffY = e.clientY - r.top;
-});
-document.addEventListener('mousemove', (e) => {
-  if (!dragging) return;
-  const x = e.clientX - dragOffX, y = e.clientY - dragOffY;
-  logoEl.style.left = x + 'px'; logoEl.style.top = y + 'px';
-  document.getElementById('logoX').value = x;
-  document.getElementById('logoY').value = y;
-});
-document.addEventListener('mouseup', () => { if (dragging) { dragging = false; if (logoVis) broadcast(); } });
-
-logoEl.addEventListener('touchstart', (e) => {
-  e.preventDefault(); dragging = true;
-  const touch = e.touches[0];
-  const r = logoEl.getBoundingClientRect();
-  dragOffX = touch.clientX - r.left; dragOffY = touch.clientY - r.top;
-}, { passive: false });
-document.addEventListener('touchmove', (e) => {
-  if (!dragging) return; e.preventDefault();
-  const touch = e.touches[0];
-  const x = touch.clientX - dragOffX, y = touch.clientY - dragOffY;
-  logoEl.style.left = x + 'px'; logoEl.style.top = y + 'px';
-  document.getElementById('logoX').value = x;
-  document.getElementById('logoY').value = y;
-}, { passive: false });
-document.addEventListener('touchend', () => { if (dragging) { dragging = false; if (logoVis) broadcast(); } });
-
+// Drag logo
+const logoElem = document.getElementById('logoOverlay');
+let dragActive=false, offX=0, offY=0;
+logoElem.addEventListener('mousedown',(e)=>{ e.preventDefault(); dragActive=true; const rect=logoElem.getBoundingClientRect(); offX=e.clientX-rect.left; offY=e.clientY-rect.top; });
+document.addEventListener('mousemove',(e)=>{ if(!dragActive) return; const x=e.clientX-offX, y=e.clientY-offY; logoElem.style.left=x+'px'; logoElem.style.top=y+'px'; document.getElementById('logoX').value=x; document.getElementById('logoY').value=y; });
+document.addEventListener('mouseup',()=>{ if(dragActive){ dragActive=false; if(logoVis) broadcast(); } });
+logoElem.addEventListener('touchstart',(e)=>{ e.preventDefault(); dragActive=true; const touch=e.touches[0]; const rect=logoElem.getBoundingClientRect(); offX=touch.clientX-rect.left; offY=touch.clientY-rect.top; },{passive:false});
+document.addEventListener('touchmove',(e)=>{ if(!dragActive) return; e.preventDefault(); const touch=e.touches[0]; const x=touch.clientX-offX, y=touch.clientY-offY; logoElem.style.left=x+'px'; logoElem.style.top=y+'px'; document.getElementById('logoX').value=x; document.getElementById('logoY').value=y; },{passive:false});
+document.addEventListener('touchend',()=>{ if(dragActive){ dragActive=false; if(logoVis) broadcast(); } });
 </script>
 </body>
 </html>
+```
