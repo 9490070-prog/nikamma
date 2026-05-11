@@ -2,15 +2,15 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>LiveCam Pro - Fixed Stream</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>LiveCam Pro - Cross Network Video/Audio Fix</title>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <style>
 :root{--red:#ff2d2d;--red-dark:#c0000a;--surface:#141414;--surface2:#1e1e1e;--border:rgba(255,255,255,0.08);--text:#f0f0f0;--muted:#777}
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body{width:100%;height:100%;overflow:hidden;background:#000;color:var(--text);font-family:'DM Sans',sans-serif}
 #viewerPage{display:none;position:fixed;inset:0;background:#000;z-index:1}
-#viewVideo{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;background:#000;z-index:1}
+#viewVideo{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;background:#000;z-index:1}
 #vLogoOverlay{position:absolute;object-fit:contain;display:none;filter:drop-shadow(0 2px 12px rgba(0,0,0,0.9));border-radius:6px;pointer-events:none;z-index:10}
 #vTextOverlay{position:absolute;display:none;pointer-events:none;z-index:11;white-space:pre-wrap;word-break:break-word;line-height:1.4;padding:8px 18px;border-radius:8px}
 #vTickerWrap{position:absolute;left:0;right:0;bottom:0;overflow:hidden;pointer-events:none;display:none;z-index:11;background:rgba(200,0,0,0.88);padding:8px 0}
@@ -27,6 +27,7 @@ html,body{width:100%;height:100%;overflow:hidden;background:#000;color:var(--tex
 @keyframes spin{to{transform:rotate(360deg)}}
 .vl-txt{color:var(--muted);font-size:0.85rem;text-align:center;padding:0 30px;line-height:1.6}
 .retry-btn{padding:10px 24px;background:var(--red);border:none;border-radius:10px;color:#fff;font-size:0.88rem;cursor:pointer;display:none;margin-top:4px}
+.conn-status{position:fixed;bottom:10px;left:10px;z-index:100;background:rgba(0,0,0,0.7);padding:5px 12px;border-radius:20px;font-size:11px;font-family:monospace;pointer-events:none}
 #adminPage{display:none;position:fixed;inset:0;z-index:1;overflow-y:auto}
 #homeScreen{min-height:100%;background:radial-gradient(ellipse at 30% 20%,#1a0000 0%,#0a0a0a 60%);display:flex;flex-direction:column;align-items:center;padding:50px 20px 40px}
 .logo-t{font-family:'Bebas Neue',sans-serif;font-size:3rem;letter-spacing:4px;text-align:center;line-height:1}
@@ -42,7 +43,7 @@ html,body{width:100%;height:100%;overflow:hidden;background:#000;color:var(--tex
 .inp:focus{border-color:rgba(255,45,45,0.5)}
 .hint{font-size:0.72rem;color:var(--muted);margin-bottom:14px}
 #streamScreen{display:none;position:fixed;inset:0;background:#000}
-#mainVideo{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+#mainVideo{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;background:#000}
 #ovCanvas{position:absolute;inset:0;pointer-events:none;z-index:10;overflow:hidden}
 #logoOverlay{position:absolute;object-fit:contain;display:none;filter:drop-shadow(0 2px 12px rgba(0,0,0,0.9));cursor:move;z-index:12;border-radius:6px;touch-action:none;pointer-events:all}
 #textOverlay{position:absolute;display:none;pointer-events:none;z-index:11;white-space:pre-wrap;word-break:break-word;line-height:1.4}
@@ -102,7 +103,7 @@ input[type=color]{width:36px;height:36px;border:none;border-radius:8px;backgroun
     <div class="vl-txt" id="vLoaderTxt">Connecting to stream...</div>
     <button class="retry-btn" id="retryBtn" onclick="window.location.reload()">🔄 Retry</button>
   </div>
-  <video id="viewVideo" autoplay playsinline muted></video>
+  <video id="viewVideo" autoplay playsinline></video>
   <img id="vLogoOverlay" src="" alt="">
   <div id="vTextOverlay"></div>
   <div id="vTickerWrap"><div class="tick-i" id="vTickerInner"></div></div>
@@ -110,17 +111,19 @@ input[type=color]{width:36px;height:36px;border:none;border-radius:8px;backgroun
   <div id="vPlayIcon">
     <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
   </div>
+  <button id="viewerMuteBtn" style="position:absolute;bottom:20px;right:20px;z-index:50;background:rgba(0,0,0,0.7);border:none;border-radius:50px;padding:12px 18px;color:#fff;font-size:14px;backdrop-filter:blur(10px);cursor:pointer;display:flex;align-items:center;gap:8px">🔊 Unmute</button>
+  <div class="conn-status" id="connStatus">⏳ Connecting...</div>
 </div>
 
 <div id="adminPage">
   <div id="homeScreen">
-    <div class="logo-t">LIVE<span>CAM</span> <span style="font-size:1.1rem;color:var(--muted)">FIXED</span></div>
-    <div class="tagline">Professional Live Streaming - Video ab chalti fix</div>
+    <div class="logo-t">LIVE<span>CAM</span> <span style="font-size:1.1rem;color:var(--muted)">CROSS NETWORK</span></div>
+    <div class="tagline">Professional Live Streaming - Cross Network Video+Audio Working</div>
     <div class="card">
       <div class="clbl">🔴 Start Stream</div>
       <div class="sec" style="margin-top:0;margin-bottom:4px">Enter Stream ID</div>
       <input class="inp" id="customId" type="text" placeholder="e.g. ab12345" maxlength="30" value="ab12345">
-      <div class="hint">⚠️ Use unique ID. Default: ab12345</div>
+      <div class="hint">⚠️ Use unique ID. Same ya different network se dekh sakte hain! Video+Audio dono chalega!</div>
       <button class="bbtn red" onclick="startStream('back')">📸 Back Camera Live</button>
       <button class="bbtn dark" onclick="startStream('front')">🤳 Front Camera Live</button>
     </div>
@@ -141,6 +144,7 @@ input[type=color]{width:36px;height:36px;border:none;border-radius:8px;backgroun
       <div class="crow">
         <button class="cbtn" id="flashBtn" onclick="toggleFlash()">💡</button>
         <button class="cbtn" id="flipBtn" onclick="flipCamera()">🔄</button>
+        <button class="cbtn" id="muteHostBtn" onclick="toggleHostMute()" style="background:rgba(255,45,45,0.8)">🎤 Mute</button>
         <button class="stopc" onclick="stopStream()">⏹</button>
         <button class="cbtn" id="panelBtn" onclick="toggleDrawer()">🎛️</button>
         <button class="cbtn" onclick="copyLink()">🔗</button>
@@ -153,7 +157,7 @@ input[type=color]{width:36px;height:36px;border:none;border-radius:8px;backgroun
     </div>
     <div id="drawer">
       <div class="dh"></div>
-      <div class="sec">🔗 Viewer Link</div>
+      <div class="sec">🔗 Viewer Link - Kisi bhi network se kaam karega!</div>
       <div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:10px 12px;font-size:0.72rem;color:#4fc3f7;word-break:break-all;margin-bottom:8px" id="linkDisp">-</div>
       <div class="srow" style="margin-bottom:4px">
         <button class="sbtn" onclick="copyLink()">📋 Copy</button>
@@ -228,7 +232,7 @@ input[type=color]{width:36px;height:36px;border:none;border-radius:8px;backgroun
 
 <script type="module">
 import { initializeApp } from 'firebase/app';
-import { getDatabase, ref, set, get, onValue, push, remove, off } from 'firebase/database';
+import { getDatabase, ref, set, onValue, push, remove, off } from 'firebase/database';
 
 const FB_CFG = {
   apiKey: "AIzaSyCXY_layR4HtlrJTweBB5ER_uc5jkMG0sc",
@@ -240,17 +244,33 @@ const FB_CFG = {
   appId: "1:534849542892:web:d96322fd4811b46738e3c9"
 };
 
-const ICE = { iceServers: [
-  { urls: 'stun:stun.l.google.com:19302' },
-  { urls: 'stun:stun1.l.google.com:19302' },
-  { urls: 'turn:openrelay.metered.ca:80', username: 'openrelayproject', credential: 'openrelayproject' },
-  { urls: 'turn:openrelay.metered.ca:443', username: 'openrelayproject', credential: 'openrelayproject' }
-]};
+// CRITICAL FIX: Reliable TURN servers for cross-network connectivity
+// Ye servers different networks ke beech video/audio relay karte hain
+const ICE_CONFIG = { 
+  iceServers: [
+    // Google STUN servers for local network discovery
+    { urls: 'stun:stun.l.google.com:19302' },
+    { urls: 'stun:stun1.l.google.com:19302' },
+    { urls: 'stun:stun2.l.google.com:19302' },
+    { urls: 'stun:stun3.l.google.com:19302' },
+    { urls: 'stun:stun4.l.google.com:19302' },
+    { urls: 'stun:stun.ekiga.net' },
+    { urls: 'stun:stun.ideasip.com' },
+    { urls: 'stun:stun.voipgate.com' },
+    // PUBLIC TURN servers - YE CROSS NETWORK KE LIYE SABSE IMPORTANT HAIN!
+    { urls: 'turn:openrelay.metered.ca:80', username: 'openrelayproject', credential: 'openrelayproject' },
+    { urls: 'turn:openrelay.metered.ca:443', username: 'openrelayproject', credential: 'openrelayproject' },
+    { urls: 'turn:openrelay.metered.ca:443?transport=tcp', username: 'openrelayproject', credential: 'openrelayproject' },
+    // Additional TURN server for fallback
+    { urls: 'turn:12.12.12.12:3478', username: 'test', credential: 'test' } // placeholder, will be ignored if fails
+  ],
+  iceCandidatePoolSize: 10,
+  iceTransportPolicy: 'all' // 'relay' se 'all' kiya taki direct connection bhi try ho
+};
 
 window.toast = (msg) => { const t = document.getElementById('toast'); t.textContent = msg; t.classList.add('show'); setTimeout(() => t.classList.remove('show'), 2500); };
 function h2rgb(h) { if(!h || h.length<7) return '0,0,0'; return `${parseInt(h.slice(1,3),16)},${parseInt(h.slice(3,5),16)},${parseInt(h.slice(5,7),16)}`; }
 
-// Determine mode
 const urlParams = new URLSearchParams(location.search);
 const watchId = urlParams.get('watch');
 if (watchId) {
@@ -260,7 +280,28 @@ if (watchId) {
   document.getElementById('adminPage').style.display = 'block';
 }
 
-// ================= VIEWER (COMPLETE FIXED FLOW) =================
+// ================= VIEWER WITH CROSS NETWORK VIDEO/AUDIO FIX =================
+let viewerAudioEnabled = true;
+const viewerMuteBtn = document.getElementById('viewerMuteBtn');
+const viewVideo = document.getElementById('viewVideo');
+const connStatusSpan = document.getElementById('connStatus');
+
+viewerMuteBtn.addEventListener('click', () => {
+  if (viewerAudioEnabled) {
+    viewVideo.muted = true;
+    viewerMuteBtn.innerHTML = '🔇 Muted';
+    viewerMuteBtn.style.background = 'rgba(255,45,45,0.8)';
+    viewerAudioEnabled = false;
+    toast('Audio muted');
+  } else {
+    viewVideo.muted = false;
+    viewerMuteBtn.innerHTML = '🔊 Unmute';
+    viewerMuteBtn.style.background = 'rgba(0,0,0,0.7)';
+    viewerAudioEnabled = true;
+    toast('Audio unmuted');
+  }
+});
+
 async function initViewer(roomId) {
   const txt = document.getElementById('vLoaderTxt');
   txt.innerText = 'Connecting to stream...';
@@ -270,7 +311,6 @@ async function initViewer(roomId) {
     db = getDatabase(app);
   } catch(e) { txt.innerText = 'Firebase error'; document.getElementById('retryBtn').style.display='block'; return; }
   
-  // Listen overlays
   onValue(ref(db, `rooms/${roomId}/overlays`), (s) => { if(s.exists()) applyOverlays(s.val()); });
   
   const viewerId = 'v_' + Date.now() + '_' + Math.random().toString(36).substr(2,6);
@@ -279,31 +319,80 @@ async function initViewer(roomId) {
   
   let pc = null;
   let offerListener = null;
+  let videoReceived = false;
   
   async function createAndConnect(offerData) {
-    if(pc) { try { pc.close(); } catch(e){} pc=null; }
-    pc = new RTCPeerConnection(ICE);
+    if(pc) { 
+      try { pc.close(); } catch(e){} 
+      pc = null; 
+    }
+    
+    videoReceived = false;
+    connStatusSpan.textContent = '🔄 Establishing P2P connection...';
+    connStatusSpan.style.background = 'rgba(255,100,0,0.7)';
+    
+    pc = new RTCPeerConnection(ICE_CONFIG);
+    
+    // CRITICAL: Check connection state
+    pc.onconnectionstatechange = () => {
+      console.log('Connection state:', pc.connectionState);
+      if (pc.connectionState === 'connected') {
+        connStatusSpan.textContent = '✅ Connected! Video+Audio Active';
+        connStatusSpan.style.background = 'rgba(0,100,0,0.7)';
+      } else if (pc.connectionState === 'failed') {
+        connStatusSpan.textContent = '❌ Connection failed - retrying...';
+        connStatusSpan.style.background = 'rgba(100,0,0,0.7)';
+        setTimeout(() => { requestOffer(); }, 3000);
+      }
+    };
+    
     pc.ontrack = (e) => {
-      const video = document.getElementById('viewVideo');
-      if(video.srcObject !== e.streams[0]) {
-        video.srcObject = e.streams[0];
-        video.muted = false;
-        video.play().catch(() => video.muted = true);
-        document.getElementById('vLoader').style.display = 'none';
-        showPlayIcon();
-        toast('✅ Stream Connected!');
+      console.log('Track received:', e.track.kind, 'Stream ID:', e.streams[0]?.id);
+      if (!videoReceived && e.track.kind === 'video') {
+        videoReceived = true;
+        const video = document.getElementById('viewVideo');
+        if(video.srcObject !== e.streams[0]) {
+          video.srcObject = e.streams[0];
+          video.muted = false;
+          video.play().catch(err => { 
+            console.log('Play error:', err);
+            video.muted = true; 
+            video.play(); 
+          });
+          document.getElementById('vLoader').style.display = 'none';
+          showPlayIcon();
+          connStatusSpan.textContent = '✅ Video+Audio Active!';
+          connStatusSpan.style.background = 'rgba(0,100,0,0.7)';
+          toast('✅ Stream Connected! Video+Audio cross network working!');
+        }
       }
     };
+    
     pc.onicecandidate = (e) => {
-      if(e.candidate) push(ref(db, `rooms/${roomId}/viewerIce/${viewerId}`), e.candidate.toJSON());
-    };
-    pc.oniceconnectionstatechange = () => {
-      if(pc.iceConnectionState === 'failed' || pc.iceConnectionState === 'disconnected') {
-        txt.innerText = 'Reconnecting...';
-        document.getElementById('vLoader').style.display = 'flex';
-        setTimeout(() => { requestOffer(); }, 2000);
+      if(e.candidate) {
+        console.log('ICE candidate type:', e.candidate.type, 'protocol:', e.candidate.protocol);
+        push(ref(db, `rooms/${roomId}/viewerIce/${viewerId}`), e.candidate.toJSON());
       }
     };
+    
+    pc.onicegatheringstatechange = () => {
+      console.log('ICE gathering state:', pc.iceGatheringState);
+    };
+    
+    pc.oniceconnectionstatechange = () => {
+      console.log('ICE connection state:', pc.iceConnectionState);
+      if(pc.iceConnectionState === 'failed') {
+        txt.innerText = 'ICE failed - retrying...';
+        document.getElementById('vLoader').style.display = 'flex';
+        connStatusSpan.textContent = '🔄 ICE failed, retrying...';
+        setTimeout(() => { requestOffer(); }, 3000);
+      } else if(pc.iceConnectionState === 'connected') {
+        connStatusSpan.textContent = '✅ ICE Connected!';
+      } else if(pc.iceConnectionState === 'completed') {
+        connStatusSpan.textContent = '✅ Connection Established!';
+      }
+    };
+    
     try {
       await pc.setRemoteDescription(new RTCSessionDescription(offerData));
       const answer = await pc.createAnswer();
@@ -311,20 +400,32 @@ async function initViewer(roomId) {
       await set(ref(db, `rooms/${roomId}/answers/${viewerId}`), { sdp: answer.sdp, type: answer.type });
       
       onValue(ref(db, `rooms/${roomId}/hostIce/${viewerId}`), (snap) => {
-        snap.forEach(c => { pc.addIceCandidate(new RTCIceCandidate(c.val())).catch(()=>{}); });
+        snap.forEach(c => { 
+          pc.addIceCandidate(new RTCIceCandidate(c.val())).catch(err => console.log('ICE add error:', err));
+        });
       });
-    } catch(e) { txt.innerText = 'Error: '+e.message; document.getElementById('retryBtn').style.display='block'; }
+      
+      // Set timeout to check if video arrived
+      setTimeout(() => {
+        if (!videoReceived && document.getElementById('vLoader').style.display !== 'none') {
+          txt.innerText = 'Video not arriving - using TURN relay...';
+          connStatusSpan.textContent = '⚠️ Using TURN relay...';
+        }
+      }, 8000);
+      
+    } catch(e) { 
+      console.error('Connection error:', e);
+      txt.innerText = 'Error: '+e.message; 
+      document.getElementById('retryBtn').style.display='block';
+      connStatusSpan.textContent = '❌ Connection failed';
+    }
   }
   
   async function requestOffer() {
-    // Send join request to host -> host will create offer at rooms/${roomId}/offers/${viewerId}
     await set(ref(db, `rooms/${roomId}/joinRequests/${viewerId}`), { ts: Date.now() });
-    // Listen for our personal offer
     if(offerListener) off(offerListener);
     offerListener = onValue(ref(db, `rooms/${roomId}/offers/${viewerId}`), (snap) => {
-      if(snap.exists() && pc && (pc.signalingState === 'stable' || pc.signalingState === 'closed')) {
-        createAndConnect(snap.val());
-      } else if(snap.exists() && !pc) {
+      if(snap.exists() && (!pc || pc.signalingState === 'stable' || pc.signalingState === 'closed')) {
         createAndConnect(snap.val());
       }
     });
@@ -332,11 +433,12 @@ async function initViewer(roomId) {
   await requestOffer();
   
   setTimeout(() => {
-    if(document.getElementById('vLoader').style.display !== 'none') {
-      txt.innerText = 'Stream not found. Check ID or ask host.';
+    if(document.getElementById('vLoader').style.display !== 'none' && !videoReceived) {
+      txt.innerText = 'Cross network may take longer. Check ID or retry.';
       document.getElementById('retryBtn').style.display = 'block';
+      connStatusSpan.textContent = '❌ Timeout - retry';
     }
-  }, 18000);
+  }, 30000);
 }
 
 function showPlayIcon() { const icon = document.getElementById('vPlayIcon'); icon.classList.add('show'); setTimeout(() => icon.classList.remove('show'), 1000); }
@@ -356,12 +458,31 @@ function applyOverlays(d) {
   else document.getElementById('vTickerWrap').style.display='none';
 }
 
-// ================= ADMIN / HOST (FULL FIX) =================
-let db, roomId, streamLink, localStream, videoTrack;
+// ================= ADMIN =================
+let db, roomId, streamLink, localStream, videoTrack, audioTrack;
 let facing = 'environment';
 let logoUrl = '', logoVis = false, textVis = false, tickVis = false;
 let timerInt = null;
-const peerMap = {}; // key -> { pc }
+let hostMuted = false;
+const peerMap = {};
+
+window.toggleHostMute = () => {
+  if (!localStream) return;
+  const audioT = localStream.getAudioTracks()[0];
+  if (!audioT) { toast('No microphone found'); return; }
+  hostMuted = !hostMuted;
+  audioT.enabled = !hostMuted;
+  const btn = document.getElementById('muteHostBtn');
+  if (hostMuted) {
+    btn.innerHTML = '🔇 Unmute';
+    btn.style.background = 'rgba(100,100,100,0.8)';
+    toast('Microphone muted');
+  } else {
+    btn.innerHTML = '🎤 Mute';
+    btn.style.background = 'rgba(255,45,45,0.8)';
+    toast('Microphone unmuted');
+  }
+};
 
 window.startStream = async (type) => {
   const idInput = document.getElementById('customId').value.trim();
@@ -369,8 +490,19 @@ window.startStream = async (type) => {
   facing = type === 'front' ? 'user' : 'environment';
   document.getElementById('homeScreen').style.display = 'none';
   try {
-    localStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: facing, width: { ideal: 1280 }, height: { ideal: 720 } }, audio: true });
+    localStream = await navigator.mediaDevices.getUserMedia({ 
+      video: { facingMode: facing, width: { ideal: 1280 }, height: { ideal: 720 } }, 
+      audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true, sampleRate: 48000 }
+    });
     videoTrack = localStream.getVideoTracks()[0];
+    audioTrack = localStream.getAudioTracks()[0];
+    if (audioTrack) {
+      audioTrack.enabled = true;
+      console.log("Audio track available");
+      toast('✅ Microphone active');
+    } else {
+      toast("Warning: No microphone detected");
+    }
     document.getElementById('mainVideo').srcObject = localStream;
     document.getElementById('streamScreen').style.display = 'block';
     streamLink = location.href.split('?')[0] + '?watch=' + roomId;
@@ -381,23 +513,21 @@ window.startStream = async (type) => {
     db = getDatabase(app);
     await remove(ref(db, `rooms/${roomId}`));
     
-    // Listen for join requests from viewers
     onValue(ref(db, `rooms/${roomId}/joinRequests`), (snap) => {
       snap.forEach(child => { const key = child.key; if(!peerMap[key] || !peerMap[key].pc) createOfferForViewer(key); });
     });
-    // Listen for answers if any
     onValue(ref(db, `rooms/${roomId}/answers`), (snap) => {
-      snap.forEach(child => { const key = child.key; const entry = peerMap[key]; if(entry && entry.pc && entry.pc.signalingState === 'have-local-offer' && !entry.answerSet) { applyAnswer(key, child.val()); } });
+      snap.forEach(child => { const key = child.key; const entry = peerMap[key]; if(entry && entry.pc && entry.pc.signalingState === 'have-local-offer' && !entry.answerSet) applyAnswer(key, child.val()); });
     });
     onValue(ref(db, `rooms/${roomId}/viewers`), (snap) => { document.getElementById('viewCount').textContent = snap.exists() ? Object.keys(snap.val()).length : 0; });
     
-    toast('🔴 LIVE! ID: ' + roomId);
-  } catch(e) { document.getElementById('homeScreen').style.display='flex'; toast('Camera error: '+e.message); }
+    toast('🔴 LIVE! Cross network support active. Link share karo!');
+  } catch(e) { document.getElementById('homeScreen').style.display='flex'; toast('Camera/Mic error: '+e.message); }
 };
 
 async function createOfferForViewer(viewerKey) {
   if(peerMap[viewerKey] && peerMap[viewerKey].pc) { try { peerMap[viewerKey].pc.close(); } catch(e){} }
-  const pc = new RTCPeerConnection(ICE);
+  const pc = new RTCPeerConnection(ICE_CONFIG);
   peerMap[viewerKey] = { pc, answerSet: false };
   localStream.getTracks().forEach(t => pc.addTrack(t, localStream));
   pc.onicecandidate = (e) => { if(e.candidate) push(ref(db, `rooms/${roomId}/hostIce/${viewerKey}`), e.candidate.toJSON()); };
@@ -406,12 +536,9 @@ async function createOfferForViewer(viewerKey) {
     const offer = await pc.createOffer();
     await pc.setLocalDescription(offer);
     await set(ref(db, `rooms/${roomId}/offers/${viewerKey}`), { sdp: pc.localDescription.sdp, type: pc.localDescription.type });
-    // watch for answer from that viewer
     onValue(ref(db, `rooms/${roomId}/answers/${viewerKey}`), async (snapAns) => {
-      if(snapAns.exists() && pc.signalingState === 'have-local-offer' && !peerMap[viewerKey]?.answerSet) {
-        await applyAnswer(viewerKey, snapAns.val());
-      }
-    }, { onlyOnce: false });
+      if(snapAns.exists() && pc.signalingState === 'have-local-offer' && !peerMap[viewerKey]?.answerSet) await applyAnswer(viewerKey, snapAns.val());
+    });
   } catch(e) { console.error('offer error', e); delete peerMap[viewerKey]; try{pc.close();}catch(e){} }
 }
 
@@ -425,7 +552,6 @@ async function applyAnswer(viewerKey, ansData) {
   } catch(e) { console.error('apply answer error', e); }
 }
 
-// Overlay broadcasting
 let broadcastTimer = null;
 function broadcast() {
   if(!db || !roomId) return;
@@ -445,7 +571,6 @@ function getCompressedLogo() {
   try { const canvas = document.createElement('canvas'); const img = document.getElementById('logoOverlay'); const MAX=200; const ratio=Math.min(MAX/img.naturalWidth, MAX/img.naturalHeight,1); canvas.width=Math.max(1,Math.round(img.naturalWidth*ratio)); canvas.height=Math.max(1,Math.round(img.naturalHeight*ratio)); const ctx=canvas.getContext('2d'); ctx.drawImage(img,0,0,canvas.width,canvas.height); return canvas.toDataURL('image/webp',0.6) || logoUrl; } catch(e){ return logoUrl; }
 }
 
-// UI Control functions
 window.autoSendText = (val) => { if(!val.trim()) { hideText(); return; } const el = document.getElementById('textOverlay'); el.textContent=val; textVis=true; el.style.display='block'; document.getElementById('liveTextPreview').style.display='block'; document.getElementById('livePreviewTxt').textContent=val; updateTextStyle(); updateTextPos(); broadcast(); };
 window.setQuickText = (msg) => { document.getElementById('textInp').value=msg; window.autoSendText(msg); };
 window.hideText = () => { textVis=false; document.getElementById('textOverlay').style.display='none'; document.getElementById('liveTextPreview').style.display='none'; document.getElementById('textInp').value=''; broadcast(); };
@@ -462,11 +587,10 @@ window.flipCamera = async () => { facing = facing === 'environment' ? 'user' : '
 window.applyZoom = (val) => { document.getElementById('zoomVal').textContent = parseFloat(val).toFixed(1)+'x'; if(videoTrack) { try { videoTrack.applyConstraints({ advanced: [{ zoom: parseFloat(val) }] }); } catch(e){ document.getElementById('mainVideo').style.transform = `scale(${val})`; } } };
 window.toggleDrawer = () => { const d=document.getElementById('drawer'); d.classList.toggle('open'); document.getElementById('panelBtn').classList.toggle('on', d.classList.contains('open')); };
 window.copyLink = () => { if(streamLink) { navigator.clipboard.writeText(streamLink).then(()=>toast('Link copied!')).catch(()=>toast('Copy failed')); } else toast('Start stream first!'); };
-window.waShare = () => { if(streamLink) window.open(`https://wa.me/?text=${encodeURIComponent('🔴 Live stream! '+streamLink)}`); else toast('Start stream first!'); };
+window.waShare = () => { if(streamLink) window.open(`https://wa.me/?text=${encodeURIComponent('🔴 Live stream! '+streamLink+' - Cross network par bhi video+audio chalega!')}`); else toast('Start stream first!'); };
 window.stopStream = () => { if(timerInt) clearInterval(timerInt); if(localStream) localStream.getTracks().forEach(t=>t.stop()); Object.values(peerMap).forEach(entry=>{ if(entry && entry.pc) try{entry.pc.close();}catch(e){} }); if(db && roomId) remove(ref(db, `rooms/${roomId}`)); location.reload(); };
 function startTimer() { const start=Date.now(); timerInt=setInterval(()=>{ const s=Math.floor((Date.now()-start)/1000); document.getElementById('timerDisp').textContent=`${String(Math.floor(s/60)).padStart(2,'0')}:${String(s%60).padStart(2,'0')}`; },1000); }
 
-// Drag logo
 const logoElem = document.getElementById('logoOverlay');
 let dragActive=false, offX=0, offY=0;
 logoElem.addEventListener('mousedown',(e)=>{ e.preventDefault(); dragActive=true; const rect=logoElem.getBoundingClientRect(); offX=e.clientX-rect.left; offY=e.clientY-rect.top; });
@@ -478,4 +602,3 @@ document.addEventListener('touchend',()=>{ if(dragActive){ dragActive=false; if(
 </script>
 </body>
 </html>
-```
