@@ -3,91 +3,93 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-<title>LiveCam Pro | Full Version</title>
+<title>LiveCam Pro | Professional Version</title>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <style>
 :root{--red:#ff2d2d;--red-dark:#c0000a;--surface:#141414;--surface2:#1e1e1e;--surface3:#252525;--border:rgba(255,255,255,0.08);--border2:rgba(255,255,255,0.14);--text:#f0f0f0;--muted:#777;--accent:#4fc3f7}
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body{width:100%;height:100%;overflow:hidden;background:#000;color:var(--text);font-family:'DM Sans',sans-serif}
 
-/* VIEWER CSS */
+/* VIEWER UI */
 #viewerPage{display:none;position:fixed;inset:0;background:#000;z-index:1}
-#viewVideo{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;background:#000;z-index:1}
+#viewVideo{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;background:#000}
 #vLoader{position:absolute;inset:0;background:#0a0a0a;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;z-index:30}
-.vl-logo{font-family:'Bebas Neue',sans-serif;font-size:2.2rem;letter-spacing:3px;color:#fff}
+.vl-logo{font-family:'Bebas Neue',sans-serif;font-size:2.5rem;letter-spacing:3px;color:#fff}
 .vl-logo span{color:var(--red)}
-.spinner{width:46px;height:46px;border:3px solid rgba(255,255,255,0.08);border-top-color:var(--red);border-radius:50%;animation:spin 0.8s linear infinite}
+.spinner{width:46px;height:46px;border:3px solid rgba(255,255,255,0.1);border-top-color:var(--red);border-radius:50%;animation:spin 0.8s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
-.conn-status{position:fixed;bottom:10px;left:10px;z-index:100;background:rgba(0,0,0,0.7);padding:5px 12px;border-radius:20px;font-size:11px;font-family:monospace}
+.conn-status{position:fixed;bottom:15px;left:15px;z-index:100;background:rgba(0,0,0,0.7);padding:6px 15px;border-radius:20px;font-size:12px;font-family:monospace;border:1px solid var(--border)}
 
-/* ADMIN CSS */
+/* ADMIN HOME */
 #adminPage{display:none;position:fixed;inset:0;z-index:1;overflow-y:auto}
-#homeScreen{min-height:100%;background:radial-gradient(ellipse at 30% 20%,#1a0000 0%,#0a0a0a 60%);display:flex;flex-direction:column;align-items:center;padding:50px 20px}
-.card{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:18px;width:100%;max-width:400px}
-.bbtn{width:100%;padding:15px;border:none;border-radius:12px;font-weight:600;cursor:pointer;margin-bottom:9px;display:flex;align-items:center;justify-content:center;gap:10px}
+#homeScreen{min-height:100%;background:radial-gradient(ellipse at 30% 20%,#1a0000 0%,#0a0a0a 60%);display:flex;flex-direction:column;align-items:center;padding:60px 20px}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:25px;width:100%;max-width:400px;box-shadow:0 20px 40px rgba(0,0,0,0.4)}
+.clbl{font-size:0.7rem;text-transform:uppercase;letter-spacing:2px;color:var(--muted);margin-bottom:15px}
+.inp{width:100%;padding:15px;background:var(--surface2);border:1px solid var(--border);border-radius:12px;color:#fff;margin-bottom:15px;font-size:1rem;outline:none}
+.bbtn{width:100%;padding:16px;border:none;border-radius:12px;font-weight:700;cursor:pointer;margin-bottom:10px;display:flex;align-items:center;justify-content:center;gap:10px;transition:0.2s}
 .bbtn.red{background:var(--red);color:#fff}
-.bbtn.dark{background:var(--surface2);color:var(--text);border:1px solid var(--border)}
-.inp{width:100%;padding:13px;background:var(--surface2);border:1px solid var(--border);border-radius:10px;color:#fff;margin-bottom:10px;outline:none}
+.bbtn.dark{background:var(--surface3);color:var(--text);border:1px solid var(--border)}
+.bbtn:active{transform:scale(0.98)}
 
 /* STREAM SCREEN */
 #streamScreen{display:none;position:fixed;inset:0;background:#000}
 #mainVideo{width:100%;height:100%;object-fit:cover}
-#adminTop{position:absolute;top:0;left:0;right:0;z-index:20;display:flex;justify-content:space-between;padding:12px;background:linear-gradient(to bottom,rgba(0,0,0,0.8),transparent)}
-#adminBot{position:absolute;bottom:0;left:0;right:0;z-index:20;padding:15px;background:linear-gradient(to top,rgba(0,0,0,0.9),transparent)}
-.crow{display:flex;align-items:center;justify-content:space-between;margin-bottom:15px}
-.cbtn{width:50px;height:50px;border-radius:50%;border:none;background:rgba(255,255,255,0.1);color:#fff;font-size:1.2rem;cursor:pointer}
-.stopc{width:60px;height:60px;border-radius:50%;background:var(--red);border:none;color:#fff;font-size:1.5rem}
-
-/* OVERLAYS */
-#textOverlay, #vTextOverlay{position:absolute;padding:10px 20px;border-radius:8px;display:none;z-index:15;font-weight:bold}
-#tickerOverlay, #vTickerWrap{position:absolute;width:100%;background:rgba(0,0,0,0.6);padding:8px 0;overflow:hidden;display:none;z-index:15}
-.tick-inner{white-space:nowrap;display:inline-block;animation:ticker 15s linear infinite}
-@keyframes ticker{from{transform:translateX(100%)}to{transform:translateX(-100%)}}
+#adminTop{position:absolute;top:0;left:0;right:0;z-index:20;display:flex;justify-content:space-between;align-items:center;padding:20px;background:linear-gradient(to bottom,rgba(0,0,0,0.8),transparent)}
+.live-tag{background:var(--red);padding:4px 12px;border-radius:4px;font-weight:bold;font-size:12px}
+#adminBot{position:absolute;bottom:0;left:0;right:0;z-index:20;padding:20px 20px 40px;background:linear-gradient(to top,rgba(0,0,0,0.9),transparent)}
+.ctrl-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px}
+.round-btn{width:55px;height:55px;border-radius:50%;border:none;background:rgba(255,255,255,0.1);backdrop-filter:blur(10px);color:#fff;font-size:1.3rem;cursor:pointer}
+.stop-btn{width:65px;height:65px;border-radius:50%;background:var(--red);border:4px solid rgba(255,255,255,0.2);color:#fff;font-size:1.6rem}
+#zoomSlider{width:100%;height:4px;appearance:none;background:rgba(255,255,255,0.2);border-radius:2px;outline:none}
+#zoomSlider::-webkit-slider-thumb{appearance:none;width:22px;height:22px;background:#fff;border-radius:50%}
 </style>
 </head>
 <body>
 
 <div id="viewerPage">
-  <div id="vLoader">
-    <div class="vl-logo">LIVE<span>CAM</span></div>
-    <div class="spinner"></div>
-    <div id="vLoaderTxt">Connecting...</div>
-  </div>
-  <video id="viewVideo" autoplay playsinline></video>
-  <div id="vTextOverlay"></div>
-  <div id="vTickerWrap"><div class="tick-inner" id="vTickerInner"></div></div>
-  <div class="conn-status" id="connStatus">Initializing...</div>
-  <button id="unmuteBtn" onclick="document.getElementById('viewVideo').muted=false;this.remove()" style="position:fixed;bottom:20px;right:20px;padding:10px 20px;z-index:100;background:var(--red);color:#fff;border:none;border-radius:20px">🔊 Unmute</button>
+    <div id="vLoader">
+        <div class="vl-logo">LIVE<span>CAM</span></div>
+        <div class="spinner"></div>
+        <div id="vLoaderTxt">Connecting to Secure Stream...</div>
+    </div>
+    <video id="viewVideo" autoplay playsinline></video>
+    <div class="conn-status" id="connStatus">⏳ Initializing P2P...</div>
+    <button id="unmuteBtn" onclick="document.getElementById('viewVideo').muted=false;this.style.display='none'" style="position:fixed;bottom:80px;left:50%;transform:translateX(-50%);z-index:100;padding:12px 25px;background:var(--red);color:#fff;border:none;border-radius:30px;font-weight:bold;box-shadow:0 10px 20px rgba(0,0,0,0.5)">📢 Click to Hear Audio</button>
 </div>
 
 <div id="adminPage">
-  <div id="homeScreen">
-    <div class="vl-logo" style="margin-bottom:30px">LIVE<span>CAM</span> PRO</div>
-    <div class="card">
-      <input class="inp" id="customId" type="text" placeholder="Stream ID" value="ab12345">
-      <button class="bbtn red" onclick="startStream('environment')">Back Camera Live</button>
-      <button class="bbtn dark" onclick="startStream('user')">Front Camera Live</button>
-    </div>
-  </div>
-
-  <div id="streamScreen">
-    <video id="mainVideo" autoplay playsinline muted></video>
-    <div id="adminTop">
-        <div style="background:var(--red);padding:5px 15px;border-radius:20px;font-weight:bold">LIVE</div>
-        <div id="timerDisp">00:00</div>
-        <div>👁 <span id="viewCount">0</span></div>
-    </div>
-    <div id="adminBot">
-        <div class="crow">
-            <button class="cbtn" onclick="toggleFlash()">💡</button>
-            <button class="cbtn" onclick="copyLink()">🔗</button>
-            <button class="stopc" onclick="location.reload()">⏹</button>
-            <button class="cbtn" onclick="waShare()">📱</button>
-            <button class="cbtn" onclick="toggleMute()">🎤</button>
+    <div id="homeScreen">
+        <div class="vl-logo" style="margin-bottom:40px">LIVE<span>CAM</span> PRO</div>
+        <div class="card">
+            <div class="clbl">Stream Identity</div>
+            <input class="inp" id="customId" type="text" placeholder="Enter Room ID" value="ab12345">
+            <button class="bbtn red" onclick="setupStream('environment')">🚀 Go Live (Back Cam)</button>
+            <button class="bbtn dark" onclick="setupStream('user')">🤳 Start Selfie Stream</button>
         </div>
-        <input type="range" style="width:100%" min="1" max="5" step="0.1" oninput="applyZoom(this.value)">
     </div>
-  </div>
+
+    <div id="streamScreen">
+        <video id="mainVideo" autoplay playsinline muted></video>
+        <div id="adminTop">
+            <div class="live-tag">REC ● LIVE</div>
+            <div id="timerDisp" style="font-family:monospace;font-weight:bold">00:00</div>
+            <div style="background:rgba(0,0,0,0.5);padding:4px 10px;border-radius:10px">👁 <span id="viewCount">0</span></div>
+        </div>
+        <div id="adminBot">
+            <div class="ctrl-row">
+                <button class="round-btn" onclick="toggleFlash()">💡</button>
+                <button class="round-btn" onclick="copyStreamLink()">🔗</button>
+                <button class="stop-btn" onclick="location.reload()">⏹</button>
+                <button class="round-btn" onclick="shareWA()">📱</button>
+                <button class="round-btn" id="muteBtn" onclick="toggleMic()">🎤</button>
+            </div>
+            <div style="display:flex;align-items:center;gap:15px">
+                <span style="font-size:12px;color:var(--muted)">1x</span>
+                <input type="range" id="zoomSlider" min="1" max="8" step="0.1" value="1" oninput="applyZoom(this.value)">
+                <span style="font-size:12px;color:var(--muted)">8x</span>
+            </div>
+        </div>
+    </div>
 </div>
 
 <script type="importmap">
@@ -101,7 +103,7 @@ html,body{width:100%;height:100%;overflow:hidden;background:#000;color:var(--tex
 
 <script type="module">
 import { initializeApp } from 'firebase/app';
-import { getDatabase, ref, set, onValue, push, remove, onChildAdded } from 'firebase/database';
+import { getDatabase, ref, set, onValue, push, remove, onChildAdded, update } from 'firebase/database';
 
 const firebaseConfig = {
   apiKey: "AIzaSyCXY_layR4HtlrJTweBB5ER_uc5jkMG0sc",
@@ -116,103 +118,150 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 
+// Cross-Network Ice Servers
 const iceServers = [
     { urls: 'stun:stun.l.google.com:19302' },
+    { urls: 'stun:stun1.l.google.com:19302' },
     { urls: 'turn:openrelay.metered.ca:80', username: 'openrelayproject', credential: 'openrelayproject' },
     { urls: 'turn:openrelay.metered.ca:443', username: 'openrelayproject', credential: 'openrelayproject' }
 ];
 
-let localStream, roomId, videoTrack;
-const peerMap = {};
+let localStream, roomId, videoTrack, micEnabled = true;
+const peerConnections = {};
 
-// --- ADMIN LOGIC ---
-window.startStream = async (facing) => {
-    roomId = document.getElementById('customId').value;
+// --- STREAMER LOGIC ---
+window.setupStream = async (facing) => {
+    roomId = document.getElementById('customId').value.trim();
+    if(!roomId) return alert("Please enter a Room ID");
+
     try {
         localStream = await navigator.mediaDevices.getUserMedia({ 
-            video: { facingMode: facing, width: 1280, height: 720 }, 
+            video: { facingMode: facing, width: {ideal: 1280}, height: {ideal: 720} }, 
             audio: true 
         });
         videoTrack = localStream.getVideoTracks()[0];
         document.getElementById('mainVideo').srcObject = localStream;
-        document.getElementById('adminPage').querySelector('#homeScreen').style.display = 'none';
+        document.getElementById('homeScreen').style.display = 'none';
         document.getElementById('streamScreen').style.display = 'block';
 
+        // Clear old room data
         await remove(ref(db, `rooms/${roomId}`));
-        
-        onValue(ref(db, `rooms/${roomId}/joinRequests`), (snap) => {
-            snap.forEach(child => {
-                if(!peerMap[child.key]) handleNewViewer(child.key);
-            });
+
+        // Listen for Viewers
+        onChildAdded(ref(db, `rooms/${roomId}/requests`), (snapshot) => {
+            const viewerId = snapshot.key;
+            initPeerConnection(viewerId);
+        });
+
+        // View Count
+        onValue(ref(db, `rooms/${roomId}/viewers`), s => {
+            document.getElementById('viewCount').textContent = s.exists() ? Object.keys(s.val()).length : 0;
         });
 
         startTimer();
-    } catch(e) { alert("Camera Error: " + e.message); }
+    } catch(e) { alert("Camera Permission Denied: " + e.message); }
 };
 
-async function handleNewViewer(vId) {
+async function initPeerConnection(vId) {
     const pc = new RTCPeerConnection({ iceServers });
-    peerMap[vId] = pc;
+    peerConnections[vId] = pc;
 
     localStream.getTracks().forEach(track => pc.addTrack(track, localStream));
 
     pc.onicecandidate = (e) => {
-        if(e.candidate) push(ref(db, `rooms/${roomId}/hostIce/${vId}`), e.candidate.toJSON());
+        if(e.candidate) push(ref(db, `rooms/${roomId}/ice_host/${vId}`), e.candidate.toJSON());
     };
 
     const offer = await pc.createOffer();
     await pc.setLocalDescription(offer);
+    
     await set(ref(db, `rooms/${roomId}/offers/${vId}`), { sdp: offer.sdp, type: offer.type });
 
-    onValue(ref(db, `rooms/${roomId}/answers/${vId}`), async (s) => {
-        if(s.exists()) await pc.setRemoteDescription(new RTCSessionDescription(s.val()));
+    // Handle Answer
+    onValue(ref(db, `rooms/${roomId}/answers/${vId}`), async (snap) => {
+        if(snap.exists() && pc.signalingState === "have-local-offer") {
+            await pc.setRemoteDescription(new RTCSessionDescription(snap.val()));
+        }
     });
 
-    onChildAdded(ref(db, `rooms/${roomId}/viewerIce/${vId}`), (s) => {
-        pc.addIceCandidate(new RTCIceCandidate(s.val()));
+    // Handle Viewer ICE
+    onChildAdded(ref(db, `rooms/${roomId}/ice_viewer/${vId}`), (snap) => {
+        pc.addIceCandidate(new RTCIceCandidate(snap.val()));
     });
 }
 
 // --- VIEWER LOGIC ---
-async function initViewer(rId) {
-    const vId = 'v' + Math.floor(Math.random()*10000);
+async function startWatching(rId) {
+    const vId = 'viewer_' + Math.floor(Math.random()*10000);
     const pc = new RTCPeerConnection({ iceServers });
     
     pc.onicecandidate = (e) => {
-        if(e.candidate) push(ref(db, `rooms/${rId}/viewerIce/${vId}`), e.candidate.toJSON());
+        if(e.candidate) push(ref(db, `rooms/${rId}/ice_viewer/${vId}`), e.candidate.toJSON());
     };
 
     pc.ontrack = (e) => {
-        document.getElementById('viewVideo').srcObject = e.streams[0];
-        document.getElementById('vLoader').style.display = 'none';
-        document.getElementById('connStatus').textContent = 'Connected';
+        const vid = document.getElementById('viewVideo');
+        if(!vid.srcObject) {
+            vid.srcObject = e.streams[0];
+            document.getElementById('vLoader').style.display = 'none';
+            document.getElementById('connStatus').textContent = '📡 Live Connected';
+            document.getElementById('connStatus').style.color = '#4fc3f7';
+        }
     };
 
-    await set(ref(db, `rooms/${rId}/joinRequests/${vId}`), { join: true });
+    // Presence
+    const vRef = ref(db, `rooms/${rId}/viewers/${vId}`);
+    set(vRef, true);
+    window.onbeforeunload = () => remove(vRef);
 
-    onValue(ref(db, `rooms/${rId}/offers/${vId}`), async (s) => {
-        if(!s.exists()) return;
-        await pc.setRemoteDescription(new RTCSessionDescription(s.val()));
-        const ans = await pc.createAnswer();
-        await pc.setLocalDescription(ans);
-        await set(ref(db, `rooms/${rId}/answers/${vId}`), { sdp: ans.sdp, type: ans.type });
+    // Request Connection
+    await set(ref(db, `rooms/${rId}/requests/${vId}`), { timestamp: Date.now() });
+
+    // Listen for Offer
+    onValue(ref(db, `rooms/${rId}/offers/${vId}`), async (snap) => {
+        if(!snap.exists()) return;
+        await pc.setRemoteDescription(new RTCSessionDescription(snap.val()));
+        const answer = await pc.createAnswer();
+        await pc.setLocalDescription(answer);
+        await set(ref(db, `rooms/${rId}/answers/${vId}`), { sdp: answer.sdp, type: answer.type });
     });
 
-    onChildAdded(ref(db, `rooms/${rId}/hostIce/${vId}`), (s) => {
-        pc.addIceCandidate(new RTCIceCandidate(s.val()));
+    // Listen for Host ICE
+    onChildAdded(ref(db, `rooms/${rId}/ice_host/${vId}`), (snap) => {
+        pc.addIceCandidate(new RTCIceCandidate(snap.val()));
     });
+
+    pc.onconnectionstatechange = () => {
+        if(pc.connectionState === 'failed') document.getElementById('connStatus').textContent = '❌ Connection Failed';
+    };
 }
 
-// --- UTILS ---
-window.copyLink = () => {
+// --- CONTROLS ---
+window.copyStreamLink = () => {
     const link = window.location.href.split('?')[0] + '?watch=' + roomId;
     navigator.clipboard.writeText(link);
-    alert("Link Copied!");
+    alert("Viewer Link Copied!");
 };
 
-window.waShare = () => {
+window.shareWA = () => {
     const link = window.location.href.split('?')[0] + '?watch=' + roomId;
-    window.open(`https://wa.me/?text=Live Stream Join Karein: ${link}`);
+    window.open(`https://wa.me/?text=🔴 Join My Live Stream: ${link}`);
+};
+
+window.toggleFlash = () => {
+    if(videoTrack) {
+        const caps = videoTrack.getCapabilities();
+        if(caps.torch) {
+            const current = videoTrack.getConstraints().advanced?.[0]?.torch || false;
+            videoTrack.applyConstraints({ advanced: [{ torch: !current }] });
+        } else alert("Flash not supported on this camera");
+    }
+};
+
+window.toggleMic = () => {
+    micEnabled = !micEnabled;
+    localStream.getAudioTracks()[0].enabled = micEnabled;
+    document.getElementById('muteBtn').style.background = micEnabled ? "rgba(255,255,255,0.1)" : "var(--red)";
 };
 
 window.applyZoom = (val) => {
@@ -220,20 +269,20 @@ window.applyZoom = (val) => {
 };
 
 function startTimer() {
-    let s = 0;
+    let sec = 0;
     setInterval(() => {
-        s++;
-        let m = Math.floor(s/60);
-        let sec = s%60;
-        document.getElementById('timerDisp').textContent = `${m}:${sec<10?'0':''}${sec}`;
+        sec++;
+        let m = Math.floor(sec/60);
+        let s = sec%60;
+        document.getElementById('timerDisp').textContent = `${m.toString().padStart(2,'0')}:${s.toString().padStart(2,'0')}`;
     }, 1000);
 }
 
-// Check URL for Viewer
-const urlParams = new URLSearchParams(window.location.search);
-if(urlParams.has('watch')) {
+// URL Router
+const params = new URLSearchParams(window.location.search);
+if(params.has('watch')) {
     document.getElementById('viewerPage').style.display = 'block';
-    initViewer(urlParams.get('watch'));
+    startWatching(params.get('watch'));
 } else {
     document.getElementById('adminPage').style.display = 'block';
 }
