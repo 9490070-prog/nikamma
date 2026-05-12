@@ -398,21 +398,37 @@ const FB_CFG = {
   appId: "1:534849542892:web:d96322fd4811b46738e3c9"
 };
 
-const ICE_CONFIG = {
-  iceServers: [
-    { urls: 'stun:stun.l.google.com:19302' },
-    { urls: 'stun:stun1.l.google.com:19302' },
-    { urls: 'stun:stun2.l.google.com:19302' },
-    { urls: 'stun:stun3.l.google.com:19302' },
-    { urls: 'stun:stun4.l.google.com:19302' },
-    { urls: 'stun:stun.ekiga.net' },
-    { urls: 'turn:openrelay.metered.ca:80', username: 'openrelayproject', credential: 'openrelayproject' },
-    { urls: 'turn:openrelay.metered.ca:443', username: 'openrelayproject', credential: 'openrelayproject' },
-    { urls: 'turn:openrelay.metered.ca:443?transport=tcp', username: 'openrelayproject', credential: 'openrelayproject' },
-  ],
-  iceCandidatePoolSize: 10,
-  iceTransportPolicy: 'all'
-};
+// ── Multiple TURN providers — browser tries all, picks best path ──
+const ICE_SERVERS_LIST = [
+  { urls: 'stun:stun.l.google.com:19302' },
+  { urls: 'stun:stun1.l.google.com:19302' },
+  { urls: 'stun:stun2.l.google.com:19302' },
+  { urls: 'stun:stun3.l.google.com:19302' },
+  { urls: 'stun:stun4.l.google.com:19302' },
+  { urls: 'stun:stun.cloudflare.com:3478' },
+  // Metered TURN — most reliable free TURN servers
+  { urls: 'turn:a.relay.metered.ca:80',                   username: 'openrelayproject', credential: 'openrelayproject' },
+  { urls: 'turn:a.relay.metered.ca:80?transport=tcp',     username: 'openrelayproject', credential: 'openrelayproject' },
+  { urls: 'turn:a.relay.metered.ca:443',                  username: 'openrelayproject', credential: 'openrelayproject' },
+  { urls: 'turns:a.relay.metered.ca:443?transport=tcp',   username: 'openrelayproject', credential: 'openrelayproject' },
+  // OpenRelay fallback
+  { urls: 'turn:openrelay.metered.ca:80',                 username: 'openrelayproject', credential: 'openrelayproject' },
+  { urls: 'turn:openrelay.metered.ca:443',                username: 'openrelayproject', credential: 'openrelayproject' },
+  { urls: 'turn:openrelay.metered.ca:443?transport=tcp',  username: 'openrelayproject', credential: 'openrelayproject' },
+  // Extra public TURN
+  { urls: 'turn:numb.viagenie.ca',                        username: 'webrtc@live.com',  credential: 'muazkh' },
+];
+// forceRelay=true => TURN only (cross-network fallback when direct ICE fails)
+function makeICEConfig(forceRelay) {
+  return {
+    iceServers: ICE_SERVERS_LIST,
+    iceCandidatePoolSize: 15,
+    iceTransportPolicy: forceRelay ? 'relay' : 'all',
+    bundlePolicy: 'max-bundle',
+    rtcpMuxPolicy: 'require',
+  };
+}
+const ICE_CONFIG = makeICEConfig(false); // default
 
 window.toast = (msg) => { const t = document.getElementById('toast'); t.textContent = msg; t.classList.add('show'); setTimeout(() => t.classList.remove('show'), 2500); };
 function h2rgb(h) { if(!h || h.length<7) return '0,0,0'; return `${parseInt(h.slice(1,3),16)},${parseInt(h.slice(3,5),16)},${parseInt(h.slice(5,7),16)}`; }
@@ -453,115 +469,232 @@ viewerMuteBtn.addEventListener('click', () => {
 
 async function initViewer(roomId) {
   const txt = document.getElementById('vLoaderTxt');
+  const loader = document.getElementById('vLoader');
+  const retryBtn = document.getElementById('retryBtn');
   txt.innerText = 'Connecting to stream...';
+
   let app, db;
   try {
-    app = initializeApp(FB_CFG, 'viewer'+Date.now());
+    app = initializeApp(FB_CFG, 'viewer_' + Date.now());
     db = getDatabase(app);
-  } catch(e) { txt.innerText = 'Firebase error'; document.getElementById('retryBtn').style.display='block'; return; }
+  } catch(e) {
+    txt.innerText = 'Firebase error: ' + e.message;
+    retryBtn.style.display = 'block';
+    return;
+  }
 
+  // Overlay listener — always active
   onValue(ref(db, `rooms/${roomId}/overlays`), (s) => { if(s.exists()) applyOverlays(s.val()); });
 
-  const viewerId = 'v_' + Date.now() + '_' + Math.random().toString(36).substr(2,6);
+  const viewerId = 'v_' + Date.now() + '_' + Math.random().toString(36).substr(2, 8);
   await set(ref(db, `rooms/${roomId}/viewers/${viewerId}`), true);
   window.addEventListener('beforeunload', () => remove(ref(db, `rooms/${roomId}/viewers/${viewerId}`)));
 
   let pc = null;
-  let offerListener = null;
+  let offerListenerRef = null;
+  let hostIceListenerRef = null;
   let videoReceived = false;
+  let connectAttempt = 0;
+  let retryTimer = null;
 
-  async function createAndConnect(offerData) {
-    if(pc) { try { pc.close(); } catch(e){} pc = null; }
+  // ── STATUS HELPER ────────────────────────────────────────────
+  function setStatus(emoji, msg, color) {
+    connStatusSpan.textContent = emoji + ' ' + msg;
+    connStatusSpan.style.background = color;
+    txt.innerText = msg;
+  }
+
+  // ── CLOSE CURRENT PC ─────────────────────────────────────────
+  function closePc() {
+    if(pc) {
+      try { pc.close(); } catch(_) {}
+      pc = null;
+    }
+    if(hostIceListenerRef) {
+      try { off(hostIceListenerRef); } catch(_) {}
+      hostIceListenerRef = null;
+    }
+  }
+
+  // ── MAIN CONNECT FUNCTION ─────────────────────────────────────
+  // forceRelay=true => iceTransportPolicy:'relay' (TURN only — guaranteed cross-network)
+  async function connectWithOffer(offerData, forceRelay) {
+    closePc();
     videoReceived = false;
-    connStatusSpan.textContent = '🔄 Connecting...';
-    connStatusSpan.style.background = 'rgba(255,100,0,0.7)';
-    pc = new RTCPeerConnection(ICE_CONFIG);
+    connectAttempt++;
+    const attempt = connectAttempt;
 
-    pc.onconnectionstatechange = () => {
-      if (pc.connectionState === 'connected') {
-        connStatusSpan.textContent = '✅ Connected!';
-        connStatusSpan.style.background = 'rgba(0,100,0,0.7)';
-      } else if (pc.connectionState === 'failed') {
-        connStatusSpan.textContent = '❌ Retrying...';
-        connStatusSpan.style.background = 'rgba(100,0,0,0.7)';
-        setTimeout(() => requestOffer(), 3000);
-      }
-    };
+    setStatus('🔄', forceRelay ? 'Using TURN relay (cross-network)...' : 'Connecting (attempt ' + attempt + ')...', 'rgba(200,100,0,0.8)');
 
-    // FIX: stream pehle attach karo — cross-network pe audio pehle aata hai
-    pc.ontrack = (e) => {
-      const video = document.getElementById('viewVideo');
-      if (e.streams && e.streams[0] && video.srcObject !== e.streams[0]) {
-        video.srcObject = e.streams[0];
-        video.muted = true;
-        video.play().catch(() => {});
+    pc = new RTCPeerConnection(makeICEConfig(forceRelay));
+
+    // ── ontrack: attach stream IMMEDIATELY regardless of track type ──
+    // BUG WAS HERE: old code only attached on 'video' track — audio arrives
+    // first in cross-network TURN relay, so video was never shown.
+    pc.ontrack = (evt) => {
+      const vid = document.getElementById('viewVideo');
+      // Always attach stream — first track that arrives sets srcObject
+      if (evt.streams && evt.streams[0]) {
+        if (vid.srcObject !== evt.streams[0]) {
+          vid.srcObject = evt.streams[0];
+          vid.muted = true; // must start muted for autoplay policy
+          vid.play().catch(() => {});
+        }
+      } else {
+        // No stream array — create one manually (some browsers)
+        if (!vid.srcObject) {
+          const ms = new MediaStream();
+          ms.addTrack(evt.track);
+          vid.srcObject = ms;
+          vid.muted = true;
+          vid.play().catch(() => {});
+        } else {
+          try { vid.srcObject.addTrack(evt.track); } catch(_) {}
+        }
       }
-      if (!videoReceived && e.track.kind === 'video') {
+      // Mark received only on video track (audio-only is not "video received")
+      if (!videoReceived && evt.track.kind === 'video') {
         videoReceived = true;
-        document.getElementById('vLoader').style.display = 'none';
+        loader.style.display = 'none';
         showPlayIcon();
-        connStatusSpan.textContent = '✅ Video+Audio Active!';
-        connStatusSpan.style.background = 'rgba(0,100,0,0.7)';
+        setStatus('✅', 'Video + Audio Active!', 'rgba(0,130,0,0.8)');
         toast('✅ Stream Connected!');
       }
     };
 
-    // Fallback check
-    const _sc = setInterval(() => {
-      const video = document.getElementById('viewVideo');
-      if (video.srcObject && video.readyState >= 2 && !videoReceived) {
-        videoReceived = true;
-        document.getElementById('vLoader').style.display = 'none';
-        connStatusSpan.textContent = '✅ Active!';
-        connStatusSpan.style.background = 'rgba(0,100,0,0.7)';
-        clearInterval(_sc);
-      }
-    }, 1000);
-    setTimeout(() => clearInterval(_sc), 60000);
-
-    pc.onicecandidate = (e) => { if(e.candidate) push(ref(db, `rooms/${roomId}/viewerIce/${viewerId}`), e.candidate.toJSON()); };
-    pc.oniceconnectionstatechange = () => {
-      if(pc.iceConnectionState === 'failed') {
-        document.getElementById('vLoader').style.display = 'flex';
-        txt.innerText = 'ICE failed — retrying...';
-        setTimeout(() => requestOffer(), 3000);
+    // ── connectionState handler ──
+    pc.onconnectionstatechange = () => {
+      console.log('[VIEWER] connectionState:', pc.connectionState, 'forceRelay:', forceRelay);
+      if (pc.connectionState === 'connected') {
+        setStatus('✅', 'P2P Connected!', 'rgba(0,130,0,0.8)');
+      } else if (pc.connectionState === 'failed') {
+        if (!forceRelay) {
+          // First failure — retry with TURN-only relay
+          setStatus('⚠️', 'Direct failed, switching to TURN...', 'rgba(180,80,0,0.8)');
+          clearTimeout(retryTimer);
+          retryTimer = setTimeout(() => doRequest(true), 1500);
+        } else {
+          // TURN also failed — wait and retry everything
+          setStatus('❌', 'Connection failed, retrying...', 'rgba(160,0,0,0.8)');
+          clearTimeout(retryTimer);
+          retryTimer = setTimeout(() => doRequest(false), 5000);
+        }
+      } else if (pc.connectionState === 'disconnected') {
+        setStatus('🔄', 'Reconnecting...', 'rgba(160,100,0,0.8)');
+        clearTimeout(retryTimer);
+        retryTimer = setTimeout(() => doRequest(false), 4000);
       }
     };
 
+    // ── iceConnectionState handler ──
+    pc.oniceconnectionstatechange = () => {
+      console.log('[VIEWER] iceState:', pc.iceConnectionState, 'forceRelay:', forceRelay);
+      if (pc.iceConnectionState === 'failed') {
+        if (!forceRelay) {
+          setStatus('⚠️', 'ICE failed, trying TURN relay...', 'rgba(180,80,0,0.8)');
+          clearTimeout(retryTimer);
+          retryTimer = setTimeout(() => doRequest(true), 1500);
+        } else {
+          setStatus('❌', 'TURN ICE failed, retrying...', 'rgba(160,0,0,0.8)');
+          clearTimeout(retryTimer);
+          retryTimer = setTimeout(() => doRequest(false), 5000);
+        }
+      } else if (pc.iceConnectionState === 'connected' || pc.iceConnectionState === 'completed') {
+        setStatus('✅', 'ICE Connected!', 'rgba(0,130,0,0.8)');
+      }
+    };
+
+    // ── Send our ICE candidates to host ──
+    pc.onicecandidate = (evt) => {
+      if (evt.candidate) {
+        push(ref(db, `rooms/${roomId}/viewerIce/${viewerId}`), evt.candidate.toJSON()).catch(() => {});
+      }
+    };
+
+    // ── Set offer & create answer ──
     try {
       await pc.setRemoteDescription(new RTCSessionDescription(offerData));
       const answer = await pc.createAnswer();
       await pc.setLocalDescription(answer);
-      await set(ref(db, `rooms/${roomId}/answers/${viewerId}`), { sdp: answer.sdp, type: answer.type });
-      onValue(ref(db, `rooms/${roomId}/hostIce/${viewerId}`), (snap) => {
-        snap.forEach(c => pc.addIceCandidate(new RTCIceCandidate(c.val())).catch(()=>{}));
+      await set(ref(db, `rooms/${roomId}/answers/${viewerId}`), {
+        sdp: answer.sdp,
+        type: answer.type
       });
+    } catch(err) {
+      console.error('[VIEWER] signaling error:', err);
+      setStatus('❌', 'Signaling error: ' + err.message, 'rgba(160,0,0,0.8)');
+      clearTimeout(retryTimer);
+      retryTimer = setTimeout(() => doRequest(false), 5000);
+      return;
+    }
+
+    // ── Receive host ICE candidates (trickle ICE) ──
+    // We listen AFTER setRemoteDescription so addIceCandidate works correctly
+    if (hostIceListenerRef) { try { off(hostIceListenerRef); } catch(_) {} }
+    hostIceListenerRef = onValue(ref(db, `rooms/${roomId}/hostIce/${viewerId}`), (snap) => {
+      snap.forEach(child => {
+        const cand = child.val();
+        if (pc && pc.remoteDescription && pc.signalingState !== 'closed') {
+          pc.addIceCandidate(new RTCIceCandidate(cand)).catch(() => {});
+        }
+      });
+    });
+
+    // ── Fallback: if readyState >= 2 but ontrack missed ──
+    const fallbackTimer = setInterval(() => {
+      const vid = document.getElementById('viewVideo');
+      if (vid.srcObject && vid.readyState >= 2 && !videoReceived) {
+        videoReceived = true;
+        loader.style.display = 'none';
+        setStatus('✅', 'Stream Active!', 'rgba(0,130,0,0.8)');
+        clearInterval(fallbackTimer);
+      }
+    }, 800);
+    setTimeout(() => clearInterval(fallbackTimer), 90000);
+
+    // ── If not relay and no video in 10s, auto-switch to TURN ──
+    if (!forceRelay) {
       setTimeout(() => {
-        if (!videoReceived) { txt.innerText = 'Using TURN relay...'; }
-      }, 8000);
-    } catch(e) {
-      txt.innerText = 'Error: '+e.message;
-      document.getElementById('retryBtn').style.display='block';
+        if (!videoReceived && connectAttempt === attempt) {
+          setStatus('⏳', 'Slow connection — trying TURN relay...', 'rgba(180,100,0,0.8)');
+          clearTimeout(retryTimer);
+          retryTimer = setTimeout(() => doRequest(true), 500);
+        }
+      }, 10000);
     }
   }
 
-  async function requestOffer() {
-    await set(ref(db, `rooms/${roomId}/joinRequests/${viewerId}`), { ts: Date.now() });
-    if(offerListener) off(offerListener);
-    offerListener = onValue(ref(db, `rooms/${roomId}/offers/${viewerId}`), (snap) => {
-      if(snap.exists() && (!pc || pc.signalingState === 'stable' || pc.signalingState === 'closed')) {
-        createAndConnect(snap.val());
-      }
+  // ── REQUEST OFFER FROM HOST ───────────────────────────────────
+  async function doRequest(forceRelay) {
+    setStatus('🔄', 'Requesting stream...', 'rgba(200,100,0,0.8)');
+    // Write join request — host sees this and sends offer
+    await set(ref(db, `rooms/${roomId}/joinRequests/${viewerId}`), {
+      ts: Date.now(),
+      relay: forceRelay ? 1 : 0
+    }).catch(() => {});
+
+    // Listen for offer
+    if (offerListenerRef) { try { off(offerListenerRef); } catch(_) {} }
+    let offerHandled = false;
+    offerListenerRef = onValue(ref(db, `rooms/${roomId}/offers/${viewerId}`), (snap) => {
+      if (!snap.exists()) return;
+      if (offerHandled) return;
+      offerHandled = true;
+      // Small delay to let host ICE candidates start arriving
+      setTimeout(() => connectWithOffer(snap.val(), forceRelay), 300);
     });
   }
-  await requestOffer();
 
+  // ── START ─────────────────────────────────────────────────────
+  await doRequest(false);
+
+  // ── Global timeout ────────────────────────────────────────────
   setTimeout(() => {
-    if(!videoReceived) {
-      txt.innerText = 'Cross network? Check ID or retry.';
-      document.getElementById('retryBtn').style.display = 'block';
+    if (!videoReceived) {
+      setStatus('⚠️', 'Check stream ID and retry', 'rgba(120,60,0,0.8)');
+      retryBtn.style.display = 'block';
     }
-  }, 30000);
+  }, 45000);
 }
 
 function showPlayIcon() { const icon = document.getElementById('vPlayIcon'); icon.classList.add('show'); setTimeout(() => icon.classList.remove('show'), 1000); }
@@ -657,11 +790,29 @@ window.startStream = async (type) => {
     const app = initializeApp(FB_CFG, 'host'+Date.now());
     db = getDatabase(app);
     await remove(ref(db, `rooms/${roomId}`));
+    // ── Listen for new viewer join requests ──
+    // onValue fires for ALL existing children + new ones.
+    // We use a seenKeys set to avoid re-processing the same key twice.
+    const seenJoinKeys = new Set();
     onValue(ref(db, `rooms/${roomId}/joinRequests`), (snap) => {
-      snap.forEach(child => { const key = child.key; if(!peerMap[key] || !peerMap[key].pc) createOfferForViewer(key); });
-    });
-    onValue(ref(db, `rooms/${roomId}/answers`), (snap) => {
-      snap.forEach(child => { const key = child.key; const entry = peerMap[key]; if(entry && entry.pc && entry.pc.signalingState === 'have-local-offer' && !entry.answerSet) applyAnswer(key, child.val()); });
+      snap.forEach(child => {
+        const key = child.key;
+        // Only create offer if:
+        //  1. We haven't processed this key yet, OR
+        //  2. The viewer sent a fresh request (ts changed) and no active PC exists
+        const existing = peerMap[key];
+        const hasActivePc = existing && existing.pc &&
+          !['failed','closed','disconnected'].includes(existing.pc.iceConnectionState);
+        if (!hasActivePc && !seenJoinKeys.has(key)) {
+          seenJoinKeys.add(key);
+          createOfferForViewer(key);
+        } else if (!hasActivePc && seenJoinKeys.has(key)) {
+          // Viewer retried (same key, new ts) — send fresh offer
+          seenJoinKeys.delete(key);
+          seenJoinKeys.add(key);
+          createOfferForViewer(key);
+        }
+      });
     });
     onValue(ref(db, `rooms/${roomId}/viewers`), (snap) => { document.getElementById('viewCount').textContent = snap.exists() ? Object.keys(snap.val()).length : 0; });
     toast('🔴 LIVE! Share the link!');
@@ -949,30 +1100,90 @@ function getCompressedImg(slot) {
 
 // ===================== WEBRTC HOST =====================
 async function createOfferForViewer(viewerKey) {
-  if(peerMap[viewerKey] && peerMap[viewerKey].pc) { try { peerMap[viewerKey].pc.close(); } catch(e){} }
-  const pc = new RTCPeerConnection(ICE_CONFIG);
-  peerMap[viewerKey] = { pc, answerSet: false };
-  localStream.getTracks().forEach(t => pc.addTrack(t, localStream));
-  pc.onicecandidate = (e) => { if(e.candidate) push(ref(db, `rooms/${roomId}/hostIce/${viewerKey}`), e.candidate.toJSON()); };
-  pc.oniceconnectionstatechange = () => { if(['disconnected','failed','closed'].includes(pc.iceConnectionState)) { try{pc.close();}catch(e){} delete peerMap[viewerKey]; } };
-  try {
-    const offer = await pc.createOffer();
-    await pc.setLocalDescription(offer);
-    await set(ref(db, `rooms/${roomId}/offers/${viewerKey}`), { sdp: pc.localDescription.sdp, type: pc.localDescription.type });
-    onValue(ref(db, `rooms/${roomId}/answers/${viewerKey}`), async (snapAns) => {
-      if(snapAns.exists() && pc.signalingState === 'have-local-offer' && !peerMap[viewerKey]?.answerSet) await applyAnswer(viewerKey, snapAns.val());
-    });
-  } catch(e) { console.error('offer error', e); delete peerMap[viewerKey]; try{pc.close();}catch(e){} }
-}
+  // Close existing PC if any
+  if (peerMap[viewerKey] && peerMap[viewerKey].pc) {
+    try { peerMap[viewerKey].pc.close(); } catch(_) {}
+  }
+  // Mark as in-progress to avoid duplicate offers
+  peerMap[viewerKey] = { pc: null, answerSet: false, creating: true };
 
-async function applyAnswer(viewerKey, ansData) {
-  const entry = peerMap[viewerKey];
-  if(!entry || !entry.pc || entry.answerSet) return;
-  entry.answerSet = true;
+  // ── Create PeerConnection ──
+  // Use makeICEConfig(false) — 'all' mode, browser tries direct first then TURN.
+  // Viewer will retry with relay=true if needed (handled in viewer code).
+  const pc = new RTCPeerConnection(makeICEConfig(false));
+  peerMap[viewerKey].pc = pc;
+  peerMap[viewerKey].creating = false;
+
+  // Add all local tracks (video + audio)
+  if (localStream) {
+    localStream.getTracks().forEach(track => {
+      pc.addTrack(track, localStream);
+    });
+  }
+
+  // ── Trickle ICE: send candidates to viewer as they arrive ──
+  pc.onicecandidate = (evt) => {
+    if (evt.candidate) {
+      push(ref(db, `rooms/${roomId}/hostIce/${viewerKey}`), evt.candidate.toJSON()).catch(() => {});
+    }
+  };
+
+  // ── ICE state: clean up on disconnect ──
+  pc.oniceconnectionstatechange = () => {
+    console.log('[HOST] viewer', viewerKey, 'iceState:', pc.iceConnectionState);
+    if (['disconnected', 'failed', 'closed'].includes(pc.iceConnectionState)) {
+      try { pc.close(); } catch(_) {}
+      delete peerMap[viewerKey];
+    }
+  };
+
+  pc.onconnectionstatechange = () => {
+    console.log('[HOST] viewer', viewerKey, 'connState:', pc.connectionState);
+  };
+
+  // ── Create and send offer ──
   try {
-    await entry.pc.setRemoteDescription(new RTCSessionDescription({ type: ansData.type, sdp: ansData.sdp }));
-    onValue(ref(db, `rooms/${roomId}/viewerIce/${viewerKey}`), (snap) => { snap.forEach(c => { entry.pc.addIceCandidate(new RTCIceCandidate(c.val())).catch(()=>{}); }); });
-  } catch(e) { console.error('apply answer error', e); }
+    // offerToReceiveAudio/Video ensures proper SDP even if tracks added after createOffer
+    const offer = await pc.createOffer({ offerToReceiveAudio: false, offerToReceiveVideo: false });
+    await pc.setLocalDescription(offer);
+
+    // Write offer to Firebase — viewer will read this
+    await set(ref(db, `rooms/${roomId}/offers/${viewerKey}`), {
+      sdp: pc.localDescription.sdp,
+      type: pc.localDescription.type
+    });
+
+    // ── Listen for viewer's answer ──
+    onValue(ref(db, `rooms/${roomId}/answers/${viewerKey}`), async (snapAns) => {
+      if (!snapAns.exists()) return;
+      const entry = peerMap[viewerKey];
+      if (!entry || !entry.pc || entry.answerSet) return;
+      if (pc.signalingState !== 'have-local-offer') return;
+      entry.answerSet = true;
+      try {
+        await pc.setRemoteDescription(new RTCSessionDescription({
+          type: snapAns.val().type,
+          sdp:  snapAns.val().sdp
+        }));
+        // ── Receive viewer's ICE candidates ──
+        onValue(ref(db, `rooms/${roomId}/viewerIce/${viewerKey}`), (snap) => {
+          snap.forEach(child => {
+            if (pc.remoteDescription && pc.signalingState !== 'closed') {
+              pc.addIceCandidate(new RTCIceCandidate(child.val())).catch(() => {});
+            }
+          });
+        });
+      } catch(err) {
+        console.error('[HOST] setRemoteDescription error:', err);
+        delete peerMap[viewerKey];
+      }
+    });
+
+  } catch(err) {
+    console.error('[HOST] createOffer error:', err);
+    delete peerMap[viewerKey];
+    try { pc.close(); } catch(_) {}
+  }
 }
 
 // ===================== MISC =====================
