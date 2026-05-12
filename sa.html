@@ -3,36 +3,42 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-<title>LiveCam - Telegram Relay (Working)</title>
+<title>LiveCam Pro - Firebase + Telegram Relay</title>
 <style>
-:root{--red:#ff2d2d;--surface:#141414;--surface2:#1e1e1e;--text:#f0f0f0;--muted:#777}
+:root{--red:#ff2d2d;--red-dark:#c0000a;--surface:#141414;--surface2:#1e1e1e;--surface3:#252525;--border:rgba(255,255,255,0.08);--text:#f0f0f0;--muted:#777}
 *{margin:0;padding:0;box-sizing:border-box}
 html,body{width:100%;height:100%;overflow:hidden;background:#000;color:var(--text);font-family:'Segoe UI',sans-serif}
 
 #viewerPage{display:none;position:fixed;inset:0;background:#000;z-index:1}
-#viewVideo{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+#viewVideo{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;background:#000}
 #vLoader{position:absolute;inset:0;background:#0a0a0a;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;z-index:30}
 .spinner{width:46px;height:46px;border:3px solid rgba(255,255,255,0.08);border-top-color:#ff2d2d;border-radius:50%;animation:spin 0.8s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
 .vl-txt{color:var(--muted);font-size:0.85rem;text-align:center;padding:0 30px}
-.conn-status{position:fixed;bottom:10px;left:10px;background:rgba(0,0,0,0.7);padding:5px 12px;border-radius:20px;font-size:11px;z-index:100}
+.retry-btn{padding:10px 24px;background:#ff2d2d;border:none;border-radius:10px;color:#fff;font-size:0.88rem;cursor:pointer;margin-top:10px}
+.conn-status{position:fixed;bottom:10px;left:10px;background:rgba(0,0,0,0.7);padding:5px 12px;border-radius:20px;font-size:10px;z-index:100}
 
 #adminPage{display:none;position:fixed;inset:0;overflow-y:auto}
-#homeScreen{min-height:100%;background:radial-gradient(ellipse at 30% 20%,#1a0000 0%,#0a0a0a 60%);padding:50px 20px}
-.logo{font-size:2.5rem;text-align:center;margin-bottom:20px}
-.logo span{color:#ff2d2d}
-.card{background:var(--surface);border-radius:16px;padding:18px;max-width:400px;margin:0 auto 15px}
-.bbtn{width:100%;padding:15px;border:none;border-radius:12px;font-size:0.93rem;font-weight:600;cursor:pointer;margin-bottom:9px}
+#homeScreen{min-height:100%;background:radial-gradient(ellipse at 30% 20%,#1a0000 0%,#0a0a0a 60%);display:flex;flex-direction:column;align-items:center;padding:50px 20px}
+.logo-t{font-family:'Bebas Neue',sans-serif;font-size:2.8rem;letter-spacing:3px;text-align:center}
+.logo-t span{color:#ff2d2d}
+.tagline{color:var(--muted);font-size:0.7rem;margin-bottom:25px}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:18px;width:100%;max-width:400px;margin-bottom:12px}
+.clbl{font-size:0.65rem;color:var(--muted);margin-bottom:12px}
+.bbtn{width:100%;padding:14px;border:none;border-radius:12px;font-size:0.9rem;font-weight:600;cursor:pointer;margin-bottom:8px}
 .bbtn.red{background:#ff2d2d;color:#fff}
 .bbtn.dark{background:#1e1e1e;color:#fff;border:1px solid #333}
-.inp{width:100%;padding:13px;background:#1e1e1e;border:1px solid #333;border-radius:10px;color:#fff;margin-bottom:8px}
+.inp{width:100%;padding:12px;background:#1e1e1e;border:1px solid #333;border-radius:10px;color:#fff;margin-bottom:8px}
+.hint{font-size:0.7rem;color:var(--muted)}
+
 #streamScreen{display:none;position:fixed;inset:0;background:#000}
 #mainVideo{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
 #adminTop{position:absolute;top:0;left:0;right:0;display:flex;justify-content:space-between;padding:12px;background:linear-gradient(to bottom,rgba(0,0,0,0.85),transparent)}
-.live-badge{background:#ff2d2d;padding:5px 12px;border-radius:20px;font-size:0.75rem}
+.lpill{background:#ff2d2d;padding:5px 12px;border-radius:20px;font-size:0.7rem}
+.spill{background:rgba(0,0,0,0.65);padding:5px 12px;border-radius:20px;font-size:0.7rem}
 #adminBot{position:absolute;bottom:0;left:0;right:0;padding:15px;background:linear-gradient(to top,rgba(0,0,0,0.92),transparent)}
 .crow{display:flex;justify-content:space-around;margin-bottom:15px}
-.cbtn{width:55px;height:55px;border-radius:50%;border:none;background:rgba(255,255,255,0.15);color:#fff;font-size:1.3rem;cursor:pointer}
+.cbtn{width:55px;height:55px;border-radius:50%;border:none;background:rgba(255,255,255,0.15);color:#fff;font-size:1.2rem;cursor:pointer}
 .stopc{background:#ff2d2d;width:65px;height:65px}
 #toast{position:fixed;top:70px;left:50%;transform:translateX(-50%);background:#333;padding:8px 20px;border-radius:25px;font-size:0.8rem;z-index:9999;opacity:0;transition:0.3s;pointer-events:none}
 #toast.show{opacity:1}
@@ -40,68 +46,80 @@ html,body{width:100%;height:100%;overflow:hidden;background:#000;color:var(--tex
 </head>
 <body>
 
-<!-- VIEWER -->
+<!-- VIEWER PAGE -->
 <div id="viewerPage">
   <div id="vLoader">
     <div class="spinner"></div>
-    <div class="vl-txt" id="vLoaderTxt">Connecting via Telegram...</div>
+    <div class="vl-txt" id="vLoaderTxt">Connecting to stream...</div>
+    <button class="retry-btn" onclick="window.location.reload()">🔄 Retry</button>
   </div>
   <video id="viewVideo" autoplay playsinline muted></video>
   <div class="conn-status" id="connStatus">⏳ Connecting...</div>
 </div>
 
-<!-- ADMIN/HOST -->
+<!-- ADMIN/HOST PAGE -->
 <div id="adminPage">
   <div id="homeScreen">
-    <div class="logo">LIVE<span>CAM</span> <span style="font-size:1rem">TELEGRAM</span></div>
+    <div class="logo-t">LIVE<span>CAM</span></div>
+    <div class="tagline">Firebase + Telegram Relay · SIM Network Ready</div>
     <div class="card">
-      <div class="sec">Stream ID</div>
-      <input class="inp" id="customId" placeholder="mystream123" value="ab12345">
-      <button class="bbtn red" onclick="startStream('back')">📸 Start Live Stream</button>
+      <div class="clbl">🔴 Start Streaming</div>
+      <input class="inp" id="streamId" placeholder="Stream ID" value="mystream123">
+      <button class="bbtn red" onclick="startStream('back')">📸 Back Camera</button>
       <button class="bbtn dark" onclick="startStream('front')">🤳 Front Camera</button>
-    </div>
-    <div class="card">
-      <div style="font-size:12px;color:#aaa">
-        ✅ Bot token already set<br>
-        📱 SIM network pe kaam karega<br>
-        🔗 Stream start karne ke baad link copy karo
-      </div>
+      <div class="hint">💡 Stream start karne ke baad link copy karo aur share karo</div>
     </div>
   </div>
 
   <div id="streamScreen">
     <video id="mainVideo" autoplay playsinline muted></video>
     <div id="adminTop">
-      <div class="live-badge">🔴 LIVE</div>
-      <div>⏱ <span id="timer">00:00</span></div>
-      <div>👁 <span id="viewCount">0</span></div>
+      <div class="lpill">🔴 LIVE</div>
+      <div class="spill">⏱ <span id="timer">00:00</span></div>
+      <div class="spill">👁 <span id="viewerCount">0</span></div>
     </div>
     <div id="adminBot">
       <div class="crow">
         <button class="cbtn" onclick="flipCamera()">🔄</button>
-        <button class="cbtn" onclick="toggleMute()">🎤</button>
+        <button class="cbtn" onclick="toggleMic()">🎤</button>
         <button class="cbtn stopc" onclick="stopStream()">⏹</button>
-        <button class="cbtn" onclick="copyLink()">🔗</button>
+        <button class="cbtn" onclick="copyStreamLink()">🔗</button>
       </div>
     </div>
   </div>
 </div>
 <div id="toast"></div>
 
-<script>
-// ==================== YOUR TELEGRAM BOT TOKEN ====================
-const TELEGRAM_BOT_TOKEN = "8629098734:AAEj5V9KVohab4cY7q8hw822xrJrD2VpjtM";
-// ================================================================
+<script type="importmap">
+{
+  "imports": {
+    "firebase/app": "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js",
+    "firebase/database": "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js"
+  }
+}
+</script>
 
-let isLive = false;
-let streamInterval = null;
-let currentRoomId = null;
-let localStream = null;
-let videoTrack = null;
-let audioTrack = null;
-let facing = 'environment';
-let viewers = new Set();
-let frameNum = 0;
+<script type="module">
+import { initializeApp } from 'firebase/app';
+import { getDatabase, ref, set, onValue, push, remove } from 'firebase/database';
+
+// Firebase Config (Aapka already hai)
+const FIREBASE_CONFIG = {
+  apiKey: "AIzaSyCXY_layR4HtlrJTweBB5ER_uc5jkMG0sc",
+  authDomain: "nikamma-4k.firebaseapp.com",
+  databaseURL: "https://nikamma-4k-default-rtdb.firebaseio.com",
+  projectId: "nikamma-4k",
+  storageBucket: "nikamma-4k.firebasestorage.app",
+  messagingSenderId: "534849542892",
+  appId: "1:534849542892:web:d96322fd4811b46738e3c9"
+};
+
+// Telegram Bot Token (Aapka)
+const TELEGRAM_TOKEN = "8629098734:AAEj5V9KVohab4cY7q8hw822xrJrD2VpjtM";
+
+let db, roomId, localStream, videoTrack, audioTrack, isLive = false;
+let frameInterval = null, facing = 'environment';
+let activeViewers = new Set();
 
 function toast(msg) {
   const t = document.getElementById('toast');
@@ -110,32 +128,41 @@ function toast(msg) {
   setTimeout(() => t.classList.remove('show'), 2000);
 }
 
-// ==================== TELEGRAM API ====================
-async function tgCall(method, params) {
-  const url = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/${method}`;
+// ==================== TELEGRAM SEND FRAME ====================
+async function sendFrameToTelegram(imageDataUrl, chatId) {
   try {
+    // Convert base64 to blob
+    const res = await fetch(imageDataUrl);
+    const blob = await res.blob();
+    
     const formData = new FormData();
-    for (let [key, val] of Object.entries(params)) {
-      formData.append(key, val);
-    }
-    const res = await fetch(url, { method: 'POST', body: formData });
-    const data = await res.json();
-    return data.ok ? data : null;
+    formData.append('chat_id', chatId);
+    formData.append('photo', blob, `frame_${Date.now()}.jpg`);
+    
+    const response = await fetch(`https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendPhoto`, {
+      method: 'POST',
+      body: formData
+    });
+    const data = await response.json();
+    return data.ok ? data.result : null;
   } catch(e) {
     return null;
   }
 }
 
-// ==================== HOST: Start Stream ====================
-async function startStream(type) {
-  const roomId = document.getElementById('customId').value.trim() || 'live_' + Date.now();
-  currentRoomId = roomId;
-  facing = type === 'front' ? 'user' : 'environment';
+// ==================== HOST: START STREAM ====================
+async function startStream(cameraType) {
+  const id = document.getElementById('streamId').value.trim();
+  if (!id) { toast('Enter Stream ID'); return; }
+  
+  roomId = id;
+  facing = cameraType === 'front' ? 'user' : 'environment';
   
   document.getElementById('homeScreen').style.display = 'none';
   document.getElementById('streamScreen').style.display = 'block';
   
   try {
+    // Get camera
     localStream = await navigator.mediaDevices.getUserMedia({
       video: { facingMode: facing, width: { ideal: 640 }, height: { ideal: 480 } },
       audio: true
@@ -145,10 +172,21 @@ async function startStream(type) {
     audioTrack = localStream.getAudioTracks()[0];
     document.getElementById('mainVideo').srcObject = localStream;
     
+    // Initialize Firebase
+    const app = initializeApp(FIREBASE_CONFIG, 'host_' + Date.now());
+    db = getDatabase(app);
+    
+    // Clear old data
+    await remove(ref(db, `telegram_streams/${roomId}`));
+    
+    // Mark stream as active
+    await set(ref(db, `telegram_streams/${roomId}/active`), true);
+    await set(ref(db, `telegram_streams/${roomId}/startTime`), Date.now());
+    
     isLive = true;
     startTimer();
     
-    // Start capturing and sending frames
+    // Capture and send frames
     const videoEl = document.createElement('video');
     videoEl.srcObject = localStream;
     videoEl.muted = true;
@@ -156,8 +194,9 @@ async function startStream(type) {
     
     const canvas = document.createElement('canvas');
     const ctx = canvas.getContext('2d');
+    let frameCount = 0;
     
-    streamInterval = setInterval(async () => {
+    frameInterval = setInterval(async () => {
       if (!isLive) return;
       
       try {
@@ -166,139 +205,167 @@ async function startStream(type) {
           canvas.height = videoEl.videoHeight;
           ctx.drawImage(videoEl, 0, 0);
           
-          canvas.toBlob(async (blob) => {
-            if (blob && blob.size < 150000) {
-              frameNum++;
-              // Store in localStorage for viewers on same device
-              const reader = new FileReader();
-              reader.onloadend = () => {
-                const frames = JSON.parse(localStorage.getItem(`telegram_frames_${currentRoomId}`) || '[]');
-                frames.push({ id: frameNum, data: reader.result, ts: Date.now() });
-                while (frames.length > 50) frames.shift();
-                localStorage.setItem(`telegram_frames_${currentRoomId}`, JSON.stringify(frames));
-                
-                // Broadcast to other tabs
-                const bc = new BroadcastChannel(`live_${currentRoomId}`);
-                bc.postMessage({ type: 'frame', data: reader.result });
-              };
-              reader.readAsDataURL(blob);
+          const imageData = canvas.toDataURL('image/jpeg', 0.4);
+          frameCount++;
+          
+          // Store in Firebase (last 10 frames only)
+          const framesRef = ref(db, `telegram_streams/${roomId}/frames`);
+          await set(framesRef, {
+            latest: imageData,
+            timestamp: Date.now(),
+            frameNum: frameCount
+          });
+          
+          // Also send to Telegram channel if we have a chat_id
+          const viewers = await getViewers();
+          for (let viewer of viewers) {
+            if (viewer.chatId) {
+              await sendFrameToTelegram(imageData, viewer.chatId);
             }
-          }, 'image/jpeg', 0.5);
+          }
         }
-      } catch(e) {}
-    }, 200); // 5 frames per second
-    
-    // Update viewer count
-    setInterval(() => {
-      if (isLive) {
-        const viewerList = JSON.parse(localStorage.getItem(`telegram_viewers_${currentRoomId}`) || '[]');
-        document.getElementById('viewCount').innerText = viewerList.length;
+      } catch(e) {
+        console.error('Frame capture error:', e);
       }
-    }, 3000);
+    }, 300); // ~3-4 fps
+    
+    // Listen for viewers
+    onValue(ref(db, `telegram_streams/${roomId}/viewers`), (snap) => {
+      if (snap.exists()) {
+        const viewers = snap.val();
+        const count = Object.keys(viewers).length;
+        document.getElementById('viewerCount').innerText = count;
+        activeViewers = new Set(Object.keys(viewers));
+      } else {
+        document.getElementById('viewerCount').innerText = '0';
+      }
+    });
     
     toast('🔴 LIVE! Share the link');
     
   } catch(e) {
-    toast('Camera error: ' + e.message);
+    toast('Error: ' + e.message);
     document.getElementById('homeScreen').style.display = 'flex';
     document.getElementById('streamScreen').style.display = 'none';
   }
 }
 
-// ==================== VIEWER: Receive Stream ====================
-async function initViewer(roomId) {
+async function getViewers() {
+  return new Promise((resolve) => {
+    const viewersRef = ref(db, `telegram_streams/${roomId}/viewers`);
+    onValue(viewersRef, (snap) => {
+      if (snap.exists()) {
+        resolve(Object.values(snap.val()));
+      } else {
+        resolve([]);
+      }
+    }, { onlyOnce: true });
+  });
+}
+
+// ==================== VIEWER: RECEIVE STREAM ====================
+async function initViewer(streamId) {
   const loader = document.getElementById('vLoader');
   const txt = document.getElementById('vLoaderTxt');
   const video = document.getElementById('viewVideo');
   const connSpan = document.getElementById('connStatus');
   
-  txt.innerText = 'Connecting to Telegram relay...';
-  connSpan.innerText = '📡 Connecting...';
+  txt.innerText = 'Connecting to stream...';
+  connSpan.innerText = '📡 Connecting to Firebase...';
   
-  const canvas = document.createElement('canvas');
-  const ctx = canvas.getContext('2d');
-  let frames = [];
-  let lastFrameTime = 0;
-  
-  // Listen for broadcast channel messages (same device)
-  const bc = new BroadcastChannel(`live_${roomId}`);
-  bc.onmessage = (event) => {
-    if (event.data.type === 'frame') {
-      displayFrame(event.data.data);
-    }
-  };
-  
-  function displayFrame(base64Data) {
-    const img = new Image();
-    img.onload = () => {
-      canvas.width = img.width;
-      canvas.height = img.height;
-      ctx.drawImage(img, 0, 0);
-      
-      if (!video.srcObject) {
-        const stream = canvas.captureStream(10);
-        video.srcObject = stream;
-        video.muted = false;
-        video.play().catch(() => {});
-        loader.style.display = 'none';
-        txt.innerText = '✅ Live now!';
-        connSpan.innerText = '✅ Connected via Telegram';
+  try {
+    // Initialize Firebase
+    const app = initializeApp(FIREBASE_CONFIG, 'viewer_' + Date.now());
+    const dbViewer = getDatabase(app);
+    
+    // Check if stream exists
+    const streamRef = ref(dbViewer, `telegram_streams/${streamId}/active`);
+    let streamExists = false;
+    
+    onValue(streamRef, (snap) => {
+      streamExists = snap.val() === true;
+      if (!streamExists) {
+        txt.innerText = 'Stream not active. Host may be offline.';
+        connSpan.innerText = '❌ Stream offline';
       }
-    };
-    img.src = base64Data;
-  }
-  
-  // Poll localStorage for frames
-  const pollInterval = setInterval(() => {
-    try {
-      const stored = localStorage.getItem(`telegram_frames_${roomId}`);
-      if (stored) {
-        const newFrames = JSON.parse(stored);
-        if (newFrames.length > frames.length && newFrames.length > 0) {
-          frames = newFrames;
-          const latest = frames[frames.length - 1];
-          displayFrame(latest.data);
+    });
+    
+    // Listen for frames
+    const framesRef = ref(dbViewer, `telegram_streams/${streamId}/frames/latest`);
+    let lastFrameTime = 0;
+    
+    // Create canvas for displaying frames
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+    let stream = null;
+    
+    onValue(framesRef, (snap) => {
+      if (snap.exists() && isLive) {
+        const frameData = snap.val();
+        if (frameData && typeof frameData === 'string') {
+          const img = new Image();
+          img.onload = () => {
+            canvas.width = img.width;
+            canvas.height = img.height;
+            ctx.drawImage(img, 0, 0);
+            
+            if (!stream) {
+              stream = canvas.captureStream(10);
+              video.srcObject = stream;
+              video.play().catch(() => {});
+              loader.style.display = 'none';
+              txt.innerText = '✅ Live now!';
+              connSpan.innerText = '✅ Connected';
+            }
+          };
+          img.src = frameData;
         }
       }
-    } catch(e) {}
-  }, 150);
-  
-  // Register viewer
-  const viewersList = JSON.parse(localStorage.getItem(`telegram_viewers_${roomId}`) || '[]');
-  const viewerId = 'v_' + Date.now();
-  viewersList.push(viewerId);
-  localStorage.setItem(`telegram_viewers_${roomId}`, JSON.stringify(viewersList.slice(-100)));
-  
-  // Cleanup on close
-  window.addEventListener('beforeunload', () => {
-    clearInterval(pollInterval);
-    const updated = JSON.parse(localStorage.getItem(`telegram_viewers_${roomId}`) || '[]').filter(id => id !== viewerId);
-    localStorage.setItem(`telegram_viewers_${roomId}`, JSON.stringify(updated));
-  });
-  
-  // Timeout
-  setTimeout(() => {
-    if (loader.style.display !== 'none') {
-      txt.innerText = 'No stream found. Check if host is live.';
-      connSpan.innerText = '❌ No stream';
-    }
-  }, 20000);
+    });
+    
+    // Register viewer
+    const viewerId = 'viewer_' + Date.now() + '_' + Math.random().toString(36).substr(2, 6);
+    await set(ref(dbViewer, `telegram_streams/${streamId}/viewers/${viewerId}`), {
+      joinedAt: Date.now(),
+      userAgent: navigator.userAgent.substring(0, 50)
+    });
+    
+    isLive = true;
+    
+    // Remove viewer on exit
+    window.addEventListener('beforeunload', () => {
+      remove(ref(dbViewer, `telegram_streams/${streamId}/viewers/${viewerId}`));
+    });
+    
+    // Timeout
+    setTimeout(() => {
+      if (loader.style.display !== 'none') {
+        txt.innerText = 'No stream found. Check if host is live.';
+        connSpan.innerText = '❌ No stream';
+      }
+    }, 15000);
+    
+  } catch(e) {
+    console.error('Viewer error:', e);
+    txt.innerText = 'Error: ' + e.message;
+    connSpan.innerText = '❌ Error';
+  }
 }
 
-// ==================== Helper Functions ====================
+// ==================== HELPER FUNCTIONS ====================
 function startTimer() {
   const start = Date.now();
-  setInterval(() => {
-    if (!isLive) return;
-    const s = Math.floor((Date.now() - start) / 1000);
-    document.getElementById('timer').innerText = `${Math.floor(s/60)}:${String(s%60).padStart(2,'0')}`;
+  const timerInt = setInterval(() => {
+    if (!isLive) { clearInterval(timerInt); return; }
+    const secs = Math.floor((Date.now() - start) / 1000);
+    document.getElementById('timer').innerText = `${Math.floor(secs/60)}:${String(secs%60).padStart(2,'0')}`;
   }, 1000);
 }
 
-window.toggleMute = () => {
+window.toggleMic = () => {
   if (!audioTrack) return;
   audioTrack.enabled = !audioTrack.enabled;
-  const btn = document.querySelector('#adminBot .cbtn:first-child + .cbtn');
+  const btn = document.querySelector('#adminBot .cbtn:nth-child(2)');
   if (btn) {
     btn.innerHTML = audioTrack.enabled ? '🎤' : '🔇';
     btn.style.background = audioTrack.enabled ? 'rgba(255,255,255,0.15)' : '#ff2d2d';
@@ -323,32 +390,35 @@ window.flipCamera = async () => {
   }
 };
 
-window.copyLink = () => {
-  const link = `${location.href.split('?')[0]}?watch=${currentRoomId}`;
+window.copyStreamLink = () => {
+  const link = `${window.location.href.split('?')[0]}?watch=${roomId}`;
   navigator.clipboard.writeText(link);
   toast('Link copied!');
 };
 
 window.stopStream = () => {
   isLive = false;
-  if (streamInterval) clearInterval(streamInterval);
+  if (frameInterval) clearInterval(frameInterval);
   if (localStream) localStream.getTracks().forEach(t => t.stop());
-  localStorage.removeItem(`telegram_frames_${currentRoomId}`);
+  if (db && roomId) {
+    remove(ref(db, `telegram_streams/${roomId}`));
+  }
   location.reload();
 };
 
-// ==================== Check Viewer Mode ====================
-const urlParams = new URLSearchParams(location.search);
-const watchId = urlParams.get('watch');
+// ==================== CHECK VIEWER MODE ====================
+const urlParams = new URLSearchParams(window.location.search);
+const watchStreamId = urlParams.get('watch');
 
-if (watchId) {
+if (watchStreamId) {
   document.getElementById('viewerPage').style.display = 'block';
-  initViewer(watchId);
+  window.isLive = true;
+  initViewer(watchStreamId);
 } else {
   document.getElementById('adminPage').style.display = 'block';
 }
 
-// Play/pause on tap
+// Video tap to play/pause
 document.getElementById('viewerPage')?.addEventListener('click', () => {
   const v = document.getElementById('viewVideo');
   if (v.paused) v.play();
