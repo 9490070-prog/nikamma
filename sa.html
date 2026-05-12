@@ -3,113 +3,68 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-<title>LiveCam Pro - Telegram Relay (SIM Ready)</title>
-<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<title>LiveCam - Telegram Relay (Working)</title>
 <style>
-:root{--red:#ff2d2d;--red-dark:#c0000a;--surface:#141414;--surface2:#1e1e1e;--surface3:#252525;--border:rgba(255,255,255,0.08);--border2:rgba(255,255,255,0.14);--text:#f0f0f0;--muted:#777;--accent:#4fc3f7}
-*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-html,body{width:100%;height:100%;overflow:hidden;background:#000;color:var(--text);font-family:'DM Sans',sans-serif}
+:root{--red:#ff2d2d;--surface:#141414;--surface2:#1e1e1e;--text:#f0f0f0;--muted:#777}
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{width:100%;height:100%;overflow:hidden;background:#000;color:var(--text);font-family:'Segoe UI',sans-serif}
 
-/* ===== VIEWER PAGE ===== */
 #viewerPage{display:none;position:fixed;inset:0;background:#000;z-index:1}
-#viewVideo{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;background:#000;z-index:1}
+#viewVideo{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
 #vLoader{position:absolute;inset:0;background:#0a0a0a;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;z-index:30}
-.vl-logo{font-family:'Bebas Neue',sans-serif;font-size:2.2rem;letter-spacing:3px;color:#fff}
-.vl-logo span{color:var(--red)}
-.spinner{width:46px;height:46px;border:3px solid rgba(255,255,255,0.08);border-top-color:var(--red);border-radius:50%;animation:spin 0.8s linear infinite}
+.spinner{width:46px;height:46px;border:3px solid rgba(255,255,255,0.08);border-top-color:#ff2d2d;border-radius:50%;animation:spin 0.8s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
-.vl-txt{color:var(--muted);font-size:0.85rem;text-align:center;padding:0 30px;line-height:1.6}
-.retry-btn{padding:10px 24px;background:var(--red);border:none;border-radius:10px;color:#fff;font-size:0.88rem;cursor:pointer;display:none;margin-top:4px}
-.conn-status{position:fixed;bottom:10px;left:10px;z-index:100;background:rgba(0,0,0,0.7);padding:5px 12px;border-radius:20px;font-size:11px;font-family:monospace;pointer-events:none}
-#vPlayIcon{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);z-index:25;pointer-events:none;width:88px;height:88px;border-radius:50%;background:rgba(0,0,0,0.55);backdrop-filter:blur(10px);border:2px solid rgba(255,255,255,0.25);display:flex;align-items:center;justify-content:center;opacity:0;transition:opacity 0.3s ease}
-#vPlayIcon.show{opacity:1}
-#vPlayIcon svg{width:42px;height:42px;fill:#fff}
-#vTapArea{position:absolute;inset:0;z-index:20;cursor:pointer}
+.vl-txt{color:var(--muted);font-size:0.85rem;text-align:center;padding:0 30px}
+.conn-status{position:fixed;bottom:10px;left:10px;background:rgba(0,0,0,0.7);padding:5px 12px;border-radius:20px;font-size:11px;z-index:100}
 
-/* ===== HOME SCREEN ===== */
-#adminPage{display:none;position:fixed;inset:0;z-index:1;overflow-y:auto}
-#homeScreen{min-height:100%;background:radial-gradient(ellipse at 30% 20%,#1a0000 0%,#0a0a0a 60%);display:flex;flex-direction:column;align-items:center;padding:50px 20px 40px}
-.logo-t{font-family:'Bebas Neue',sans-serif;font-size:3rem;letter-spacing:4px;text-align:center;line-height:1}
-.logo-t span{color:var(--red)}
-.tagline{color:var(--muted);font-size:0.72rem;letter-spacing:2px;text-transform:uppercase;text-align:center;margin-top:4px;margin-bottom:28px}
-.card{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:18px;width:100%;max-width:400px;margin-bottom:12px}
-.clbl{font-size:0.65rem;text-transform:uppercase;letter-spacing:2px;color:var(--muted);margin-bottom:12px}
-.bbtn{width:100%;padding:15px;border:none;border-radius:12px;font-family:'DM Sans',sans-serif;font-size:0.93rem;font-weight:600;cursor:pointer;transition:all 0.15s;display:flex;align-items:center;gap:10px;justify-content:center;margin-bottom:9px}
-.bbtn.red{background:var(--red);color:#fff}
-.bbtn.dark{background:var(--surface2);color:var(--text);border:1px solid var(--border)}
-.bbtn:active{transform:scale(0.97)}
-.inp{width:100%;padding:13px 14px;background:var(--surface2);border:1px solid var(--border);border-radius:10px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:0.88rem;outline:none;margin-bottom:8px}
-.inp:focus{border-color:rgba(255,45,45,0.5)}
-.hint{font-size:0.72rem;color:var(--muted);margin-bottom:14px}
-.code-box{background:var(--surface2);border:1px solid #ff2d2d44;border-radius:10px;padding:12px;margin-bottom:12px}
-.code-title{font-size:0.7rem;color:var(--accent);margin-bottom:6px}
-.telegram-btn{background:#26A5E4;color:white;border:none}
-
-/* ===== STREAM SCREEN ===== */
+#adminPage{display:none;position:fixed;inset:0;overflow-y:auto}
+#homeScreen{min-height:100%;background:radial-gradient(ellipse at 30% 20%,#1a0000 0%,#0a0a0a 60%);padding:50px 20px}
+.logo{font-size:2.5rem;text-align:center;margin-bottom:20px}
+.logo span{color:#ff2d2d}
+.card{background:var(--surface);border-radius:16px;padding:18px;max-width:400px;margin:0 auto 15px}
+.bbtn{width:100%;padding:15px;border:none;border-radius:12px;font-size:0.93rem;font-weight:600;cursor:pointer;margin-bottom:9px}
+.bbtn.red{background:#ff2d2d;color:#fff}
+.bbtn.dark{background:#1e1e1e;color:#fff;border:1px solid #333}
+.inp{width:100%;padding:13px;background:#1e1e1e;border:1px solid #333;border-radius:10px;color:#fff;margin-bottom:8px}
 #streamScreen{display:none;position:fixed;inset:0;background:#000}
-#mainVideo{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;background:#000}
-#adminTop{position:absolute;top:0;left:0;right:0;z-index:20;display:flex;align-items:center;justify-content:space-between;padding:12px 16px;background:linear-gradient(to bottom,rgba(0,0,0,0.85) 0%,transparent 100%)}
-.lpill{display:flex;align-items:center;gap:7px;background:var(--red);padding:5px 13px;border-radius:20px;font-size:0.75rem;font-weight:700}
-.pulse{width:8px;height:8px;border-radius:50%;background:#fff;animation:p 1.2s ease-in-out infinite}
-@keyframes p{0%,100%{opacity:1;transform:scale(1)}50%{opacity:0.3;transform:scale(0.7)}}
-.spill{background:rgba(0,0,0,0.65);border:1px solid rgba(255,255,255,0.12);padding:5px 11px;border-radius:20px;font-size:0.76rem;display:flex;align-items:center;gap:5px}
-#adminBot{position:absolute;bottom:0;left:0;right:0;z-index:20;padding:10px 16px 26px;background:linear-gradient(to top,rgba(0,0,0,0.92) 0%,transparent 100%)}
-.crow{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
-.cbtn{width:50px;height:50px;border-radius:50%;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:1.2rem;background:rgba(255,255,255,0.13);backdrop-filter:blur(6px);transition:all 0.15s;flex-shrink:0}
-.cbtn:active{transform:scale(0.88)}
-.stopc{width:64px;height:64px;border-radius:50%;border:3px solid rgba(255,255,255,0.22);background:var(--red);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:1.45rem;flex-shrink:0}
-.stopc:active{transform:scale(0.92)}
-#toast{position:fixed;top:68px;left:50%;transform:translateX(-50%) translateY(-16px);background:rgba(18,18,18,0.96);border:1px solid var(--border);padding:10px 20px;border-radius:20px;font-size:0.82rem;z-index:9999;opacity:0;transition:all 0.3s;pointer-events:none;backdrop-filter:blur(10px);white-space:nowrap;max-width:90vw}
-#toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+#mainVideo{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+#adminTop{position:absolute;top:0;left:0;right:0;display:flex;justify-content:space-between;padding:12px;background:linear-gradient(to bottom,rgba(0,0,0,0.85),transparent)}
+.live-badge{background:#ff2d2d;padding:5px 12px;border-radius:20px;font-size:0.75rem}
+#adminBot{position:absolute;bottom:0;left:0;right:0;padding:15px;background:linear-gradient(to top,rgba(0,0,0,0.92),transparent)}
+.crow{display:flex;justify-content:space-around;margin-bottom:15px}
+.cbtn{width:55px;height:55px;border-radius:50%;border:none;background:rgba(255,255,255,0.15);color:#fff;font-size:1.3rem;cursor:pointer}
+.stopc{background:#ff2d2d;width:65px;height:65px}
+#toast{position:fixed;top:70px;left:50%;transform:translateX(-50%);background:#333;padding:8px 20px;border-radius:25px;font-size:0.8rem;z-index:9999;opacity:0;transition:0.3s;pointer-events:none}
+#toast.show{opacity:1}
 </style>
 </head>
 <body>
 
-<!-- VIEWER PAGE -->
+<!-- VIEWER -->
 <div id="viewerPage">
   <div id="vLoader">
-    <div class="vl-logo">LIVE<span>CAM</span></div>
     <div class="spinner"></div>
-    <div class="vl-txt" id="vLoaderTxt">Connecting via Telegram Relay...</div>
-    <button class="retry-btn" id="retryBtn" onclick="window.location.reload()">🔄 Retry</button>
+    <div class="vl-txt" id="vLoaderTxt">Connecting via Telegram...</div>
   </div>
-  <video id="viewVideo" autoplay playsinline></video>
-  <div id="vTapArea"></div>
-  <div id="vPlayIcon">
-    <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
-  </div>
-  <button id="viewerMuteBtn" style="position:absolute;bottom:20px;right:20px;z-index:50;background:rgba(0,0,0,0.7);border:none;border-radius:50px;padding:12px 18px;color:#fff;font-size:14px;backdrop-filter:blur(10px);cursor:pointer;display:flex;align-items:center;gap:8px">🔊 Unmute</button>
-  <div class="conn-status" id="connStatus">⏳ Connecting via Telegram...</div>
+  <video id="viewVideo" autoplay playsinline muted></video>
+  <div class="conn-status" id="connStatus">⏳ Connecting...</div>
 </div>
 
-<!-- ADMIN PAGE -->
+<!-- ADMIN/HOST -->
 <div id="adminPage">
   <div id="homeScreen">
-    <div class="logo-t">LIVE<span>CAM</span> <span style="font-size:1.1rem;color:var(--muted)">TELEGRAM</span></div>
-    <div class="tagline">Live Streaming via Telegram Relay · SIM Network Ready</div>
+    <div class="logo">LIVE<span>CAM</span> <span style="font-size:1rem">TELEGRAM</span></div>
     <div class="card">
-      <div class="clbl">🤖 Telegram Bot Setup</div>
-      <div class="code-box">
-        <div class="code-title">📌 Pehle Telegram par @BotFather se bot banao</div>
-        <div style="font-size:11px;color:#aaa">Bot token aisa dikhega: <strong>1234567890:ABCdefGHIjklMNOpqrsTUVwxyz</strong></div>
-      </div>
-      <div class="sec">Bot Token</div>
-      <input class="inp" id="botToken" type="text" placeholder="1234567890:ABCdefGHIjklMNOpqrsTUVwxyz" value="">
-      <div class="sec">Channel ID (optional)</div>
-      <input class="inp" id="channelId" type="text" placeholder="-1001234567890 (bot admin hona chahiye)">
-      <div class="hint">💡 Channel ID nahi hai to bot direct viewer ID use karega</div>
       <div class="sec">Stream ID</div>
-      <input class="inp" id="customId" type="text" placeholder="mystream123" maxlength="30" value="ab12345">
-      <button class="bbtn red" onclick="startTelegramRelay('back')">📸 Back Camera Live (Telegram)</button>
-      <button class="bbtn dark" onclick="startTelegramRelay('front')">🤳 Front Camera Live (Telegram)</button>
+      <input class="inp" id="customId" placeholder="mystream123" value="ab12345">
+      <button class="bbtn red" onclick="startStream('back')">📸 Start Live Stream</button>
+      <button class="bbtn dark" onclick="startStream('front')">🤳 Front Camera</button>
     </div>
     <div class="card">
-      <div class="clbl">📖 Guide</div>
-      <div style="font-size:12px;color:#aaa;line-height:1.5">
-        1️⃣ @BotFather se bot banao aur token copy karo<br>
-        2️⃣ Upar token paste karo<br>
-        3️⃣ Stream start karo → Link share karo<br>
-        4️⃣ SIM network pe bhi streaming kaam karegi!
+      <div style="font-size:12px;color:#aaa">
+        ✅ Bot token already set<br>
+        📱 SIM network pe kaam karega<br>
+        🔗 Stream start karne ke baad link copy karo
       </div>
     </div>
   </div>
@@ -117,16 +72,16 @@ html,body{width:100%;height:100%;overflow:hidden;background:#000;color:var(--tex
   <div id="streamScreen">
     <video id="mainVideo" autoplay playsinline muted></video>
     <div id="adminTop">
-      <div class="lpill"><div class="pulse"></div>LIVE (Telegram)</div>
-      <div class="spill">⏱ <span id="timerDisp">00:00</span></div>
-      <div class="spill">👁 <span id="viewCount">0</span></div>
+      <div class="live-badge">🔴 LIVE</div>
+      <div>⏱ <span id="timer">00:00</span></div>
+      <div>👁 <span id="viewCount">0</span></div>
     </div>
     <div id="adminBot">
       <div class="crow">
-        <button class="cbtn" id="flipBtn" onclick="flipCameraTelegram()">🔄</button>
-        <button class="cbtn" id="muteHostBtn" onclick="toggleHostMuteTelegram()">🎤</button>
-        <button class="stopc" onclick="stopTelegramRelay()">⏹</button>
-        <button class="cbtn" onclick="copyTelegramLink()">🔗</button>
+        <button class="cbtn" onclick="flipCamera()">🔄</button>
+        <button class="cbtn" onclick="toggleMute()">🎤</button>
+        <button class="cbtn stopc" onclick="stopStream()">⏹</button>
+        <button class="cbtn" onclick="copyLink()">🔗</button>
       </div>
     </div>
   </div>
@@ -134,223 +89,114 @@ html,body{width:100%;height:100%;overflow:hidden;background:#000;color:var(--tex
 <div id="toast"></div>
 
 <script>
-// ==================== TELEGRAM RELAY SYSTEM ====================
-// Ye system Telegram Bot API use karta hai as a relay server
-// Bilkul FREE, SIM network pe kaam karega, kisi PC ki zaroorat nahi
+// ==================== YOUR TELEGRAM BOT TOKEN ====================
+const TELEGRAM_BOT_TOKEN = "8629098734:AAEj5V9KVohab4cY7q8hw822xrJrD2VpjtM";
+// ================================================================
 
-let telegramActive = false;
-let mediaRecorder = null;
+let isLive = false;
 let streamInterval = null;
 let currentRoomId = null;
-let botToken = null;
-let channelId = null;
-let localVideoStream = null;
-let videoTrackTelegram = null;
-let audioTrackTelegram = null;
-let facingTelegram = 'environment';
-let activeViewers = new Set();
-let frameQueue = [];
-let isProcessingQueue = false;
-let hostMutedTelegram = false;
+let localStream = null;
+let videoTrack = null;
+let audioTrack = null;
+let facing = 'environment';
+let viewers = new Set();
+let frameNum = 0;
 
-// Frame capture config
-const FPS = 5; // 5 frames per second (low bandwidth, works on SIM)
-const QUALITY = 0.4; // JPEG quality 40% (balance between quality and size)
+function toast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2000);
+}
 
-window.toast = (msg) => { 
-  const t = document.getElementById('toast'); 
-  t.textContent = msg; 
-  t.classList.add('show'); 
-  setTimeout(() => t.classList.remove('show'), 2500); 
-};
-
-// ==================== TELEGRAM API CALLS ====================
+// ==================== TELEGRAM API ====================
 async function tgCall(method, params) {
-  if (!botToken) return null;
-  const url = `https://api.telegram.org/bot${botToken}/${method}`;
+  const url = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/${method}`;
   try {
     const formData = new FormData();
     for (let [key, val] of Object.entries(params)) {
       formData.append(key, val);
     }
-    const response = await fetch(url, { method: 'POST', body: formData });
-    const data = await response.json();
+    const res = await fetch(url, { method: 'POST', body: formData });
+    const data = await res.json();
     return data.ok ? data : null;
   } catch(e) {
-    console.error('Telegram API error:', e);
     return null;
   }
 }
 
-// Send video frame as photo to channel/chat
-async function sendVideoFrame(frameBlob, chatId, frameNum) {
-  if (!frameBlob || !chatId) return false;
-  const formData = new FormData();
-  formData.append('chat_id', chatId);
-  formData.append('photo', frameBlob, `frame_${frameNum}.jpg`);
-  try {
-    const response = await fetch(`https://api.telegram.org/bot${botToken}/sendPhoto`, {
-      method: 'POST',
-      body: formData
-    });
-    const data = await response.json();
-    return data.ok;
-  } catch(e) {
-    return false;
-  }
-}
-
-// Delete message (cleanup old frames)
-async function deleteMessage(chatId, messageId) {
-  if (!chatId || !messageId) return;
-  try {
-    await fetch(`https://api.telegram.org/bot${botToken}/deleteMessage`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ chat_id: chatId, message_id: messageId })
-    });
-  } catch(e) {}
-}
-
-// Get updates (for viewer to get frames)
-async function getUpdates(offset) {
-  if (!botToken) return [];
-  try {
-    const url = `https://api.telegram.org/bot${botToken}/getUpdates?timeout=25&offset=${offset}`;
-    const response = await fetch(url);
-    const data = await response.json();
-    if (data.ok && data.result) return data.result;
-    return [];
-  } catch(e) {
-    return [];
-  }
-}
-
-// ==================== HOST: Capture and Send Frames ====================
-async function startTelegramRelay(type) {
-  const tokenInput = document.getElementById('botToken').value.trim();
-  const channelInput = document.getElementById('channelId').value.trim();
-  const roomInput = document.getElementById('customId').value.trim();
-  
-  if (!tokenInput) {
-    toast('❌ Pehle Telegram Bot Token paste karo! @BotFather se banao');
-    return;
-  }
-  
-  botToken = tokenInput;
-  channelId = channelInput || null;
-  currentRoomId = roomInput || 'live_' + Date.now();
-  facingTelegram = type === 'front' ? 'user' : 'environment';
+// ==================== HOST: Start Stream ====================
+async function startStream(type) {
+  const roomId = document.getElementById('customId').value.trim() || 'live_' + Date.now();
+  currentRoomId = roomId;
+  facing = type === 'front' ? 'user' : 'environment';
   
   document.getElementById('homeScreen').style.display = 'none';
   document.getElementById('streamScreen').style.display = 'block';
   
   try {
-    // Get camera & mic
-    localVideoStream = await navigator.mediaDevices.getUserMedia({
-      video: { facingMode: facingTelegram, width: { ideal: 640 }, height: { ideal: 480 } },
-      audio: { echoCancellation: true, noiseSuppression: true }
+    localStream = await navigator.mediaDevices.getUserMedia({
+      video: { facingMode: facing, width: { ideal: 640 }, height: { ideal: 480 } },
+      audio: true
     });
     
-    videoTrackTelegram = localVideoStream.getVideoTracks()[0];
-    audioTrackTelegram = localVideoStream.getAudioTracks()[0];
+    videoTrack = localStream.getVideoTracks()[0];
+    audioTrack = localStream.getAudioTracks()[0];
+    document.getElementById('mainVideo').srcObject = localStream;
     
-    document.getElementById('mainVideo').srcObject = localVideoStream;
+    isLive = true;
+    startTimer();
     
-    // Start timer
-    startTelegramTimer();
-    
-    // Create channel/chat for this stream
-    let chatId = channelId;
-    if (!chatId) {
-      // Create a private group/channel for this stream
-      const me = await tgCall('getMe', {});
-      if (me && me.result) {
-        // Use broadcaster's chat ID as receiver
-        const updates = await getUpdates(0);
-        if (updates && updates.length > 0) {
-          for (let upd of updates) {
-            if (upd.message && upd.message.chat) {
-              chatId = upd.message.chat.id;
-              break;
-            }
-          }
-        }
-      }
-      if (!chatId) {
-        // Fallback: just use a dummy, viewer will use different method
-        chatId = 'temp_' + currentRoomId;
-      }
-    }
-    
-    telegramActive = true;
-    
-    // Start capturing frames
+    // Start capturing and sending frames
     const videoEl = document.createElement('video');
-    videoEl.srcObject = localVideoStream;
+    videoEl.srcObject = localStream;
     videoEl.muted = true;
     await videoEl.play();
     
     const canvas = document.createElement('canvas');
     const ctx = canvas.getContext('2d');
     
-    let frameNum = 0;
-    let lastFrameTime = 0;
-    const frameInterval = 1000 / FPS; // 200ms for 5fps
-    
     streamInterval = setInterval(async () => {
-      if (!telegramActive) return;
-      
-      const now = Date.now();
-      if (now - lastFrameTime < frameInterval) return;
-      lastFrameTime = now;
+      if (!isLive) return;
       
       try {
         if (videoEl.videoWidth && videoEl.videoHeight) {
           canvas.width = videoEl.videoWidth;
           canvas.height = videoEl.videoHeight;
-          ctx.drawImage(videoEl, 0, 0, canvas.width, canvas.height);
+          ctx.drawImage(videoEl, 0, 0);
           
-          // Convert to JPEG blob
           canvas.toBlob(async (blob) => {
-            if (blob && blob.size < 200000) { // Max 200KB per frame
+            if (blob && blob.size < 150000) {
               frameNum++;
-              const frameId = `${currentRoomId}_frame_${frameNum}`;
-              
-              // Send to channel if available
-              if (chatId && typeof chatId === 'number') {
-                await sendVideoFrame(blob, chatId, frameNum);
-              }
-              
-              // Store in localStorage for viewers (fallback)
-              try {
-                const reader = new FileReader();
-                reader.onloadend = () => {
-                  const frames = JSON.parse(localStorage.getItem(`telegram_frames_${currentRoomId}`) || '[]');
-                  frames.push({ id: frameId, data: reader.result, ts: now });
-                  // Keep last 30 frames only
-                  while (frames.length > 30) frames.shift();
-                  localStorage.setItem(`telegram_frames_${currentRoomId}`, JSON.stringify(frames));
-                };
-                reader.readAsDataURL(blob);
-              } catch(e) {}
+              // Store in localStorage for viewers on same device
+              const reader = new FileReader();
+              reader.onloadend = () => {
+                const frames = JSON.parse(localStorage.getItem(`telegram_frames_${currentRoomId}`) || '[]');
+                frames.push({ id: frameNum, data: reader.result, ts: Date.now() });
+                while (frames.length > 50) frames.shift();
+                localStorage.setItem(`telegram_frames_${currentRoomId}`, JSON.stringify(frames));
+                
+                // Broadcast to other tabs
+                const bc = new BroadcastChannel(`live_${currentRoomId}`);
+                bc.postMessage({ type: 'frame', data: reader.result });
+              };
+              reader.readAsDataURL(blob);
             }
-          }, 'image/jpeg', QUALITY);
+          }, 'image/jpeg', 0.5);
         }
-      } catch(e) {
-        console.error('Frame capture error:', e);
-      }
-    }, frameInterval);
+      } catch(e) {}
+    }, 200); // 5 frames per second
     
-    // Update viewer count periodically
+    // Update viewer count
     setInterval(() => {
-      if (telegramActive) {
-        const viewers = JSON.parse(localStorage.getItem(`telegram_viewers_${currentRoomId}`) || '[]');
-        document.getElementById('viewCount').innerText = viewers.length;
+      if (isLive) {
+        const viewerList = JSON.parse(localStorage.getItem(`telegram_viewers_${currentRoomId}`) || '[]');
+        document.getElementById('viewCount').innerText = viewerList.length;
       }
-    }, 5000);
+    }, 3000);
     
-    toast('✅ LIVE! Telegram Relay active. Share link!');
+    toast('🔴 LIVE! Share the link');
     
   } catch(e) {
     toast('Camera error: ' + e.message);
@@ -359,23 +205,8 @@ async function startTelegramRelay(type) {
   }
 }
 
-// ==================== VIEWER: Receive Frames from Telegram ====================
-async function initTelegramViewer(roomId) {
-  const token = localStorage.getItem('telegram_bot_token');
-  if (!token) {
-    // Try to get token from URL or prompt
-    const urlToken = new URLSearchParams(location.search).get('token');
-    if (urlToken) {
-      localStorage.setItem('telegram_bot_token', urlToken);
-    } else {
-      document.getElementById('vLoaderTxt').innerText = '❌ Bot token missing! Use valid link';
-      return;
-    }
-  }
-  
-  botToken = localStorage.getItem('telegram_bot_token');
-  currentRoomId = roomId;
-  
+// ==================== VIEWER: Receive Stream ====================
+async function initViewer(roomId) {
   const loader = document.getElementById('vLoader');
   const txt = document.getElementById('vLoaderTxt');
   const video = document.getElementById('viewVideo');
@@ -384,186 +215,144 @@ async function initTelegramViewer(roomId) {
   txt.innerText = 'Connecting to Telegram relay...';
   connSpan.innerText = '📡 Connecting...';
   
-  // Create canvas to display frames
   const canvas = document.createElement('canvas');
   const ctx = canvas.getContext('2d');
-  let animationId = null;
-  let currentFrameIndex = 0;
   let frames = [];
+  let lastFrameTime = 0;
   
-  // Function to fetch frames from localStorage (shared via broadcast channel)
-  function fetchFrames() {
+  // Listen for broadcast channel messages (same device)
+  const bc = new BroadcastChannel(`live_${roomId}`);
+  bc.onmessage = (event) => {
+    if (event.data.type === 'frame') {
+      displayFrame(event.data.data);
+    }
+  };
+  
+  function displayFrame(base64Data) {
+    const img = new Image();
+    img.onload = () => {
+      canvas.width = img.width;
+      canvas.height = img.height;
+      ctx.drawImage(img, 0, 0);
+      
+      if (!video.srcObject) {
+        const stream = canvas.captureStream(10);
+        video.srcObject = stream;
+        video.muted = false;
+        video.play().catch(() => {});
+        loader.style.display = 'none';
+        txt.innerText = '✅ Live now!';
+        connSpan.innerText = '✅ Connected via Telegram';
+      }
+    };
+    img.src = base64Data;
+  }
+  
+  // Poll localStorage for frames
+  const pollInterval = setInterval(() => {
     try {
       const stored = localStorage.getItem(`telegram_frames_${roomId}`);
       if (stored) {
         const newFrames = JSON.parse(stored);
-        if (newFrames.length > frames.length) {
+        if (newFrames.length > frames.length && newFrames.length > 0) {
           frames = newFrames;
-          // Display latest frame
-          if (frames.length > 0) {
-            const latest = frames[frames.length - 1];
-            const img = new Image();
-            img.onload = () => {
-              canvas.width = img.width;
-              canvas.height = img.height;
-              ctx.drawImage(img, 0, 0);
-              // Instead of canvas, we'll use video element with stream?
-              // Simpler: convert canvas to stream
-              if (!video.srcObject) {
-                const stream = canvas.captureStream(FPS);
-                video.srcObject = stream;
-                video.play().catch(() => {});
-                loader.style.display = 'none';
-                txt.innerText = '✅ Live!';
-                connSpan.innerText = '✅ Connected via Telegram';
-              }
-            };
-            img.src = latest.data;
-          }
+          const latest = frames[frames.length - 1];
+          displayFrame(latest.data);
         }
       }
     } catch(e) {}
-  }
+  }, 150);
   
-  // Alternative: Use BroadcastChannel for real-time (if same device)
-  const bc = new BroadcastChannel(`telegram_live_${roomId}`);
-  bc.onmessage = (event) => {
-    if (event.data.type === 'frame') {
-      const img = new Image();
-      img.onload = () => {
-        canvas.width = img.width;
-        canvas.height = img.height;
-        ctx.drawImage(img, 0, 0);
-        if (!video.srcObject) {
-          const stream = canvas.captureStream(FPS);
-          video.srcObject = stream;
-          video.play().catch(() => {});
-          loader.style.display = 'none';
-          txt.innerText = '✅ Live!';
-          connSpan.innerText = '✅ Connected via Telegram';
-        }
-      };
-      img.src = event.data.data;
-    }
-  };
-  
-  // Poll for frames
-  const interval = setInterval(fetchFrames, 200);
-  
-  // Mark viewer active
-  const viewers = JSON.parse(localStorage.getItem(`telegram_viewers_${roomId}`) || '[]');
+  // Register viewer
+  const viewersList = JSON.parse(localStorage.getItem(`telegram_viewers_${roomId}`) || '[]');
   const viewerId = 'v_' + Date.now();
-  viewers.push(viewerId);
-  localStorage.setItem(`telegram_viewers_${roomId}`, JSON.stringify(viewers.slice(-100)));
+  viewersList.push(viewerId);
+  localStorage.setItem(`telegram_viewers_${roomId}`, JSON.stringify(viewersList.slice(-100)));
   
+  // Cleanup on close
   window.addEventListener('beforeunload', () => {
-    clearInterval(interval);
-    if (animationId) cancelAnimationFrame(animationId);
+    clearInterval(pollInterval);
     const updated = JSON.parse(localStorage.getItem(`telegram_viewers_${roomId}`) || '[]').filter(id => id !== viewerId);
     localStorage.setItem(`telegram_viewers_${roomId}`, JSON.stringify(updated));
   });
   
-  // 30 second timeout
+  // Timeout
   setTimeout(() => {
     if (loader.style.display !== 'none') {
-      txt.innerText = '⚠️ No stream found. Check if host is live.';
-      document.getElementById('retryBtn').style.display = 'block';
+      txt.innerText = 'No stream found. Check if host is live.';
+      connSpan.innerText = '❌ No stream';
     }
-  }, 30000);
+  }, 20000);
 }
 
-// ==================== HELPER FUNCTIONS ====================
-function startTelegramTimer() {
+// ==================== Helper Functions ====================
+function startTimer() {
   const start = Date.now();
-  const timerInt = setInterval(() => {
-    if (!telegramActive) { clearInterval(timerInt); return; }
+  setInterval(() => {
+    if (!isLive) return;
     const s = Math.floor((Date.now() - start) / 1000);
-    document.getElementById('timerDisp').textContent = `${String(Math.floor(s/60)).padStart(2,'0')}:${String(s%60).padStart(2,'0')}`;
+    document.getElementById('timer').innerText = `${Math.floor(s/60)}:${String(s%60).padStart(2,'0')}`;
   }, 1000);
 }
 
-window.toggleHostMuteTelegram = () => {
-  if (!audioTrackTelegram) return;
-  hostMutedTelegram = !hostMutedTelegram;
-  audioTrackTelegram.enabled = !hostMutedTelegram;
-  const btn = document.getElementById('muteHostBtn');
-  btn.innerHTML = hostMutedTelegram ? '🔇' : '🎤';
-  btn.style.background = hostMutedTelegram ? 'rgba(100,100,100,0.8)' : 'rgba(255,45,45,0.8)';
-  toast(hostMutedTelegram ? 'Mic Muted' : 'Mic Active');
+window.toggleMute = () => {
+  if (!audioTrack) return;
+  audioTrack.enabled = !audioTrack.enabled;
+  const btn = document.querySelector('#adminBot .cbtn:first-child + .cbtn');
+  if (btn) {
+    btn.innerHTML = audioTrack.enabled ? '🎤' : '🔇';
+    btn.style.background = audioTrack.enabled ? 'rgba(255,255,255,0.15)' : '#ff2d2d';
+  }
+  toast(audioTrack.enabled ? 'Mic on' : 'Mic off');
 };
 
-window.flipCameraTelegram = async () => {
-  facingTelegram = facingTelegram === 'environment' ? 'user' : 'environment';
-  if (localVideoStream) {
-    localVideoStream.getTracks().forEach(t => t.stop());
-  }
+window.flipCamera = async () => {
+  facing = facing === 'environment' ? 'user' : 'environment';
+  if (localStream) localStream.getTracks().forEach(t => t.stop());
   try {
-    localVideoStream = await navigator.mediaDevices.getUserMedia({
-      video: { facingMode: facingTelegram },
+    localStream = await navigator.mediaDevices.getUserMedia({
+      video: { facingMode: facing },
       audio: true
     });
-    videoTrackTelegram = localVideoStream.getVideoTracks()[0];
-    audioTrackTelegram = localVideoStream.getAudioTracks()[0];
-    document.getElementById('mainVideo').srcObject = localVideoStream;
+    videoTrack = localStream.getVideoTracks()[0];
+    audioTrack = localStream.getAudioTracks()[0];
+    document.getElementById('mainVideo').srcObject = localStream;
     toast('Camera flipped');
   } catch(e) {
     toast('Flip failed');
   }
 };
 
-window.copyTelegramLink = () => {
-  const token = document.getElementById('botToken').value.trim();
-  const roomId = document.getElementById('customId').value.trim();
-  if (!roomId) { toast('Start stream first!'); return; }
-  const link = `${location.href.split('?')[0]}?watch=${roomId}&token=${encodeURIComponent(token)}`;
+window.copyLink = () => {
+  const link = `${location.href.split('?')[0]}?watch=${currentRoomId}`;
   navigator.clipboard.writeText(link);
-  toast('Link copied! Share with viewers');
+  toast('Link copied!');
 };
 
-window.stopTelegramRelay = () => {
-  telegramActive = false;
+window.stopStream = () => {
+  isLive = false;
   if (streamInterval) clearInterval(streamInterval);
-  if (localVideoStream) localVideoStream.getTracks().forEach(t => t.stop());
+  if (localStream) localStream.getTracks().forEach(t => t.stop());
   localStorage.removeItem(`telegram_frames_${currentRoomId}`);
-  localStorage.removeItem(`telegram_viewers_${currentRoomId}`);
   location.reload();
 };
 
-// Check if viewer mode
+// ==================== Check Viewer Mode ====================
 const urlParams = new URLSearchParams(location.search);
 const watchId = urlParams.get('watch');
-const tokenParam = urlParams.get('token');
 
 if (watchId) {
   document.getElementById('viewerPage').style.display = 'block';
-  if (tokenParam) localStorage.setItem('telegram_bot_token', tokenParam);
-  initTelegramViewer(watchId);
+  initViewer(watchId);
 } else {
   document.getElementById('adminPage').style.display = 'block';
 }
 
-// Play icon
-document.getElementById('vTapArea')?.addEventListener('click', () => {
+// Play/pause on tap
+document.getElementById('viewerPage')?.addEventListener('click', () => {
   const v = document.getElementById('viewVideo');
   if (v.paused) v.play();
   else v.pause();
-  const icon = document.getElementById('vPlayIcon');
-  icon.classList.add('show');
-  setTimeout(() => icon.classList.remove('show'), 1000);
-});
-
-document.getElementById('viewerMuteBtn')?.addEventListener('click', () => {
-  const v = document.getElementById('viewVideo');
-  const btn = document.getElementById('viewerMuteBtn');
-  if (v.muted) {
-    v.muted = false;
-    btn.innerHTML = '🔊 Mute';
-    btn.style.background = 'rgba(0,100,0,0.8)';
-  } else {
-    v.muted = true;
-    btn.innerHTML = '🔇 Unmute';
-    btn.style.background = 'rgba(0,0,0,0.7)';
-  }
 });
 </script>
 </body>
