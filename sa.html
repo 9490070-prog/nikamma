@@ -667,21 +667,26 @@ async function initViewer(roomId) {
   // ── REQUEST OFFER FROM HOST ───────────────────────────────────
   async function doRequest(forceRelay) {
     setStatus('🔄', 'Requesting stream...', 'rgba(200,100,0,0.8)');
-    // Write join request — host sees this and sends offer
+    // Clean old stale signaling data so host sends fresh offer
+    await remove(ref(db, `rooms/${roomId}/answers/${viewerId}`)).catch(() => {});
+    await remove(ref(db, `rooms/${roomId}/viewerIce/${viewerId}`)).catch(() => {});
+    // Write join request — host sees this and sends fresh offer
     await set(ref(db, `rooms/${roomId}/joinRequests/${viewerId}`), {
       ts: Date.now(),
       relay: forceRelay ? 1 : 0
     }).catch(() => {});
 
-    // Listen for offer
-    if (offerListenerRef) { try { off(offerListenerRef); } catch(_) {} }
-    let offerHandled = false;
+    // Listen for offer — remove old listener first
+    if (offerListenerRef) { try { off(offerListenerRef); } catch(_) {} offerListenerRef = null; }
+    let lastOfferSdp = null;
     offerListenerRef = onValue(ref(db, `rooms/${roomId}/offers/${viewerId}`), (snap) => {
       if (!snap.exists()) return;
-      if (offerHandled) return;
-      offerHandled = true;
-      // Small delay to let host ICE candidates start arriving
-      setTimeout(() => connectWithOffer(snap.val(), forceRelay), 300);
+      const offerData = snap.val();
+      // Avoid processing same offer twice, but allow new offers (retries)
+      if (offerData.sdp === lastOfferSdp) return;
+      lastOfferSdp = offerData.sdp;
+      // Small delay to allow host ICE candidates to start trickling
+      setTimeout(() => connectWithOffer(offerData, forceRelay), 200);
     });
   }
 
@@ -793,23 +798,23 @@ window.startStream = async (type) => {
     // ── Listen for new viewer join requests ──
     // onValue fires for ALL existing children + new ones.
     // We use a seenKeys set to avoid re-processing the same key twice.
-    const seenJoinKeys = new Set();
+    // Track last-seen joinRequest timestamp per viewer to detect retries
+    const lastJoinTs = {};
     onValue(ref(db, `rooms/${roomId}/joinRequests`), (snap) => {
       snap.forEach(child => {
         const key = child.key;
-        // Only create offer if:
-        //  1. We haven't processed this key yet, OR
-        //  2. The viewer sent a fresh request (ts changed) and no active PC exists
+        const data = child.val() || {};
+        const ts = data.ts || 0;
         const existing = peerMap[key];
-        const hasActivePc = existing && existing.pc &&
-          !['failed','closed','disconnected'].includes(existing.pc.iceConnectionState);
-        if (!hasActivePc && !seenJoinKeys.has(key)) {
-          seenJoinKeys.add(key);
-          createOfferForViewer(key);
-        } else if (!hasActivePc && seenJoinKeys.has(key)) {
-          // Viewer retried (same key, new ts) — send fresh offer
-          seenJoinKeys.delete(key);
-          seenJoinKeys.add(key);
+        // Consider PC "working" only if ICE is connected/completed AND connection is connected
+        const pcWorking = existing && existing.pc &&
+          existing.pc.connectionState === 'connected' &&
+          ['connected','completed'].includes(existing.pc.iceConnectionState);
+        // Send new offer if:
+        //  a) No working PC, OR
+        //  b) Viewer sent a newer timestamp (retry request)
+        if (!pcWorking || ts > (lastJoinTs[key] || 0)) {
+          lastJoinTs[key] = ts;
           createOfferForViewer(key);
         }
       });
@@ -1050,9 +1055,11 @@ function broadcast() {
   broadcastTimer = setTimeout(() => {
     const bgTransparent = document.getElementById('bgTransparent')?.checked || false;
     const bgOpacity = parseInt(document.getElementById('bgOpacity')?.value || 60);
+    // Only send image src when it actually changed — base64 on every broadcast
+    // floods Firebase and delays WebRTC signaling
     const images = imgSlots.map(slot => ({
       show: slot.vis,
-      src: slot.vis ? getCompressedImg(slot) : '',
+      src: (slot.vis && slot._lastBroadcastUrl !== slot.url) ? (() => { const c = getCompressedImg(slot); slot._lastBroadcastUrl = slot.url; slot._lastCompressed = c; return c; })() : (slot._lastCompressed || ''),
       x: slot.x, y: slot.y, w: slot.w, h: slot.h
     }));
     set(ref(db, `rooms/${roomId}/overlays`), {
@@ -1134,6 +1141,13 @@ async function createOfferForViewer(viewerKey) {
     if (['disconnected', 'failed', 'closed'].includes(pc.iceConnectionState)) {
       try { pc.close(); } catch(_) {}
       delete peerMap[viewerKey];
+      // Clean up stale Firebase data so viewer can re-request cleanly
+      if (db && roomId) {
+        remove(ref(db, `rooms/${roomId}/offers/${viewerKey}`)).catch(() => {});
+        remove(ref(db, `rooms/${roomId}/answers/${viewerKey}`)).catch(() => {});
+        remove(ref(db, `rooms/${roomId}/hostIce/${viewerKey}`)).catch(() => {});
+        remove(ref(db, `rooms/${roomId}/viewerIce/${viewerKey}`)).catch(() => {});
+      }
     }
   };
 
@@ -1144,7 +1158,7 @@ async function createOfferForViewer(viewerKey) {
   // ── Create and send offer ──
   try {
     // offerToReceiveAudio/Video ensures proper SDP even if tracks added after createOffer
-    const offer = await pc.createOffer({ offerToReceiveAudio: false, offerToReceiveVideo: false });
+    const offer = await pc.createOffer();
     await pc.setLocalDescription(offer);
 
     // Write offer to Firebase — viewer will read this
