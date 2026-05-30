@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <meta name="theme-color" content="#121212">
-    <title>Nikamma 4k Pro v5.6 | Image Crop Editor Integration</title>
+    <title>Nikamma 4k Pro v6.0 | Pure Cloud Mode</title>
     
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
@@ -56,7 +56,7 @@
         .category-count { background: rgba(255,255,255,0.15); color: white; padding: 1px 6px; border-radius: 10px; font-size: 0.68rem; font-weight: 700; }
         .category-tab.active .category-count { background: rgba(0,0,0,0.2); color: black; }
 
-        /* FIXED: Responsive Grid layout for Card View */
+        /* Card View Responsive Layout Grid */
         .h-scroll-row { 
             display: grid; 
             grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); 
@@ -86,7 +86,7 @@
         .card-action-btn.edit-btn:hover { background: var(--main-color); color: black; }
         .card-action-btn.delete-btn:hover { background: #f44336; color: white; }
         
-        /* Card Aspect Ratio Media Layout */
+        /* Card Media Layout */
         .card-img-wrap { width: 100%; aspect-ratio: 16 / 9.5; background: #0a0a0a; overflow: hidden; position: relative; border-bottom: 1px solid var(--card-border); cursor: pointer; }
         .card-img-wrap img { width: 100%; height: 100%; object-fit: cover; display: block; }
         .card-category-badge { position: absolute; bottom: 5px; left: 5px; background: rgba(0, 188, 212, 0.95); color: black; font-size: 8px; font-weight: 700; padding: 1px 6px; border-radius: 8px; text-transform: uppercase; }
@@ -111,7 +111,7 @@
         .card-btn.play-btn { background: var(--main-gradient); color: black; font-weight: 600; border-color: transparent; }
         .card-btn.play-btn:hover { transform: scale(1.02); }
 
-        /* FIXED: Modal Layer Responsive Layout */
+        /* Modal Layer Responsive Layout */
         .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); backdrop-filter: blur(3px); z-index: 2000; justify-content: center; align-items: center; padding: 12px; }
         .modal-content { background: #141414; border-radius: 12px; padding: 20px; max-width: 500px; width: 100%; max-height: 92vh; overflow-y: auto; border: 1px solid rgba(0,188,212,0.2); box-shadow: 0 15px 40px rgba(0,0,0,0.5); scrollbar-width: thin; }
         .modal-content h3 { font-size: 1rem; font-weight: 600; color: var(--main-color); margin-bottom: 14px; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 8px; }
@@ -161,7 +161,6 @@
         .btn-secondary:hover { background: #333; }
         .form-buttons { display: flex; gap: 8px; margin-top: 15px; justify-content: flex-end; width: 100%; border-top: 1px solid rgba(255,255,255,0.03); padding-top: 12px; }
 
-        /* Toast Popup Alerts */
         .toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: var(--main-color); color: #000; padding: 8px 20px; border-radius: 25px; font-weight: 700; z-index: 3000; box-shadow: 0 4px 12px rgba(0,0,0,0.4); font-size: 0.78rem; animation: slideUpInOut 2.5s ease-in-out; white-space: nowrap; }
         @keyframes slideUpInOut {
             0% { opacity: 0; transform: translateX(-50%) translateY(15px); }
@@ -181,7 +180,6 @@
         <h3>Premium Console</h3>
     </div>
     <div class="menu-item active" data-page="channels" onclick="showPage('channels')"><i class="fas fa-desktop"></i> Channels Row</div>
-    <div class="menu-item" data-page="settings" onclick="showPage('settings')"><i class="fas fa-sliders-h"></i> Configuration</div>
     <div class="menu-item" data-page="categories" onclick="showPage('categories')"><i class="fas fa-folder"></i> Categories</div>
 </div>
 
@@ -201,21 +199,6 @@
         <div class="category-tabs" id="categoryTabs"></div>
         <div id="channelsContainer">
             <div class="h-scroll-row" id="channelsRow"></div>
-        </div>
-    </div>
-
-    <div id="settingsPage" style="display:none;">
-        <div style="background: #141414; padding: 20px; border-radius: 12px; border: 1px solid var(--card-border); max-width: 600px; margin: 0 auto;">
-            <h3 style="color: var(--main-color); margin-bottom: 15px; font-weight:600;"><i class="fas fa-tools"></i> Cloud Script Settings</h3>
-            <div class="form-group">
-                <label>Web App Exec URL</label>
-                <input type="text" id="appsScriptUrl" placeholder="https://script.google.com/macros/s/.../exec">
-            </div>
-            <div class="form-group">
-                <label>Drive Storage Folder ID</label>
-                <input type="text" id="driveFolderId" placeholder="Google Drive Folder Unique ID">
-            </div>
-            <button class="btn btn-primary" onclick="saveSettings()"><i class="fas fa-save"></i> Save System Config</button>
         </div>
     </div>
 
@@ -257,7 +240,7 @@
 
             <div class="form-group full-width">
                 <label>Brief Meta Info</label>
-                <textarea id="channelInfo" rows="2" placeholder="Brief explanation or quality logs..."></textarea>
+                <textarea id="channelInfo" rows="2" placeholder="Brief explanation..."></textarea>
             </div>
             
             <div class="form-group">
@@ -328,7 +311,7 @@
 <div id="loadingOverlay">
     <div class="overlay-progress-box">
         <div class="loading-spinner"></div>
-        <div class="progress-text" id="opProgressText">Connecting...</div>
+        <div class="progress-text" id="opProgressText">Connecting Live Sheet...</div>
         
         <div class="progress-bar-container">
             <div class="progress-bar-fill" id="opProgressFill"></div>
@@ -344,19 +327,24 @@
 </div>
 
 <script>
+    // ==========================================
+    // CRITICAL CLOUD MODE CONFIGURATION (NO LOCAL STORAGE)
+    // ==========================================
+    const appsScriptUrl = "PASTE_YOUR_APPS_SCRIPT_URL_HERE"; 
+    const driveFolderId = "PASTE_YOUR_DRIVE_FOLDER_ID_HERE";
+    // ==========================================
+
     let channels = [];
     let categories = [];
     let currentCategory = 'all';
     let editMode = false;
     let editId = null;
-    let appsScriptUrl = localStorage.getItem('appsScriptUrl') || '';
-    let driveFolderId = localStorage.getItem('driveFolderId') || '';
     
     let pendingPosterBase64 = null;
     let pendingAdminBase64 = null;
     
     let cropper = null;
-    let activeCropTarget = ''; // 'poster' or 'admin'
+    let activeCropTarget = ''; 
 
     function showToast(msg) {
         const t = document.createElement('div');
@@ -373,7 +361,6 @@
 
     function showPage(p) {
         document.getElementById('channelsPage').style.display = p === 'channels' ? 'block' : 'none';
-        document.getElementById('settingsPage').style.display = p === 'settings' ? 'block' : 'none';
         document.getElementById('categoriesPage').style.display = p === 'categories' ? 'block' : 'none';
         document.querySelectorAll('.menu-item').forEach(m => m.classList.remove('active'));
         const targetItem = document.querySelector(`.menu-item[data-page="${p}"]`);
@@ -381,23 +368,12 @@
         if(window.innerWidth < 768) toggleSideMenu();
     }
 
-    function saveSettings() {
-        appsScriptUrl = document.getElementById('appsScriptUrl').value.trim();
-        driveFolderId = document.getElementById('driveFolderId').value.trim();
-        localStorage.setItem('appsScriptUrl', appsScriptUrl);
-        localStorage.setItem('driveFolderId', driveFolderId);
-        showToast('Settings compiled locally!');
-        if(appsScriptUrl) syncWithSheet();
-    }
-
     function generateUniqueId() {
         return 'NK' + Date.now().toString().slice(-8) + Math.floor(Math.random() * 100);
     }
 
     function getCategoryCount(catName) {
-        if(catName === 'all') {
-            return channels.length;
-        }
+        if(catName === 'all') return channels.length;
         return channels.filter(c => c.category === catName).length;
     }
 
@@ -443,15 +419,12 @@
         const filtered = currentCategory === 'all' ? channels : channels.filter(c => c.category === currentCategory);
         
         if(filtered.length === 0) {
-            row.innerHTML = '<div style="grid-column:1/-1; text-align:center; padding:25px; color:#444; font-size:0.8rem;">No channels added inside this category tab.</div>';
+            row.innerHTML = '<div style="grid-column:1/-1; text-align:center; padding:25px; color:#444; font-size:0.8rem;">No channels inside this category.</div>';
             return;
         }
 
         filtered.forEach(c => {
             const dateStr = c.createdAt ? new Date(c.createdAt).toLocaleDateString(undefined, {month:'short', day:'numeric'}) : 'New';
-            const liveLikes = c.likes || 0;
-            const liveShares = c.shares || 0;
-
             row.innerHTML += `
                 <div class="h-scroll-card">
                     <div class="card-actions">
@@ -466,7 +439,7 @@
                     
                     <div class="card-body">
                         <div class="card-title">${c.channelName}</div>
-                        <div class="card-description">${c.channelInfo || 'No descriptive summary logs cataloged.'}</div>
+                        <div class="card-description">${c.channelInfo || 'No description logs.'}</div>
                         
                         <div class="admin-profile-inline">
                             <img class="admin-avatar" src="${c.adminImage || 'https://via.placeholder.com/100?text=A'}" onerror="this.src='https://via.placeholder.com/100?text=U'">
@@ -476,10 +449,10 @@
                         
                         <div class="card-action-bar">
                             <button class="card-btn like-btn" onclick="updateLike('${c.uniqueId}', 1)">
-                                <i class="fas fa-heart"></i> <span>${liveLikes}</span>
+                                <i class="fas fa-heart"></i> <span>${c.likes || 0}</span>
                             </button>
                             <button class="card-btn share-btn" onclick="updateShare('${c.uniqueId}')">
-                                <i class="fas fa-share-alt"></i> <span>${liveShares}</span>
+                                <i class="fas fa-share-alt"></i> <span>${c.shares || 0}</span>
                             </button>
                             <button class="card-btn play-btn" onclick="window.open('${c.videoUrl || '#'}','_blank')"><i class="fas fa-play"></i> LAUNCH</button>
                         </div>
@@ -490,8 +463,11 @@
     }
 
     async function syncWithSheet() {
-        if(!appsScriptUrl) { showToast('Setup Apps Script URL first.'); return; }
-        document.getElementById('opProgressText').innerText = "Syncing Mainframe...";
+        if(appsScriptUrl === "PASTE_YOUR_APPS_SCRIPT_URL_HERE" || !appsScriptUrl) { 
+            showToast('Please insert your Apps Script URL inside the HTML code first.'); 
+            return; 
+        }
+        document.getElementById('opProgressText').innerText = "Fetching live spreadsheet mainframe...";
         document.getElementById('opProgressFill').style.width = '100%';
         document.getElementById('loadingOverlay').classList.add('active');
         
@@ -506,7 +482,7 @@
                 showToast('Mainframe synced successfully!');
             }
         } catch(e) {
-            showToast('Handshake rejected or network drop.');
+            showToast('Handshake rejected. Check your script deployment permission.');
         }
         document.getElementById('loadingOverlay').classList.remove('active');
     }
@@ -529,16 +505,15 @@
     }
 
     async function updateCategoriesOnCloud() {
-        if(!appsScriptUrl) return;
+        if(appsScriptUrl === "PASTE_YOUR_APPS_SCRIPT_URL_HERE") return;
         await fetch(appsScriptUrl, {
             method: 'POST',
             mode: 'no-cors',
             body: JSON.stringify({ action: 'saveCategories', categories: categories })
         });
-        showToast('Categories updated.');
+        showToast('Categories synced to cloud sheet.');
     }
 
-    // Integrated Image Crop Editor Initiation
     function handleFileSelection(input, target) {
         const file = input.files[0];
         if(!file) return;
@@ -548,14 +523,10 @@
         reader.onload = function(e) {
             const cropImg = document.getElementById('cropperImage');
             cropImg.src = e.target.result;
-            
             document.getElementById('cropperModal').style.display = 'flex';
-            
             if(cropper) cropper.destroy();
             
-            // Set optimal aspect ratio according to target parameter
             const ratio = target === 'poster' ? (16 / 9.5) : 1;
-            
             cropper = new Cropper(cropImg, {
                 aspectRatio: ratio,
                 viewMode: 1,
@@ -564,18 +535,15 @@
             });
         };
         reader.readAsDataURL(file);
-        input.value = ''; // Reset input link trigger
+        input.value = ''; 
     }
 
     function applyCrop() {
         if(!cropper) return;
-        
-        // Output clean cropped Canvas node
         const canvas = cropper.getCroppedCanvas({
             width: activeCropTarget === 'poster' ? 640 : 200,
             height: activeCropTarget === 'poster' ? 380 : 200,
         });
-        
         const croppedBase64 = canvas.toDataURL('image/jpeg', 0.85);
         
         if(activeCropTarget === 'poster') {
@@ -589,9 +557,7 @@
             img.classList.add('active');
             pendingAdminBase64 = croppedBase64;
         }
-        
         closeModal('cropperModal');
-        showToast('Image custom crop generated!');
     }
 
     document.getElementById('posterInput').onchange = function() { handleFileSelection(this, 'poster'); };
@@ -600,7 +566,6 @@
     document.getElementById('addChannelBtn').onclick = function() {
         editMode = false;
         editId = null;
-        
         document.getElementById('opProgressFill').style.width = '0%';
         document.getElementById('opProgressText').innerText = "Initializing...";
         document.querySelectorAll('.progress-step span').forEach(s => s.className = '');
@@ -623,9 +588,11 @@
     };
 
     document.getElementById('uniqueIdBox').onclick = function() {
-        const newId = generateUniqueId();
-        document.getElementById('channelId').value = newId;
-        document.getElementById('uniqueIdDisplay').innerText = newId;
+        if(!editMode) {
+            const newId = generateUniqueId();
+            document.getElementById('channelId').value = newId;
+            document.getElementById('uniqueIdDisplay').innerText = newId;
+        }
     };
 
     function closeModal(id) { 
@@ -646,34 +613,29 @@
 
     async function saveChannel() {
         const name = document.getElementById('channelName').value.trim();
-        if(!name) { showToast('Channel Name parameter missing.'); return; }
+        if(!name) { showToast('Channel Name is required.'); return; }
         
         closeModal('channelModal');
-        
         const fill = document.getElementById('opProgressFill');
         const txt = document.getElementById('opProgressText');
         const overlay = document.getElementById('loadingOverlay');
-        
         overlay.classList.add('active');
         
-        // Step 1: Validate
-        txt.innerText = "Validating...";
         updateStepStatus(1, 'active');
+        txt.innerText = "Validating Fields...";
         fill.style.width = '25%';
-        await new Promise(r => setTimeout(r, 200)); 
+        await new Promise(r => setTimeout(r, 250)); 
         updateStepStatus(1, 'completed');
 
-        // Step 2: Process Image
-        txt.innerText = "Processing Crop Output...";
         updateStepStatus(2, 'active');
+        txt.innerText = "Processing Crop Outputs...";
         fill.style.width = '50%';
-        await new Promise(r => setTimeout(r, 200));
+        await new Promise(r => setTimeout(r, 250));
         updateStepStatus(2, 'completed');
 
-        // Step 3 & 4: Upload & Save Cloud Config
-        txt.innerText = "Saving Data...";
         updateStepStatus(3, 'active');
         updateStepStatus(4, 'active');
+        txt.innerText = "Uploading Payload to Sheet Mainframe...";
         fill.style.width = '75%';
 
         const payload = {
@@ -700,21 +662,17 @@
 
         try {
             await fetch(appsScriptUrl, { method: 'POST', mode: 'no-cors', body: JSON.stringify(payload) });
-            
             fill.style.width = '100%';
-            txt.innerText = "Changes Saved!";
+            txt.innerText = "Database Row Updated!";
             updateStepStatus(3, 'completed');
             updateStepStatus(4, 'completed');
             
-            // FIXED: Removed the fake local unshift/push mock data code.
-            // Server response completely fetch karke sheet ka exact data hi dikhayenge.
             setTimeout(() => {
                 overlay.classList.remove('active');
-                syncWithSheet(); // Direct live sheet data loading
-            }, 500);
-
+                syncWithSheet(); 
+            }, 600);
         } catch(e) {
-            showToast('Mainframe upload interrupted.');
+            showToast('Network error or invalid Apps Script endpoint.');
             overlay.classList.remove('active');
         }
     }
@@ -752,8 +710,8 @@
     }
 
     async function removeChannel(id) {
-        if(!confirm('Absolute delete this database node block?')) return;
-        document.getElementById('opProgressText').innerText = "Purging Item...";
+        if(!confirm('Absolute delete this database row?')) return;
+        document.getElementById('opProgressText').innerText = "Erasing data block...";
         document.getElementById('opProgressFill').style.width = '100%';
         document.getElementById('loadingOverlay').classList.add('active');
         try {
@@ -762,10 +720,10 @@
                 mode: 'no-cors',
                 body: JSON.stringify({ action: 'delete', id: id })
             });
-            showToast('Item row erased.');
+            showToast('Erase command pushed.');
             syncWithSheet();
         } catch(e) {
-            showToast('Network interface drops tracked.');
+            showToast('Network droplet failure.');
         }
         document.getElementById('loadingOverlay').classList.remove('active');
     }
@@ -788,7 +746,7 @@
         if(c) {
             c.shares = (c.shares || 0) + 1;
             renderChannels();
-            showToast('Gateway clipboard address saved!');
+            showToast('Shared successfully!');
             await fetch(appsScriptUrl, {
                 method: 'POST',
                 mode: 'no-cors',
@@ -797,9 +755,10 @@
         }
     }
 
-    document.getElementById('appsScriptUrl').value = appsScriptUrl;
-    document.getElementById('driveFolderId').value = driveFolderId;
-    if(appsScriptUrl) syncWithSheet();
+    // Auto-initiate cloud data mapping on load
+    if(appsScriptUrl !== "PASTE_YOUR_APPS_SCRIPT_URL_HERE") {
+        syncWithSheet();
+    }
 </script>
 </body>
 </html>
