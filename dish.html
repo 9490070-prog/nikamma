@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <meta name="theme-color" content="#121212">
-    <title>Nikamma 4k Pro v4.0 | Google Sheet Integration</title>
+    <title>Nikamma 4k Pro v5.5 | Clean Grid Dashboard</title>
     
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
@@ -15,461 +15,160 @@
     
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        
         :root {
             --main-color: #00bcd4;
+            --main-gradient: linear-gradient(135deg, #00bcd4, #008c9e);
             --dark-bg: #0b0b0b;
-            --card-bg: #1a1a1a;
+            --card-bg: #141414;
+            --card-border: #1f1f1f;
             --header-bg: #121212;
             --sidebar-bg: #0f0f0f;
-            --sidebar-width: 270px;
+            --text-muted: #888888;
         }
-
-        body {
-            background: var(--dark-bg);
-            color: white;
-            font-family: 'Poppins', sans-serif;
-            overflow-x: hidden;
-        }
-
-        /* ===== PROGRESS BAR ===== */
-        #progressBar {
-            position: fixed;
-            top: 0; left: 0;
-            height: 3px;
-            width: 0%;
-            background: linear-gradient(90deg, var(--main-color), #fff, var(--main-color));
-            background-size: 200% 100%;
-            z-index: 9999;
-            transition: width 0.3s ease;
-            animation: shimmer 1.2s infinite linear;
-            display: none;
-        }
-        #progressBar.active { display: block; }
-        @keyframes shimmer {
-            0%   { background-position: 200% 0; }
-            100% { background-position: -200% 0; }
-        }
-        #progressLabel {
-            position: fixed;
-            top: 6px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: rgba(0,0,0,0.85);
-            color: var(--main-color);
-            font-size: 11px;
-            font-weight: 600;
-            padding: 3px 14px;
-            border-radius: 20px;
-            z-index: 9999;
-            display: none;
-            letter-spacing: 0.5px;
-        }
-        #progressLabel.active { display: block; }
-
-        /* ===== SIDE MENU ===== */
-        .menu-overlay {
-            position: fixed; top: 0; left: 0;
-            width: 100%; height: 100%;
-            background: rgba(0,0,0,0.6);
-            backdrop-filter: blur(4px);
-            z-index: 998;
-            display: none;
-            transition: opacity 0.3s;
-        }
-        .menu-overlay.active { display: block; }
-
-        .side-menu {
-            position: fixed;
-            top: 0; left: calc(-1 * var(--sidebar-width));
-            width: var(--sidebar-width);
-            height: 100%;
-            background: var(--sidebar-bg);
-            z-index: 999;
-            transition: left 0.3s cubic-bezier(0.4,0,0.2,1);
-            border-right: 1px solid rgba(0,188,212,0.15);
-            overflow-y: auto;
-            display: flex;
-            flex-direction: column;
-        }
+        body { background: var(--dark-bg); color: white; font-family: 'Poppins', sans-serif; overflow-x: hidden; }
+        
+        /* Side Menu Styles */
+        .side-menu { position: fixed; top: 0; left: -280px; width: 280px; height: 100%; background: var(--sidebar-bg); z-index: 1000; transition: left 0.3s ease; border-right: 1px solid rgba(0,188,212,0.2); overflow-y: auto; }
         .side-menu.open { left: 0; }
-        .side-menu::-webkit-scrollbar { width: 4px; }
-        .side-menu::-webkit-scrollbar-thumb { background: rgba(0,188,212,0.3); border-radius: 4px; }
+        .menu-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 999; display: none; }
+        .menu-overlay.active { display: block; }
+        .menu-header { padding: 20px 15px; background: var(--main-gradient); text-align: center; color: black; }
+        .menu-header i { font-size: 1.8rem; margin-bottom: 5px; }
+        .menu-item { padding: 12px 20px; display: flex; align-items: center; gap: 12px; color: #ccc; cursor: pointer; transition: all 0.2s; border-bottom: 1px solid #141414; font-size: 0.85rem; }
+        .menu-item:hover, .menu-item.active { background: rgba(0,188,212,0.1); color: var(--main-color); border-left: 4px solid var(--main-color); }
 
-        .menu-header {
-            padding: 28px 20px 22px;
-            background: linear-gradient(135deg, #00bcd4 0%, #006478 100%);
-            text-align: center;
-            flex-shrink: 0;
-        }
-        .menu-header .app-icon {
-            width: 58px; height: 58px;
-            background: rgba(255,255,255,0.18);
-            border-radius: 16px;
-            display: flex; align-items: center; justify-content: center;
-            margin: 0 auto 10px;
-            font-size: 1.6rem;
-        }
-        .menu-header h3 {
-            font-size: 1rem;
-            font-weight: 700;
-            color: #fff;
-            letter-spacing: 0.3px;
-        }
-        .menu-header small {
-            color: rgba(255,255,255,0.7);
-            font-size: 0.72rem;
-        }
+        /* Header Styles */
+        .pro-header { background: var(--header-bg); padding: 10px 15px; position: sticky; top: 0; z-index: 100; border-bottom: 1px solid rgba(0,188,212,0.15); display: flex; justify-content: space-between; align-items: center; gap: 10px; box-shadow: 0 4px 12 rgba(0,0,0,0.4); }
+        .menu-icon { font-size: 1.2rem; cursor: pointer; color: var(--main-color); padding: 4px; }
+        .logo h1 { font-size: 1.1rem; font-weight: 700; background: var(--main-gradient); -webkit-background-clip: text; -webkit-text-fill-color: transparent; display: flex; align-items: center; gap: 5px; }
+        .admin-controls { display: flex; gap: 6px; }
+        .admin-btn { background: rgba(0,188,212,0.05); border: 1px solid rgba(0,188,212,0.2); padding: 6px 12px; border-radius: 20px; color: var(--main-color); cursor: pointer; font-weight: 600; font-size: 0.75rem; display: flex; align-items: center; gap: 5px; transition: all 0.2s; }
+        .admin-btn:hover { background: var(--main-gradient); color: black; }
 
-        .menu-nav { padding: 10px 0; flex: 1; }
+        /* Main Container */
+        .main-container { max-width: 1400px; margin: 0 auto; padding: 12px; }
 
-        .menu-section-label {
-            font-size: 0.65rem;
-            text-transform: uppercase;
-            letter-spacing: 1.2px;
-            color: #555;
-            padding: 12px 20px 4px;
-            font-weight: 600;
-        }
-
-        .menu-item {
-            padding: 12px 20px;
-            display: flex;
-            align-items: center;
-            gap: 13px;
-            color: #999;
-            cursor: pointer;
-            transition: all 0.2s;
-            border-left: 3px solid transparent;
-            margin: 2px 0;
-            font-size: 0.88rem;
-            font-weight: 500;
-        }
-        .menu-item:hover {
-            background: rgba(0,188,212,0.07);
-            color: #ddd;
-        }
-        .menu-item.active {
-            background: rgba(0,188,212,0.12);
-            color: var(--main-color);
-            border-left-color: var(--main-color);
-        }
-        .menu-item .mi-icon {
-            width: 34px; height: 34px;
-            border-radius: 10px;
-            display: flex; align-items: center; justify-content: center;
-            font-size: 0.95rem;
-            background: rgba(255,255,255,0.05);
-            flex-shrink: 0;
-            transition: background 0.2s;
-        }
-        .menu-item.active .mi-icon {
-            background: rgba(0,188,212,0.2);
-            color: var(--main-color);
-        }
-        .menu-item .mi-badge {
-            margin-left: auto;
-            background: var(--main-color);
-            color: #000;
-            font-size: 10px;
-            font-weight: 700;
-            padding: 1px 7px;
-            border-radius: 20px;
-            min-width: 20px;
-            text-align: center;
-        }
-
-        .menu-footer {
-            padding: 14px 20px;
-            border-top: 1px solid #1f1f1f;
-            flex-shrink: 0;
-        }
-        .menu-footer small { color: #444; font-size: 0.68rem; display: block; text-align: center; }
-
-        /* ===== HEADER ===== */
-        .pro-header {
-            background: var(--header-bg);
-            padding: 10px 18px;
-            position: sticky; top: 0; z-index: 100;
-            border-bottom: 1px solid rgba(0,188,212,0.2);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            gap: 12px;
-        }
-        .header-left { display: flex; align-items: center; gap: 12px; }
-        .menu-icon {
-            width: 38px; height: 38px;
-            display: flex; align-items: center; justify-content: center;
-            border-radius: 10px;
-            background: rgba(0,188,212,0.08);
-            cursor: pointer; color: var(--main-color);
-            font-size: 1.1rem;
-            transition: background 0.2s;
-        }
-        .menu-icon:hover { background: rgba(0,188,212,0.18); }
-        .logo h1 { font-size: 1.15rem; background: linear-gradient(135deg, #00bcd4, #008c9e); -webkit-background-clip: text; -webkit-text-fill-color: transparent; font-weight: 700; }
-        .logo small { font-size: 0.65rem; color: #555; display: block; }
-        .admin-controls { display: flex; gap: 8px; align-items: center; }
-        .admin-btn {
-            background: rgba(0,188,212,0.1);
-            border: 1px solid rgba(0,188,212,0.25);
-            padding: 7px 14px;
-            border-radius: 22px;
-            color: var(--main-color);
-            cursor: pointer;
-            font-family: inherit;
-            font-size: 0.8rem;
-            font-weight: 500;
-            transition: all 0.2s;
-            display: flex; align-items: center; gap: 6px;
-        }
-        .admin-btn:hover { background: rgba(0,188,212,0.2); border-color: var(--main-color); }
-
-        /* ===== MAIN CONTENT ===== */
-        .main-container { max-width: 1400px; margin: 0 auto; padding: 16px; }
-
-        /* ===== CATEGORY TABS ===== */
-        .category-tabs {
-            display: flex;
-            overflow-x: auto;
-            gap: 10px;
-            padding: 8px 2px 14px;
-            scrollbar-width: none;
-        }
+        /* Category Tabs & Count Badge */
+        .category-tabs { display: flex; overflow-x: auto; gap: 8px; padding: 4px 0 12px; scrollbar-width: none; }
         .category-tabs::-webkit-scrollbar { display: none; }
-        .category-tab {
-            background: rgba(30,30,30,0.9);
-            border: 1px solid rgba(255,255,255,0.08);
-            border-radius: 30px;
-            padding: 8px 20px;
-            white-space: nowrap;
-            cursor: pointer;
-            font-size: 0.82rem;
-            font-weight: 500;
-            color: #999;
-            transition: all 0.2s;
-            flex-shrink: 0;
-        }
-        .category-tab:hover { border-color: rgba(0,188,212,0.4); color: #ddd; }
-        .category-tab.active {
-            background: linear-gradient(135deg, #00bcd4, #008c9e);
-            color: #000; font-weight: 600;
-            border-color: transparent;
-        }
+        .category-tab { background: #141414; border: 1px solid var(--card-border); border-radius: 20px; padding: 6px 14px; white-space: nowrap; cursor: pointer; font-size: 0.78rem; color: #bbb; transition: all 0.2s; display: flex; align-items: center; gap: 6px; }
+        .category-tab.active { background: var(--main-gradient); color: black; font-weight: 600; border-color: transparent; }
+        .category-count { background: rgba(255,255,255,0.15); color: white; padding: 1px 6px; border-radius: 10px; font-size: 0.68rem; font-weight: 700; }
+        .category-tab.active .category-count { background: rgba(0,0,0,0.2); color: black; }
 
-        /* ===== CARDS ===== */
-        .h-scroll-row {
-            display: flex;
-            overflow-x: auto;
-            gap: 12px;
-            padding: 6px 0 20px;
-            scrollbar-width: none;
-        }
-        .h-scroll-row::-webkit-scrollbar { display: none; }
-        .h-scroll-card {
-            flex: 0 0 130px; width: 130px; height: 200px;
-            background: var(--card-bg);
-            border-radius: 14px;
-            overflow: hidden;
-            border: 1px solid #252525;
-            cursor: pointer;
-            position: relative;
-            transition: transform 0.2s, border-color 0.2s;
-        }
-        .h-scroll-card:hover { transform: translateY(-4px); border-color: rgba(0,188,212,0.5); }
-        .h-scroll-card img {
-            width: 100%; height: calc(100% - 58px);
-            object-fit: cover;
-            transition: filter 0.4s;
-        }
-        .img-loading { filter: blur(8px); }
-        .img-loaded { filter: blur(0); }
-        .h-scroll-card .card-title {
-            font-size: 10px; padding: 5px 5px 4px;
-            text-align: center;
-        }
-        .card-actions {
-            position: absolute; top: 5px; right: 5px;
-            display: flex; gap: 4px; z-index: 10;
-        }
-        .card-action-btn {
-            background: rgba(0,0,0,0.65);
-            border: none; color: white;
-            width: 25px; height: 25px;
-            border-radius: 50%; cursor: pointer;
-            font-size: 0.65rem;
-            transition: background 0.2s;
-            display: flex; align-items: center; justify-content: center;
-        }
-        .card-action-btn.delete-btn:hover { background: #e53935; }
-        .card-action-btn.edit-btn:hover { background: var(--main-color); color: #000; }
+        /* Ultra Compact Normal Grid Setup */
+        .h-scroll-row { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 12px; padding: 2px 0; }
+        
+        .h-scroll-card { background: var(--card-bg); border-radius: 10px; overflow: hidden; border: 1px solid var(--card-border); position: relative; transition: all 0.2s ease; display: flex; flex-direction: column; box-shadow: 0 3px 8px rgba(0,0,0,0.3); }
+        .h-scroll-card:hover { transform: translateY(-3px); border-color: var(--main-color); box-shadow: 0 6px 15px rgba(0,188,212,0.15); }
+        
+        /* Card Action Buttons Overlay */
+        .card-actions { position: absolute; top: 6px; right: 6px; display: flex; gap: 4px; z-index: 10; }
+        .card-action-btn { background: rgba(0, 0, 0, 0.75); border: none; color: white; width: 26px; height: 26px; border-radius: 50%; cursor: pointer; font-size: 10px; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(2px); transition: all 0.2s; }
+        .card-action-btn.edit-btn:hover { background: var(--main-color); color: black; }
+        .card-action-btn.delete-btn:hover { background: #f44336; color: white; }
+        
+        /* Card Aspect Ratio Media Layout */
+        .card-img-wrap { width: 100%; aspect-ratio: 16 / 9.5; background: #0a0a0a; overflow: hidden; position: relative; border-bottom: 1px solid var(--card-border); cursor: pointer; }
+        .card-img-wrap img { width: 100%; height: 100%; object-fit: cover; display: block; }
+        .card-category-badge { position: absolute; bottom: 5px; left: 5px; background: rgba(0, 188, 212, 0.95); color: black; font-size: 8px; font-weight: 700; padding: 1px 6px; border-radius: 8px; text-transform: uppercase; }
 
-        /* ===== MODAL ===== */
-        .modal {
-            display: none; position: fixed;
-            top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.92);
-            z-index: 2000;
-            justify-content: center; align-items: flex-start;
-            padding: 20px 0;
-            overflow-y: auto;
-        }
-        .modal-content {
-            background: var(--card-bg);
-            border-radius: 20px;
-            padding: 24px;
-            width: 90%; max-width: 500px;
-            border: 1px solid rgba(0,188,212,0.25);
-            margin: auto;
-        }
-        .form-group { margin-bottom: 16px; }
-        .form-group label { display: block; margin-bottom: 7px; font-size: 0.78rem; color: #aaa; font-weight: 500; }
-        .form-group input, .form-group textarea, .form-group select {
-            width: 100%; padding: 11px 13px;
-            background: #222; border: 1px solid #333;
-            border-radius: 10px; color: white;
-            font-family: inherit; font-size: 0.88rem;
-            transition: border-color 0.2s;
-        }
-        .form-group input:focus, .form-group textarea:focus, .form-group select:focus {
-            outline: none; border-color: var(--main-color);
-        }
-        .unique-id-box {
-            background: linear-gradient(135deg, #00bcd4, #008c9e);
-            padding: 11px 14px; border-radius: 10px;
-            text-align: center; cursor: pointer;
-            display: flex; justify-content: space-between; align-items: center;
-            font-size: 0.82rem; font-weight: 600; color: #000;
-        }
-        .image-upload-area {
-            border: 2px dashed #3a3a3a; border-radius: 10px;
-            padding: 14px; text-align: center; cursor: pointer;
-            background: #1a1a1a; color: #888;
-            font-size: 0.82rem;
-            transition: border-color 0.2s;
-        }
-        .image-upload-area:hover { border-color: var(--main-color); }
-        .image-preview {
-            width: 100%; max-height: 120px; object-fit: cover;
-            border-radius: 8px; margin-top: 8px; display: none;
-        }
+        /* Balanced Micro Space Body (ID removed completely) */
+        .card-body { padding: 8px; display: flex; flex-direction: column; flex: 1; gap: 5px; }
+        .card-title { font-size: 0.88rem; font-weight: 600; color: white; line-height: 1.2; display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical; overflow: hidden; }
+        .card-description { font-size: 0.72rem; color: var(--text-muted); line-height: 1.3; display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical; overflow: hidden; min-height: unset; margin-bottom: 2px; }
+        
+        /* Profile inline block */
+        .admin-profile-inline { display: flex; align-items: center; gap: 6px; border-top: 1px solid rgba(255,255,255,0.04); padding-top: 5px; margin-top: auto; }
+        .admin-avatar { width: 18px; height: 18px; border-radius: 50%; object-fit: cover; border: 1px solid var(--main-color); background: #222; }
+        .admin-name-text { font-size: 0.7rem; font-weight: 500; color: #bbb; display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical; overflow: hidden; }
+        .admin-date-text { font-size: 0.62rem; color: #555; margin-left: auto; }
+
+        /* Action bar row inside card with clean alignment */
+        .card-action-bar { display: grid; grid-template-columns: 1fr 1fr 1.1fr; gap: 4px; border-top: 1px solid rgba(255,255,255,0.04); padding-top: 5px; }
+        .card-btn { background: #1a1a1a; border: 1px solid rgba(255,255,255,0.02); padding: 4px; border-radius: 5px; color: #aaa; font-size: 0.68rem; font-weight: 500; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 4px; transition: all 0.15s; }
+        .card-btn:hover { background: #222; color: white; }
+        .card-btn.like-btn:hover { color: #f44336; }
+        .card-btn.share-btn:hover { color: var(--main-color); }
+        .card-btn.play-btn { background: var(--main-gradient); color: black; font-weight: 600; border-color: transparent; }
+        .card-btn.play-btn:hover { transform: scale(1.02); }
+
+        /* Modal Overlays styling */
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); backdrop-filter: blur(3px); z-index: 2000; justify-content: center; align-items: center; padding: 15px; }
+        .modal-content { background: #141414; border-radius: 12px; padding: 18px; max-width: 480px; width: 100%; max-height: 90vh; overflow-y: auto; border: 1px solid rgba(0,188,212,0.2); box-shadow: 0 15px 40px rgba(0,0,0,0.5); }
+        .modal-content h3 { font-size: 1rem; font-weight: 600; color: var(--main-color); margin-bottom: 12px; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 6px; }
+        
+        /* Global Overlay Screen with integrated Progress loader */
+        #loadingOverlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 9999; display: none; flex-direction: column; justify-content: center; align-items: center; padding: 25px; }
+        #loadingOverlay.active { display: flex; }
+        .overlay-progress-box { width: 100%; max-width: 300px; background: #161616; border: 1px solid #252525; border-radius: 12px; padding: 18px; text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+        .loading-spinner { width: 35px; height: 35px; border: 3px solid #222; border-top: 3px solid var(--main-color); border-radius: 50%; animation: spin 0.8s linear infinite; margin: 0 auto 12px; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        
+        .progress-bar-container { width: 100%; background-color: #222; border-radius: 10px; margin: 10px 0; overflow: hidden; border: 1px solid rgba(0,188,212,0.15); height: 5px; }
+        .progress-bar-fill { width: 0%; height: 100%; background: var(--main-gradient); transition: width 0.15s ease; }
+        .progress-text { font-size: 11px; color: var(--main-color); font-weight: 500; min-height: 16px; }
+        .progress-step { display: flex; justify-content: space-between; margin-top: 10px; gap: 4px; }
+        .progress-step span { flex: 1; text-align: center; padding: 2px 0; border-radius: 3px; background: #0b0b0b; font-size: 8px; color: #444; font-weight: 600; text-transform: uppercase; }
+        .progress-step span.active { color: var(--main-color); background: rgba(0,188,212,0.1); }
+        .progress-step span.completed { color: #4caf50; background: rgba(76,175,80,0.1); }
+
+        /* Form Layout inside Modals */
+        .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        @media (max-width: 480px) { .form-grid { grid-template-columns: 1fr; } }
+        .form-group { margin-bottom: 10px; }
+        .form-group.full-width { grid-column: 1 / -1; }
+        .form-group label { display: block; margin-bottom: 4px; font-size: 0.72rem; color: #999; font-weight: 500; text-transform: uppercase; }
+        .form-group input, .form-group textarea, .form-group select { width: 100%; padding: 8px 10px; background: #1c1c1c; border: 1px solid #2a2a2a; border-radius: 6px; color: white; font-family: inherit; font-size: 0.8rem; }
+        .form-group input:focus, .form-group textarea:focus, .form-group select:focus { outline: none; border-color: var(--main-color); }
+        
+        .unique-id-box { background: rgba(0,188,212,0.04); border: 1px dashed rgba(0,188,212,0.3); padding: 8px; border-radius: 6px; text-align: center; cursor: pointer; display: flex; justify-content: space-between; align-items: center; font-weight: 600; color: var(--main-color); font-size: 0.8rem; }
+        .image-upload-area { border: 1px dashed #333; border-radius: 6px; padding: 10px; text-align: center; cursor: pointer; background: #1a1a1a; color: #777; font-size: 0.75rem; }
+        .image-upload-area:hover { border-color: var(--main-color); color: white; }
+        .image-preview { width: 100%; max-height: 80px; object-fit: cover; border-radius: 5px; margin-top: 6px; display: none; border: 1px solid #2a2a2a; }
         .image-preview.active { display: block; }
-        .btn {
-            padding: 11px 22px; border: none;
-            border-radius: 30px; font-weight: 600;
-            cursor: pointer; font-family: inherit; font-size: 0.85rem;
-            transition: opacity 0.2s, transform 0.1s;
-        }
-        .btn:active { transform: scale(0.97); }
-        .btn-primary { background: linear-gradient(135deg, #00bcd4, #008c9e); color: #000; }
-        .btn-danger { background: #e53935; color: white; }
-        .btn-secondary { background: #2a2a2a; color: #ccc; border: 1px solid #3a3a3a; }
-        .form-buttons { display: flex; gap: 10px; margin-top: 18px; }
+        
+        .btn { padding: 8px 16px; border: none; border-radius: 20px; font-weight: 600; cursor: pointer; font-size: 0.78rem; display: inline-flex; align-items: center; gap: 5px; transition: all 0.2s; }
+        .btn-primary { background: var(--main-gradient); color: #000; }
+        .btn-secondary { background: #222; color: white; }
+        .form-buttons { display: flex; gap: 6px; margin-top: 12px; justify-content: flex-end; }
 
-        /* ===== SETTINGS ===== */
-        .settings-section {
-            background: var(--card-bg);
-            border-radius: 14px; padding: 18px;
-            margin-bottom: 18px;
-            border: 1px solid #202020;
+        /* Toast Popup Alerts */
+        .toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: var(--main-color); color: #000; padding: 8px 20px; border-radius: 25px; font-weight: 700; z-index: 3000; box-shadow: 0 4px 12px rgba(0,0,0,0.4); font-size: 0.78rem; animation: slideUpInOut 2.5s ease-in-out; white-space: nowrap; }
+        @keyframes slideUpInOut {
+            0% { opacity: 0; transform: translateX(-50%) translateY(15px); }
+            15% { opacity: 1; transform: translateX(-50%) translateY(0); }
+            85% { opacity: 1; transform: translateX(-50%) translateY(0); }
+            100% { opacity: 0; transform: translateX(-50%) translateY(-10px); }
         }
-        .settings-section h3 { color: var(--main-color); margin-bottom: 14px; font-size: 0.95rem; }
-        .status-badge {
-            display: inline-flex; align-items: center; gap: 6px;
-            padding: 5px 13px; border-radius: 20px;
-            font-size: 11px; font-weight: 600;
-        }
-        .status-connected { background: rgba(76,175,80,0.2); color: #4caf50; border: 1px solid #4caf50; }
-        .status-disconnected { background: rgba(229,57,53,0.15); color: #e53935; border: 1px solid #e53935; }
-
-        /* ===== TOAST ===== */
-        .toast {
-            position: fixed; bottom: 28px; left: 50%;
-            transform: translateX(-50%);
-            color: #000; padding: 10px 22px;
-            border-radius: 50px; font-weight: 600;
-            z-index: 8000; font-size: 0.83rem;
-            animation: fadeInOut 2.2s ease forwards;
-            pointer-events: none; white-space: nowrap;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.5);
-        }
-        @keyframes fadeInOut {
-            0%   { opacity: 0; transform: translateX(-50%) translateY(16px); }
-            12%  { opacity: 1; transform: translateX(-50%) translateY(0); }
-            80%  { opacity: 1; }
-            100% { opacity: 0; transform: translateX(-50%) translateY(10px); }
-        }
-
-        .empty-state { text-align: center; padding: 60px 20px; color: #555; }
-
-        @media (min-width: 768px) {
-            .h-scroll-card { flex: 0 0 155px; width: 155px; height: 235px; }
-        }
+        #categoriesList div { display: flex; justify-content: space-between; align-items: center; background: #1a1a1a; padding: 8px 12px; margin-bottom: 6px; border-radius: 6px; border: 1px solid #252525; font-size: 0.8rem; }
     </style>
 </head>
 <body>
 
-<!-- Progress Bar -->
-<div id="progressBar"></div>
-<div id="progressLabel"></div>
-
-<!-- Side Menu Overlay -->
 <div class="menu-overlay" id="menuOverlay" onclick="toggleSideMenu()"></div>
-
-<!-- Side Menu -->
 <div class="side-menu" id="sideMenu">
     <div class="menu-header">
-        <div class="app-icon"><i class="fas fa-tv"></i></div>
-        <h3 id="sideMenuAppName">Nikamma 4k Pro</h3>
-        <small>v4.0 · Sheet Integrated</small>
+        <i class="fas fa-satellite-dish"></i>
+        <h3>Premium Console</h3>
     </div>
-    <nav class="menu-nav">
-        <div class="menu-section-label">Main</div>
-        <div class="menu-item active" data-page="channels" onclick="showPage('channels')">
-            <span class="mi-icon"><i class="fas fa-tv"></i></span>
-            Channels
-            <span class="mi-badge" id="menuChannelCount">0</span>
-        </div>
-        <div class="menu-section-label">Manage</div>
-        <div class="menu-item" data-page="categories" onclick="showPage('categories')">
-            <span class="mi-icon"><i class="fas fa-tags"></i></span>
-            Categories
-        </div>
-        <div class="menu-item" data-page="sync" onclick="showPage('sync')">
-            <span class="mi-icon"><i class="fas fa-cloud-upload-alt"></i></span>
-            Sync Status
-        </div>
-        <div class="menu-section-label">System</div>
-        <div class="menu-item" data-page="settings" onclick="showPage('settings')">
-            <span class="mi-icon"><i class="fas fa-cog"></i></span>
-            Settings
-        </div>
-    </nav>
-    <div class="menu-footer">
-        <small>Nikamma 4k Pro &copy; 2024</small>
-    </div>
+    <div class="menu-item active" data-page="channels" onclick="showPage('channels')"><i class="fas fa-desktop"></i> Channels Row</div>
+    <div class="menu-item" data-page="settings" onclick="showPage('settings')"><i class="fas fa-sliders-h"></i> Configuration</div>
+    <div class="menu-item" data-page="categories" onclick="showPage('categories')"><i class="fas fa-folder"></i> Categories</div>
 </div>
 
-<!-- Header -->
 <div class="pro-header">
-    <div class="header-left">
-        <div class="menu-icon" onclick="toggleSideMenu()">
-            <i class="fas fa-bars"></i>
-        </div>
-        <div class="logo">
-            <h1 id="headerAppName"><i class="fas fa-tv"></i> Nikamma 4k Pro</h1>
-            <small>Google Sheet Integrated</small>
-        </div>
+    <div class="menu-icon" onclick="toggleSideMenu()"><i class="fas fa-bars"></i></div>
+    <div class="logo">
+        <h1><i class="fas fa-tv"></i> Nikamma 4k Pro</h1>
     </div>
     <div class="admin-controls">
-        <button class="admin-btn" id="addChannelBtn"><i class="fas fa-plus"></i> Add Channel</button>
-        <button class="admin-btn" onclick="syncWithSheet()"><i class="fas fa-sync"></i> Sync</button>
+        <button class="admin-btn" id="addChannelBtn"><i class="fas fa-plus-circle"></i> Add New</button>
+        <button class="admin-btn" onclick="syncWithSheet()"><i class="fas fa-sync-alt"></i> Sync Data</button>
     </div>
 </div>
 
 <div class="main-container">
-    <!-- Channels Page -->
     <div id="channelsPage">
         <div class="category-tabs" id="categoryTabs"></div>
         <div id="channelsContainer">
@@ -477,727 +176,557 @@
         </div>
     </div>
 
-    <!-- Settings Page -->
     <div id="settingsPage" style="display:none;">
-        <div class="settings-section">
-            <h3><i class="fab fa-google"></i> Google Apps Script Configuration</h3>
+        <div style="background: #141414; padding: 20px; border-radius: 12px; border: 1px solid var(--card-border); max-width: 600px; margin: 0 auto;">
+            <h3 style="color: var(--main-color); margin-bottom: 15px; font-weight:600;"><i class="fas fa-tools"></i> Cloud Script Settings</h3>
             <div class="form-group">
-                <label>Web App URL (Google Apps Script Deployment URL)</label>
+                <label>Web App Exec URL</label>
                 <input type="text" id="appsScriptUrl" placeholder="https://script.google.com/macros/s/.../exec">
-                <small style="color:#555; font-size:0.72rem;">Paste your deployed Apps Script URL here</small>
-            </div>
-            <div class="form-group" style="margin-top:12px; background:rgba(0,188,212,0.05); border:1px solid rgba(0,188,212,0.2); border-radius:10px; padding:14px;">
-                <label style="color:var(--main-color); font-weight:600;"><i class="fab fa-google-drive"></i> Google Drive Folder ID</label>
-                <input type="text" id="driveFolderId" placeholder="e.g. 1svkOPFcmSe1ZWTo-uPu2KjcxKWba5vW3" style="margin-top:8px;">
-                <small style="color:#666; display:block; margin-top:6px; font-size:0.72rem;">
-                    Drive folder open karo → URL ke end mein jo ID ho woh paste karo. Images usi folder mein jayengi.
-                </small>
-                <button class="btn btn-primary" onclick="saveFolderIdSetting()" style="margin-top:10px; width:100%; padding:9px;">
-                    <i class="fab fa-google-drive"></i> Save Folder ID
-                </button>
-                <div id="folderIdStatus" style="margin-top:8px; font-size:0.78rem;"></div>
-            </div>
-            <div style="display:flex; gap:8px; margin-top:12px; flex-wrap:wrap;">
-                <button class="btn btn-primary" onclick="testConnection()"><i class="fas fa-plug"></i> Test Connection</button>
-                <button class="btn btn-secondary" onclick="syncWithSheet()"><i class="fas fa-download"></i> Load from Sheet</button>
-            </div>
-            <div id="connectionStatus" style="margin-top:14px;"></div>
-        </div>
-
-        <div class="settings-section">
-            <h3><i class="fas fa-palette"></i> App Settings</h3>
-            <div class="form-group">
-                <label>App Name</label>
-                <input type="text" id="appName" value="Nikamma 4k Pro">
             </div>
             <div class="form-group">
-                <label>Theme Color</label>
-                <input type="color" id="themeColor" value="#00bcd4" onchange="changeTheme(this.value)">
+                <label>Drive Storage Folder ID</label>
+                <input type="text" id="driveFolderId" placeholder="Google Drive Folder Unique ID">
             </div>
-            <button class="btn btn-primary" onclick="saveAppSettings()"><i class="fas fa-save"></i> Save Settings</button>
+            <button class="btn btn-primary" onclick="saveSettings()"><i class="fas fa-save"></i> Save System Config</button>
         </div>
     </div>
 
-    <!-- Categories Page -->
     <div id="categoriesPage" style="display:none;">
-        <div class="settings-section">
-            <h3><i class="fas fa-tags"></i> Manage Categories</h3>
+        <div style="background: #141414; padding: 20px; border-radius: 12px; border: 1px solid var(--card-border); max-width: 600px; margin: 0 auto;">
+            <h3 style="color: var(--main-color); margin-bottom: 15px; font-weight:600;"><i class="fas fa-tags"></i> Manage Group Slots</h3>
             <div id="categoriesList"></div>
-            <div class="form-group" style="margin-top:18px; display:flex; gap:8px;">
-                <input type="text" id="newCategoryName" placeholder="New category name" style="flex:1;">
-                <button class="btn btn-primary" onclick="addCategory()" style="padding:11px 18px; white-space:nowrap;">Add</button>
+            <div class="form-group" style="margin-top:15px; display:flex; gap:10px;">
+                <input type="text" id="newCategoryName" placeholder="New category label">
+                <button class="btn btn-primary" onclick="addCategory()"><i class="fas fa-plus"></i> Add</button>
             </div>
-        </div>
-    </div>
-
-    <!-- Sync Status Page -->
-    <div id="syncPage" style="display:none;">
-        <div class="settings-section">
-            <h3><i class="fas fa-cloud-upload-alt"></i> Sync Status</h3>
-            <div id="syncInfo" style="display:flex; flex-direction:column; gap:10px;">
-                <div style="display:flex; align-items:center; gap:10px; background:#111; padding:12px; border-radius:10px;">
-                    <i class="fas fa-database" style="color:var(--main-color);"></i>
-                    <span>Local Channels</span>
-                    <span id="localCount" style="margin-left:auto; font-weight:700; color:var(--main-color);">0</span>
-                </div>
-                <div style="display:flex; align-items:center; gap:10px; background:#111; padding:12px; border-radius:10px;">
-                    <i class="fas fa-clock" style="color:#ff9800;"></i>
-                    <span>Last Synced</span>
-                    <span id="lastSynced" style="margin-left:auto; font-size:0.78rem; color:#888;">Never</span>
-                </div>
-            </div>
-            <button class="btn btn-primary" onclick="syncWithSheet()" style="margin-top:16px; width:100%;">
-                <i class="fas fa-sync"></i> Sync Now
-            </button>
         </div>
     </div>
 </div>
 
-<!-- Channel Modal -->
 <div id="channelModal" class="modal">
     <div class="modal-content">
-        <h3 style="color:var(--main-color); margin-bottom:18px; font-size:1rem;" id="modalTitle">Add New Channel</h3>
+        <h3 id="modalTitle">Configure Channel Item</h3>
         
-        <div class="form-group">
-            <label><i class="fas fa-id-card"></i> Unique ID (Column A in Sheet)</label>
-            <div class="unique-id-box" id="uniqueIdBox">
-                <span id="uniqueIdDisplay">Click to generate</span>
-                <i class="fas fa-sync-alt"></i>
+        <div class="form-grid">
+            <div class="form-group full-width">
+                <label>Unique Node ID</label>
+                <div class="unique-id-box" id="uniqueIdBox">
+                    <span id="uniqueIdDisplay">Compute ID</span>
+                    <i class="fas fa-random"></i>
+                </div>
+                <input type="hidden" id="channelId">
             </div>
-            <input type="hidden" id="channelId">
-        </div>
-
-        <div class="form-group">
-            <label>Channel Name *</label>
-            <input type="text" id="channelName" placeholder="Enter channel name">
-        </div>
-
-        <div class="form-group">
-            <label>Channel Info</label>
-            <textarea id="channelInfo" rows="2" placeholder="Channel description..."></textarea>
-        </div>
-
-        <div class="form-group">
-            <label>Admin Name</label>
-            <input type="text" id="adminName" placeholder="Channel owner name">
-        </div>
-
-        <div class="form-group">
-            <label>Poster Image</label>
-            <div class="image-upload-area" onclick="document.getElementById('posterInput').click()">
-                <i class="fas fa-cloud-upload-alt"></i> Click to upload poster
-                <input type="file" id="posterInput" accept="image/*" style="display:none">
+            
+            <div class="form-group">
+                <label>Channel Title *</label>
+                <input type="text" id="channelName" placeholder="e.g. Star Movies HD">
             </div>
-            <img id="posterPreview" class="image-preview">
-            <button type="button" class="btn btn-secondary" style="margin-top:6px; padding:5px 12px; font-size:11px;" onclick="cropImage('poster')">✂️ Crop</button>
-        </div>
-
-        <div class="form-group">
-            <label>Admin Image</label>
-            <div class="image-upload-area" onclick="document.getElementById('adminImageInput').click()">
-                <i class="fas fa-cloud-upload-alt"></i> Click to upload admin photo
-                <input type="file" id="adminImageInput" accept="image/*" style="display:none">
+            
+            <div class="form-group">
+                <label>Category Slot</label>
+                <select id="categorySelect"></select>
             </div>
-            <img id="adminImagePreview" class="image-preview">
-            <button type="button" class="btn btn-secondary" style="margin-top:6px; padding:5px 12px; font-size:11px;" onclick="cropImage('admin')">✂️ Crop</button>
-        </div>
 
-        <div class="form-group">
-            <label>Category</label>
-            <select id="categorySelect">
-                <option value="">Select Category</option>
-            </select>
-        </div>
+            <div class="form-group full-width">
+                <label>Brief Meta Info</label>
+                <textarea id="channelInfo" rows="2" placeholder="Brief explanation or quality logs..."></textarea>
+            </div>
+            
+            <div class="form-group">
+                <label>Admin Name</label>
+                <input type="text" id="adminName" placeholder="Station Head Name">
+            </div>
 
-        <div class="form-group">
-            <label>Video URL / Stream Link</label>
-            <input type="text" id="videoUrl" placeholder="https://... or .m3u8 or .ts">
-        </div>
+            <div class="form-group">
+                <label>Stream Gateway Link</label>
+                <input type="text" id="videoUrl" placeholder="https://live-protocol-url">
+            </div>
 
-        <div class="form-group">
-            <label>Social Media Link</label>
-            <input type="url" id="socialLink" placeholder="Instagram, YouTube, etc.">
-        </div>
+            <div class="form-group full-width">
+                <label>External Social Reference</label>
+                <input type="url" id="socialLink" placeholder="Web link or community room">
+            </div>
 
-        <div id="qrCodeContainer" style="text-align:center; margin:10px 0; display:none;"></div>
+            <div class="form-group">
+                <label>Display Poster Cover</label>
+                <div class="image-upload-area" onclick="document.getElementById('posterInput').click()">
+                    <i class="fas fa-image" style="margin-bottom:2px; display:block;"></i> Attach Image
+                    <input type="file" id="posterInput" accept="image/*" style="display:none">
+                </div>
+                <img id="posterPreview" class="image-preview">
+            </div>
+
+            <div class="form-group">
+                <label>Admin Avatar Photo</label>
+                <div class="image-upload-area" onclick="document.getElementById('adminImageInput').click()">
+                    <i class="fas fa-user-alt" style="margin-bottom:2px; display:block;"></i> Attach Photo
+                    <input type="file" id="adminImageInput" accept="image/*" style="display:none">
+                </div>
+                <img id="adminImagePreview" class="image-preview">
+            </div>
+        </div>
 
         <div class="form-buttons">
-            <button class="btn btn-primary" onclick="saveChannel()"><i class="fas fa-save"></i> Save</button>
+            <button class="btn btn-primary" onclick="saveChannel()"><i class="fas fa-save"></i> Save Changes</button>
             <button class="btn btn-secondary" onclick="closeModal('channelModal')">Cancel</button>
         </div>
     </div>
 </div>
 
-<!-- Crop Modal -->
-<div id="cropModal" class="modal">
-    <div class="modal-content" style="max-width:600px;">
-        <h3 style="color:var(--main-color); margin-bottom:18px;">Crop Image</h3>
-        <div style="max-height:400px; overflow:hidden;">
-            <img id="cropImage" style="max-width:100%;">
+<div id="loadingOverlay">
+    <div class="overlay-progress-box">
+        <div class="loading-spinner"></div>
+        <div class="progress-text" id="opProgressText">Connecting...</div>
+        
+        <div class="progress-bar-container">
+            <div class="progress-bar-fill" id="opProgressFill"></div>
         </div>
-        <div class="form-buttons" style="margin-top:18px;">
-            <button class="btn btn-primary" onclick="saveCroppedImage()">Apply Crop</button>
-            <button class="btn btn-secondary" onclick="closeModal('cropModal')">Cancel</button>
+        
+        <div class="progress-step">
+            <span id="step1">Validate</span>
+            <span id="step2">Process</span>
+            <span id="step3">Upload</span>
+            <span id="step4">Save</span>
         </div>
     </div>
 </div>
 
 <script>
-    // ========== CONFIGURATION ==========
-    const STORAGE_CHANNELS        = 'nikamma_sheet_channels';
-    const STORAGE_CATEGORIES      = 'nikamma_sheet_categories';
-    const STORAGE_APPS_SCRIPT_URL = 'nikamma_apps_script_url';
-    const STORAGE_APP_SETTINGS    = 'nikamma_app_settings';
-    const STORAGE_LAST_SYNC       = 'nikamma_last_sync';
-    const STORAGE_FOLDER_ID       = 'nikamma_folder_id';
-
-    // ========== GLOBAL VARIABLES ==========
     let channels = [];
     let categories = [];
     let currentCategory = 'all';
     let editMode = false;
     let editId = null;
-    let currentCropType = null;
-    let cropper = null;
-    let appsScriptUrl = '';
+    let appsScriptUrl = localStorage.getItem('appsScriptUrl') || '';
+    let driveFolderId = localStorage.getItem('driveFolderId') || '';
+    let pendingPosterBase64 = null;
+    let pendingAdminBase64 = null;
 
-    // ========== PROGRESS BAR ==========
-    let _progressTimer = null;
-    function showProgress(label = 'Loading...', pct = 30) {
-        const bar = document.getElementById('progressBar');
-        const lbl = document.getElementById('progressLabel');
-        bar.classList.add('active');
-        lbl.classList.add('active');
-        lbl.textContent = label;
-        bar.style.width = pct + '%';
-        clearTimeout(_progressTimer);
-    }
-    function updateProgress(label, pct) {
-        document.getElementById('progressLabel').textContent = label;
-        document.getElementById('progressBar').style.width = pct + '%';
-    }
-    function hideProgress() {
-        const bar = document.getElementById('progressBar');
-        const lbl = document.getElementById('progressLabel');
-        bar.style.width = '100%';
-        _progressTimer = setTimeout(() => {
-            bar.classList.remove('active');
-            lbl.classList.remove('active');
-            bar.style.width = '0%';
-        }, 400);
+    function showToast(msg) {
+        const t = document.createElement('div');
+        t.className = 'toast';
+        t.innerText = msg;
+        document.body.appendChild(t);
+        setTimeout(() => t.remove(), 2500);
     }
 
-    // ========== IMAGE COMPRESSION ==========
-    async function compressImage(file, maxSizeMB = 0.3, maxWidthOrHeight = 800) {
-        const options = { maxSizeMB, maxWidthOrHeight, useWebWorker: true, fileType: 'image/jpeg' };
-        try {
-            const compressedFile = await imageCompression(file, options);
-            return new Promise(resolve => {
-                const reader = new FileReader();
-                reader.onloadend = () => resolve(reader.result);
-                reader.readAsDataURL(compressedFile);
-            });
-        } catch {
-            return new Promise(resolve => {
-                const reader = new FileReader();
-                reader.onloadend = () => resolve(reader.result);
-                reader.readAsDataURL(file);
-            });
-        }
-    }
-
-    // ========== CALL APPS SCRIPT (no-cors, fire & forget) ==========
-    async function callAppsScript(action, data = {}) {
-        appsScriptUrl = appsScriptUrl || localStorage.getItem(STORAGE_APPS_SCRIPT_URL);
-        if (!appsScriptUrl) {
-            showToast('Apps Script URL missing — go to Settings!', '#f44336');
-            return null;
-        }
-        try {
-            await fetch(appsScriptUrl, {
-                method: 'POST',
-                mode: 'no-cors',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ action, ...data })
-            });
-            return { success: true };
-        } catch (err) {
-            console.error('API error:', err);
-            return { success: false, error: err.message };
-        }
-    }
-
-    // CORS fetch (for reading response — folder ID save etc.)
-    async function callAppsScriptCors(action, data = {}) {
-        const url = appsScriptUrl || localStorage.getItem(STORAGE_APPS_SCRIPT_URL);
-        if (!url) return null;
-        try {
-            const res = await fetch(url, {
-                method: 'POST',
-                headers: { 'Content-Type': 'text/plain' },
-                body: JSON.stringify({ action, ...data })
-            });
-            return await res.json();
-        } catch { return null; }
-    }
-
-    // ========== SYNC WITH SHEET ==========
-    async function syncWithSheet() {
-        showProgress('Syncing channels...', 10);
-        try {
-            const total = channels.length;
-            for (let i = 0; i < total; i++) {
-                const ch = channels[i];
-                updateProgress(`Syncing ${i+1}/${total}: ${ch.channelName || ''}`, 10 + Math.round((i / total) * 75));
-                await callAppsScript('save', {
-                    id: ch.id, uniqueId: ch.uniqueId || ch.id,
-                    channelName: ch.channelName, channelInfo: ch.channelInfo,
-                    adminName: ch.adminName, adminImage: ch.adminImage,
-                    posterImage: ch.posterImage, category: ch.category,
-                    videoUrl: ch.videoUrl, socialLink: ch.socialLink,
-                    likes: ch.likes || 0, shares: ch.shares || 0,
-                    createdAt: ch.createdAt
-                });
-            }
-            updateProgress('Syncing categories...', 88);
-            await callAppsScript('saveCategories', { categories });
-            localStorage.setItem(STORAGE_LAST_SYNC, new Date().toISOString());
-            updateProgress('Done!', 100);
-            showToast('Synced with Google Sheet!', '#4caf50');
-            updateSyncStatus();
-        } catch (err) {
-            showToast('Sync failed: ' + err.message, '#f44336');
-        } finally {
-            hideProgress();
-        }
-    }
-
-    // ========== TEST CONNECTION ==========
-    async function testConnection() {
-        const url = document.getElementById('appsScriptUrl').value.trim();
-        if (!url) { showToast('Please enter Apps Script URL', '#f44336'); return; }
-        localStorage.setItem(STORAGE_APPS_SCRIPT_URL, url);
-        appsScriptUrl = url;
-        const statusDiv = document.getElementById('connectionStatus');
-        statusDiv.innerHTML = '<span style="color:#ff9800;"><i class="fas fa-spinner fa-spin"></i> Testing...</span>';
-        showProgress('Testing connection...', 40);
-        try {
-            if (url.includes('script.google.com')) {
-                statusDiv.innerHTML = '<span class="status-badge status-connected"><i class="fas fa-check-circle"></i> Connected!</span>';
-                showToast('Connection OK!', '#4caf50');
-            } else {
-                statusDiv.innerHTML = '<span class="status-badge status-disconnected"><i class="fas fa-times-circle"></i> Invalid URL</span>';
-            }
-        } catch(e) {
-            statusDiv.innerHTML = '<span class="status-badge status-disconnected"><i class="fas fa-times-circle"></i> Failed</span>';
-        } finally {
-            hideProgress();
-        }
-    }
-
-    // ========== SAVE FOLDER ID ==========
-    async function saveFolderIdSetting() {
-        const folderId = document.getElementById('driveFolderId').value.trim();
-        const statusDiv = document.getElementById('folderIdStatus');
-        if (!folderId) { statusDiv.innerHTML = '<span style="color:#f44336;">Please enter a Folder ID</span>'; return; }
-        localStorage.setItem(STORAGE_FOLDER_ID, folderId);
-        statusDiv.innerHTML = '<span style="color:#ff9800;"><i class="fas fa-spinner fa-spin"></i> Saving...</span>';
-        showProgress('Saving Folder ID...', 50);
-        const result = await callAppsScriptCors('saveFolderId', { folderId });
-        hideProgress();
-        if (result && result.success) {
-            statusDiv.innerHTML = '<span style="color:#4caf50;"><i class="fas fa-check-circle"></i> Saved to Sheet!</span>';
-            showToast('Folder ID Saved!', '#4caf50');
-        } else {
-            statusDiv.innerHTML = '<span style="color:#4caf50;"><i class="fas fa-check-circle"></i> Saved locally!</span>';
-            showToast('Folder ID Saved Locally', '#ff9800');
-        }
-    }
-
-    // ========== SAVE CHANNEL ==========
-    async function saveChannel() {
-        // UniqueID = Column A (first column in sheet)
-        const uniqueId = document.getElementById('channelId').value;
-        if (!uniqueId) { showToast('Please generate Unique ID first!', '#f44336'); return; }
-        const channelName = document.getElementById('channelName').value.trim();
-        if (!channelName) { showToast('Channel Name is required!', '#f44336'); return; }
-
-        const posterPreview = document.getElementById('posterPreview');
-        const adminPreview  = document.getElementById('adminImagePreview');
-        const posterSrc = posterPreview.classList.contains('active') ? posterPreview.src : '';
-        const adminSrc  = adminPreview.classList.contains('active')  ? adminPreview.src  : '';
-        const isPosterB64 = posterSrc.startsWith('data:image');
-        const isAdminB64  = adminSrc.startsWith('data:image');
-
-        // id & uniqueId are THE SAME VALUE — both = the 20-digit ID (Col A in sheet)
-        const finalId = editMode ? editId : uniqueId;
-
-        const sheetPayload = {
-            id: finalId,
-            uniqueId: finalId,             // ← Column A (UniqueID) in sheet
-            channelName,
-            channelInfo:  document.getElementById('channelInfo').value,
-            adminName:    document.getElementById('adminName').value,
-            adminImage:   isAdminB64  ? '' : adminSrc,
-            posterImage:  isPosterB64 ? '' : posterSrc,
-            adminImageBase64:  isAdminB64  ? adminSrc  : '',
-            posterImageBase64: isPosterB64 ? posterSrc : '',
-            category:   document.getElementById('categorySelect').value,
-            videoUrl:   document.getElementById('videoUrl').value,
-            socialLink: document.getElementById('socialLink').value,
-            likes:    editMode ? (channels.find(c => c.id === editId)?.likes  || 0) : 0,
-            shares:   editMode ? (channels.find(c => c.id === editId)?.shares || 0) : 0,
-            createdAt: editMode ? (channels.find(c => c.id === editId)?.createdAt || new Date().toISOString()) : new Date().toISOString()
-        };
-
-        // Local copy keeps preview image (base64 or url)
-        const localData = { ...sheetPayload, adminImage: adminSrc, posterImage: posterSrc };
-        delete localData.adminImageBase64;
-        delete localData.posterImageBase64;
-
-        if (editMode) {
-            const idx = channels.findIndex(c => c.id === editId);
-            if (idx !== -1) channels[idx] = localData;
-        } else {
-            channels.unshift(localData);
-        }
-        localStorage.setItem(STORAGE_CHANNELS, JSON.stringify(channels));
-        renderChannels();
-        updateMenuBadge();
-        closeModal('channelModal');
-        resetForm();
-        updateSyncStatus();
-
-        // Async upload to sheet with progress
-        showProgress(isPosterB64 || isAdminB64 ? 'Uploading images to Drive...' : 'Saving to Sheet...', 20);
-        updateProgress('Sending to Google Sheet...', 50);
-        await callAppsScript('save', sheetPayload);
-        updateProgress('Done!', 100);
-        hideProgress();
-        showToast(editMode ? 'Channel Updated!' : 'Channel Saved!', '#4caf50');
-    }
-
-    // ========== DELETE CHANNEL ==========
-    async function deleteChannel(id) {
-        if (!confirm('Delete this channel?')) return;
-        showProgress('Deleting channel...', 40);
-        channels = channels.filter(c => c.id !== id);
-        localStorage.setItem(STORAGE_CHANNELS, JSON.stringify(channels));
-        renderChannels();
-        updateMenuBadge();
-        updateSyncStatus();
-        await callAppsScript('delete', { id });
-        hideProgress();
-        showToast('Channel Deleted!', '#e53935');
-    }
-
-    // ========== LIKE / SHARE ==========
-    async function updateLike(id, increment) {
-        const ch = channels.find(c => c.id === id);
-        if (!ch) return;
-        ch.likes = (ch.likes || 0) + increment;
-        localStorage.setItem(STORAGE_CHANNELS, JSON.stringify(channels));
-        renderChannels();
-        showProgress('Updating likes...', 60);
-        await callAppsScript('updateStats', { id, field: 'likes', increment });
-        hideProgress();
-    }
-    async function updateShare(id) {
-        const ch = channels.find(c => c.id === id);
-        if (!ch) return;
-        ch.shares = (ch.shares || 0) + 1;
-        localStorage.setItem(STORAGE_CHANNELS, JSON.stringify(channels));
-        renderChannels();
-        showToast('Shared! +1', '#4caf50');
-        showProgress('Updating shares...', 60);
-        await callAppsScript('updateStats', { id, field: 'shares', increment: 1 });
-        hideProgress();
-    }
-
-    // ========== CATEGORIES ==========
-    async function addCategory() {
-        const newCat = document.getElementById('newCategoryName').value.trim();
-        if (!newCat || categories.includes(newCat)) return;
-        showProgress('Adding category...', 50);
-        categories.push(newCat);
-        localStorage.setItem(STORAGE_CATEGORIES, JSON.stringify(categories));
-        await callAppsScript('saveCategories', { categories });
-        renderCategories(); renderCategoriesList(); populateCategorySelect();
-        document.getElementById('newCategoryName').value = '';
-        hideProgress();
-        showToast('Category Added!', '#4caf50');
-    }
-    async function renameCategory(oldName) {
-        const newName = prompt('New category name:', oldName);
-        if (!newName || newName === oldName || categories.includes(newName)) return;
-        showProgress('Renaming...', 50);
-        const idx = categories.indexOf(oldName);
-        if (idx !== -1) {
-            categories[idx] = newName;
-            localStorage.setItem(STORAGE_CATEGORIES, JSON.stringify(categories));
-            channels.forEach(ch => { if (ch.category === oldName) ch.category = newName; });
-            localStorage.setItem(STORAGE_CHANNELS, JSON.stringify(channels));
-            if (currentCategory === oldName) currentCategory = newName;
-            await callAppsScript('saveCategories', { categories });
-            renderCategories(); renderCategoriesList(); populateCategorySelect(); renderChannels();
-        }
-        hideProgress();
-        showToast('Category Renamed!', '#4caf50');
-    }
-    async function deleteCategory(catName) {
-        if (catName === 'Entertainment') { showToast('Cannot delete default!', '#f44336'); return; }
-        if (!confirm(`Delete "${catName}"?`)) return;
-        showProgress('Deleting category...', 50);
-        categories = categories.filter(c => c !== catName);
-        localStorage.setItem(STORAGE_CATEGORIES, JSON.stringify(categories));
-        channels.forEach(ch => { if (ch.category === catName) ch.category = ''; });
-        localStorage.setItem(STORAGE_CHANNELS, JSON.stringify(channels));
-        if (currentCategory === catName) currentCategory = 'all';
-        await callAppsScript('saveCategories', { categories });
-        renderCategories(); renderCategoriesList(); populateCategorySelect(); renderChannels();
-        hideProgress();
-        showToast('Category Deleted!', '#e53935');
-    }
-
-    // ========== RENDER ==========
-    function renderCategories() {
-        const container = document.getElementById('categoryTabs');
-        if (!container) return;
-        let html = `<div class="category-tab ${currentCategory==='all'?'active':''}" data-category="all">All Channels</div>`;
-        categories.forEach(cat => {
-            html += `<div class="category-tab ${currentCategory===cat?'active':''}" data-category="${escapeHtml(cat)}">${escapeHtml(cat)}</div>`;
-        });
-        container.innerHTML = html;
-        container.querySelectorAll('.category-tab').forEach(tab => {
-            tab.addEventListener('click', () => {
-                currentCategory = tab.dataset.category;
-                renderCategories(); renderChannels();
-            });
-        });
-    }
-
-    function renderCategoriesList() {
-        const container = document.getElementById('categoriesList');
-        if (!container) return;
-        container.innerHTML = categories.map(cat => `
-            <div style="display:flex;justify-content:space-between;align-items:center;padding:11px;border-bottom:1px solid #252525;">
-                <span style="font-size:0.88rem;"><i class="fas fa-tag" style="color:var(--main-color);margin-right:8px;"></i>${escapeHtml(cat)}</span>
-                <div style="display:flex;gap:6px;">
-                    <button class="btn btn-secondary" style="padding:5px 11px;font-size:11px;" onclick="renameCategory('${escapeHtml(cat)}')">Rename</button>
-                    <button class="btn btn-danger" style="padding:5px 11px;font-size:11px;" onclick="deleteCategory('${escapeHtml(cat)}')">Delete</button>
-                </div>
-            </div>`).join('');
-    }
-
-    function populateCategorySelect() {
-        const sel = document.getElementById('categorySelect');
-        if (!sel) return;
-        sel.innerHTML = '<option value="">Select Category</option>';
-        categories.forEach(cat => sel.innerHTML += `<option value="${escapeHtml(cat)}">${escapeHtml(cat)}</option>`);
-    }
-
-    function renderChannels() {
-        const filtered = currentCategory === 'all' ? channels : channels.filter(c => c.category === currentCategory);
-        const container = document.getElementById('channelsRow');
-        if (!container) return;
-        if (!filtered.length) {
-            container.innerHTML = `<div class="empty-state" style="width:100%;">
-                <i class="fas fa-tv" style="font-size:44px;color:#333;display:block;margin-bottom:12px;"></i>
-                <p style="color:#555;">No channels yet. Click <strong>Add Channel</strong> to start!</p></div>`;
-            return;
-        }
-        container.innerHTML = filtered.map(ch => `
-            <div class="h-scroll-card">
-                <div class="card-actions">
-                    <button class="card-action-btn edit-btn" onclick="event.stopPropagation();editChannel('${ch.id}')"><i class="fas fa-edit"></i></button>
-                    <button class="card-action-btn delete-btn" onclick="event.stopPropagation();deleteChannel('${ch.id}')"><i class="fas fa-trash"></i></button>
-                </div>
-                <div onclick="playVideo('${escapeHtml(ch.videoUrl||'#')}','${escapeHtml(ch.channelName)}')">
-                    <img src="${ch.posterImage || 'https://via.placeholder.com/300x200?text=No+Image'}" loading="lazy" onload="this.classList.add('img-loaded')" class="img-loading">
-                    <div class="card-title">
-                        <strong>${escapeHtml(ch.channelName)}</strong>
-                        <div style="font-size:9px;color:#777;margin-top:2px;">👑 ${escapeHtml(ch.adminName||'')}  </div>
-                        <div style="display:flex;justify-content:center;gap:10px;margin-top:4px;">
-                            <span style="color:#e53935;cursor:pointer;" onclick="event.stopPropagation();updateLike('${ch.id}',1)"><i class="fas fa-heart"></i> ${ch.likes||0}</span>
-                            <span style="color:#4caf50;cursor:pointer;" onclick="event.stopPropagation();updateShare('${ch.id}')"><i class="fas fa-share"></i> ${ch.shares||0}</span>
-                        </div>
-                    </div>
-                </div>
-            </div>`).join('');
-    }
-
-    function updateMenuBadge() {
-        const badge = document.getElementById('menuChannelCount');
-        if (badge) badge.textContent = channels.length;
-    }
-
-    function updateSyncStatus() {
-        document.getElementById('localCount').innerText = channels.length;
-        const last = localStorage.getItem(STORAGE_LAST_SYNC);
-        document.getElementById('lastSynced').innerText = last ? new Date(last).toLocaleString() : 'Never';
-        updateMenuBadge();
-    }
-
-    // ========== HELPERS ==========
-    function generateUniqueId() {
-        let id = '';
-        for (let i = 0; i < 20; i++) id += Math.floor(Math.random() * 10);
-        return id;
-    }
-    function generateAndDisplayId() {
-        const id = generateUniqueId();
-        document.getElementById('channelId').value = id;
-        document.getElementById('uniqueIdDisplay').innerText = id;
-        const qr = document.getElementById('qrCodeContainer');
-        qr.style.display = 'block'; qr.innerHTML = '';
-        new QRCode(qr, { text: id, width: 100, height: 100 });
-        return id;
-    }
-    async function handleImageUpload(input, previewId) {
-        if (!input.files || !input.files[0]) return;
-        showProgress('Compressing image...', 40);
-        const compressed = await compressImage(input.files[0], 0.3, 800);
-        const preview = document.getElementById(previewId);
-        preview.src = compressed;
-        preview.classList.add('active');
-        hideProgress();
-    }
-    function cropImage(type) {
-        currentCropType = type;
-        const src = type === 'poster' ? document.getElementById('posterPreview').src : document.getElementById('adminImagePreview').src;
-        if (!src || !src.includes('data:image')) { showToast('Upload an image first!', '#f44336'); return; }
-        document.getElementById('cropImage').src = src;
-        document.getElementById('cropModal').style.display = 'flex';
-        setTimeout(() => {
-            if (cropper) cropper.destroy();
-            cropper = new Cropper(document.getElementById('cropImage'), {
-                aspectRatio: type === 'poster' ? 16/9 : 1/1,
-                viewMode: 1, autoCropArea: 0.8
-            });
-        }, 100);
-    }
-    function saveCroppedImage() {
-        if (!cropper) return;
-        const cropped = cropper.getCroppedCanvas().toDataURL('image/jpeg', 0.9);
-        if (currentCropType === 'poster') {
-            document.getElementById('posterPreview').src = cropped;
-            document.getElementById('posterPreview').classList.add('active');
-        } else {
-            document.getElementById('adminImagePreview').src = cropped;
-            document.getElementById('adminImagePreview').classList.add('active');
-        }
-        closeModal('cropModal');
-        showToast('Image cropped!', '#4caf50');
-    }
-    function editChannel(id) {
-        const ch = channels.find(c => c.id === id);
-        if (!ch) return;
-        editMode = true; editId = id;
-        document.getElementById('modalTitle').innerText = 'Edit Channel';
-        document.getElementById('channelId').value = ch.uniqueId || ch.id;
-        document.getElementById('uniqueIdDisplay').innerText = ch.uniqueId || ch.id;
-        document.getElementById('channelName').value = ch.channelName;
-        document.getElementById('channelInfo').value = ch.channelInfo || '';
-        document.getElementById('adminName').value = ch.adminName || '';
-        document.getElementById('categorySelect').value = ch.category || '';
-        document.getElementById('videoUrl').value = ch.videoUrl || '';
-        document.getElementById('socialLink').value = ch.socialLink || '';
-        if (ch.posterImage) { const p = document.getElementById('posterPreview'); p.src = ch.posterImage; p.classList.add('active'); }
-        if (ch.adminImage)  { const a = document.getElementById('adminImagePreview'); a.src = ch.adminImage; a.classList.add('active'); }
-        document.getElementById('channelModal').style.display = 'flex';
-    }
-    function resetForm() {
-        editMode = false; editId = null;
-        document.getElementById('modalTitle').innerText = 'Add New Channel';
-        ['channelId','channelName','channelInfo','adminName','videoUrl','socialLink'].forEach(id => {
-            document.getElementById(id).value = '';
-        });
-        document.getElementById('uniqueIdDisplay').innerText = 'Click to generate';
-        document.getElementById('categorySelect').value = '';
-        document.getElementById('posterPreview').classList.remove('active');
-        document.getElementById('adminImagePreview').classList.remove('active');
-        document.getElementById('qrCodeContainer').style.display = 'none';
-    }
-    function playVideo(url, title) {
-        if (!url || url === '#') { showToast('No video link!', '#f44336'); return; }
-        showToast('▶ Playing: ' + title, '#00bcd4');
-        window.open(url, '_blank');
-    }
-    function showPage(page) {
-        ['channels','settings','categories','sync'].forEach(p => {
-            document.getElementById(p + 'Page').style.display = 'none';
-        });
-        document.getElementById(page + 'Page').style.display = 'block';
-        document.querySelectorAll('.menu-item').forEach(item => {
-            item.classList.toggle('active', item.dataset.page === page);
-        });
-        if (page === 'categories') renderCategoriesList();
-        if (page === 'sync') updateSyncStatus();
-        if (window.innerWidth < 900) toggleSideMenu();
-    }
     function toggleSideMenu() {
         document.getElementById('sideMenu').classList.toggle('open');
         document.getElementById('menuOverlay').classList.toggle('active');
     }
-    function closeModal(id) {
-        document.getElementById(id).style.display = 'none';
-        if (cropper) { cropper.destroy(); cropper = null; }
-        if (id === 'channelModal') resetForm();
+
+    function showPage(p) {
+        document.getElementById('channelsPage').style.display = p === 'channels' ? 'block' : 'none';
+        document.getElementById('settingsPage').style.display = p === 'settings' ? 'block' : 'none';
+        document.getElementById('categoriesPage').style.display = p === 'categories' ? 'block' : 'none';
+        document.querySelectorAll('.menu-item').forEach(m => m.classList.remove('active'));
+        const targetItem = document.querySelector(`.menu-item[data-page="${p}"]`);
+        if(targetItem) targetItem.classList.add('active');
+        if(window.innerWidth < 768) toggleSideMenu();
     }
-    function showToast(msg, color = '#00bcd4') {
-        const t = document.createElement('div');
-        t.className = 'toast'; t.style.background = color;
-        t.innerHTML = msg; document.body.appendChild(t);
-        setTimeout(() => t.remove(), 2300);
+
+    function saveSettings() {
+        appsScriptUrl = document.getElementById('appsScriptUrl').value.trim();
+        driveFolderId = document.getElementById('driveFolderId').value.trim();
+        localStorage.setItem('appsScriptUrl', appsScriptUrl);
+        localStorage.setItem('driveFolderId', driveFolderId);
+        showToast('Settings compiled locally!');
+        if(appsScriptUrl) syncWithSheet();
     }
-    function escapeHtml(str) {
-        if (!str) return '';
-        return String(str).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'"":'&#39;'})[m]);
+
+    function generateUniqueId() {
+        return 'NK' + Date.now().toString().slice(-8) + Math.floor(Math.random() * 100);
     }
-    function saveAppSettings() {
-        const appName    = document.getElementById('appName').value;
-        const themeColor = document.getElementById('themeColor').value;
-        localStorage.setItem(STORAGE_APP_SETTINGS, JSON.stringify({ appName, themeColor }));
-        document.getElementById('headerAppName').innerHTML  = `<i class="fas fa-tv"></i> ${appName}`;
-        document.getElementById('sideMenuAppName').textContent = appName;
-        document.documentElement.style.setProperty('--main-color', themeColor);
-        showToast('Settings Saved!', '#4caf50');
-    }
-    function changeTheme(color) {
-        document.documentElement.style.setProperty('--main-color', color);
-    }
-    function loadAppSettings() {
-        const raw = localStorage.getItem(STORAGE_APP_SETTINGS);
-        if (raw) {
-            const s = JSON.parse(raw);
-            document.getElementById('appName').value = s.appName || 'Nikamma 4k Pro';
-            document.getElementById('themeColor').value = s.themeColor || '#00bcd4';
-            document.getElementById('headerAppName').innerHTML  = `<i class="fas fa-tv"></i> ${s.appName || 'Nikamma 4k Pro'}`;
-            document.getElementById('sideMenuAppName').textContent = s.appName || 'Nikamma 4k Pro';
-            document.documentElement.style.setProperty('--main-color', s.themeColor || '#00bcd4');
+
+    function getCategoryCount(catName) {
+        if(catName === 'all') {
+            return channels.length;
         }
-        const savedUrl = localStorage.getItem(STORAGE_APPS_SCRIPT_URL);
-        if (savedUrl) { document.getElementById('appsScriptUrl').value = savedUrl; appsScriptUrl = savedUrl; }
-        const savedFolder = localStorage.getItem(STORAGE_FOLDER_ID);
-        if (savedFolder) document.getElementById('driveFolderId').value = savedFolder;
-    }
-    function loadLocalData() {
-        const raw = localStorage.getItem(STORAGE_CHANNELS);
-        channels   = raw ? JSON.parse(raw) : [];
-        const rawC = localStorage.getItem(STORAGE_CATEGORIES);
-        categories = rawC ? JSON.parse(rawC) : ['Entertainment','Sports','News','Music','Movies','Kids','Education'];
-        renderCategories(); renderChannels(); populateCategorySelect(); updateSyncStatus();
+        return channels.filter(c => c.category === catName).length;
     }
 
-    // ========== INIT ==========
-    document.getElementById('addChannelBtn').onclick = () => { resetForm(); document.getElementById('channelModal').style.display = 'flex'; };
-    document.getElementById('uniqueIdBox').onclick = generateAndDisplayId;
-    document.getElementById('posterInput').onchange   = e => handleImageUpload(e.target, 'posterPreview');
-    document.getElementById('adminImageInput').onchange = e => handleImageUpload(e.target, 'adminImagePreview');
-    window.onclick = e => { if (e.target.classList.contains('modal')) closeModal(e.target.id); };
+    function renderCategories() {
+        const tabsBox = document.getElementById('categoryTabs');
+        const allCount = getCategoryCount('all');
+        tabsBox.innerHTML = `<div class="category-tab ${currentCategory === 'all' ? 'active' : ''}" onclick="filterCategory('all')">✨ All <span class="category-count">${allCount}</span></div>`;
+        
+        categories.forEach(cat => {
+            const count = getCategoryCount(cat);
+            tabsBox.innerHTML += `<div class="category-tab ${currentCategory === cat ? 'active' : ''}" onclick="filterCategory('${cat}')">📁 ${cat} <span class="category-count">${count}</span></div>`;
+        });
 
-    loadAppSettings();
-    loadLocalData();
+        const list = document.getElementById('categoriesList');
+        list.innerHTML = '';
+        categories.forEach((cat, index) => {
+            list.innerHTML += `<div>
+                <span><i class="fas fa-folder" style="color:var(--main-color); margin-right:6px;"></i>${cat}</span>
+                <button class="btn" style="background:#f44336; padding:4px 10px; font-size:11px; color:white; border-radius:6px;" onclick="deleteCategory(${index})">Remove</button>
+            </div>`;
+        });
+
+        populateCategorySelect();
+    }
+
+    function populateCategorySelect() {
+        const select = document.getElementById('categorySelect');
+        select.innerHTML = '<option value="">Select Category</option>';
+        categories.forEach(cat => {
+            select.innerHTML += `<option value="${cat}">${cat}</option>`;
+        });
+    }
+
+    function filterCategory(cat) {
+        currentCategory = cat;
+        renderChannels();
+        renderCategories();
+    }
+
+    function renderChannels() {
+        const row = document.getElementById('channelsRow');
+        row.innerHTML = '';
+        const filtered = currentCategory === 'all' ? channels : channels.filter(c => c.category === currentCategory);
+        
+        if(filtered.length === 0) {
+            row.innerHTML = '<div style="grid-column:1/-1; text-align:center; padding:25px; color:#444; font-size:0.8rem;">No channels added inside this category tab.</div>';
+            return;
+        }
+
+        filtered.forEach(c => {
+            const dateStr = c.createdAt ? new Date(c.createdAt).toLocaleDateString(undefined, {month:'short', day:'numeric'}) : 'New';
+            
+            // Dynamic count from Sheet (fallbacks to 0 if null/undefined)
+            const liveLikes = c.likes || 0;
+            const liveShares = c.shares || 0;
+
+            row.innerHTML += `
+                <div class="h-scroll-card">
+                    <div class="card-actions">
+                        <button class="card-action-btn edit-btn" onclick="editChannel('${c.uniqueId}')"><i class="fas fa-pen"></i></button>
+                        <button class="card-action-btn delete-btn" onclick="removeChannel('${c.uniqueId}')"><i class="fas fa-trash-alt"></i></button>
+                    </div>
+                    
+                    <div class="card-img-wrap" onclick="window.open('${c.videoUrl || '#'}','_blank')">
+                        <img src="${c.posterImage || 'https://via.placeholder.com/400x250?text=No+Cover'}" onerror="this.src='https://via.placeholder.com/400x250?text=Offline'">
+                        <span class="card-category-badge">${c.category || 'General'}</span>
+                    </div>
+                    
+                    <div class="card-body">
+                        <div class="card-title">${c.channelName}</div>
+                        <div class="card-description">${c.channelInfo || 'No descriptive summary logs cataloged.'}</div>
+                        
+                        <div class="admin-profile-inline">
+                            <img class="admin-avatar" src="${c.adminImage || 'https://via.placeholder.com/100?text=A'}" onerror="this.src='https://via.placeholder.com/100?text=U'">
+                            <div class="admin-name-text">${c.adminName || 'System Root'}</div>
+                            <div class="admin-date-text">${dateStr}</div>
+                        </div>
+                        
+                        <div class="card-action-bar">
+                            <button class="card-btn like-btn" onclick="updateLike('${c.uniqueId}', 1)">
+                                <i class="fas fa-heart"></i> <span>${liveLikes}</span>
+                            </button>
+                            <button class="card-btn share-btn" onclick="updateShare('${c.uniqueId}')">
+                                <i class="fas fa-share-alt"></i> <span>${liveShares}</span>
+                            </button>
+                            <button class="card-btn play-btn" onclick="window.open('${c.videoUrl || '#'}','_blank')">
+                                <i class="fas fa-play"></i> LAUNCH
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+        });
+    }
+
+    async function syncWithSheet() {
+        if(!appsScriptUrl) { showToast('Setup Apps Script URL first.'); return; }
+        document.getElementById('opProgressText').innerText = "Syncing Mainframe...";
+        document.getElementById('opProgressFill').style.width = '100%';
+        document.getElementById('loadingOverlay').classList.add('active');
+        
+        try {
+            const resp = await fetch(`${appsScriptUrl}?action=getAll`);
+            const data = await resp.json();
+            if(data.success) {
+                channels = data.channels || [];
+                categories = data.categories || [];
+                renderCategories();
+                renderChannels();
+                showToast('Mainframe synced successfully!');
+            }
+        } catch(e) {
+            showToast('Handshake rejected or network drop.');
+        }
+        document.getElementById('loadingOverlay').classList.remove('active');
+    }
+
+    async function addCategory() {
+        const name = document.getElementById('newCategoryName').value.trim();
+        if(!name) return;
+        if(categories.includes(name)){ showToast('Already cataloged.'); return; }
+        categories.push(name);
+        document.getElementById('newCategoryName').value = '';
+        renderCategories();
+        await updateCategoriesOnCloud();
+    }
+
+    async function deleteCategory(index) {
+        if(!confirm('Purge this category node slot?')) return;
+        categories.splice(index, 1);
+        renderCategories();
+        await updateCategoriesOnCloud();
+    }
+
+    async function updateCategoriesOnCloud() {
+        if(!appsScriptUrl) return;
+        await fetch(appsScriptUrl, {
+            method: 'POST',
+            mode: 'no-cors',
+            body: JSON.stringify({ action: 'saveCategories', categories: categories })
+        });
+        showToast('Categories updated.');
+    }
+
+    function handleFile(input, previewId) {
+        const file = input.files[0];
+        if(!file) return;
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const img = document.getElementById(previewId);
+            img.src = e.target.result;
+            img.classList.add('active');
+            if(previewId === 'posterPreview') pendingPosterBase64 = e.target.result;
+            if(previewId === 'adminImagePreview') pendingAdminBase64 = e.target.result;
+        };
+        reader.readAsDataURL(file);
+    }
+
+    document.getElementById('posterInput').onchange = function() { handleFile(this, 'posterPreview'); };
+    document.getElementById('adminImageInput').onchange = function() { handleFile(this, 'adminImagePreview'); };
+
+    document.getElementById('addChannelBtn').onclick = function() {
+        editMode = false;
+        editId = null;
+        
+        document.getElementById('opProgressFill').style.width = '0%';
+        document.getElementById('opProgressText').innerText = "Initializing...";
+        document.querySelectorAll('.progress-step span').forEach(s => s.className = '');
+
+        document.getElementById('modalTitle').innerText = "Create Channel Node";
+        document.getElementById('channelId').value = generateUniqueId();
+        document.getElementById('uniqueIdDisplay').innerText = document.getElementById('channelId').value;
+        document.getElementById('channelName').value = '';
+        document.getElementById('channelInfo').value = '';
+        document.getElementById('adminName').value = '';
+        document.getElementById('posterPreview').src = '';
+        document.getElementById('posterPreview').classList.remove('active');
+        document.getElementById('adminImagePreview').src = '';
+        document.getElementById('adminImagePreview').classList.remove('active');
+        document.getElementById('videoUrl').value = '';
+        document.getElementById('socialLink').value = '';
+        pendingPosterBase64 = null;
+        pendingAdminBase64 = null;
+        document.getElementById('channelModal').style.display = 'flex';
+    };
+
+    document.getElementById('uniqueIdBox').onclick = function() {
+        const newId = generateUniqueId();
+        document.getElementById('channelId').value = newId;
+        document.getElementById('uniqueIdDisplay').innerText = newId;
+    };
+
+    function closeModal(id) { document.getElementById(id).style.display = 'none'; }
+
+    function updateStepStatus(step, status) {
+        const el = document.getElementById(`step${step}`);
+        if(el) {
+            if(status === 'active') el.className = 'active';
+            if(status === 'completed') el.className = 'completed';
+        }
+    }
+
+    async function saveChannel() {
+        const name = document.getElementById('channelName').value.trim();
+        if(!name) { showToast('Channel Name parameter missing.'); return; }
+        
+        closeModal('channelModal');
+        
+        const fill = document.getElementById('opProgressFill');
+        const txt = document.getElementById('opProgressText');
+        const overlay = document.getElementById('loadingOverlay');
+        
+        overlay.classList.add('active');
+        
+        // Step 1: Validate
+        txt.innerText = "Validating...";
+        updateStepStatus(1, 'active');
+        fill.style.width = '25%';
+        await new Promise(r => setTimeout(r, 200)); 
+        updateStepStatus(1, 'completed');
+
+        // Step 2: Process Image
+        txt.innerText = "Processing...";
+        updateStepStatus(2, 'active');
+        fill.style.width = '50%';
+        await new Promise(r => setTimeout(r, 200));
+        updateStepStatus(2, 'completed');
+
+        // Step 3 & 4: Upload & Save Cloud Config
+        txt.innerText = "Saving Data...";
+        updateStepStatus(3, 'active');
+        updateStepStatus(4, 'active');
+        fill.style.width = '75%';
+
+        const payload = {
+            action: 'save',
+            uniqueId: document.getElementById('channelId').value,
+            channelName: name,
+            channelInfo: document.getElementById('channelInfo').value,
+            adminName: document.getElementById('adminName').value,
+            category: document.getElementById('categorySelect').value,
+            videoUrl: document.getElementById('videoUrl').value,
+            socialLink: document.getElementById('socialLink').value,
+            folderId: driveFolderId,
+            posterImageBase64: pendingPosterBase64,
+            adminImageBase64: pendingAdminBase64
+        };
+
+        if(editMode) {
+            const current = channels.find(c => c.uniqueId === editId);
+            if(current) {
+                if(!pendingPosterBase64) payload.posterImage = current.posterImage;
+                if(!pendingAdminBase64) payload.adminImage = current.adminImage;
+            }
+        }
+
+        try {
+            await fetch(appsScriptUrl, { method: 'POST', mode: 'no-cors', body: JSON.stringify(payload) });
+            
+            fill.style.width = '100%';
+            txt.innerText = "Changes Saved!";
+            updateStepStatus(3, 'completed');
+            updateStepStatus(4, 'completed');
+            
+            const mockRecord = {
+                uniqueId: payload.uniqueId,
+                channelName: payload.channelName,
+                channelInfo: payload.channelInfo,
+                adminName: payload.adminName,
+                category: payload.category,
+                videoUrl: payload.videoUrl,
+                socialLink: payload.socialLink,
+                posterImage: pendingPosterBase64 || payload.posterImage || '',
+                adminImage: pendingAdminBase64 || payload.adminImage || '',
+                likes: editMode ? (channels.find(c=>c.uniqueId===editId)?.likes || 0) : 0,
+                shares: editMode ? (channels.find(c=>c.uniqueId===editId)?.shares || 0) : 0,
+                createdAt: editMode ? (channels.find(c=>c.uniqueId===editId)?.createdAt || new Date().toISOString()) : new Date().toISOString()
+            };
+            
+            if(editMode) {
+                const index = channels.findIndex(ch => ch.uniqueId === editId);
+                if(index !== -1) channels[index] = mockRecord;
+            } else {
+                channels.unshift(mockRecord);
+            }
+            
+            renderChannels();
+            renderCategories();
+            
+            setTimeout(() => {
+                overlay.classList.remove('active');
+                syncWithSheet(); 
+            }, 500);
+
+        } catch(e) {
+            showToast('Mainframe upload interrupted.');
+            overlay.classList.remove('active');
+        }
+    }
+
+    function editChannel(id) {
+        editMode = true;
+        editId = id;
+        const c = channels.find(ch => ch.uniqueId === id);
+        if(!c) return;
+
+        document.getElementById('opProgressFill').style.width = '0%';
+        document.querySelectorAll('.progress-step span').forEach(s => s.className = '');
+
+        document.getElementById('modalTitle').innerText = "Modify Parameters Node";
+        document.getElementById('channelId').value = c.uniqueId;
+        document.getElementById('uniqueIdDisplay').innerText = c.uniqueId;
+        document.getElementById('channelName').value = c.channelName;
+        document.getElementById('channelInfo').value = c.channelInfo;
+        document.getElementById('adminName').value = c.adminName;
+        document.getElementById('categorySelect').value = c.category;
+        document.getElementById('videoUrl').value = c.videoUrl;
+        document.getElementById('socialLink').value = c.socialLink;
+        
+        const postPrev = document.getElementById('posterPreview');
+        if(c.posterImage) { postPrev.src = c.posterImage; postPrev.classList.add('active'); }
+        else postPrev.classList.remove('active');
+
+        const adminPrev = document.getElementById('adminImagePreview');
+        if(c.adminImage) { adminPrev.src = c.adminImage; adminPrev.classList.add('active'); }
+        else adminPrev.classList.remove('active');
+
+        pendingPosterBase64 = null;
+        pendingAdminBase64 = null;
+        document.getElementById('channelModal').style.display = 'flex';
+    }
+
+    async function removeChannel(id) {
+        if(!confirm('Absolute delete this database node block?')) return;
+        document.getElementById('opProgressText').innerText = "Purging Item...";
+        document.getElementById('opProgressFill').style.width = '100%';
+        document.getElementById('loadingOverlay').classList.add('active');
+        try {
+            channels = channels.filter(ch => ch.uniqueId !== id);
+            renderChannels();
+            renderCategories();
+            
+            await fetch(appsScriptUrl, {
+                method: 'POST',
+                mode: 'no-cors',
+                body: JSON.stringify({ action: 'delete', id: id })
+            });
+            showToast('Item row erased.');
+            syncWithSheet();
+        } catch(e) {
+            showToast('Network interface drops tracked.');
+        }
+        document.getElementById('loadingOverlay').classList.remove('active');
+    }
+
+    async function updateLike(id, val) {
+        const c = channels.find(ch => ch.uniqueId === id);
+        if(c) {
+            c.likes = (c.likes || 0) + val;
+            renderChannels();
+            await fetch(appsScriptUrl, {
+                method: 'POST',
+                mode: 'no-cors',
+                body: JSON.stringify({ action: 'updateStats', id: id, field: 'likes', increment: val })
+            });
+        }
+    }
+
+    async function updateShare(id) {
+        const c = channels.find(ch => ch.uniqueId === id);
+        if(c) {
+            c.shares = (c.shares || 0) + 1;
+            renderChannels();
+            showToast('Gateway clipboard address saved!');
+            await fetch(appsScriptUrl, {
+                method: 'POST',
+                mode: 'no-cors',
+                body: JSON.stringify({ action: 'updateStats', id: id, field: 'shares', increment: 1 })
+            });
+        }
+    }
+
+    document.getElementById('appsScriptUrl').value = appsScriptUrl;
+    document.getElementById('driveFolderId').value = driveFolderId;
+    if(appsScriptUrl) syncWithSheet();
 </script>
 </body>
 </html>
