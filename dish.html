@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <meta name="theme-color" content="#121212">
-    <title>Nikamma 4k Pro v5.5 | Clean Grid Dashboard</title>
+    <title>Nikamma 4k Pro v5.6 | Image Crop Editor Integration</title>
     
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
@@ -38,7 +38,7 @@
         .menu-item:hover, .menu-item.active { background: rgba(0,188,212,0.1); color: var(--main-color); border-left: 4px solid var(--main-color); }
 
         /* Header Styles */
-        .pro-header { background: var(--header-bg); padding: 10px 15px; position: sticky; top: 0; z-index: 100; border-bottom: 1px solid rgba(0,188,212,0.15); display: flex; justify-content: space-between; align-items: center; gap: 10px; box-shadow: 0 4px 12 rgba(0,0,0,0.4); }
+        .pro-header { background: var(--header-bg); padding: 10px 15px; position: sticky; top: 0; z-index: 100; border-bottom: 1px solid rgba(0,188,212,0.15); display: flex; justify-content: space-between; align-items: center; gap: 10px; box-shadow: 0 4px 12px rgba(0,0,0,0.4); }
         .menu-icon { font-size: 1.2rem; cursor: pointer; color: var(--main-color); padding: 4px; }
         .logo h1 { font-size: 1.1rem; font-weight: 700; background: var(--main-gradient); -webkit-background-clip: text; -webkit-text-fill-color: transparent; display: flex; align-items: center; gap: 5px; }
         .admin-controls { display: flex; gap: 6px; }
@@ -73,7 +73,7 @@
         .card-img-wrap img { width: 100%; height: 100%; object-fit: cover; display: block; }
         .card-category-badge { position: absolute; bottom: 5px; left: 5px; background: rgba(0, 188, 212, 0.95); color: black; font-size: 8px; font-weight: 700; padding: 1px 6px; border-radius: 8px; text-transform: uppercase; }
 
-        /* Balanced Micro Space Body (ID removed completely) */
+        /* Balanced Micro Space Body */
         .card-body { padding: 8px; display: flex; flex-direction: column; flex: 1; gap: 5px; }
         .card-title { font-size: 0.88rem; font-weight: 600; color: white; line-height: 1.2; display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical; overflow: hidden; }
         .card-description { font-size: 0.72rem; color: var(--text-muted); line-height: 1.3; display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical; overflow: hidden; min-height: unset; margin-bottom: 2px; }
@@ -98,6 +98,14 @@
         .modal-content { background: #141414; border-radius: 12px; padding: 18px; max-width: 480px; width: 100%; max-height: 90vh; overflow-y: auto; border: 1px solid rgba(0,188,212,0.2); box-shadow: 0 15px 40px rgba(0,0,0,0.5); }
         .modal-content h3 { font-size: 1rem; font-weight: 600; color: var(--main-color); margin-bottom: 12px; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 6px; }
         
+        /* Cropper Container Modal Specifics */
+        .cropper-modal-content { max-width: 600px !important; }
+        .cropper-wrapper { width: 100%; max-height: 350px; background: #000; margin-bottom: 15px; border-radius: 8px; overflow: hidden; display: flex; justify-content: center; align-items: center; }
+        .cropper-wrapper img { max-width: 100%; max-height: 350px; display: block; }
+        .crop-controls { display: flex; gap: 8px; justify-content: center; margin-bottom: 10px; }
+        .crop-ctrl-btn { background: #222; border: 1px solid #333; color: white; padding: 5px 10px; border-radius: 4px; cursor: pointer; font-size: 0.75rem; }
+        .crop-ctrl-btn:hover { background: var(--main-color); color: black; }
+
         /* Global Overlay Screen with integrated Progress loader */
         #loadingOverlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 9999; display: none; flex-direction: column; justify-content: center; align-items: center; padding: 25px; }
         #loadingOverlay.active { display: flex; }
@@ -123,7 +131,7 @@
         .form-group input:focus, .form-group textarea:focus, .form-group select:focus { outline: none; border-color: var(--main-color); }
         
         .unique-id-box { background: rgba(0,188,212,0.04); border: 1px dashed rgba(0,188,212,0.3); padding: 8px; border-radius: 6px; text-align: center; cursor: pointer; display: flex; justify-content: space-between; align-items: center; font-weight: 600; color: var(--main-color); font-size: 0.8rem; }
-        .image-upload-area { border: 1px dashed #333; border-radius: 6px; padding: 10px; text-align: center; cursor: pointer; background: #1a1a1a; color: #777; font-size: 0.75rem; }
+        .image-upload-area { border: 1px dashed #333; border-radius: 6px; padding: 10px; text-align: center; cursor: pointer; background: #1a1a1a; color: #777; font-size: 0.75rem; position: relative; }
         .image-upload-area:hover { border-color: var(--main-color); color: white; }
         .image-preview { width: 100%; max-height: 80px; object-fit: cover; border-radius: 5px; margin-top: 6px; display: none; border: 1px solid #2a2a2a; }
         .image-preview.active { display: block; }
@@ -203,6 +211,7 @@
     </div>
 </div>
 
+<!-- Form Modal -->
 <div id="channelModal" class="modal">
     <div class="modal-content">
         <h3 id="modalTitle">Configure Channel Item</h3>
@@ -250,7 +259,7 @@
             <div class="form-group">
                 <label>Display Poster Cover</label>
                 <div class="image-upload-area" onclick="document.getElementById('posterInput').click()">
-                    <i class="fas fa-image" style="margin-bottom:2px; display:block;"></i> Attach Image
+                    <i class="fas fa-image" style="margin-bottom:2px; display:block;"></i> Attach & Crop Poster
                     <input type="file" id="posterInput" accept="image/*" style="display:none">
                 </div>
                 <img id="posterPreview" class="image-preview">
@@ -259,7 +268,7 @@
             <div class="form-group">
                 <label>Admin Avatar Photo</label>
                 <div class="image-upload-area" onclick="document.getElementById('adminImageInput').click()">
-                    <i class="fas fa-user-alt" style="margin-bottom:2px; display:block;"></i> Attach Photo
+                    <i class="fas fa-user-alt" style="margin-bottom:2px; display:block;"></i> Attach & Crop Photo
                     <input type="file" id="adminImageInput" accept="image/*" style="display:none">
                 </div>
                 <img id="adminImagePreview" class="image-preview">
@@ -273,6 +282,28 @@
     </div>
 </div>
 
+<!-- Advanced Image Crop Editor Modal -->
+<div id="cropperModal" class="modal">
+    <div class="modal-content cropper-modal-content">
+        <h3><i class="fas fa-crop-alt"></i> Image Resizer & Crop Editor</h3>
+        <div class="cropper-wrapper">
+            <img id="cropperImage" src="">
+        </div>
+        <div class="crop-controls">
+            <button class="crop-ctrl-btn" onclick="cropper.setAspectRatio(16/9.5)"><i class="fas fa-tv"></i> 16:9.5 (Poster)</button>
+            <button class="crop-ctrl-btn" onclick="cropper.setAspectRatio(1/1)"><i class="fas fa-user"></i> 1:1 (Avatar)</button>
+            <button class="crop-ctrl-btn" onclick="cropper.rotate(90)"><i class="fas fa-redo"></i> Rotate</button>
+            <button class="crop-ctrl-btn" onclick="cropper.zoom(0.1)"><i class="fas fa-search-plus"></i> Zoom In</button>
+            <button class="crop-ctrl-btn" onclick="cropper.zoom(-0.1)"><i class="fas fa-search-minus"></i> Zoom Out</button>
+        </div>
+        <div class="form-buttons">
+            <button class="btn btn-primary" onclick="applyCrop()"><i class="fas fa-check"></i> Apply Crop</button>
+            <button class="btn btn-secondary" onclick="closeModal('cropperModal')">Cancel</button>
+        </div>
+    </div>
+</div>
+
+<!-- Overlay Loader with Integrated Dynamic Step Progress -->
 <div id="loadingOverlay">
     <div class="overlay-progress-box">
         <div class="loading-spinner"></div>
@@ -299,8 +330,12 @@
     let editId = null;
     let appsScriptUrl = localStorage.getItem('appsScriptUrl') || '';
     let driveFolderId = localStorage.getItem('driveFolderId') || '';
+    
     let pendingPosterBase64 = null;
     let pendingAdminBase64 = null;
+    
+    let cropper = null;
+    let activeCropTarget = ''; // 'poster' or 'admin'
 
     function showToast(msg) {
         const t = document.createElement('div');
@@ -393,8 +428,6 @@
 
         filtered.forEach(c => {
             const dateStr = c.createdAt ? new Date(c.createdAt).toLocaleDateString(undefined, {month:'short', day:'numeric'}) : 'New';
-            
-            // Dynamic count from Sheet (fallbacks to 0 if null/undefined)
             const liveLikes = c.likes || 0;
             const liveShares = c.shares || 0;
 
@@ -427,9 +460,7 @@
                             <button class="card-btn share-btn" onclick="updateShare('${c.uniqueId}')">
                                 <i class="fas fa-share-alt"></i> <span>${liveShares}</span>
                             </button>
-                            <button class="card-btn play-btn" onclick="window.open('${c.videoUrl || '#'}','_blank')">
-                                <i class="fas fa-play"></i> LAUNCH
-                            </button>
+                            <button class="card-btn play-btn" onclick="window.open('${c.videoUrl || '#'}','_blank')"><i class="fas fa-play"></i> LAUNCH</button>
                         </div>
                     </div>
                 </div>
@@ -486,22 +517,64 @@
         showToast('Categories updated.');
     }
 
-    function handleFile(input, previewId) {
+    // Integrated Image Crop Editor Initiation
+    function handleFileSelection(input, target) {
         const file = input.files[0];
         if(!file) return;
+        
+        activeCropTarget = target;
         const reader = new FileReader();
         reader.onload = function(e) {
-            const img = document.getElementById(previewId);
-            img.src = e.target.result;
-            img.classList.add('active');
-            if(previewId === 'posterPreview') pendingPosterBase64 = e.target.result;
-            if(previewId === 'adminImagePreview') pendingAdminBase64 = e.target.result;
+            const cropImg = document.getElementById('cropperImage');
+            cropImg.src = e.target.result;
+            
+            document.getElementById('cropperModal').style.display = 'flex';
+            
+            if(cropper) cropper.destroy();
+            
+            // Set optimal aspect ratio according to target parameter
+            const ratio = target === 'poster' ? (16 / 9.5) : 1;
+            
+            cropper = new Cropper(cropImg, {
+                aspectRatio: ratio,
+                viewMode: 1,
+                background: true,
+                autoCropArea: 1
+            });
         };
         reader.readAsDataURL(file);
+        input.value = ''; // Reset input link trigger
     }
 
-    document.getElementById('posterInput').onchange = function() { handleFile(this, 'posterPreview'); };
-    document.getElementById('adminImageInput').onchange = function() { handleFile(this, 'adminImagePreview'); };
+    function applyCrop() {
+        if(!cropper) return;
+        
+        // Output clean cropped Canvas node
+        const canvas = cropper.getCroppedCanvas({
+            width: activeCropTarget === 'poster' ? 640 : 200,
+            height: activeCropTarget === 'poster' ? 380 : 200,
+        });
+        
+        const croppedBase64 = canvas.toDataURL('image/jpeg', 0.85);
+        
+        if(activeCropTarget === 'poster') {
+            const img = document.getElementById('posterPreview');
+            img.src = croppedBase64;
+            img.classList.add('active');
+            pendingPosterBase64 = croppedBase64;
+        } else {
+            const img = document.getElementById('adminImagePreview');
+            img.src = croppedBase64;
+            img.classList.add('active');
+            pendingAdminBase64 = croppedBase64;
+        }
+        
+        closeModal('cropperModal');
+        showToast('Image custom crop generated!');
+    }
+
+    document.getElementById('posterInput').onchange = function() { handleFileSelection(this, 'poster'); };
+    document.getElementById('adminImageInput').onchange = function() { handleFileSelection(this, 'admin'); };
 
     document.getElementById('addChannelBtn').onclick = function() {
         editMode = false;
@@ -534,7 +607,13 @@
         document.getElementById('uniqueIdDisplay').innerText = newId;
     };
 
-    function closeModal(id) { document.getElementById(id).style.display = 'none'; }
+    function closeModal(id) { 
+        document.getElementById(id).style.display = 'none'; 
+        if(id === 'cropperModal' && cropper) {
+            cropper.destroy();
+            cropper = null;
+        }
+    }
 
     function updateStepStatus(step, status) {
         const el = document.getElementById(`step${step}`);
@@ -564,7 +643,7 @@
         updateStepStatus(1, 'completed');
 
         // Step 2: Process Image
-        txt.innerText = "Processing...";
+        txt.innerText = "Processing Crop Output...";
         updateStepStatus(2, 'active');
         fill.style.width = '50%';
         await new Promise(r => setTimeout(r, 200));
