@@ -47,12 +47,13 @@
         }
 
         .main-container { max-width: 1400px; margin: 0 auto; padding: 12px; }
-        .category-tabs { display: flex; overflow-x: auto; gap: 8px; padding: 4px 0 12px; scrollbar-width: none; }
+        .category-tabs { display: flex; overflow-x: auto; gap: 6px; padding: 4px 0 12px; scrollbar-width: none; }
         .category-tabs::-webkit-scrollbar { display: none; }
-        .category-tab { background: #141414; border: 1px solid var(--card-border); border-radius: 20px; padding: 6px 14px; white-space: nowrap; cursor: pointer; font-size: 0.78rem; color: #bbb; display: flex; align-items: center; gap: 6px; }
-        .category-tab.active { background: var(--main-gradient); color: black; font-weight: 600; }
-        .category-count { background: rgba(255,255,255,0.15); color: white; padding: 10px 6px; border-radius: 1px; font-size: 0.68rem; font-weight: 700; }
-        .category-tab.active .category-count { background: rgba(0,0,0,0.2); color: black; }
+        .category-tab { background: transparent; border: 1px solid rgba(255,255,255,0.08); border-radius: 20px; padding: 5px 13px; white-space: nowrap; cursor: pointer; font-size: 0.76rem; color: #888; display: flex; align-items: center; gap: 5px; transition: all 0.2s ease; letter-spacing: 0.2px; }
+        .category-tab:hover { border-color: rgba(0,188,212,0.35); color: #ccc; }
+        .category-tab.active { background: var(--main-gradient); border-color: transparent; color: #000; font-weight: 600; }
+        .category-count { background: transparent; color: inherit; padding: 0; border-radius: 0; font-size: 0.68rem; font-weight: 500; opacity: 0.6; }
+        .category-tab.active .category-count { background: transparent; color: rgba(0,0,0,0.6); opacity: 1; font-weight: 700; }
 
         .h-scroll-row { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 12px; padding: 2px 0; }
         @media (max-width: 420px) { .h-scroll-row { grid-template-columns: repeat(2, 1fr); gap: 10px; } }
@@ -332,10 +333,10 @@
     function renderCategories() {
         const tabsBox = document.getElementById('categoryTabs');
         const allCount = channels.length;
-        tabsBox.innerHTML = `<div class="category-tab ${currentCategory === 'all' ? 'active' : ''}" onclick="filterCategory('all')">✨ All <span class="category-count">${allCount}</span></div>`;
+        tabsBox.innerHTML = `<div class="category-tab ${currentCategory === 'all' ? 'active' : ''}" onclick="filterCategory('all')">All <span class="category-count">· ${allCount}</span></div>`;
         categories.forEach(cat => {
             const count = channels.filter(c => c.category === cat).length;
-            tabsBox.innerHTML += `<div class="category-tab ${currentCategory === cat ? 'active' : ''}" onclick="filterCategory('${cat}')">📁 ${cat} <span class="category-count">${count}</span></div>`;
+            tabsBox.innerHTML += `<div class="category-tab ${currentCategory === cat ? 'active' : ''}" onclick="filterCategory('${cat}')">${cat} <span class="category-count">· ${count}</span></div>`;
         });
         const list = document.getElementById('categoriesList');
         list.innerHTML = '';
