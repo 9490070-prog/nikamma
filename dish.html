@@ -353,43 +353,95 @@
 
     function filterCategory(cat) { currentCategory = cat; renderChannels(); renderCategories(); }
 
+    // ─── VIRTUAL SCROLL CONFIG ───────────────────────────────────────────────
+    // Mobile: 10 cards first load, 10 per batch | PC: 15 cards first load, 15 per batch
+    let _vsFiltered   = [];   // current filtered list
+    let _vsLoaded     = 0;    // how many cards rendered so far
+    let _vsBatchSize  = 10;   // will be set on each renderChannels call
+    let _vsObserver   = null; // IntersectionObserver instance
+
+    function _isMobile() { return window.innerWidth <= 768; }
+
+    function _buildCardHTML(c) {
+        let banner = c.posterImage || 'https://via.placeholder.com/400x225?text=No+Cover';
+        let avatar = c.adminImage  || 'https://via.placeholder.com/100?text=Admin';
+        if(banner.includes('id=')) { banner = 'https://lh3.googleusercontent.com/d/' + banner.split('id=')[1]; }
+        if(avatar.includes('id=')) { avatar = 'https://lh3.googleusercontent.com/d/' + avatar.split('id=')[1]; }
+        return `
+            <div class="h-scroll-card">
+                <div class="card-actions">
+                    <button class="card-action-btn edit-btn"   onclick="editChannel('${c.uniqueId}')"><i class="fas fa-pen"></i></button>
+                    <button class="card-action-btn delete-btn" onclick="removeChannel('${c.uniqueId}')"><i class="fas fa-trash-alt"></i></button>
+                </div>
+                <div class="card-img-wrap" onclick="window.open('${c.videoUrl || '#'}','_blank')">
+                    <img src="${banner}" loading="lazy" onerror="this.src='https://via.placeholder.com/400x225?text=Processing'">
+                    <span class="card-category-badge">${c.category || 'General'}</span>
+                </div>
+                <div class="card-body">
+                    <div class="card-title">${c.channelName}</div>
+                    <div class="card-description">${c.channelInfo || 'No logs tracked.'}</div>
+                    <div class="admin-profile-inline">
+                        <img class="admin-avatar" src="${avatar}" onerror="this.src='https://via.placeholder.com/100?text=U'">
+                        <div class="admin-name-text">${c.adminName || 'System'}</div>
+                    </div>
+                    <div class="card-action-bar">
+                        <button class="card-btn" onclick="updateLike('${c.uniqueId}', 1)"><i class="fas fa-heart"></i> ${c.likes || 0}</button>
+                        <button class="card-btn" onclick="updateShare('${c.uniqueId}')"><i class="fas fa-share-alt"></i> ${c.shares || 0}</button>
+                        <button class="card-btn play-btn" onclick="window.open('${c.videoUrl || '#'}','_blank')">LAUNCH</button>
+                    </div>
+                </div>
+            </div>`;
+    }
+
+    function _appendNextBatch() {
+        const row      = document.getElementById('channelsRow');
+        const sentinel = document.getElementById('vs-sentinel');
+        if(sentinel) sentinel.remove();          // remove old sentinel first
+
+        if(_vsLoaded >= _vsFiltered.length) return;   // all cards loaded
+
+        const batch = _vsFiltered.slice(_vsLoaded, _vsLoaded + _vsBatchSize);
+        const frag  = document.createDocumentFragment();
+        const tmp   = document.createElement('div');
+        batch.forEach(c => { tmp.innerHTML = _buildCardHTML(c); frag.appendChild(tmp.firstElementChild); });
+        _vsLoaded += batch.length;
+
+        // Append batch to grid
+        row.appendChild(frag);
+
+        // If more cards remain, add a sentinel div that triggers next batch on scroll
+        if(_vsLoaded < _vsFiltered.length) {
+            const sentinel = document.createElement('div');
+            sentinel.id = 'vs-sentinel';
+            sentinel.style.cssText = 'grid-column:1/-1; height:1px;';
+            row.appendChild(sentinel);
+
+            if(_vsObserver) _vsObserver.disconnect();
+            _vsObserver = new IntersectionObserver((entries) => {
+                if(entries[0].isIntersecting) {
+                    _vsObserver.disconnect();
+                    _appendNextBatch();
+                }
+            }, { rootMargin: '200px' });
+            _vsObserver.observe(sentinel);
+        }
+    }
+
     function renderChannels() {
         const row = document.getElementById('channelsRow');
         row.innerHTML = '';
-        const filtered = currentCategory === 'all' ? channels : channels.filter(c => c.category === currentCategory);
-        if(filtered.length === 0) { row.innerHTML = '<div style="grid-column:1/-1; text-align:center; padding:40px; color:#555;">No channel parameters active.</div>'; return; }
 
-        filtered.forEach(c => {
-            let banner = c.posterImage || 'https://via.placeholder.com/400x225?text=No+Cover';
-            let avatar = c.adminImage || 'https://via.placeholder.com/100?text=Admin';
-            if(banner.includes('id=')) { banner = 'https://lh3.googleusercontent.com/d/' + banner.split('id=')[1]; }
-            if(avatar.includes('id=')) { avatar = 'https://lh3.googleusercontent.com/d/' + avatar.split('id=')[1]; }
+        if(_vsObserver) { _vsObserver.disconnect(); _vsObserver = null; }
 
-            row.innerHTML += `
-                <div class="h-scroll-card">
-                    <div class="card-actions">
-                        <button class="card-action-btn edit-btn" onclick="editChannel('${c.uniqueId}')"><i class="fas fa-pen"></i></button>
-                        <button class="card-action-btn delete-btn" onclick="removeChannel('${c.uniqueId}')"><i class="fas fa-trash-alt"></i></button>
-                    </div>
-                    <div class="card-img-wrap" onclick="window.open('${c.videoUrl || '#'}','_blank')">
-                        <img src="${banner}" loading="lazy" onerror="this.src='https://via.placeholder.com/400x225?text=Processing'">
-                        <span class="card-category-badge">${c.category || 'General'}</span>
-                    </div>
-                    <div class="card-body">
-                        <div class="card-title">${c.channelName}</div>
-                        <div class="card-description">${c.channelInfo || 'No logs tracked.'}</div>
-                        <div class="admin-profile-inline">
-                           <img class="admin-avatar" src="${avatar}" onerror="this.src='https://via.placeholder.com/100?text=U'">
-                            <div class="admin-name-text">${c.adminName || 'System'}</div>
-                        </div>
-                        <div class="card-action-bar">
-                           <button class="card-btn" onclick="updateLike('${c.uniqueId}', 1)"><i class="fas fa-heart"></i> ${c.likes || 0}</button>
-                            <button class="card-btn" onclick="updateShare('${c.uniqueId}')"><i class="fas fa-share-alt"></i> ${c.shares || 0}</button>
-                            <button class="card-btn play-btn" onclick="window.open('${c.videoUrl || '#'}','_blank')">LAUNCH</button>
-                        </div>
-                    </div>
-                </div>`;
-        });
+        _vsFiltered  = currentCategory === 'all' ? channels : channels.filter(c => c.category === currentCategory);
+        _vsLoaded    = 0;
+        _vsBatchSize = _isMobile() ? 10 : 15;
+
+        if(_vsFiltered.length === 0) {
+            row.innerHTML = '<div style="grid-column:1/-1; text-align:center; padding:40px; color:#555;">No channel parameters active.</div>';
+            return;
+        }
+        _appendNextBatch();   // render first batch immediately
     }
 
     function handleFileSelection(input, target) {
