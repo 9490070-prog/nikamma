@@ -71,7 +71,7 @@
         .card-category-badge { position: absolute; bottom: 5px; left: 5px; background: rgba(0, 188, 212, 0.95); color: black; font-size: 8px; font-weight: 700; padding: 1px 6px; border-radius: 8px; }
         .card-body { padding: 8px; display: flex; flex-direction: column; flex: 1; gap: 5px; }
         .card-title { font-size: 0.88rem; font-weight: 600; color: white; line-height: 1.2; display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical; overflow: hidden; }
-        .card-description { font-size: 0.72rem; color: var(--text-muted); line-height: 1.3; display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical; overflow: hidden; }
+        .card-description { font-size: 0.72rem; color: var(--text-muted); line-height: 1.3; white-space: pre-line; word-break: break-word; }
         .admin-profile-inline { display: flex; align-items: center; gap: 6px; border-top: 1px solid rgba(255,255,255,0.04); padding-top: 5px; margin-top: auto; }
         .admin-avatar { width: 18px; height: 18px; border-radius: 50%; object-fit: cover; border: 1px solid var(--main-color); background: #222; }
         .admin-name-text { font-size: 0.7rem; font-weight: 500; color: #bbb; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 80px; }
@@ -103,6 +103,7 @@
         .form-group.full-width { grid-column: 1 / -1; }
         .form-group label { display: block; margin-bottom: 5px; font-size: 0.72rem; color: #999; }
         .form-group input, .form-group textarea, .form-group select { width: 100%; padding: 9px 12px; background: #1c1c1c; border: 1px solid #2a2a2a; border-radius: 6px; color: white; font-family: inherit; font-size: 0.82rem; }
+        textarea#channelInfo { resize: none; overflow: hidden; min-height: 60px; }
         .unique-id-box { background: rgba(0,188,212,0.04); border: 1px dashed rgba(0,188,212,0.3); padding: 8px; border-radius: 6px; text-align: center; cursor: pointer; display: flex; justify-content: space-between; align-items: center; color: var(--main-color); font-size: 0.8rem; }
         .image-upload-area { border: 1px dashed #333; border-radius: 6px; padding: 12px; text-align: center; cursor: pointer; background: #1a1a1a; color: #777; font-size: 0.75rem; }
         .image-preview { width: 100%; max-height: 90px; object-fit: cover; border-radius: 5px; margin-top: 8px; display: none; border: 1px solid #2a2a2a; }
@@ -196,7 +197,8 @@
             </div>
             <div class="form-group full-width">
                 <label>Description Info</label>
-                <textarea id="channelInfo" rows="2" placeholder="Brief logs..."></textarea>
+                <textarea id="channelInfo" rows="3" placeholder="Description Info
+ type"></textarea>
             </div>
             <div class="form-group">
                 <label>Admin Name</label>
@@ -479,6 +481,14 @@
 
     document.getElementById('posterInput').onchange = function() { handleFileSelection(this, 'poster'); };
     document.getElementById('adminImageInput').onchange = function() { handleFileSelection(this, 'admin'); };
+
+    // Auto-grow textarea
+    function autoGrow(el) { el.style.height = 'auto'; el.style.height = el.scrollHeight + 'px'; }
+    const infoArea = document.getElementById('channelInfo');
+    infoArea.addEventListener('input', function() { autoGrow(this); });
+    // Also auto-grow when modal opens with existing data
+    const origEditChannel = editChannel;
+    function patchAutoGrow() { setTimeout(() => { autoGrow(infoArea); }, 50); }
     document.getElementById('addChannelBtn').onclick = function() {
         editMode = false; editId = null;
         document.getElementById('modalTitle').innerText = "Create New Node";
@@ -493,6 +503,7 @@
         document.getElementById('socialLink').value = '';
         pendingPosterBase64 = null; pendingAdminBase64 = null;
         document.getElementById('channelModal').style.display = 'flex';
+        patchAutoGrow();
     };
     function closeModal(id) { document.getElementById(id).style.display = 'none'; if(cropper){cropper.destroy(); cropper=null;} }
 
@@ -507,7 +518,7 @@
             action: 'save',
             uniqueId: document.getElementById('channelId').value,
             channelName: name,
-            channelInfo: document.getElementById('channelInfo').value,
+            channelInfo: document.getElementById('channelInfo').value.replace(/\\n|\n/g, '±'),
             adminName: document.getElementById('adminName').value,
             category: document.getElementById('categorySelect').value,
             videoUrl: document.getElementById('videoUrl').value,
@@ -556,6 +567,7 @@
 
         pendingPosterBase64 = null; pendingAdminBase64 = null;
         document.getElementById('channelModal').style.display = 'flex';
+        patchAutoGrow();
     }
 
     async function removeChannel(id) {
