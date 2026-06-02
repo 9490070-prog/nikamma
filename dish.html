@@ -514,6 +514,11 @@
         document.getElementById('opProgressText').innerText = "Uploading Matrix Row Payload...";
         document.getElementById('opProgressFill').style.width = '80%';
         document.getElementById('loadingOverlay').classList.add('active');
+        // Format date as: May 21, 2026 (only this format, nothing else)
+        const _now = new Date();
+        const _months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+        const _formattedDate = String(_months[_now.getMonth()] + ' ' + _now.getDate() + ', ' + _now.getFullYear());
+
         const payload = {
             action: 'save',
             uniqueId: document.getElementById('channelId').value,
@@ -532,7 +537,12 @@
             if(current) {
                 if(!pendingPosterBase64) payload.posterImage = current.posterImage;
                 if(!pendingAdminBase64) payload.adminImage = current.adminImage;
+                // Edit mode mein existing createdAt preserve karo
+                payload.createdAt = current.createdAt || _formattedDate;
             }
+        } else {
+            // New record ke liye current date set karo
+            payload.createdAt = _formattedDate;
         }
         try {
             await fetch(appsScriptUrl, { method: 'POST', body: JSON.stringify(payload) });
