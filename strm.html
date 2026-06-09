@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-<title>Player — Streaming Working</title>
+<title>Player — Ultra Fast Streaming</title>
 <script src="https://cdn.jsdelivr.net/npm/hls.js@1.5.7"></script>
 <style>
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
@@ -114,14 +114,14 @@ body{display:flex;flex-direction:column;font-family:sans-serif}
 <body>
 
 <div id="bar">
-  <input id="ui" type="url" inputmode="url" value="https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8"
+  <input id="ui" type="url" inputmode="url" 
     placeholder="m3u8 / mp4 URL paste karein…"
     onkeydown="if(event.key==='Enter'){this.blur();doLoad()}">
-  <button onclick="doLoad()">Play</button>
+  <button onclick="doLoad()">▶ Play</button>
 </div>
 
 <div id="pa">
-  <video id="v" playsinline webkit-playsinline crossorigin="anonymous"></video>
+  <video id="v" playsinline webkit-playsinline preload="auto" crossorigin="anonymous"></video>
   <div id="spin"><div class="ring"></div></div>
   <div id="empty">
     <svg width="54" height="54" viewBox="0 0 24 24" fill="none" stroke="#444" stroke-width="1.2">
@@ -208,6 +208,7 @@ var hls = null;
 var fitMode = 0;
 var ctrlShown = false;
 var hideT = null;
+var loadingStarted = false;
 
 var fitModes = [
   { name: "Fit", objectFit: "contain" },
@@ -215,13 +216,6 @@ var fitModes = [
   { name: "Stretch", objectFit: "fill" },
   { name: "Original", objectFit: "none" }
 ];
-
-function fmt(s){
-  if(!isFinite(s)||s<0) return '0:00';
-  var m=Math.floor(s/60), ss=Math.floor(s%60);
-  return m+':'+pd(ss);
-}
-function pd(n){return n<10?'0'+n:''+n;}
 
 function showCtrl(){ctrl.classList.add('show');ctrlShown=true;clearTimeout(hideT);}
 function hideCtrl(){ctrl.classList.remove('show');ctrlShown=false;}
@@ -265,6 +259,7 @@ function destroyHLS(){
   }
 }
 
+// ULTRA FAST LOAD FUNCTION
 function doLoad(){
   var url = document.getElementById('ui').value.trim();
   if(!url){
@@ -272,11 +267,9 @@ function doLoad(){
     return;
   }
 
-  // Stop current playback
+  // Fast cleanup
   v.pause();
   destroyHLS();
-  
-  // Reset video element
   v.removeAttribute('src');
   v.load();
   
@@ -286,108 +279,116 @@ function doLoad(){
   bufEl.style.width = '0%';
   qsel.innerHTML = '<option value="-1">Auto</option>';
   setPB(false);
+  loadingStarted = true;
 
   var isHLS = /\.m3u8|m3u8/i.test(url);
   
-  console.log("Loading URL:", url);
-  console.log("Is HLS:", isHLS);
-  console.log("HLS.js available:", typeof Hls !== 'undefined');
-  
-  // For HLS streams
+  // ULTRA FAST HLS CONFIGURATION
   if(isHLS && typeof Hls !== 'undefined' && Hls.isSupported()){
-    console.log("Using HLS.js");
     hls = new Hls({
       enableWorker: true,
       debug: false,
+      // FAST START OPTIMIZATIONS
       autoStartLoad: true,
       startPosition: -1,
       capLevelToPlayerSize: true,
-      maxBufferLength: 30,
-      maxMaxBufferLength: 60
+      maxBufferLength: 10,           // Small buffer = faster start
+      maxMaxBufferLength: 20,
+      backBufferLength: 10,
+      // LOW LATENCY
+      liveSyncDurationCount: 3,
+      liveMaxLatencyDurationCount: 5,
+      liveDurationInfinity: false,
+      // FAST FRAGMENT LOADING
+      fragLoadingTimeOut: 10000,
+      manifestLoadingTimeOut: 10000,
+      levelLoadingTimeOut: 10000,
+      // ABR OPTIMIZATIONS
+      abrEwmaDefaultEstimate: 500000,
+      abrBandWidthFactor: 0.95,
+      abrBandWidthUpFactor: 0.7,
+      abrMaxWithRealBitrate: true,
+      // START FROM LOWEST BITRATE FOR SPEED
+      startFragPrefetch: true,
+      testBandwidth: false
     });
     
     hls.loadSource(url);
     hls.attachMedia(v);
     
+    // INSTANT PLAY ON MANIFEST
     hls.on(Hls.Events.MANIFEST_PARSED, function(event, data){
-      console.log("Manifest parsed, levels:", data.levels);
       spin.classList.remove('on');
       if(hls && hls.levels && hls.levels.length){
         qsel.innerHTML = '<option value="-1">Auto</option>';
         hls.levels.forEach(function(l, i){
           var o = document.createElement('option');
           o.value = i;
-          var label = l.height ? l.height + 'p' : 'Quality ' + (i+1);
+          var label = l.height ? l.height + 'p' : 'Q' + (i+1);
           o.textContent = label;
           qsel.appendChild(o);
         });
+        // Start from lowest quality for fastest start
+        if(hls.levels.length > 0){
+          hls.currentLevel = 0;
+        }
       }
-      v.play().catch(function(e){ 
-        console.log("Autoplay failed:", e);
-        spin.classList.remove('on');
-      });
+      // PLAY IMMEDIATELY - NO DELAY
+      var playPromise = v.play();
+      if(playPromise !== undefined){
+        playPromise.catch(function(e){ 
+          console.log("Autoplay blocked, user click needed");
+          spin.classList.remove('on');
+        });
+      }
     });
     
+    // FAST ERROR RECOVERY
     hls.on(Hls.Events.ERROR, function(event, data){
-      console.error("HLS Error:", data);
       if(data.fatal){
-        switch(data.type){
-          case Hls.ErrorTypes.NETWORK_ERROR:
-            console.log("Network error, trying to recover...");
-            setTimeout(function(){ if(hls) hls.startLoad(); }, 2000);
-            break;
-          case Hls.ErrorTypes.MEDIA_ERROR:
-            console.log("Media error, recovering...");
-            hls.recoverMediaError();
-            break;
-          default:
-            console.log("Fatal error, cannot recover");
-            spin.classList.remove('on');
-            empty.style.display = 'flex';
-            break;
+        if(data.type === Hls.ErrorTypes.NETWORK_ERROR){
+          setTimeout(function(){ if(hls) hls.startLoad(); }, 1000);
+        } else if(data.type === Hls.ErrorTypes.MEDIA_ERROR){
+          hls.recoverMediaError();
+        } else {
+          spin.classList.remove('on');
+          empty.style.display = 'flex';
         }
       }
     });
     
-    hls.on(Hls.Events.MEDIA_ATTACHED, function(){
-      console.log("Media attached");
+    hls.on(Hls.Events.FRAG_LOADED, function(){
+      // As soon as first fragment loads, ensure playing
+      if(v.paused && !v.ended && loadingStarted){
+        v.play().catch(function(){});
+      }
     });
     
   } else if(isHLS && v.canPlayType('application/vnd.apple.mpegurl')){
-    // Safari native HLS
-    console.log("Using native HLS (Safari)");
+    // Safari native - fast
     v.src = url;
+    v.load();
+    v.play().catch(function(){});
     v.addEventListener('loadedmetadata', function onMeta(){
       v.removeEventListener('loadedmetadata', onMeta);
       spin.classList.remove('on');
     });
+  } else {
+    // MP4 - instant play
+    v.src = url;
+    v.preload = 'auto';
     v.load();
     v.play().catch(function(e){ 
-      console.log("Play failed:", e);
+      console.log(e);
       spin.classList.remove('on');
     });
-  } else {
-    // MP4 or direct file
-    console.log("Using native playback (MP4)");
-    v.src = url;
     v.addEventListener('loadeddata', function onData(){
       v.removeEventListener('loadeddata', onData);
       spin.classList.remove('on');
     });
-    v.addEventListener('error', function(e){
-      console.log("Video error:", e);
-      spin.classList.remove('on');
-      empty.style.display = 'flex';
-    });
-    v.load();
-    v.play().catch(function(e){ 
-      console.log("Play failed:", e);
-      spin.classList.remove('on');
-      if(!v.src) empty.style.display = 'flex';
-    });
   }
   
-  // Fallback timeout
+  // Ultra fast timeout - 3 seconds max
   setTimeout(function(){
     if(spin.classList.contains('on')){
       spin.classList.remove('on');
@@ -395,12 +396,18 @@ function doLoad(){
         empty.style.display = 'flex';
       }
     }
-  }, 10000);
+  }, 3000);
 }
 
+// INSTANT PLAY FUNCTION - no delays
 function togglePlay(){ 
   if(v.paused){
-    v.play().catch(function(e){ console.log("Play error:", e); });
+    var playPromise = v.play();
+    if(playPromise !== undefined){
+      playPromise.catch(function(e){ 
+        console.log("Play error:", e);
+      });
+    }
   } else {
     v.pause();
   }
@@ -498,25 +505,24 @@ v.addEventListener('timeupdate', function(){
 
 v.addEventListener('waiting', function(){ spin.classList.add('on'); });
 v.addEventListener('canplay', function(){ spin.classList.remove('on'); });
+v.addEventListener('canplaythrough', function(){ spin.classList.remove('on'); });
 v.addEventListener('playing', function(){ spin.classList.remove('on'); setPB(true); autoHide(); });
 v.addEventListener('pause', function(){ setPB(false); showCtrl(); });
 v.addEventListener('ended', function(){ setPB(false); showCtrl(); });
-v.addEventListener('error', function(e){
-  console.log("Video element error:", e);
-  spin.classList.remove('on');
-});
+v.addEventListener('loadstart', function(){ spin.classList.add('on'); });
+v.addEventListener('loadeddata', function(){ spin.classList.remove('on'); });
 
-// Auto-load test stream on page load
+// Initialize
+restoreFitMode();
+mb.querySelector('svg').style.opacity = '1';
+
+// Auto-load demo URL on page load for testing
 window.addEventListener('load', function(){
-  restoreFitMode();
-  mb.querySelector('svg').style.opacity = '1';
-  // Auto-load a test stream so you can see it works
+  var demoUrl = "https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8";
+  document.getElementById('ui').value = demoUrl;
   setTimeout(function(){
-    if(document.getElementById('ui').value.trim() === ""){
-      document.getElementById('ui').value = "https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8";
-      doLoad();
-    }
-  }, 500);
+    doLoad();
+  }, 100);
 });
 </script>
 </body>
