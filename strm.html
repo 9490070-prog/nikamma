@@ -2,8 +2,8 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Player</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>Player — Streaming + 4 Fit Modes</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/hls.js/1.5.7/hls.min.js"></script>
 <style>
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
@@ -59,53 +59,88 @@ body{display:flex;flex-direction:column;font-family:sans-serif}
   align-items:center;justify-content:center;
   gap:12px;pointer-events:none;
 }
-#empty p{font-size:14px;color:#555;text-align:center;padding:0 32px;line-height:1.6}
+#empty p{font-size:14px;color:#666;text-align:center;padding:0 32px;line-height:1.6}
 
 #ctrl{
   position:absolute;bottom:0;left:0;right:0;
-  padding:40px 10px 10px;
-  background:linear-gradient(transparent,rgba(0,0,0,.92));
-  opacity:0;transition:opacity .2s;
+  padding:40px 12px 14px;
+  background:linear-gradient(transparent,rgba(0,0,0,.95));
+  opacity:0;transition:opacity .25s;
   z-index:10;pointer-events:none;
 }
 #ctrl.show{opacity:1;pointer-events:all}
 
-#seekrow{padding:4px 0 10px;touch-action:none;cursor:pointer}
+#seekrow{padding:4px 0 12px;touch-action:none;cursor:pointer}
 #track{height:4px;background:rgba(255,255,255,.2);border-radius:4px;position:relative}
 #buf,#prog{
   position:absolute;top:0;left:0;height:100%;
   border-radius:4px;pointer-events:none;width:0%;
 }
-#buf{background:rgba(255,255,255,.25)}
+#buf{background:rgba(255,255,255,.3)}
 #prog{background:#fff}
 
-#btnrow{display:flex;align-items:center;gap:0;overflow:visible}
+/* Horizontal button row - fixed layout */
+#btnrow{
+  display:flex;
+  align-items:center;
+  justify-content:flex-start;
+  gap:2px;
+  overflow-x:auto;
+  overflow-y:hidden;
+  -webkit-overflow-scrolling:touch;
+  scrollbar-width:none;
+  white-space:nowrap;
+}
+#btnrow::-webkit-scrollbar{display:none}
+
 .cb{
   background:none;border:none;color:#fff;
-  cursor:pointer;width:42px;height:44px;
-  display:flex;align-items:center;
-  justify-content:center;flex-shrink:0;
-  border-radius:6px;padding:0;
+  cursor:pointer;width:44px;height:44px;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  flex-shrink:0;
+  border-radius:8px;
+  padding:0;
 }
 .cb:active{background:rgba(255,255,255,.15)}
+
 #tdisp{
-  font-size:11px;color:rgba(255,255,255,.55);
-  white-space:nowrap;padding:0 4px;
-  font-variant-numeric:tabular-nums;flex-shrink:1;min-width:0;
+  font-size:11px;color:rgba(255,255,255,.7);
+  white-space:nowrap;padding:0 8px;
+  font-variant-numeric:tabular-nums;
+  flex-shrink:0;
+  font-weight:500;
 }
-#gap{flex:1;min-width:4px}
+#gap{flex:1;min-width:6px}
+
 #qsel{
-  background:#1a1a1a;border:1px solid #333;color:#fff;
-  padding:4px 4px;border-radius:6px;font-size:11px;
-  outline:none;flex-shrink:0;max-width:60px;
+  background:#1a1a1a;border:1px solid #444;color:#fff;
+  padding:6px 6px;border-radius:8px;font-size:11px;
+  outline:none;flex-shrink:0;width:62px;
+  font-weight:500;
 }
+
+#fitModeBadge{
+  font-size:9px;
+  background:rgba(0,0,0,0.65);
+  padding:4px 8px;
+  border-radius:20px;
+  color:#aaa;
+  white-space:nowrap;
+  flex-shrink:0;
+  margin-left:4px;
+  font-weight:500;
+}
+
+:-webkit-full-screen #bar, :fullscreen #bar{display:none}
 </style>
 </head>
 <body>
 
 <div id="bar">
   <input id="ui" type="url" inputmode="url"
-    placeholder="m3u8 / mp4 URL yahan paste karein…"
+    placeholder="m3u8 / mp4 URL paste karein…"
     onkeydown="if(event.key==='Enter'){this.blur();doLoad()}">
   <button onclick="doLoad()">Play</button>
 </div>
@@ -118,7 +153,7 @@ body{display:flex;flex-direction:column;font-family:sans-serif}
       <circle cx="12" cy="12" r="10"/>
       <polygon points="10 8 16 12 10 16" fill="#444" stroke="none"/>
     </svg>
-    <p>URL paste karein aur Play dabayein</p>
+    <p>URL paste karein aur Play dabayein<br>HLS (.m3u8) ya MP4</p>
   </div>
 
   <div id="ctrl">
@@ -129,27 +164,26 @@ body{display:flex;flex-direction:column;font-family:sans-serif}
       </div>
     </div>
     <div id="btnrow">
-
       <button class="cb" id="pb" onclick="event.stopPropagation();togglePlay()">
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="white"><polygon points="5 3 19 12 5 21"/></svg>
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="white"><polygon points="5 3 19 12 5 21"/></svg>
       </button>
 
       <button class="cb" onclick="event.stopPropagation();skip(-10)">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round">
           <polyline points="1 4 1 10 7 10"/>
           <path d="M3.51 15a9 9 0 1 0 .49-5"/>
         </svg>
       </button>
 
       <button class="cb" onclick="event.stopPropagation();skip(10)">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round">
           <polyline points="23 4 23 10 17 10"/>
           <path d="M20.49 15a9 9 0 1 1-.49-5"/>
         </svg>
       </button>
 
       <button class="cb" id="mb" onclick="event.stopPropagation();toggleMute()">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round">
           <polygon points="11 5 6 9 2 9 2 15 6 15 11 19"/>
           <path d="M19.07 4.93a10 10 0 0 1 0 14.14"/>
           <path d="M15.54 8.46a5 5 0 0 1 0 7.07"/>
@@ -163,47 +197,56 @@ body{display:flex;flex-direction:column;font-family:sans-serif}
         <option value="-1">Auto</option>
       </select>
 
-      <button class="cb" id="fitbtn" onclick="event.stopPropagation();toggleFit()" title="Fit/Fill">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <!-- FIT BUTTON with 4 modes -->
+      <button class="cb" id="fitbtn" onclick="event.stopPropagation();cycleFitMode()" title="Fit Modes: Fit/Fill/Stretch/Original">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <rect x="3" y="5" width="18" height="14" rx="1"/>
           <line x1="3" y1="10" x2="21" y2="10"/>
           <line x1="3" y1="14" x2="21" y2="14"/>
         </svg>
       </button>
+      <span id="fitModeBadge">Fit</span>
 
       <button class="cb" id="fsbtn" onclick="event.stopPropagation();toggleFS()" title="Fullscreen">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
           <polyline points="15 3 21 3 21 9"/>
           <polyline points="9 21 3 21 3 15"/>
           <line x1="21" y1="3" x2="14" y2="10"/>
           <line x1="3" y1="21" x2="10" y2="14"/>
         </svg>
       </button>
-
     </div>
   </div>
 </div>
 
 <script>
-var v      = document.getElementById('v');
-var pa     = document.getElementById('pa');
-var ctrl   = document.getElementById('ctrl');
-var spin   = document.getElementById('spin');
-var empty  = document.getElementById('empty');
-var prog   = document.getElementById('prog');
-var bufEl  = document.getElementById('buf');
-var tdisp  = document.getElementById('tdisp');
-var pb     = document.getElementById('pb');
-var qsel   = document.getElementById('qsel');
-var barEl  = document.getElementById('bar');
+var v = document.getElementById('v');
+var pa = document.getElementById('pa');
+var ctrl = document.getElementById('ctrl');
+var spin = document.getElementById('spin');
+var empty = document.getElementById('empty');
+var prog = document.getElementById('prog');
+var bufEl = document.getElementById('buf');
+var tdisp = document.getElementById('tdisp');
+var pb = document.getElementById('pb');
+var qsel = document.getElementById('qsel');
+var barEl = document.getElementById('bar');
 var fitbtn = document.getElementById('fitbtn');
-var fsbtn  = document.getElementById('fsbtn');
-var mb     = document.getElementById('mb');
+var fsbtn = document.getElementById('fsbtn');
+var mb = document.getElementById('mb');
+var fitModeBadge = document.getElementById('fitModeBadge');
 
 var hls = null;
-var fitted = false;
+var fitMode = 0;
 var ctrlShown = false;
 var hideT = null;
+
+var fitModes = [
+  { name: "Fit", objectFit: "contain" },
+  { name: "Fill", objectFit: "cover" },
+  { name: "Stretch", objectFit: "fill" },
+  { name: "Original", objectFit: "none" }
+];
 
 function fmt(s){
   if(!isFinite(s)||s<0) return '0:00';
@@ -212,10 +255,9 @@ function fmt(s){
 }
 function pd(n){return n<10?'0'+n:''+n;}
 
-/* controls show/hide */
 function showCtrl(){ctrl.classList.add('show');ctrlShown=true;clearTimeout(hideT);}
 function hideCtrl(){ctrl.classList.remove('show');ctrlShown=false;}
-function autoHide(){clearTimeout(hideT);hideT=setTimeout(function(){if(!v.paused)hideCtrl();},3000);}
+function autoHide(){clearTimeout(hideT);hideT=setTimeout(function(){if(!v.paused)hideCtrl();},3500);}
 function bringUp(){showCtrl();autoHide();}
 
 pa.addEventListener('mousemove', bringUp);
@@ -230,37 +272,43 @@ pa.addEventListener('click', function(e){
   togglePlay();
 });
 
-/* seek */
+// Seek logic
 var seeking = false;
 function applySeek(cx){
-  var r = document.getElementById('track').getBoundingClientRect();
+  var track = document.getElementById('track');
+  if(!track) return;
+  var r = track.getBoundingClientRect();
   var pct = Math.max(0, Math.min(1, (cx - r.left) / r.width));
   if(isFinite(v.duration) && v.duration > 0) v.currentTime = pct * v.duration;
 }
 document.getElementById('seekrow').addEventListener('mousedown', function(e){seeking=true;applySeek(e.clientX);e.stopPropagation();});
 document.addEventListener('mousemove', function(e){if(seeking) applySeek(e.clientX);});
 document.addEventListener('mouseup', function(){seeking=false;});
-document.getElementById('seekrow').addEventListener('touchstart', function(e){e.stopPropagation();applySeek(e.touches[0].clientX);},{passive:true});
-document.getElementById('seekrow').addEventListener('touchmove', function(e){e.stopPropagation();applySeek(e.touches[0].clientX);},{passive:true});
+document.getElementById('seekrow').addEventListener('touchstart', function(e){e.stopPropagation();applySeek(e.touches[0].clientX);},{passive:false});
+document.getElementById('seekrow').addEventListener('touchmove', function(e){e.stopPropagation();applySeek(e.touches[0].clientX);},{passive:false});
 
-/* LOAD — v.load() removed for HLS, only used for native */
 function destroyHLS(){
   if(hls){
-    hls.stopLoad();
-    hls.detachMedia();
-    hls.destroy();
+    try{
+      hls.stopLoad();
+      hls.detachMedia();
+      hls.destroy();
+    }catch(e){}
     hls = null;
   }
 }
 
 function doLoad(){
   var url = document.getElementById('ui').value.trim();
-  if(!url) return;
+  if(!url){
+    empty.style.display = 'flex';
+    return;
+  }
 
   destroyHLS();
-  /* reset video element cleanly without calling v.load() for HLS */
   v.pause();
-
+  v.removeAttribute('src');
+  
   empty.style.display = 'none';
   spin.classList.add('on');
   prog.style.width = '0%';
@@ -270,131 +318,191 @@ function doLoad(){
   tdisp.textContent = '0:00';
 
   var isHLS = /\.m3u8|m3u8/i.test(url);
-
+  
+  // Try HLS.js first
   if(isHLS && typeof Hls !== 'undefined' && Hls.isSupported()){
-    /* HLS.js path — do NOT call v.src or v.load() */
     hls = new Hls({
       enableWorker: true,
       debug: false,
-      backBufferLength: 30,
-      maxBufferLength: 30,
-      fragLoadingTimeOut: 20000,
-      manifestLoadingTimeOut: 20000,
-      levelLoadingTimeOut: 20000
+      backBufferLength: 60,
+      maxBufferLength: 60,
+      fragLoadingTimeOut: 30000,
+      manifestLoadingTimeOut: 30000,
+      levelLoadingTimeOut: 30000
     });
+    
     hls.loadSource(url);
     hls.attachMedia(v);
-
+    
     hls.on(Hls.Events.MANIFEST_PARSED, function(event, data){
       spin.classList.remove('on');
-      data.levels.forEach(function(l, i){
-        var o = document.createElement('option');
-        o.value = i;
-        o.textContent = l.height ? l.height + 'p' : 'L' + (i+1);
-        qsel.appendChild(o);
-      });
-      v.play().catch(function(){});
+      if(hls && hls.levels && hls.levels.length){
+        hls.levels.forEach(function(l, i){
+          var o = document.createElement('option');
+          o.value = i;
+          o.textContent = l.height ? l.height + 'p' : (l.bitrate ? (l.bitrate/1000).toFixed(0)+'k' : 'L'+(i+1));
+          qsel.appendChild(o);
+        });
+      }
+      v.play().catch(function(e){ console.log("autoplay blocked", e); });
     });
-
+    
     hls.on(Hls.Events.ERROR, function(event, data){
       if(data.fatal){
         if(data.type === Hls.ErrorTypes.NETWORK_ERROR){
-          setTimeout(function(){ if(hls) hls.startLoad(); }, 1500);
+          setTimeout(function(){ if(hls) hls.startLoad(); }, 2000);
         } else if(data.type === Hls.ErrorTypes.MEDIA_ERROR){
           hls.recoverMediaError();
         } else {
           spin.classList.remove('on');
+          empty.style.display = 'flex';
         }
       }
     });
-
-  } else if(isHLS && v.canPlayType('application/vnd.apple.mpegurl')){
-    /* Safari native HLS */
+    
+  } else if(v.canPlayType('application/vnd.apple.mpegurl')){
+    // Safari native HLS
     v.src = url;
+    v.addEventListener('loadedmetadata', function onMeta(){
+      v.removeEventListener('loadedmetadata', onMeta);
+      spin.classList.remove('on');
+    });
     v.load();
-    v.addEventListener('loadeddata', function onld(){
-      v.removeEventListener('loadeddata', onld);
-      spin.classList.remove('on');
-      v.play().catch(function(){});
-    });
-    v.addEventListener('error', function onerr(){
-      v.removeEventListener('error', onerr);
-      spin.classList.remove('on');
-    });
+    v.play().catch(function(){});
   } else {
-    /* MP4 / WebM / direct */
+    // MP4 or direct
     v.src = url;
+    v.addEventListener('loadeddata', function onData(){
+      v.removeEventListener('loadeddata', onData);
+      spin.classList.remove('on');
+    });
     v.load();
-    v.addEventListener('loadeddata', function onld(){
-      v.removeEventListener('loadeddata', onld);
-      spin.classList.remove('on');
-      v.play().catch(function(){});
-    });
-    v.addEventListener('error', function onerr(){
-      v.removeEventListener('error', onerr);
-      spin.classList.remove('on');
-    });
+    v.play().catch(function(e){ console.log(e); });
+  }
+  
+  // Error handler
+  v.onerror = function(){
+    spin.classList.remove('on');
+    empty.style.display = 'flex';
+  };
+}
+
+function togglePlay(){ 
+  if(v.paused){
+    v.play().catch(function(e){ console.log(e); });
+  } else {
+    v.pause();
   }
 }
 
-function togglePlay(){ v.paused ? v.play().catch(function(){}) : v.pause(); }
-function skip(s){ v.currentTime = Math.max(0, v.currentTime + s); bringUp(); }
-function setQ(x){ if(hls) hls.currentLevel = parseInt(x); }
+function skip(s){ 
+  if(isFinite(v.duration)) v.currentTime = Math.max(0, Math.min(v.duration, v.currentTime + s)); 
+  bringUp(); 
+}
+
+function setQ(x){ 
+  if(hls && !isNaN(parseInt(x))){
+    var level = parseInt(x);
+    if(level === -1) hls.currentLevel = -1;
+    else hls.currentLevel = level;
+  }
+}
 
 function toggleMute(){
   v.muted = !v.muted;
-  mb.querySelector('svg').style.opacity = v.muted ? '0.4' : '1';
+  var svg = mb.querySelector('svg');
+  if(svg) svg.style.opacity = v.muted ? '0.5' : '1';
 }
 
 function setPB(playing){
   pb.innerHTML = playing
-    ? '<svg width="22" height="22" viewBox="0 0 24 24" fill="white"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>'
-    : '<svg width="22" height="22" viewBox="0 0 24 24" fill="white"><polygon points="5 3 19 12 5 21"/></svg>';
+    ? '<svg width="20" height="20" viewBox="0 0 24 24" fill="white"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>'
+    : '<svg width="20" height="20" viewBox="0 0 24 24" fill="white"><polygon points="5 3 19 12 5 21"/></svg>';
 }
 
-function toggleFit(){
-  fitted = !fitted;
-  v.style.objectFit = fitted ? 'cover' : 'contain';
-  fitbtn.style.opacity = fitted ? '1' : '0.8';
-  fitbtn.querySelector('svg').style.stroke = fitted ? '#5af' : 'white';
+// 4 FIT MODES
+function cycleFitMode(){
+  fitMode = (fitMode + 1) % 4;
+  var mode = fitModes[fitMode];
+  v.style.objectFit = mode.objectFit;
+  fitModeBadge.textContent = mode.name;
+  
+  var svg = fitbtn.querySelector('svg');
+  if(mode.name !== "Fit"){
+    svg.setAttribute('stroke', '#3ea6ff');
+    fitModeBadge.style.color = '#3ea6ff';
+    fitModeBadge.style.background = 'rgba(62,166,255,0.2)';
+  } else {
+    svg.setAttribute('stroke', 'white');
+    fitModeBadge.style.color = '#aaa';
+    fitModeBadge.style.background = 'rgba(0,0,0,0.65)';
+  }
+  
+  localStorage.setItem('fitMode', fitMode);
+  bringUp();
+}
+
+function restoreFitMode(){
+  var saved = localStorage.getItem('fitMode');
+  if(saved !== null){
+    fitMode = parseInt(saved);
+    var mode = fitModes[fitMode];
+    v.style.objectFit = mode.objectFit;
+    fitModeBadge.textContent = mode.name;
+    var svg = fitbtn.querySelector('svg');
+    if(mode.name !== "Fit"){
+      svg.setAttribute('stroke', '#3ea6ff');
+      fitModeBadge.style.color = '#3ea6ff';
+      fitModeBadge.style.background = 'rgba(62,166,255,0.2)';
+    }
+  }
 }
 
 function toggleFS(){
-  var inFS = !!(document.fullscreenElement || document.webkitFullscreenElement);
-  if(!inFS){
-    var el = document.documentElement;
-    var fn = el.requestFullscreen || el.webkitRequestFullscreen;
-    if(fn) fn.call(el);
+  var elem = document.documentElement;
+  var isFullscreen = !!(document.fullscreenElement || document.webkitFullscreenElement);
+  
+  if(!isFullscreen){
+    var requestFS = elem.requestFullscreen || elem.webkitRequestFullscreen;
+    if(requestFS) requestFS.call(elem);
   } else {
-    var fn2 = document.exitFullscreen || document.webkitExitFullscreen;
-    if(fn2) fn2.call(document);
+    var exitFS = document.exitFullscreen || document.webkitExitFullscreen;
+    if(exitFS) exitFS.call(document);
   }
 }
 
 function onFSChange(){
-  var inFS = !!(document.fullscreenElement || document.webkitFullscreenElement);
-  barEl.style.display = inFS ? 'none' : '';
-  if(inFS){
-    fsbtn.innerHTML = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 14 10 14 10 20"/><polyline points="20 10 14 10 14 4"/><line x1="10" y1="14" x2="3" y2="21"/><line x1="21" y1="3" x2="14" y2="10"/></svg>';
-  } else {
-    fsbtn.innerHTML = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/></svg>';
+  var isFullscreen = !!(document.fullscreenElement || document.webkitFullscreenElement);
+  barEl.style.display = isFullscreen ? 'none' : 'flex';
+  if(!isFullscreen){
+    var mode = fitModes[fitMode];
+    v.style.objectFit = mode.objectFit;
   }
 }
+
 document.addEventListener('fullscreenchange', onFSChange);
 document.addEventListener('webkitfullscreenchange', onFSChange);
 
+// Video events
 v.addEventListener('timeupdate', function(){
   var c = v.currentTime, d = v.duration;
-  tdisp.textContent = isFinite(d) && d > 0 ? fmt(c)+' / '+fmt(d) : fmt(c);
+  tdisp.textContent = (isFinite(d) && d > 0) ? fmt(c)+' / '+fmt(d) : fmt(c);
   if(isFinite(d) && d > 0) prog.style.width = (c/d*100)+'%';
-  if(v.buffered.length && isFinite(d) && d > 0)
-    bufEl.style.width = (v.buffered.end(v.buffered.length-1)/d*100)+'%';
+  if(v.buffered.length && isFinite(d) && d > 0){
+    var bufEnd = v.buffered.end(v.buffered.length-1);
+    bufEl.style.width = (bufEnd/d*100)+'%';
+  }
 });
-v.addEventListener('waiting',  function(){ spin.classList.add('on'); });
-v.addEventListener('canplay',  function(){ spin.classList.remove('on'); });
-v.addEventListener('playing',  function(){ spin.classList.remove('on'); setPB(true); autoHide(); });
-v.addEventListener('pause',    function(){ setPB(false); showCtrl(); });
-v.addEventListener('ended',    function(){ setPB(false); showCtrl(); });
+
+v.addEventListener('waiting', function(){ spin.classList.add('on'); });
+v.addEventListener('canplay', function(){ spin.classList.remove('on'); });
+v.addEventListener('playing', function(){ spin.classList.remove('on'); setPB(true); autoHide(); });
+v.addEventListener('pause', function(){ setPB(false); showCtrl(); });
+v.addEventListener('ended', function(){ setPB(false); showCtrl(); });
+
+// Initialize
+restoreFitMode();
+mb.querySelector('svg').style.opacity = '1';
 </script>
 </body>
 </html>
