@@ -3,8 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-<title>Player — Streaming + 4 Fit Modes</title>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/hls.js/1.5.7/hls.min.js"></script>
+<title>Player — Streaming Working</title>
+<script src="https://cdn.jsdelivr.net/npm/hls.js@1.5.7"></script>
 <style>
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body{width:100%;height:100%;overflow:hidden;background:#000}
@@ -79,58 +79,33 @@ body{display:flex;flex-direction:column;font-family:sans-serif}
 #buf{background:rgba(255,255,255,.3)}
 #prog{background:#fff}
 
-/* Horizontal button row - fixed layout */
 #btnrow{
   display:flex;
   align-items:center;
-  justify-content:flex-start;
-  gap:2px;
-  overflow-x:auto;
-  overflow-y:hidden;
-  -webkit-overflow-scrolling:touch;
-  scrollbar-width:none;
-  white-space:nowrap;
+  justify-content:space-evenly;
+  gap:4px;
+  width:100%;
 }
-#btnrow::-webkit-scrollbar{display:none}
 
 .cb{
   background:none;border:none;color:#fff;
   cursor:pointer;width:44px;height:44px;
-  display:inline-flex;
+  display:flex;
   align-items:center;
   justify-content:center;
   flex-shrink:0;
-  border-radius:8px;
+  border-radius:30px;
   padding:0;
+  transition:background 0.1s;
 }
 .cb:active{background:rgba(255,255,255,.15)}
 
-#tdisp{
-  font-size:11px;color:rgba(255,255,255,.7);
-  white-space:nowrap;padding:0 8px;
-  font-variant-numeric:tabular-nums;
-  flex-shrink:0;
-  font-weight:500;
-}
-#gap{flex:1;min-width:6px}
-
 #qsel{
   background:#1a1a1a;border:1px solid #444;color:#fff;
-  padding:6px 6px;border-radius:8px;font-size:11px;
-  outline:none;flex-shrink:0;width:62px;
+  padding:6px 8px;border-radius:20px;font-size:12px;
+  outline:none;flex-shrink:0;width:65px;
   font-weight:500;
-}
-
-#fitModeBadge{
-  font-size:9px;
-  background:rgba(0,0,0,0.65);
-  padding:4px 8px;
-  border-radius:20px;
-  color:#aaa;
-  white-space:nowrap;
-  flex-shrink:0;
-  margin-left:4px;
-  font-weight:500;
+  cursor:pointer;
 }
 
 :-webkit-full-screen #bar, :fullscreen #bar{display:none}
@@ -139,14 +114,14 @@ body{display:flex;flex-direction:column;font-family:sans-serif}
 <body>
 
 <div id="bar">
-  <input id="ui" type="url" inputmode="url"
+  <input id="ui" type="url" inputmode="url" value="https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8"
     placeholder="m3u8 / mp4 URL paste karein…"
     onkeydown="if(event.key==='Enter'){this.blur();doLoad()}">
   <button onclick="doLoad()">Play</button>
 </div>
 
 <div id="pa">
-  <video id="v" playsinline webkit-playsinline></video>
+  <video id="v" playsinline webkit-playsinline crossorigin="anonymous"></video>
   <div id="spin"><div class="ring"></div></div>
   <div id="empty">
     <svg width="54" height="54" viewBox="0 0 24 24" fill="none" stroke="#444" stroke-width="1.2">
@@ -165,50 +140,45 @@ body{display:flex;flex-direction:column;font-family:sans-serif}
     </div>
     <div id="btnrow">
       <button class="cb" id="pb" onclick="event.stopPropagation();togglePlay()">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="white"><polygon points="5 3 19 12 5 21"/></svg>
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="white"><polygon points="5 3 19 12 5 21"/></svg>
       </button>
 
       <button class="cb" onclick="event.stopPropagation();skip(-10)">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.2" stroke-linecap="round">
           <polyline points="1 4 1 10 7 10"/>
           <path d="M3.51 15a9 9 0 1 0 .49-5"/>
         </svg>
       </button>
 
       <button class="cb" onclick="event.stopPropagation();skip(10)">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.2" stroke-linecap="round">
           <polyline points="23 4 23 10 17 10"/>
           <path d="M20.49 15a9 9 0 1 1-.49-5"/>
         </svg>
       </button>
 
       <button class="cb" id="mb" onclick="event.stopPropagation();toggleMute()">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round">
           <polygon points="11 5 6 9 2 9 2 15 6 15 11 19"/>
           <path d="M19.07 4.93a10 10 0 0 1 0 14.14"/>
           <path d="M15.54 8.46a5 5 0 0 1 0 7.07"/>
         </svg>
       </button>
 
-      <span id="tdisp">0:00</span>
-      <div id="gap"></div>
-
       <select id="qsel" onclick="event.stopPropagation()" onchange="setQ(this.value)">
         <option value="-1">Auto</option>
       </select>
 
-      <!-- FIT BUTTON with 4 modes -->
-      <button class="cb" id="fitbtn" onclick="event.stopPropagation();cycleFitMode()" title="Fit Modes: Fit/Fill/Stretch/Original">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <button class="cb" id="fitbtn" onclick="event.stopPropagation();cycleFitMode()" title="Fit Screen: Fit/Fill/Stretch/Original">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <rect x="3" y="5" width="18" height="14" rx="1"/>
           <line x1="3" y1="10" x2="21" y2="10"/>
           <line x1="3" y1="14" x2="21" y2="14"/>
         </svg>
       </button>
-      <span id="fitModeBadge">Fit</span>
 
       <button class="cb" id="fsbtn" onclick="event.stopPropagation();toggleFS()" title="Fullscreen">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
           <polyline points="15 3 21 3 21 9"/>
           <polyline points="9 21 3 21 3 15"/>
           <line x1="21" y1="3" x2="14" y2="10"/>
@@ -227,14 +197,12 @@ var spin = document.getElementById('spin');
 var empty = document.getElementById('empty');
 var prog = document.getElementById('prog');
 var bufEl = document.getElementById('buf');
-var tdisp = document.getElementById('tdisp');
 var pb = document.getElementById('pb');
 var qsel = document.getElementById('qsel');
 var barEl = document.getElementById('bar');
 var fitbtn = document.getElementById('fitbtn');
 var fsbtn = document.getElementById('fsbtn');
 var mb = document.getElementById('mb');
-var fitModeBadge = document.getElementById('fitModeBadge');
 
 var hls = null;
 var fitMode = 0;
@@ -250,8 +218,8 @@ var fitModes = [
 
 function fmt(s){
   if(!isFinite(s)||s<0) return '0:00';
-  var h=Math.floor(s/3600),m=Math.floor((s%3600)/60),ss=Math.floor(s%60);
-  return h>0?h+':'+pd(m)+':'+pd(ss):m+':'+pd(ss);
+  var m=Math.floor(s/60), ss=Math.floor(s%60);
+  return m+':'+pd(ss);
 }
 function pd(n){return n<10?'0'+n:''+n;}
 
@@ -272,7 +240,6 @@ pa.addEventListener('click', function(e){
   togglePlay();
 });
 
-// Seek logic
 var seeking = false;
 function applySeek(cx){
   var track = document.getElementById('track');
@@ -305,9 +272,13 @@ function doLoad(){
     return;
   }
 
-  destroyHLS();
+  // Stop current playback
   v.pause();
+  destroyHLS();
+  
+  // Reset video element
   v.removeAttribute('src');
+  v.load();
   
   empty.style.display = 'none';
   spin.classList.add('on');
@@ -315,88 +286,130 @@ function doLoad(){
   bufEl.style.width = '0%';
   qsel.innerHTML = '<option value="-1">Auto</option>';
   setPB(false);
-  tdisp.textContent = '0:00';
 
   var isHLS = /\.m3u8|m3u8/i.test(url);
   
-  // Try HLS.js first
+  console.log("Loading URL:", url);
+  console.log("Is HLS:", isHLS);
+  console.log("HLS.js available:", typeof Hls !== 'undefined');
+  
+  // For HLS streams
   if(isHLS && typeof Hls !== 'undefined' && Hls.isSupported()){
+    console.log("Using HLS.js");
     hls = new Hls({
       enableWorker: true,
       debug: false,
-      backBufferLength: 60,
-      maxBufferLength: 60,
-      fragLoadingTimeOut: 30000,
-      manifestLoadingTimeOut: 30000,
-      levelLoadingTimeOut: 30000
+      autoStartLoad: true,
+      startPosition: -1,
+      capLevelToPlayerSize: true,
+      maxBufferLength: 30,
+      maxMaxBufferLength: 60
     });
     
     hls.loadSource(url);
     hls.attachMedia(v);
     
     hls.on(Hls.Events.MANIFEST_PARSED, function(event, data){
+      console.log("Manifest parsed, levels:", data.levels);
       spin.classList.remove('on');
       if(hls && hls.levels && hls.levels.length){
+        qsel.innerHTML = '<option value="-1">Auto</option>';
         hls.levels.forEach(function(l, i){
           var o = document.createElement('option');
           o.value = i;
-          o.textContent = l.height ? l.height + 'p' : (l.bitrate ? (l.bitrate/1000).toFixed(0)+'k' : 'L'+(i+1));
+          var label = l.height ? l.height + 'p' : 'Quality ' + (i+1);
+          o.textContent = label;
           qsel.appendChild(o);
         });
       }
-      v.play().catch(function(e){ console.log("autoplay blocked", e); });
+      v.play().catch(function(e){ 
+        console.log("Autoplay failed:", e);
+        spin.classList.remove('on');
+      });
     });
     
     hls.on(Hls.Events.ERROR, function(event, data){
+      console.error("HLS Error:", data);
       if(data.fatal){
-        if(data.type === Hls.ErrorTypes.NETWORK_ERROR){
-          setTimeout(function(){ if(hls) hls.startLoad(); }, 2000);
-        } else if(data.type === Hls.ErrorTypes.MEDIA_ERROR){
-          hls.recoverMediaError();
-        } else {
-          spin.classList.remove('on');
-          empty.style.display = 'flex';
+        switch(data.type){
+          case Hls.ErrorTypes.NETWORK_ERROR:
+            console.log("Network error, trying to recover...");
+            setTimeout(function(){ if(hls) hls.startLoad(); }, 2000);
+            break;
+          case Hls.ErrorTypes.MEDIA_ERROR:
+            console.log("Media error, recovering...");
+            hls.recoverMediaError();
+            break;
+          default:
+            console.log("Fatal error, cannot recover");
+            spin.classList.remove('on');
+            empty.style.display = 'flex';
+            break;
         }
       }
     });
     
-  } else if(v.canPlayType('application/vnd.apple.mpegurl')){
+    hls.on(Hls.Events.MEDIA_ATTACHED, function(){
+      console.log("Media attached");
+    });
+    
+  } else if(isHLS && v.canPlayType('application/vnd.apple.mpegurl')){
     // Safari native HLS
+    console.log("Using native HLS (Safari)");
     v.src = url;
     v.addEventListener('loadedmetadata', function onMeta(){
       v.removeEventListener('loadedmetadata', onMeta);
       spin.classList.remove('on');
     });
     v.load();
-    v.play().catch(function(){});
+    v.play().catch(function(e){ 
+      console.log("Play failed:", e);
+      spin.classList.remove('on');
+    });
   } else {
-    // MP4 or direct
+    // MP4 or direct file
+    console.log("Using native playback (MP4)");
     v.src = url;
     v.addEventListener('loadeddata', function onData(){
       v.removeEventListener('loadeddata', onData);
       spin.classList.remove('on');
     });
+    v.addEventListener('error', function(e){
+      console.log("Video error:", e);
+      spin.classList.remove('on');
+      empty.style.display = 'flex';
+    });
     v.load();
-    v.play().catch(function(e){ console.log(e); });
+    v.play().catch(function(e){ 
+      console.log("Play failed:", e);
+      spin.classList.remove('on');
+      if(!v.src) empty.style.display = 'flex';
+    });
   }
   
-  // Error handler
-  v.onerror = function(){
-    spin.classList.remove('on');
-    empty.style.display = 'flex';
-  };
+  // Fallback timeout
+  setTimeout(function(){
+    if(spin.classList.contains('on')){
+      spin.classList.remove('on');
+      if(!v.currentTime && !v.src){
+        empty.style.display = 'flex';
+      }
+    }
+  }, 10000);
 }
 
 function togglePlay(){ 
   if(v.paused){
-    v.play().catch(function(e){ console.log(e); });
+    v.play().catch(function(e){ console.log("Play error:", e); });
   } else {
     v.pause();
   }
 }
 
 function skip(s){ 
-  if(isFinite(v.duration)) v.currentTime = Math.max(0, Math.min(v.duration, v.currentTime + s)); 
+  if(isFinite(v.duration) && v.duration > 0){
+    v.currentTime = Math.max(0, Math.min(v.duration, v.currentTime + s)); 
+  }
   bringUp(); 
 }
 
@@ -416,26 +429,20 @@ function toggleMute(){
 
 function setPB(playing){
   pb.innerHTML = playing
-    ? '<svg width="20" height="20" viewBox="0 0 24 24" fill="white"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>'
-    : '<svg width="20" height="20" viewBox="0 0 24 24" fill="white"><polygon points="5 3 19 12 5 21"/></svg>';
+    ? '<svg width="22" height="22" viewBox="0 0 24 24" fill="white"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>'
+    : '<svg width="22" height="22" viewBox="0 0 24 24" fill="white"><polygon points="5 3 19 12 5 21"/></svg>';
 }
 
-// 4 FIT MODES
 function cycleFitMode(){
   fitMode = (fitMode + 1) % 4;
   var mode = fitModes[fitMode];
   v.style.objectFit = mode.objectFit;
-  fitModeBadge.textContent = mode.name;
   
   var svg = fitbtn.querySelector('svg');
   if(mode.name !== "Fit"){
     svg.setAttribute('stroke', '#3ea6ff');
-    fitModeBadge.style.color = '#3ea6ff';
-    fitModeBadge.style.background = 'rgba(62,166,255,0.2)';
   } else {
     svg.setAttribute('stroke', 'white');
-    fitModeBadge.style.color = '#aaa';
-    fitModeBadge.style.background = 'rgba(0,0,0,0.65)';
   }
   
   localStorage.setItem('fitMode', fitMode);
@@ -448,12 +455,9 @@ function restoreFitMode(){
     fitMode = parseInt(saved);
     var mode = fitModes[fitMode];
     v.style.objectFit = mode.objectFit;
-    fitModeBadge.textContent = mode.name;
     var svg = fitbtn.querySelector('svg');
     if(mode.name !== "Fit"){
       svg.setAttribute('stroke', '#3ea6ff');
-      fitModeBadge.style.color = '#3ea6ff';
-      fitModeBadge.style.background = 'rgba(62,166,255,0.2)';
     }
   }
 }
@@ -483,10 +487,8 @@ function onFSChange(){
 document.addEventListener('fullscreenchange', onFSChange);
 document.addEventListener('webkitfullscreenchange', onFSChange);
 
-// Video events
 v.addEventListener('timeupdate', function(){
   var c = v.currentTime, d = v.duration;
-  tdisp.textContent = (isFinite(d) && d > 0) ? fmt(c)+' / '+fmt(d) : fmt(c);
   if(isFinite(d) && d > 0) prog.style.width = (c/d*100)+'%';
   if(v.buffered.length && isFinite(d) && d > 0){
     var bufEnd = v.buffered.end(v.buffered.length-1);
@@ -499,10 +501,23 @@ v.addEventListener('canplay', function(){ spin.classList.remove('on'); });
 v.addEventListener('playing', function(){ spin.classList.remove('on'); setPB(true); autoHide(); });
 v.addEventListener('pause', function(){ setPB(false); showCtrl(); });
 v.addEventListener('ended', function(){ setPB(false); showCtrl(); });
+v.addEventListener('error', function(e){
+  console.log("Video element error:", e);
+  spin.classList.remove('on');
+});
 
-// Initialize
-restoreFitMode();
-mb.querySelector('svg').style.opacity = '1';
+// Auto-load test stream on page load
+window.addEventListener('load', function(){
+  restoreFitMode();
+  mb.querySelector('svg').style.opacity = '1';
+  // Auto-load a test stream so you can see it works
+  setTimeout(function(){
+    if(document.getElementById('ui').value.trim() === ""){
+      document.getElementById('ui').value = "https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8";
+      doLoad();
+    }
+  }, 500);
+});
 </script>
 </body>
 </html>
