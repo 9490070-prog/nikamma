@@ -1,144 +1,151 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <meta name="referrer" content="no-referrer">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Advance Enterprise IPTV Player</title>
+    <title>Pro Turbo Universal Player</title>
     
-    <script src="https://cdn.jsdelivr.net/npm/hls.js@latest/dist/hls.light.min.js"></script>
+    <link href="https://vjs.zencdn.net/8.10.0/video-js.css" rel="stylesheet" />
+    <script src="https://vjs.zencdn.net/8.10.0/video.min.js"></script>
     
+    <script src="https://cdn.jsdelivr.net/npm/mpegts.js@1.7.3/dist/mpegts.min.js"></script>
+
     <style>
         * { box-sizing: border-box; }
         body {
             margin: 0;
             padding: 0;
-            background: radial-gradient(circle, #1a1a1a 0%, #0a0a0a 100%);
+            background: radial-gradient(circle, #141414 0%, #070707 100%);
             display: flex;
             justify-content: center;
             align-items: center;
             height: 100vh;
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-        }
-        .player-card {
-            width: 95%;
-            max-width: 800px;
-            background: #000;
-            border-radius: 16px;
             overflow: hidden;
-            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7);
-            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+        .player-wrapper {
+            width: 95%;
+            max-width: 850px;
+            background: #000;
+            border-radius: 14px;
+            overflow: hidden;
+            box-shadow: 0 25px 60px rgba(0, 0, 0, 0.85);
+            border: 1px solid rgba(255, 255, 255, 0.06);
             position: relative;
         }
-        video {
-            width: 100%;
-            height: auto;
+        .video-js {
+            width: 100% !important;
+            height: auto !important;
             aspect-ratio: 16/9;
-            display: block;
-            object-fit: contain;
         }
-        .status-bar {
+        /* Custom Premium Accent styling for VideoJS controls */
+        .vjs-matrix.video-js { color: #00ffcc; }
+        .vjs-matrix .vjs-big-play-button {
+            background-color: rgba(0, 255, 204, 0.15) !important;
+            border-color: #00ffcc !important;
+            border-radius: 50% !important;
+            width: 70px !important;
+            height: 70px !important;
+            line-height: 66px !important;
+            margin-top: -35px !important;
+            margin-left: -35px !important;
+            backdrop-filter: blur(4px);
+            transition: all 0.3s ease;
+        }
+        .video-js:hover .vjs-big-play-button {
+            background-color: rgba(0, 255, 204, 0.3) !important;
+            transform: scale(1.08);
+        }
+        .vjs-matrix .vjs-play-progress, .vjs-matrix .vjs-volume-level { background: #00ffcc !important; }
+        .engine-badge {
             position: absolute;
             top: 15px;
-            left: 15px;
-            background: rgba(0, 0, 0, 0.6);
-            padding: 6px 12px;
-            border-radius: 20px;
-            font-size: 12px;
-            color: #00ffcc;
+            right: 15px;
+            background: rgba(0, 0, 0, 0.65);
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-size: 11px;
+            color: #ffffff;
+            font-weight: bold;
+            letter-spacing: 1px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
             backdrop-filter: blur(5px);
-            border: 1px solid rgba(0, 255, 204, 0.3);
             pointer-events: none;
-            display: flex;
-            align-items: center;
-            gap: 6px;
-        }
-        .pulse-dot {
-            width: 8px;
-            height: 8px;
-            background: #00ffcc;
-            border-radius: 50%;
-            animation: pulse 1.5s infinite;
-        }
-        @keyframes pulse {
-            0% { transform: scale(0.9); opacity: 0.6; }
-            50% { transform: scale(1.1); opacity: 1; }
-            100% { transform: scale(0.9); opacity: 0.6; }
+            z-index: 10;
         }
     </style>
 </head>
 <body>
 
-<div class="player-card">
-    <div class="status-bar">
-        <div class="pulse-dot"></div>
-        <span id="status-text">Connecting Securely...</span>
-    </div>
-    
-    <video id="video-engine" controls crossorigin="anonymous" playsinline autoplay muted></video>
+<div class="player-wrapper">
+    <div id="engine-mode" class="engine-badge">INITIALIZING...</div>
+
+    <video 
+        id="universal-core" 
+        class="video-js vjs-matrix vjs-default-skin vjs-big-play-centered" 
+        controls 
+        preload="auto" 
+        autoplay 
+        muted
+        playsinline>
+    </video>
 </div>
 
 <script>
-    const streamUrl = "https://cdn12isb.tamashaweb.com:8087/jazzauth/189H/playlist.m3u8";
-    const video = document.getElementById('video-engine');
-    const statusText = document.getElementById('status-text');
+    // Universal URL Input Controller (Dono .m3u8 ya .ts formats yahan work karenge)
+    const streamUrl = "https://catchup.yuppcdn.net/amazonv2/36/preview/asianetmovies/master/chunklist.m3u8?hdnts=st=1662922116~exp=1662922716~acl=";
+    
+    const videoEl = document.getElementById('universal-core');
+    const badge = document.getElementById('engine-mode');
 
-    // Advance Hls Engine Configuration for Mixed Content & IPTV Streams
-    const config = {
-        enableWorker: true, // Multi-threading toggle to bypass Main Thread CORS
-        lowLatencyMode: true,
-        backBufferLength: 30,
-        maxBufferSize: 0,
-        maxBufferLength: 10,
-        progressive: true,
-        // Force upgrade/bypass rules inside JS compiler
-        xhrSetup: function (xhr, url) {
-            xhr.withCredentials = false;
-        }
-    };
+    // Logic to detect extension format type
+    const isTS = streamUrl.split('?')[0].endsWith('.ts') || streamUrl.includes('/live/');
 
-    if (Hls.isSupported()) {
-        const hls = new Hls(config);
+    if (isTS && mpegts.getFeatureList().mseLivePlayback) {
+        // --- PROCESS RAW TS STREAMS ---
+        badge.innerText = "ENGINE: MPEG-TS";
+        badge.style.color = "#00ffcc";
         
-        statusText.innerText = "Transmuxing Stream...";
-        hls.loadSource(streamUrl);
-        hls.attachMedia(video);
-
-        hls.on(Hls.Events.MANIFEST_PARSED, function() {
-            statusText.innerText = "LIVE";
-            statusText.style.color = "#ff3333";
-            document.querySelector('.pulse-dot').style.background = "#ff3333";
-            
-            video.play().catch(error => {
-                statusText.innerText = "Click Play Button";
-                statusText.style.color = "#fff";
-            });
+        var mpegtsPlayer = mpegts.createPlayer({
+            type: 'mse',
+            isLive: true,
+            url: streamUrl
+        }, {
+            enableWorker: true,
+            lazyLoad: false
         });
+        
+        // Initialize Video.js standard layout skin over HTML5 element
+        var player = videojs('universal-core');
+        mpegtsPlayer.attachMediaElement(videoEl);
+        mpegtsPlayer.load();
+        mpegtsPlayer.play();
+        
+    } else {
+        // --- PROCESS M3U8 (HLS) STREAMS ---
+        badge.innerText = "ENGINE: HLS (.M3U8)";
+        badge.style.color = "#ffaa00";
 
-        // Auto Recovery on Mixed Content/Network Drops
-        hls.on(Hls.Events.ERROR, function (event, data) {
-            if (data.fatal) {
-                switch (data.type) {
-                    case Hls.ErrorTypes.NETWORK_ERROR:
-                        statusText.innerText = "Network Retry...";
-                        hls.startLoad();
-                        break;
-                    case Hls.ErrorTypes.MEDIA_ERROR:
-                        statusText.innerText = "Decoding Stream...";
-                        hls.recoverMediaError();
-                        break;
-                    default:
-                        statusText.innerText = "Loading Video...";
-                        break;
+        var player = videojs('universal-core', {
+            html5: {
+                vhs: {
+                    overrideNative: true,
+                    withCredentials: false
                 }
             }
         });
-    } 
-    // Apple Devices Safari Support
-    else if (video.canPlayType('application/vnd.apple.mpegurl')) {
-        video.src = streamUrl;
-        statusText.innerText = "LIVE (Native)";
-    } else {
-        statusText.innerText = "Browser Not Supported";
+
+        player.src({
+            src: streamUrl,
+            type: 'application/x-mpegURL'
+        });
+
+        player.ready(function() {
+            player.play().catch(function(error) {
+                console.log("Autoplay context: Manual touch interaction needed on mobile devices.");
+            });
+        });
     }
 </script>
 
