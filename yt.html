@@ -1,153 +1,125 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ur">
 <head>
-    <meta name="referrer" content="no-referrer">
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pro Turbo Universal Player</title>
-    
-    <link href="https://vjs.zencdn.net/8.10.0/video-js.css" rel="stylesheet" />
-    <script src="https://vjs.zencdn.net/8.10.0/video.min.js"></script>
-    
-    <script src="https://cdn.jsdelivr.net/npm/mpegts.js@1.7.3/dist/mpegts.min.js"></script>
-
-    <style>
-        * { box-sizing: border-box; }
-        body {
-            margin: 0;
-            padding: 0;
-            background: radial-gradient(circle, #141414 0%, #070707 100%);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-            overflow: hidden;
-        }
-        .player-wrapper {
-            width: 95%;
-            max-width: 850px;
-            background: #000;
-            border-radius: 14px;
-            overflow: hidden;
-            box-shadow: 0 25px 60px rgba(0, 0, 0, 0.85);
-            border: 1px solid rgba(255, 255, 255, 0.06);
-            position: relative;
-        }
-        .video-js {
-            width: 100% !important;
-            height: auto !important;
-            aspect-ratio: 16/9;
-        }
-        /* Custom Premium Accent styling for VideoJS controls */
-        .vjs-matrix.video-js { color: #00ffcc; }
-        .vjs-matrix .vjs-big-play-button {
-            background-color: rgba(0, 255, 204, 0.15) !important;
-            border-color: #00ffcc !important;
-            border-radius: 50% !important;
-            width: 70px !important;
-            height: 70px !important;
-            line-height: 66px !important;
-            margin-top: -35px !important;
-            margin-left: -35px !important;
-            backdrop-filter: blur(4px);
-            transition: all 0.3s ease;
-        }
-        .video-js:hover .vjs-big-play-button {
-            background-color: rgba(0, 255, 204, 0.3) !important;
-            transform: scale(1.08);
-        }
-        .vjs-matrix .vjs-play-progress, .vjs-matrix .vjs-volume-level { background: #00ffcc !important; }
-        .engine-badge {
-            position: absolute;
-            top: 15px;
-            right: 15px;
-            background: rgba(0, 0, 0, 0.65);
-            padding: 4px 10px;
-            border-radius: 6px;
-            font-size: 11px;
-            color: #ffffff;
-            font-weight: bold;
-            letter-spacing: 1px;
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            backdrop-filter: blur(5px);
-            pointer-events: none;
-            z-index: 10;
-        }
-    </style>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Facebook Live Player</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      background: #0d0d0d;
+      font-family: 'Segoe UI', sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+    .container { width: 100%; max-width: 820px; }
+    .header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 16px;
+    }
+    .fb-logo {
+      width: 36px; height: 36px;
+      background: #1877F2;
+      border-radius: 8px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 22px; font-weight: bold; color: #fff;
+    }
+    .live-badge {
+      background: #e02020; color: #fff;
+      font-size: 11px; font-weight: 700;
+      letter-spacing: 1.5px; padding: 3px 9px;
+      border-radius: 4px; text-transform: uppercase;
+      animation: pulse 1.8s ease-in-out infinite;
+    }
+    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.6} }
+    .title { color: #f0f0f0; font-size: 15px; font-weight: 500; }
+    .player-wrapper {
+      width: 100%;
+      background: #111;
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 8px 40px rgba(24,119,242,0.18);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 460px;
+    }
+    .fb-video { width: 100% !important; }
+    .footer {
+      margin-top: 14px;
+      text-align: center;
+      color: #555;
+      font-size: 12px;
+    }
+    .footer a { color: #1877F2; text-decoration: none; }
+    .footer a:hover { text-decoration: underline; }
+    .open-btn {
+      display: inline-block;
+      margin-top: 12px;
+      background: #1877F2;
+      color: #fff;
+      padding: 10px 24px;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 600;
+      text-decoration: none;
+      transition: background 0.2s;
+    }
+    .open-btn:hover { background: #1560c0; text-decoration: none; }
+  </style>
 </head>
 <body>
 
-<div class="player-wrapper">
-    <div id="engine-mode" class="engine-badge">INITIALIZING...</div>
-
-    <video 
-        id="universal-core" 
-        class="video-js vjs-matrix vjs-default-skin vjs-big-play-centered" 
-        controls 
-        preload="auto" 
-        autoplay 
-        muted
-        playsinline>
-    </video>
-</div>
-
+<!-- Facebook JS SDK -->
+<div id="fb-root"></div>
 <script>
-    // Universal URL Input Controller (Dono .m3u8 ya .ts formats yahan work karenge)
-    const streamUrl = "http://starhub.pro:80/live/Suborna5535/Suborna6654/89.ts";
-    
-    const videoEl = document.getElementById('universal-core');
-    const badge = document.getElementById('engine-mode');
-
-    // Logic to detect extension format type
-    const isTS = streamUrl.split('?')[0].endsWith('.ts') || streamUrl.includes('/live/');
-
-    if (isTS && mpegts.getFeatureList().mseLivePlayback) {
-        // --- PROCESS RAW TS STREAMS ---
-        badge.innerText = "ENGINE: MPEG-TS";
-        badge.style.color = "#00ffcc";
-        
-        var mpegtsPlayer = mpegts.createPlayer({
-            type: 'mse',
-            isLive: true,
-            url: streamUrl
-        }, {
-            enableWorker: true,
-            lazyLoad: false
-        });
-        
-        // Initialize Video.js standard layout skin over HTML5 element
-        var player = videojs('universal-core');
-        mpegtsPlayer.attachMediaElement(videoEl);
-        mpegtsPlayer.load();
-        mpegtsPlayer.play();
-        
-    } else {
-        // --- PROCESS M3U8 (HLS) STREAMS ---
-        badge.innerText = "ENGINE: HLS (.M3U8)";
-        badge.style.color = "#ffaa00";
-
-        var player = videojs('universal-core', {
-            html5: {
-                vhs: {
-                    overrideNative: true,
-                    withCredentials: false
-                }
-            }
-        });
-
-        player.src({
-            src: streamUrl,
-            type: 'application/x-mpegURL'
-        });
-
-        player.ready(function() {
-            player.play().catch(function(error) {
-                console.log("Autoplay context: Manual touch interaction needed on mobile devices.");
-            });
-        });
-    }
+  window.fbAsyncInit = function() {
+    FB.init({
+      appId: '',
+      xfbml: true,
+      version: 'v19.0'
+    });
+  };
+  (function(d, s, id){
+    var js, fjs = d.getElementsByTagName(s)[0];
+    if (d.getElementById(id)) return;
+    js = d.createElement(s); js.id = id;
+    js.src = "https://connect.facebook.net/en_US/sdk.js";
+    fjs.parentNode.insertBefore(js, fjs);
+  }(document, 'script', 'facebook-jssdk'));
 </script>
+
+<div class="container">
+  <div class="header">
+    <div class="fb-logo">f</div>
+    <span class="live-badge">Live</span>
+    <span class="title">Facebook Live Video</span>
+  </div>
+
+  <div class="player-wrapper">
+    <div
+      class="fb-video"
+      data-href="https://www.facebook.com/video/1483969843528660"
+      data-width="820"
+      data-show-text="false"
+      data-autoplay="true"
+      data-allowfullscreen="true">
+    </div>
+  </div>
+
+  <div class="footer">
+    <p>Agar video nahi chal raha:</p>
+    <a class="open-btn" href="https://www.facebook.com/video/1483969843528660" target="_blank">
+      Facebook par Direct Kholein ↗
+    </a>
+  </div>
+</div>
 
 </body>
 </html>
