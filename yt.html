@@ -4,9 +4,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Ad Studio Pro - Animated Banner GIF Export</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js">
+    </script>
     <!-- GIF.js for creating animated GIFs -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/gif.js/0.2.0/gif.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gif.js/0.2.0/gif.js">
+    </script>
     <style>
         * {
             margin: 0;
@@ -926,7 +928,7 @@
                     <input type="number" id="canvasH" value="50" oninput="mutateCanvas()" min="30" max="400">
                 </div>
             </div>
-            
+
             <div class="card-title" style="margin-top:10px;margin-bottom:6px;font-size:10px;">
                 <span class="title-icon">🎨</span> Ad Canvas Background
             </div>
@@ -973,7 +975,7 @@
                 <button class="btn btn-blue" onclick="exportMP4()">🎥 MP4</button>
                 <button class="btn btn-orange" onclick="exportTransparent()">✨ Transparent</button>
             </div>
-            
+
             <!-- GIF Export Options -->
             <div class="gif-options" id="gifOptions">
                 <div class="input-group">
@@ -1917,7 +1919,7 @@
             }, 500);
         }
 
-        // ===== DYNAMIC REAL-TIME ANIMATED GIF EXPORT ENGINE =====
+        // ===== FIXED: DYNAMIC REAL-TIME ANIMATED GIF EXPORT ENGINE =====
         function exportFullGIF() {
             clearSelection();
             showToast('🎞️ Initializing Premium HD GIF Render Engine...');
@@ -1926,7 +1928,7 @@
 
             const totalFrames = parseInt(document.getElementById('gifFrames').value) || 24;
             const delay = parseInt(document.getElementById('gifDelay').value) || 60;
-            const quality = parseInt(document.getElementById('gifQuality').value) || 1; // 1 means highest quality, no pixelation
+            const quality = parseInt(document.getElementById('gifQuality').value) || 1;
 
             const workerCode = `
                 importScripts('https://cdnjs.cloudflare.com/ajax/libs/gif.js/0.2.0/gif.worker.js');
@@ -1947,61 +1949,100 @@
             const framesBuffer = [];
 
             // Store original states before temporary frame mutation snapshots
-            const originalTransforms = [];
+            const originalStates = [];
             const nodes = canvas.querySelectorAll('.ad-node');
             nodes.forEach(node => {
-                originalTransforms.push({
+                const textInside = node.querySelector('.text-inside');
+                originalStates.push({
                     node: node,
                     transform: node.style.transform || 'none',
                     opacity: parseFloat(node.style.opacity) || 1,
-                    color: node.querySelector('.text-inside') ? node.querySelector('.text-inside').style.color : null
+                    color: textInside ? textInside.style.color : null,
+                    textShadow: textInside ? textInside.style.textShadow : null
                 });
             });
 
+            // Function to get animation value based on frame and total frames
+            function getAnimationValue(anim, frame, total) {
+                const progress = frame / total;
+                const angle = progress * Math.PI * 2;
+                const sin = Math.sin(angle);
+                const cos = Math.cos(angle);
+                const normalizedSin = (sin + 1) / 2;
+
+                switch (anim) {
+                    case 'bounce':
+                        return sin * 8;
+                    case 'pulse':
+                        return 1 + sin * 0.15;
+                    case 'fade':
+                        return 0.2 + normalizedSin * 0.8;
+                    case 'spin':
+                        return progress * 360;
+                    case 'slide':
+                        return sin * 12;
+                    case 'flash':
+                        return frame % 2 === 0 ? '#ff0000' : '#ffaa00';
+                    case 'rainbow':
+                        return progress * 360;
+                    case 'glow':
+                        return 5 + normalizedSin * 7;
+                    default:
+                        return null;
+                }
+            }
+
             function captureNextFrame() {
                 if (currentFrame >= totalFrames) {
-                    // Restore original layouts completely
-                    originalTransforms.forEach(t => {
-                        t.node.style.transform = t.transform;
-                        t.node.style.opacity = t.opacity;
-                        const txt = t.node.querySelector('.text-inside');
-                        if (txt && t.color) txt.style.color = t.color;
+                    // Restore original states
+                    originalStates.forEach(state => {
+                        state.node.style.transform = state.transform;
+                        state.node.style.opacity = state.opacity;
+                        const txt = state.node.querySelector('.text-inside');
+                        if (txt) {
+                            txt.style.color = state.color || '';
+                            txt.style.textShadow = state.textShadow || '';
+                        }
                     });
                     compileBufferedFrames();
                     return;
                 }
 
-                // FIX: Valid backtick interpolation layout mapping without string slash breaks
+                // Apply animations to each node
                 nodes.forEach(node => {
                     const anim = node.dataset.animName;
-                    if (!anim) return;
-                    
-                    const step = currentFrame;
-                    const textInside = node.querySelector('.text-inside');
+                    if (!anim || anim === 'none') return;
 
-                    if (anim === 'bounce') {
-                        const offset = Math.sin((step / totalFrames) * Math.PI * 2) * 8;
-                        node.style.transform = `translateY(${offset}px)`;
-                    } else if (anim === 'pulse') {
-                        const scale = 1 + Math.sin((step / totalFrames) * Math.PI * 2) * 0.15;
-                        node.style.transform = `scale(${scale})`;
-                    } else if (anim === 'fade') {
-                        const opacity = 0.2 + (Math.sin((step / totalFrames) * Math.PI * 2) + 1) * 0.4;
-                        node.style.opacity = opacity;
-                    } else if (anim === 'spin') {
-                        const angle = (step / totalFrames) * 360;
-                        node.style.transform = `rotate(${angle}deg)`;
-                    } else if (anim === 'slide') {
-                        const offset = Math.sin((step / totalFrames) * Math.PI * 2) * 12;
-                        node.style.transform = `translateX(${offset}px)`;
-                    } else if (anim === 'flash' && textInside) {
-                        textInside.style.color = step % 2 === 0 ? '#ff0000' : '#ffaa00';
-                    } else if (anim === 'rainbow' && textInside) {
-                        const hue = (step / totalFrames) * 360;
-                        textInside.style.color = `hsl(${hue}, 100%, 50%)`;
-                    } else if (anim === 'glow' && textInside) {
-                        const blur = 5 + (Math.sin((step / totalFrames) * Math.PI * 2) + 1) * 7;
-                        textInside.style.textShadow = `0 0 ${blur}px #3b82f6`;
+                    const textInside = node.querySelector('.text-inside');
+                    const value = getAnimationValue(anim, currentFrame, totalFrames);
+
+                    if (value === null) return;
+
+                    switch (anim) {
+                        case 'bounce':
+                            node.style.transform = `translateY(${value}px)`;
+                            break;
+                        case 'pulse':
+                            node.style.transform = `scale(${value})`;
+                            break;
+                        case 'fade':
+                            node.style.opacity = value;
+                            break;
+                        case 'spin':
+                            node.style.transform = `rotate(${value}deg)`;
+                            break;
+                        case 'slide':
+                            node.style.transform = `translateX(${value}px)`;
+                            break;
+                        case 'flash':
+                            if (textInside) textInside.style.color = value;
+                            break;
+                        case 'rainbow':
+                            if (textInside) textInside.style.color = `hsl(${value}, 100%, 50%)`;
+                            break;
+                        case 'glow':
+                            if (textInside) textInside.style.textShadow = `0 0 ${value}px #3b82f6`;
+                            break;
                     }
                 });
 
@@ -2009,18 +2050,22 @@
                     backgroundColor: isTransparent ? null : window.getComputedStyle(canvas).backgroundColor,
                     logging: false,
                     useCORS: true,
-                    scale: 2 // Boost canvas frame quality up scale mapping
+                    scale: 2
                 }).then(renderedCanvas => {
                     const ctx = renderedCanvas.getContext('2d');
                     framesBuffer.push(ctx.getImageData(0, 0, renderedCanvas.width, renderedCanvas.height));
-                    
+
                     currentFrame++;
-                    progressFill.style.width = Math.round((currentFrame / totalFrames) * 50) + '%';
-                    
-                    setTimeout(captureNextFrame, 40); // 40ms capture delta frames matching 60ms delay profile
+                    // Use delay as the timing factor - lower delay = faster animation
+                    const progressPercent = Math.round((currentFrame / totalFrames) * 50);
+                    progressFill.style.width = Math.min(progressPercent, 50) + '%';
+
+                    // Use the actual delay value for frame timing
+                    const frameDelay = Math.max(20, delay * 0.8); // Slightly faster than delay for smoothness
+                    setTimeout(captureNextFrame, frameDelay);
                 }).catch(err => {
                     console.error(err);
-                    showToast('❌ Frame capture missing: ' + err.message, 'error');
+                    showToast('❌ Frame capture error: ' + err.message, 'error');
                     progressBar.style.display = 'none';
                     URL.revokeObjectURL(workerUrl);
                 });
@@ -2028,7 +2073,7 @@
 
             function compileBufferedFrames() {
                 showToast('⚙️ Encoding Perfect HD Frames...');
-                
+
                 if (framesBuffer.length === 0) {
                     showToast('❌ Buffer empty', 'error');
                     progressBar.style.display = 'none';
@@ -2040,17 +2085,18 @@
                 tempCanvas.height = framesBuffer[0].height;
                 const tempCtx = tempCanvas.getContext('2d');
 
-                // Adjust gif setup dimensions to match internal upscaled canvas buffer
                 gif.options.width = tempCanvas.width;
                 gif.options.height = tempCanvas.height;
 
+                // Add all frames to GIF
                 for (let i = 0; i < framesBuffer.length; i++) {
                     tempCtx.putImageData(framesBuffer[i], 0, 0);
                     gif.addFrame(tempCtx, { delay: delay, copy: true });
                 }
 
                 gif.on('progress', function(p) {
-                    progressFill.style.width = (50 + Math.round(p * 50)) + '%';
+                    const progressValue = 50 + Math.round(p * 50);
+                    progressFill.style.width = Math.min(progressValue, 100) + '%';
                 });
 
                 gif.on('finished', function(blob) {
@@ -2064,7 +2110,7 @@
                 gif.render();
             }
 
-            // Fire main thread engine
+            // Start frame capture
             setTimeout(captureNextFrame, 100);
         }
 
@@ -2090,6 +2136,17 @@
         // ===== INIT =====
         window.onload = function() {
             mutateCanvas();
+            // Set default animation for demo
+            setTimeout(() => {
+                const textNodes = document.querySelectorAll('.ad-node');
+                textNodes.forEach(node => {
+                    if (node.dataset.type === 'text') {
+                        node.dataset.animName = 'fade';
+                        const textEl = node.querySelector('.text-inside');
+                        if (textEl) textEl.classList.add('text-fade');
+                    }
+                });
+            }, 500);
         };
     </script>
 </body>
