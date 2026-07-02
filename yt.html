@@ -978,15 +978,15 @@
             <div class="gif-options" id="gifOptions">
                 <div class="input-group">
                     <label>Frames</label>
-                    <input type="number" id="gifFrames" value="15" min="5" max="40">
+                    <input type="number" id="gifFrames" value="24" min="5" max="50">
                 </div>
                 <div class="input-group">
                     <label>Delay (ms)</label>
-                    <input type="number" id="gifDelay" value="100" min="40" max="500">
+                    <input type="number" id="gifDelay" value="60" min="30" max="500">
                 </div>
                 <div class="input-group">
-                    <label>Quality</label>
-                    <input type="number" id="gifQuality" value="10" min="1" max="20">
+                    <label>Quality (1=Best)</label>
+                    <input type="number" id="gifQuality" value="1" min="1" max="20">
                 </div>
             </div>
             <div style="margin-top:6px;display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;">
@@ -1478,6 +1478,8 @@
 
         function dragEnd() {
             isDragging = false;
+            document.getElementById('canvasW').value = canvas.offsetWidth;
+            document.getElementById('canvasH').value = canvas.offsetHeight;
             document.removeEventListener('mousemove', dragMove);
             document.removeEventListener('touchmove', dragMove);
             document.removeEventListener('mouseup', dragEnd);
@@ -1918,13 +1920,13 @@
         // ===== DYNAMIC REAL-TIME ANIMATED GIF EXPORT ENGINE =====
         function exportFullGIF() {
             clearSelection();
-            showToast('🎞️ Initializing Animated GIF Render Engine...');
+            showToast('🎞️ Initializing Premium HD GIF Render Engine...');
             progressBar.style.display = 'block';
             progressFill.style.width = '0%';
 
-            const totalFrames = parseInt(document.getElementById('gifFrames').value) || 15;
-            const delay = parseInt(document.getElementById('gifDelay').value) || 100;
-            const quality = parseInt(document.getElementById('gifQuality').value) || 10;
+            const totalFrames = parseInt(document.getElementById('gifFrames').value) || 24;
+            const delay = parseInt(document.getElementById('gifDelay').value) || 60;
+            const quality = parseInt(document.getElementById('gifQuality').value) || 1; // 1 means highest quality, no pixelation
 
             const workerCode = `
                 importScripts('https://cdnjs.cloudflare.com/ajax/libs/gif.js/0.2.0/gif.worker.js');
@@ -1933,7 +1935,7 @@
             const workerUrl = URL.createObjectURL(workerBlob);
 
             const gif = new GIF({
-                workers: 2,
+                workers: 4,
                 quality: quality,
                 width: canvas.offsetWidth,
                 height: canvas.offsetHeight,
@@ -1944,14 +1946,13 @@
             let currentFrame = 0;
             const framesBuffer = [];
 
-            // Store original positions & states before temporary snapshot mutations
+            // Store original states before temporary frame mutation snapshots
             const originalTransforms = [];
             const nodes = canvas.querySelectorAll('.ad-node');
             nodes.forEach(node => {
                 originalTransforms.push({
                     node: node,
-                    left: parseInt(node.style.left) || 0,
-                    top: parseInt(node.style.top) || 0,
+                    transform: node.style.transform || 'none',
                     opacity: parseFloat(node.style.opacity) || 1,
                     color: node.querySelector('.text-inside') ? node.querySelector('.text-inside').style.color : null
                 });
@@ -1959,10 +1960,9 @@
 
             function captureNextFrame() {
                 if (currentFrame >= totalFrames) {
-                    // Restore layers to original structural layouts
+                    // Restore original layouts completely
                     originalTransforms.forEach(t => {
-                        t.node.style.left = t.left + 'px';
-                        t.node.style.top = t.top + 'px';
+                        t.node.style.transform = t.transform;
                         t.node.style.opacity = t.opacity;
                         const txt = t.node.querySelector('.text-inside');
                         if (txt && t.color) txt.style.color = t.color;
@@ -1971,7 +1971,7 @@
                     return;
                 }
 
-                // STEP VARIATION MULTIPLIER: Force HTML5 Canvas layout parsing manually 
+                // FIX: Valid backtick interpolation layout mapping without string slash breaks
                 nodes.forEach(node => {
                     const anim = node.dataset.animName;
                     if (!anim) return;
@@ -1979,26 +1979,29 @@
                     const step = currentFrame;
                     const textInside = node.querySelector('.text-inside');
 
-                    if (anim === 'bounce' || anim === 'bounce') {
+                    if (anim === 'bounce') {
                         const offset = Math.sin((step / totalFrames) * Math.PI * 2) * 8;
-                        node.style.transform = `translateY(\${offset}px)`;
+                        node.style.transform = `translateY(${offset}px)`;
                     } else if (anim === 'pulse') {
                         const scale = 1 + Math.sin((step / totalFrames) * Math.PI * 2) * 0.15;
-                        node.style.transform = `scale(\${scale})`;
+                        node.style.transform = `scale(${scale})`;
                     } else if (anim === 'fade') {
-                        const opacity = 0.3 + (Math.sin((step / totalFrames) * Math.PI * 2) + 1) * 0.35;
+                        const opacity = 0.2 + (Math.sin((step / totalFrames) * Math.PI * 2) + 1) * 0.4;
                         node.style.opacity = opacity;
                     } else if (anim === 'spin') {
                         const angle = (step / totalFrames) * 360;
-                        node.style.transform = `rotate(\${angle}deg)`;
+                        node.style.transform = `rotate(${angle}deg)`;
                     } else if (anim === 'slide') {
                         const offset = Math.sin((step / totalFrames) * Math.PI * 2) * 12;
-                        node.style.transform = `translateX(\${offset}px)`;
+                        node.style.transform = `translateX(${offset}px)`;
                     } else if (anim === 'flash' && textInside) {
                         textInside.style.color = step % 2 === 0 ? '#ff0000' : '#ffaa00';
                     } else if (anim === 'rainbow' && textInside) {
                         const hue = (step / totalFrames) * 360;
-                        textInside.style.color = `hsl(\${hue}, 100%, 50%)`;
+                        textInside.style.color = `hsl(${hue}, 100%, 50%)`;
+                    } else if (anim === 'glow' && textInside) {
+                        const blur = 5 + (Math.sin((step / totalFrames) * Math.PI * 2) + 1) * 7;
+                        textInside.style.textShadow = `0 0 ${blur}px #3b82f6`;
                     }
                 });
 
@@ -2006,15 +2009,15 @@
                     backgroundColor: isTransparent ? null : window.getComputedStyle(canvas).backgroundColor,
                     logging: false,
                     useCORS: true,
-                    scale: 1
+                    scale: 2 // Boost canvas frame quality up scale mapping
                 }).then(renderedCanvas => {
                     const ctx = renderedCanvas.getContext('2d');
-                    framesBuffer.push(ctx.getImageData(0, 0, canvas.offsetWidth, canvas.offsetHeight));
+                    framesBuffer.push(ctx.getImageData(0, 0, renderedCanvas.width, renderedCanvas.height));
                     
                     currentFrame++;
                     progressFill.style.width = Math.round((currentFrame / totalFrames) * 50) + '%';
                     
-                    setTimeout(captureNextFrame, 60); // Rapid sampling ticks
+                    setTimeout(captureNextFrame, 40); // 40ms capture delta frames matching 60ms delay profile
                 }).catch(err => {
                     console.error(err);
                     showToast('❌ Frame capture missing: ' + err.message, 'error');
@@ -2024,12 +2027,22 @@
             }
 
             function compileBufferedFrames() {
-                showToast('⚙️ Compiling Movie Frame Snapshots...');
+                showToast('⚙️ Encoding Perfect HD Frames...');
                 
+                if (framesBuffer.length === 0) {
+                    showToast('❌ Buffer empty', 'error');
+                    progressBar.style.display = 'none';
+                    return;
+                }
+
                 const tempCanvas = document.createElement('canvas');
-                tempCanvas.width = canvas.offsetWidth;
-                tempCanvas.height = canvas.offsetHeight;
+                tempCanvas.width = framesBuffer[0].width;
+                tempCanvas.height = framesBuffer[0].height;
                 const tempCtx = tempCanvas.getContext('2d');
+
+                // Adjust gif setup dimensions to match internal upscaled canvas buffer
+                gif.options.width = tempCanvas.width;
+                gif.options.height = tempCanvas.height;
 
                 for (let i = 0; i < framesBuffer.length; i++) {
                     tempCtx.putImageData(framesBuffer[i], 0, 0);
@@ -2044,15 +2057,15 @@
                     progressBar.style.display = 'none';
                     const finalGifUrl = URL.createObjectURL(blob);
                     showDialog(finalGifUrl, 'ad-animation-' + Date.now() + '.gif', 'gif');
-                    showToast('✅ Dynamic GIF Exported Perfectly!');
+                    showToast('🎯 GIF Rendered at Max Quality!');
                     URL.revokeObjectURL(workerUrl);
                 });
 
                 gif.render();
             }
 
-            // Fire thread capture engine
-            setTimeout(captureNextFrame, 150);
+            // Fire main thread engine
+            setTimeout(captureNextFrame, 100);
         }
 
         // ===== UTILITY =====
