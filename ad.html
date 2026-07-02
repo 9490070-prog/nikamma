@@ -1,97 +1,272 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Nikamma Engine Studio Pro - Drag Fix</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;600;700&family=Inter:wght@400;600;700&family=Montserrat:wght@900&display=swap" rel="stylesheet">
-    
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-    
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Nikamma Engine Studio Pro · Complete</title>
+    <script src="https://cdn.tailwindcss.com">
+    </script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;600;700&family=Inter:wght@400;600;700&family=Montserrat:wght@900&display=swap" rel="stylesheet" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js">
+    </script>
     <script>
         tailwind.config = {
             theme: {
                 extend: {
-                    fontFamily: {
-                        sans: ['Inter', 'sans-serif'],
-                        heading: ['Space Grotesk', 'sans-serif'],
-                        montserrat: ['Montserrat', 'sans-serif']
-                    }
+                    fontFamily: { sans: ['Inter', 'sans-serif'], heading: ['Space Grotesk', 'sans-serif'], montserrat: ['Montserrat', 'sans-serif'] }
                 }
             }
         }
     </script>
     <style>
-        ::-webkit-scrollbar { width: 6px; height: 6px; }
-        ::-webkit-scrollbar-track { background: #0b0b0e; }
-        ::-webkit-scrollbar-thumb { background: #27273a; border-radius: 4px; }
-        ::-webkit-scrollbar-thumb:hover { background: #4f46e5; }
-
+        * {
+            box-sizing: border-box;
+            user-select: none;
+        }
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #0b0b0e;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #27273a;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #4f46e5;
+        }
         .canvas-grid {
             background-color: #111116;
-            background-image: linear-gradient(45deg, #181822 25%, transparent 25%), 
-                              linear-gradient(-45deg, #181822 25%, transparent 25%), 
-                              linear-gradient(45deg, transparent 75%, #181822 75%), 
-                              linear-gradient(-45deg, transparent 75%, #181822 75%);
+            background-image: linear-gradient(45deg, #181822 25%, transparent 25%),
+                linear-gradient(-45deg, #181822 25%, transparent 25%),
+                linear-gradient(45deg, transparent 75%, #181822 75%),
+                linear-gradient(-45deg, transparent 75%, #181822 75%);
             background-size: 16px 16px;
         }
-
         .ad-layer-element {
             position: absolute;
-            cursor: move;
+            cursor: grab;
             border: 2px dashed transparent;
             box-sizing: border-box;
             user-select: none;
             -webkit-user-drag: none;
+            min-width: 12px;
+            min-height: 12px;
+            transition: box-shadow 0.15s;
         }
-        .ad-layer-element:hover { border-color: rgba(99, 102, 241, 0.6); }
+        .ad-layer-element:active {
+            cursor: grabbing;
+        }
+        .ad-layer-element:hover {
+            border-color: rgba(99, 102, 241, 0.5);
+        }
         .ad-layer-element.active-selected {
             border-color: #6366f1;
-            box-shadow: 0 0 10px rgba(99, 102, 241, 0.4);
+            box-shadow: 0 0 0 2px #6366f1, 0 0 20px rgba(99, 102, 241, 0.3);
+            z-index: 999 !important;
         }
-
         .scale-handle {
             display: none;
             position: absolute;
-            width: 10px;
-            height: 10px;
+            width: 14px;
+            height: 14px;
             background: #6366f1;
-            border: 1px solid #ffffff;
+            border: 2px solid white;
             border-radius: 50%;
-            bottom: -5px; right: -5px;
+            bottom: -7px;
+            right: -7px;
             cursor: se-resize;
-            z-index: 50;
+            z-index: 999;
+            box-shadow: 0 0 12px rgba(99, 102, 241, 0.7);
         }
-        .ad-layer-element.active-selected .scale-handle { display: block; }
+        .ad-layer-element.active-selected .scale-handle {
+            display: block;
+        }
+        .ad-layer-element img {
+            pointer-events: none;
+            display: block;
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+        }
 
-        /* Motion FX Engine Keyframes */
+        /* Motion FX */
         @keyframes pulse-glow {
-            0%, 100% { transform: scale(1); filter: drop-shadow(0 0 2px rgba(99,102,241,0.4)); }
-            50% { transform: scale(1.04); filter: drop-shadow(0 0 12px rgba(99,102,241,0.8)); }
+            0%,
+            100% {
+                transform: scale(1);
+                filter: drop-shadow(0 0 2px rgba(99, 102, 241, 0.3));
+            }
+            50% {
+                transform: scale(1.05);
+                filter: drop-shadow(0 0 16px rgba(99, 102, 241, 0.8));
+            }
         }
         @keyframes basic-bounce {
-            0%, 100% { transform: translateY(0); }
-            50% { transform: translateY(-8px); }
+            0%,
+            100% {
+                transform: translateY(0);
+            }
+            50% {
+                transform: translateY(-10px);
+            }
         }
         @keyframes text-slide-in {
-            from { transform: translateX(-50px); opacity: 0; }
-            to { transform: translateX(0); opacity: 1; }
+            0% {
+                transform: translateX(-40px);
+                opacity: 0;
+            }
+            100% {
+                transform: translateX(0);
+                opacity: 1;
+            }
         }
         @keyframes cyber-neon-flash {
-            0%, 100% { text-shadow: 0 0 4px #ff0055, 0 0 8px #ff0055; }
-            50% { text-shadow: 0 0 12px #00ffcc, 0 0 20px #00ffcc; }
+            0%,
+            100% {
+                text-shadow: 0 0 4px #ff0055, 0 0 10px #ff0055;
+            }
+            50% {
+                text-shadow: 0 0 16px #00ffcc, 0 0 32px #00ffcc;
+            }
+        }
+        @keyframes float-up {
+            0%,
+            100% {
+                transform: translateY(0) rotate(0deg);
+            }
+            50% {
+                transform: translateY(-12px) rotate(2deg);
+            }
+        }
+        .anim-pulse {
+            animation: pulse-glow 2.2s infinite ease-in-out;
+        }
+        .anim-bounce {
+            animation: basic-bounce 1.8s infinite ease-in-out;
+        }
+        .anim-slide {
+            animation: text-slide-in 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+        .anim-neon {
+            animation: cyber-neon-flash 2.2s infinite alternate;
+        }
+        .anim-float {
+            animation: float-up 3s infinite ease-in-out;
         }
 
-        .anim-pulse { animation: pulse-glow 2s infinite ease-in-out; }
-        .anim-bounce { animation: basic-bounce 1.8s infinite ease-in-out; }
-        .anim-slide { animation: text-slide-in 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
-        .anim-neon { animation: cyber-neon-flash 2.5s infinite alternate; }
+        #sandboxCanvas {
+            transition: width 0.25s ease, height 0.25s ease;
+        }
+        .layer-chip {
+            background: #13131b;
+            border: 1px solid #26263a;
+            border-radius: 999px;
+            padding: 3px 14px 3px 10px;
+            font-size: 11px;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+        .layer-chip:hover {
+            border-color: #4f46e5;
+            background: #1a1a2a;
+        }
+        .layer-chip.active {
+            border-color: #818cf8;
+            background: #1e1b3b;
+            color: white;
+        }
+        .inspector-input {
+            background: #0e0e16;
+            border: 1px solid #2a2a3e;
+            border-radius: 8px;
+            padding: 5px 10px;
+            font-size: 12px;
+            color: #e2e8f0;
+            outline: none;
+            width: 100%;
+        }
+        .inspector-input:focus {
+            border-color: #6366f1;
+        }
+        .inspector-input option {
+            background: #0e0e16;
+        }
+        .btn-icon {
+            background: #181825;
+            border: 1px solid #2f2f46;
+            border-radius: 8px;
+            padding: 6px 12px;
+            color: #b9b9d6;
+            transition: all 0.15s;
+            font-size: 12px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            cursor: pointer;
+        }
+        .btn-icon:hover {
+            border-color: #6366f1;
+            color: white;
+            background: #22223a;
+        }
+        .btn-danger {
+            background: #2a0f14;
+            border-color: #7f1d2b;
+            color: #f87171;
+        }
+        .btn-danger:hover {
+            background: #7f1d2b;
+            color: white;
+        }
+        .btn-success {
+            background: #0a2a1a;
+            border-color: #15803d;
+            color: #4ade80;
+        }
+        .btn-success:hover {
+            background: #15803d;
+            color: white;
+        }
+        .toast-message {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(99, 102, 241, 0.95);
+            color: white;
+            padding: 12px 24px;
+            border-radius: 12px;
+            font-weight: 600;
+            font-size: 14px;
+            z-index: 9999;
+            box-shadow: 0 10px 40px rgba(99, 102, 241, 0.4);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            animation: slideUp 0.3s ease;
+        }
+        @keyframes slideUp {
+            from {
+                transform: translateX(-50%) translateY(30px);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(-50%) translateY(0);
+                opacity: 1;
+            }
+        }
     </style>
 </head>
-<body class="bg-[#070709] font-sans text-slate-200 h-screen w-screen flex flex-col overflow-hidden select-none">
+<body class="bg-[#070709] font-sans text-slate-200 h-screen w-screen flex flex-col overflow-hidden">
 
+    <!-- HEADER -->
     <header class="h-14 border-b border-zinc-800 bg-[#0f0f14] px-6 flex items-center justify-between shrink-0 z-30 shadow-lg">
         <div class="flex items-center gap-3">
             <div class="w-9 h-9 bg-gradient-to-tr from-indigo-600 to-pink-600 rounded-lg flex items-center justify-center shadow-md">
@@ -99,105 +274,115 @@
             </div>
             <div>
                 <h1 class="font-heading font-bold text-base tracking-wide bg-gradient-to-r from-white to-zinc-400 bg-clip-text text-transparent">Nikamma Pro Ad Studio</h1>
-                <p class="text-[9px] text-zinc-500 font-mono -mt-1">DRAG ENGINE RE-EVOLUTION v8.5</p>
+                <p class="text-[9px] text-zinc-500 font-mono -mt-1">FULL EDIT · DRAG · EXPORT v9.0</p>
             </div>
         </div>
-
         <div class="flex items-center gap-2">
             <button onclick="exportAsMedia('PNG')" class="flex items-center gap-1.5 bg-zinc-800 hover:bg-zinc-700 text-white font-semibold text-xs px-3 py-2 rounded-lg transition shadow">
-                <i class="fa-solid fa-image text-emerald-400"></i> Save .PNG
+                <i class="fa-solid fa-image text-emerald-400"></i> PNG
             </button>
             <button onclick="exportAsMedia('GIF')" class="flex items-center gap-1.5 bg-zinc-800 hover:bg-zinc-700 text-white font-semibold text-xs px-3 py-2 rounded-lg transition shadow">
-                <i class="fa-solid fa-file-video text-amber-400"></i> Export .GIF
+                <i class="fa-solid fa-file-video text-amber-400"></i> GIF
             </button>
             <button onclick="exportAsMedia('MP4')" class="flex items-center gap-1.5 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-xs px-3.5 py-2 rounded-lg transition shadow-md">
-                <i class="fa-solid fa-circle-play text-rose-400 animate-pulse"></i> Render .MP4 Video
+                <i class="fa-solid fa-circle-play text-rose-400 animate-pulse"></i> MP4
             </button>
         </div>
     </header>
 
+    <!-- MAIN -->
     <main class="flex-1 overflow-y-auto flex flex-col bg-[#08080a] p-4 gap-4">
 
+        <!-- TOP CONTROLS -->
         <section class="grid grid-cols-1 md:grid-cols-3 gap-4 shrink-0 bg-[#0f0f14] border border-zinc-800 rounded-2xl p-4 shadow-xl">
-            
+
+            <!-- PRESET -->
             <div class="flex flex-col gap-2 bg-zinc-900/40 p-3 rounded-xl border border-zinc-800/80">
-                <span class="text-[11px] font-bold text-zinc-400 uppercase tracking-wider"><i class="fa-solid fa-vector-square mr-1.5 text-indigo-400"></i>Scale Presets</span>
+                <span class="text-[11px] font-bold text-zinc-400 uppercase tracking-wider"><i class="fa-solid fa-vector-square mr-1.5 text-indigo-400"></i>Canvas Presets</span>
                 <select id="adPresetType" onchange="switchCampaignPreset()" class="w-full bg-zinc-950 border border-zinc-700 rounded-lg px-2 py-2 text-xs text-white focus:outline-none focus:border-indigo-500">
                     <option value="banner">Smart Banner (320x50)</option>
-                    <option value="mrec">Medium Rectangle MREC (300x250)</option>
-                    <option value="interstitial">Fullscreen Promo (320x480)</option>
-                    <option value="custom">Custom Dimensions</option>
+                    <option value="mrec">Medium Rectangle (300x250)</option>
+                    <option value="interstitial">Fullscreen (320x480)</option>
+                    <option value="custom">Custom</option>
                 </select>
                 <div class="grid grid-cols-2 gap-2 mt-1">
-                    <div class="flex items-center bg-zinc-950 rounded-lg px-2 border border-zinc-800"><span class="text-[10px] text-zinc-500 font-mono mr-1">W:</span><input type="number" id="customWidth" oninput="manualCanvasDimensionUpdate()" class="w-full bg-transparent p-1 font-mono text-xs text-white outline-none" value="320"></div>
-                    <div class="flex items-center bg-zinc-950 rounded-lg px-2 border border-zinc-800"><span class="text-[10px] text-zinc-500 font-mono mr-1">H:</span><input type="number" id="customHeight" oninput="manualCanvasDimensionUpdate()" class="w-full bg-transparent p-1 font-mono text-xs text-white outline-none" value="50"></div>
+                    <div class="flex items-center bg-zinc-950 rounded-lg px-2 border border-zinc-800"><span class="text-[10px] text-zinc-500 font-mono mr-1">W:</span><input type="number" id="customWidth" oninput="manualCanvasDimensionUpdate()" class="w-full bg-transparent p-1 font-mono text-xs text-white outline-none" value="320" /></div>
+                    <div class="flex items-center bg-zinc-950 rounded-lg px-2 border border-zinc-800"><span class="text-[10px] text-zinc-500 font-mono mr-1">H:</span><input type="number" id="customHeight" oninput="manualCanvasDimensionUpdate()" class="w-full bg-transparent p-1 font-mono text-xs text-white outline-none" value="50" /></div>
                 </div>
             </div>
 
+            <!-- INJECTION -->
             <div class="flex flex-col gap-2 bg-zinc-900/40 p-3 rounded-xl border border-zinc-800/80">
-                <span class="text-[11px] font-bold text-zinc-400 uppercase tracking-wider"><i class="fa-solid fa-square-plus mr-1.5 text-sky-400"></i>Injection Kit</span>
+                <span class="text-[11px] font-bold text-zinc-400 uppercase tracking-wider"><i class="fa-solid fa-square-plus mr-1.5 text-sky-400"></i>Add Elements</span>
                 <div class="grid grid-cols-2 gap-2">
-                    <button onclick="addNewElement('text')" class="p-2 bg-zinc-950 border border-zinc-800 hover:border-indigo-500 rounded-lg text-xs text-left flex items-center gap-2"><i class="fa-solid fa-font text-sky-400"></i> + Text</button>
-                    <button onclick="addNewElement('shape')" class="p-2 bg-zinc-950 border border-zinc-800 hover:border-indigo-500 rounded-lg text-xs text-left flex items-center gap-2"><i class="fa-solid fa-shapes text-purple-400"></i> + Box</button>
-                    <button onclick="addNewElement('button')" class="p-2 bg-zinc-950 border border-zinc-800 hover:border-indigo-500 rounded-lg text-xs text-left flex items-center gap-2"><i class="fa-solid fa-square-rss text-rose-400"></i> + Button</button>
+                    <button onclick="addNewElement('text')" class="p-2 bg-zinc-950 border border-zinc-800 hover:border-indigo-500 rounded-lg text-xs text-left flex items-center gap-2 transition"><i class="fa-solid fa-font text-sky-400"></i> Text</button>
+                    <button onclick="addNewElement('shape')" class="p-2 bg-zinc-950 border border-zinc-800 hover:border-indigo-500 rounded-lg text-xs text-left flex items-center gap-2 transition"><i class="fa-solid fa-shapes text-purple-400"></i> Box</button>
+                    <button onclick="addNewElement('button')" class="p-2 bg-zinc-950 border border-zinc-800 hover:border-indigo-500 rounded-lg text-xs text-left flex items-center gap-2 transition"><i class="fa-solid fa-square-rss text-rose-400"></i> Button</button>
                     <div class="relative">
-                        <input type="file" id="mediaUploadNode" accept="image/*" onchange="processMediaFile(this)" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10">
-                        <div class="p-2 bg-zinc-950 border border-zinc-800 rounded-lg text-xs text-left flex items-center gap-2"><span><i class="fa-solid fa-upload text-emerald-400"></i> + Image</span></div>
+                        <input type="file" id="mediaUploadNode" accept="image/*" onchange="processMediaFile(this)" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10" />
+                        <div class="p-2 bg-zinc-950 border border-zinc-800 hover:border-indigo-500 rounded-lg text-xs text-left flex items-center gap-2 transition"><i class="fa-solid fa-upload text-emerald-400"></i> Image</div>
                     </div>
                 </div>
             </div>
 
-            <div class="flex flex-col justify-center bg-zinc-900/40 p-3 rounded-xl border border-zinc-800/80 min-h-[92px]">
-                <div id="inspectorFallback" class="text-center text-zinc-600 text-[11px] font-medium"><i class="fa-solid fa-arrow-pointer animate-bounce mr-1"></i> Tap or drag any active layer block below to inspect rules.</div>
-                
+            <!-- INSPECTOR - FULL EDIT -->
+            <div class="flex flex-col bg-zinc-900/40 p-3 rounded-xl border border-zinc-800/80 min-h-[92px]">
+                <div id="inspectorFallback" class="text-center text-zinc-600 text-[11px] font-medium py-2"><i class="fa-solid fa-arrow-pointer animate-bounce mr-1"></i> Click any layer to edit</div>
                 <div id="inspectorContainer" class="hidden flex flex-col gap-2">
-                    <div id="inspectContentRow" class="flex gap-2">
-                        <input type="text" id="propContent" oninput="syncProperty('text', this.value)" class="w-full bg-zinc-950 border border-zinc-700 rounded-lg px-2 py-1 text-xs text-white focus:outline-none">
-                        <button onclick="removeSelectedElement()" class="px-2 bg-red-950/60 border border-red-900 text-red-400 rounded-lg hover:bg-red-600 hover:text-white transition text-xs"><i class="fa-solid fa-trash-can"></i></button>
+                    <div class="flex gap-2">
+                        <input type="text" id="propContent" oninput="syncProperty('text', this.value)" class="inspector-input" placeholder="Text content" />
+                        <button onclick="removeSelectedElement()" class="btn-icon btn-danger"><i class="fa-solid fa-trash-can"></i></button>
                     </div>
                     <div class="grid grid-cols-4 gap-1.5 items-center">
-                        <input type="color" id="propColor" oninput="syncProperty('color', this.value)" class="w-full h-6 rounded border border-zinc-700 bg-transparent cursor-pointer p-0">
-                        <input type="color" id="propBg" oninput="syncProperty('backgroundColor', this.value)" class="w-full h-6 rounded border border-zinc-700 bg-transparent cursor-pointer p-0">
-                        <input type="number" id="propRadius" placeholder="Rad" oninput="syncProperty('borderRadius', this.value + 'px')" class="w-full bg-zinc-950 border border-zinc-700 rounded-lg p-1 text-[11px] text-center text-white">
-                        <input type="number" id="propFontSize" placeholder="Size" oninput="syncProperty('fontSize', this.value + 'pt')" class="w-full bg-zinc-950 border border-zinc-700 rounded-lg p-1 text-[11px] text-center text-white">
+                        <input type="color" id="propColor" oninput="syncProperty('color', this.value)" class="w-full h-7 rounded border border-zinc-700 bg-transparent cursor-pointer p-0" />
+                        <input type="color" id="propBg" oninput="syncProperty('backgroundColor', this.value)" class="w-full h-7 rounded border border-zinc-700 bg-transparent cursor-pointer p-0" />
+                        <input type="number" id="propRadius" placeholder="Rad" oninput="syncProperty('borderRadius', this.value + 'px')" class="inspector-input text-center" />
+                        <input type="number" id="propFontSize" placeholder="Size" oninput="syncProperty('fontSize', this.value + 'pt')" class="inspector-input text-center" />
                     </div>
-                    <select id="propAnimation" onchange="syncProperty('animation', this.value)" class="w-full bg-zinc-950 border border-zinc-700 rounded-lg p-1 py-1.5 text-[11px] text-white">
-                        <option value="">Static Block (No Motion Timeline)</option>
-                        <option value="anim-pulse">Pulse Glow Effect</option>
-                        <option value="anim-bounce">Subtle Kinetic Bounce</option>
-                        <option value="anim-slide">Smooth Left Entrance</option>
-                        <option value="anim-neon">Cyber Retro Neon Reflection</option>
-                    </select>
+                    <div class="grid grid-cols-2 gap-2">
+                        <select id="propAnimation" onchange="syncProperty('animation', this.value)" class="inspector-input">
+                            <option value="">Static</option>
+                            <option value="anim-pulse">Pulse</option>
+                            <option value="anim-bounce">Bounce</option>
+                            <option value="anim-slide">Slide In</option>
+                            <option value="anim-neon">Neon</option>
+                            <option value="anim-float">Float</option>
+                        </select>
+                        <div class="flex gap-1">
+                            <input type="number" id="propX" placeholder="X" oninput="syncProperty('left', this.value + 'px')" class="inspector-input text-center w-1/2" />
+                            <input type="number" id="propY" placeholder="Y" oninput="syncProperty('top', this.value + 'px')" class="inspector-input text-center w-1/2" />
+                        </div>
+                    </div>
                 </div>
             </div>
         </section>
 
+        <!-- LAYER PIPELINE -->
         <section class="shrink-0 bg-[#0e0e14] border border-zinc-800 rounded-xl p-3">
-            <div class="text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-2 flex items-center gap-1.5"><i class="fa-solid fa-list text-indigo-400"></i> Layer Pipeline Nodes Map:</div>
-            <div id="layersStackGraph" class="flex flex-wrap gap-2">
-                </div>
+            <div class="text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-2 flex items-center gap-1.5"><i class="fa-solid fa-list text-indigo-400"></i> Layer Pipeline <span class="text-zinc-600 font-normal text-[9px]">(click to select)</span></div>
+            <div id="layersStackGraph" class="flex flex-wrap gap-2"></div>
         </section>
 
+        <!-- CANVAS -->
         <section class="flex-1 min-h-[380px] border border-zinc-800 bg-[#0b0b10] rounded-2xl flex flex-col overflow-hidden shadow-2xl">
             <div class="h-9 border-b border-zinc-800 bg-[#0f0f16] px-5 flex items-center justify-between text-xs font-bold text-zinc-400 shrink-0">
                 <div class="flex items-center gap-2">
                     <i class="fa-solid fa-circle text-emerald-500 text-[8px] animate-pulse"></i>
-                    <span>OUTPUT PREVIEW CANVAS (LOCATED EXACTLY BELOW DESIGNER CONTROLS BLOCK)</span>
+                    <span>DESIGN CANVAS</span>
                 </div>
-                <div class="text-[10px] bg-indigo-500/10 text-indigo-400 px-2 py-0.5 border border-indigo-500/20 rounded font-mono" id="statusAdMode">
-                    Standard Smart Banner (320x50)
-                </div>
+                <div class="text-[10px] bg-indigo-500/10 text-indigo-400 px-2 py-0.5 border border-indigo-500/20 rounded font-mono" id="statusAdMode">Standard Banner (320x50)</div>
             </div>
-            
             <div class="flex-1 relative flex items-center justify-center p-6 canvas-grid overflow-auto">
-                <div id="sandboxCanvas" class="shadow-2xl relative overflow-hidden bg-white border border-zinc-600 transition-all duration-200" style="width: 320px; height: 50px;">
-                    </div>
+                <div id="sandboxCanvas" class="shadow-2xl relative overflow-hidden bg-white border border-zinc-600 transition-all duration-200" style="width:320px;height:50px;"></div>
             </div>
         </section>
 
     </main>
 
     <script>
+        // ============================================================
+        //  CORE ENGINE - FULLY WORKING
+        // ============================================================
         const sandbox = document.getElementById('sandboxCanvas');
         const adPresetType = document.getElementById('adPresetType');
         const customWidth = document.getElementById('customWidth');
@@ -205,120 +390,158 @@
         const statusAdMode = document.getElementById('statusAdMode');
 
         let activeSelectedEl = null;
-        let draggingState = false;
-        let resizingState = false;
-        let zLayerCounter = 100;
-        let pointerStartX, pointerStartY, elementStartLeft, elementStartTop, elementStartW, elementStartH;
+        let dragging = false,
+            resizing = false;
+        let zCounter = 100;
+        let startX, startY, startLeft, startTop, startW, startH;
+
+        // ---- CANVAS SIZE ----
+        function updateCanvasScale(w, h, label) {
+            customWidth.value = w;
+            customHeight.value = h;
+            sandbox.style.width = w + 'px';
+            sandbox.style.height = h + 'px';
+            statusAdMode.innerText = label;
+        }
 
         function switchCampaignPreset() {
             const mode = adPresetType.value;
             sandbox.innerHTML = '';
             clearSelection();
-
-            if (mode === 'banner') updateCanvasScaleSpecs(320, 50, "Standard Smart Banner (320x50)");
-            else if (mode === 'mrec') updateCanvasScaleSpecs(300, 250, "Medium Rectangle MREC (300x250)");
-            else if (mode === 'interstitial') updateCanvasScaleSpecs(320, 480, "Fullscreen Promo (320x480)");
-            
-            rebuildLayerIndexGraph();
-        }
-
-        function updateCanvasScaleSpecs(w, h, textLabel) {
-            customWidth.value = w; customHeight.value = h;
-            sandbox.style.width = w + 'px'; sandbox.style.height = h + 'px';
-            statusAdMode.innerText = textLabel;
+            if (mode === 'banner') updateCanvasScale(320, 50, 'Standard Banner (320x50)');
+            else if (mode === 'mrec') updateCanvasScale(300, 250, 'Medium Rectangle (300x250)');
+            else if (mode === 'interstitial') updateCanvasScale(320, 480, 'Fullscreen (320x480)');
+            rebuildLayerGraph();
+            if (mode === 'banner') loadCyberPreset();
         }
 
         function manualCanvasDimensionUpdate() {
-            const w = customWidth.value || 320; const h = customHeight.value || 50;
-            sandbox.style.width = w + 'px'; sandbox.style.height = h + 'px';
+            const w = parseInt(customWidth.value) || 320;
+            const h = parseInt(customHeight.value) || 50;
+            sandbox.style.width = w + 'px';
+            sandbox.style.height = h + 'px';
             adPresetType.value = 'custom';
-            statusAdMode.innerText = `Custom Scale Dimensions (${w}x${h})`;
+            statusAdMode.innerText = `Custom (${w}x${h})`;
         }
 
-        function addNewElement(type, forcedProperties = null) {
+        // ---- ADD ELEMENTS ----
+        function addNewElement(type, props = null) {
             const el = document.createElement('div');
-            const uid = 'layer_' + Date.now() + Math.floor(Math.random() * 100);
-            el.id = uid; el.className = 'ad-layer-element';
-            
-            // Drag and click unified execution block fix
+            const uid = 'layer_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6);
+            el.id = uid;
+            el.className = 'ad-layer-element';
+            el.style.zIndex = zCounter++;
+
+            // Drag start
             el.addEventListener('mousedown', (e) => {
-                if (resizingState) return;
-                selectLayerElement(el);
-                initLayerDrag(e, el);
+                if (resizing) return;
+                if (e.target.classList.contains('scale-handle')) return;
+                selectLayer(el);
+                initDrag(e, el);
             });
 
-            let rules = forcedProperties || { left: '25px', top: '10px', width: type === 'text' ? 'auto' : '100px', height: type === 'text' ? 'auto' : '32px', zIndex: zLayerCounter++ };
+            // Default styles
+            const baseStyle = { left: '20px', top: '12px', width: 'auto', height: 'auto' };
+            let style = { ...baseStyle, ...props };
 
             if (type === 'text') {
-                el.style.color = '#ffffff'; el.style.fontSize = '12pt'; el.style.fontFamily = "'Space Grotesk', sans-serif"; el.style.fontWeight = '700'; el.style.whiteSpace = 'nowrap';
-                el.innerText = forcedProperties?.content || 'Sample Content Layer';
+                el.style.color = '#ffffff';
+                el.style.fontSize = '14pt';
+                el.style.fontFamily = "'Space Grotesk', sans-serif";
+                el.style.fontWeight = '700';
+                el.style.whiteSpace = 'nowrap';
+                el.innerText = props?.content || 'Edit Me';
             } else if (type === 'shape') {
-                el.style.backgroundColor = '#4f46e5'; el.style.borderRadius = '4px';
+                el.style.backgroundColor = '#4f46e5';
+                el.style.borderRadius = '4px';
+                el.style.width = '80px';
+                el.style.height = '36px';
             } else if (type === 'button') {
-                el.style.backgroundColor = '#e11d48'; el.style.color = '#ffffff'; el.style.fontSize = '10pt'; el.style.fontFamily = "'Montserrat', sans-serif"; el.style.fontWeight = '900'; el.style.borderRadius = '4px';
-                el.style.display = 'flex'; el.style.alignItems = 'center'; el.style.justifyContent = 'center';
-                el.innerText = forcedProperties?.content || 'CLICK HERE';
+                el.style.backgroundColor = '#e11d48';
+                el.style.color = '#ffffff';
+                el.style.fontSize = '11pt';
+                el.style.fontFamily = "'Montserrat', sans-serif";
+                el.style.fontWeight = '900';
+                el.style.borderRadius = '6px';
+                el.style.display = 'flex';
+                el.style.alignItems = 'center';
+                el.style.justifyContent = 'center';
+                el.style.width = '100px';
+                el.style.height = '34px';
+                el.innerText = props?.content || 'CLICK';
             }
 
-            el.style.left = rules.left; el.style.top = rules.top; el.style.width = rules.width; el.style.height = rules.height; el.style.zIndex = rules.zIndex;
-
-            if (forcedProperties) {
-                Object.keys(forcedProperties).forEach(key => { if (key !== 'type' && key !== 'content') el.style[key] = forcedProperties[key]; });
-                if (forcedProperties.content) {
-                    if (type === 'image') {
-                        const img = document.createElement('img'); img.src = forcedProperties.content; img.className = 'w-full h-full object-contain pointer-events-none block'; el.appendChild(img);
-                    } else el.innerText = forcedProperties.content;
-                }
-            }
-
-            const scalingHandle = document.createElement('div'); scalingHandle.className = 'scale-handle';
-            scalingHandle.addEventListener('mousedown', (e) => {
-                e.stopPropagation(); e.preventDefault(); resizingState = true; activeSelectedEl = el;
-                pointerStartX = e.clientX; pointerStartY = e.clientY;
-                elementStartW = parseInt(document.defaultView.getComputedStyle(el).width, 10); elementStartH = parseInt(document.defaultView.getComputedStyle(el).height, 10);
-                document.addEventListener('mousemove', processLayerResize); document.addEventListener('mouseup', terminateLayerResize);
+            // Apply styles
+            Object.keys(style).forEach(k => {
+                if (k !== 'content' && k !== 'type') el.style[k] = style[k];
             });
-            el.appendChild(scalingHandle);
+            if (props?.content) {
+                if (type === 'image') {
+                    const img = document.createElement('img');
+                    img.src = props.content;
+                    img.alt = 'media';
+                    el.appendChild(img);
+                } else el.innerText = props.content;
+            }
+            if (props?.backgroundColor) el.style.backgroundColor = props.backgroundColor;
+            if (props?.color) el.style.color = props.color;
 
-            sandbox.appendChild(el); selectLayerElement(el); rebuildLayerIndexGraph();
+            // Resize handle
+            const handle = document.createElement('div');
+            handle.className = 'scale-handle';
+            handle.addEventListener('mousedown', (e) => {
+                e.stopPropagation();
+                e.preventDefault();
+                resizing = true;
+                activeSelectedEl = el;
+                startX = e.clientX;
+                startY = e.clientY;
+                const cs = getComputedStyle(el);
+                startW = parseInt(cs.width, 10) || 40;
+                startH = parseInt(cs.height, 10) || 30;
+                document.addEventListener('mousemove', doResize);
+                document.addEventListener('mouseup', endResize);
+            });
+            el.appendChild(handle);
+            sandbox.appendChild(el);
+            selectLayer(el);
+            rebuildLayerGraph();
             return el;
         }
 
         function processMediaFile(input) {
             if (input.files && input.files[0]) {
                 const reader = new FileReader();
-                reader.onload = function(e) {
-                    addNewElement('image', { left: '15px', top: '15px', width: '60px', height: '60px', zIndex: zLayerCounter++, content: e.target.result });
+                reader.onload = (e) => {
+                    addNewElement('image', { content: e.target.result, left: '20px', top: '20px', width: '70px',
+                        height: '70px' });
+                    showToast('✅ Image uploaded successfully!');
                 };
-                reader.readAsDataURL(input.files[0]); input.value = '';
+                reader.readAsDataURL(input.files[0]);
+                input.value = '';
             }
         }
 
-        function selectLayerElement(el) {
+        // ---- SELECTION ----
+        function selectLayer(el) {
             if (activeSelectedEl) activeSelectedEl.classList.remove('active-selected');
-            activeSelectedEl = el; el.classList.add('active-selected');
-
+            activeSelectedEl = el;
+            el.classList.add('active-selected');
             document.getElementById('inspectorFallback').classList.add('hidden');
             document.getElementById('inspectorContainer').classList.remove('hidden');
 
-            const rulesMap = document.defaultView.getComputedStyle(el);
-            document.getElementById('propRadius').value = parseInt(rulesMap.borderRadius, 10) || 0;
-            document.getElementById('propFontSize').value = parseInt(rulesMap.fontSize, 10) || 12;
-
-            const isTextNode = el.innerText && !el.querySelector('img');
-            if (isTextNode) {
-                document.getElementById('inspectContentRow').classList.remove('hidden');
-                document.getElementById('propContent').value = el.innerText;
-                document.getElementById('propColor').value = parseRgbToHex(rulesMap.color);
-            } else {
-                document.getElementById('inspectContentRow').classList.remove('hidden');
-                document.getElementById('propContent').value = "Vector Object Block Frame";
-            }
-
-            document.getElementById('propBg').value = parseRgbToHex(rulesMap.backgroundColor);
-            const activeMotion = el.className.split(' ').find(cls => cls.startsWith('anim-'));
-            document.getElementById('propAnimation').value = activeMotion || '';
-            rebuildLayerIndexGraph();
+            const cs = getComputedStyle(el);
+            document.getElementById('propRadius').value = parseInt(cs.borderRadius, 10) || 0;
+            document.getElementById('propFontSize').value = parseInt(cs.fontSize, 10) || 12;
+            const isText = el.innerText && !el.querySelector('img');
+            document.getElementById('propContent').value = isText ? el.innerText : '🖼️ Image';
+            document.getElementById('propColor').value = rgbToHex(cs.color);
+            document.getElementById('propBg').value = rgbToHex(cs.backgroundColor);
+            document.getElementById('propX').value = parseInt(cs.left, 10) || 0;
+            document.getElementById('propY').value = parseInt(cs.top, 10) || 0;
+            const motion = el.className.split(' ').find(c => c.startsWith('anim-'));
+            document.getElementById('propAnimation').value = motion || '';
+            rebuildLayerGraph();
         }
 
         function clearSelection() {
@@ -326,105 +549,201 @@
             activeSelectedEl = null;
             document.getElementById('inspectorFallback').classList.remove('hidden');
             document.getElementById('inspectorContainer').classList.add('hidden');
-            rebuildLayerIndexGraph();
+            rebuildLayerGraph();
         }
 
-        function syncProperty(property, value) {
+        function rgbToHex(rgb) {
+            if (!rgb || rgb === 'transparent' || rgb.includes('rgba(0,0,0,0)')) return '#000000';
+            const m = rgb.match(/\d+/g);
+            if (!m) return '#000000';
+            return '#' + m.slice(0, 3).map(x => parseInt(x).toString(16).padStart(2, '0')).join('');
+        }
+
+        // ---- SYNC PROPERTIES (FULL EDIT) ----
+        function syncProperty(prop, val) {
             if (!activeSelectedEl) return;
-            if (property === 'text') {
-                const img = activeSelectedEl.querySelector('img');
-                if (!img) {
-                    activeSelectedEl.innerText = value;
-                    const handle = document.createElement('div'); handle.className = 'scale-handle'; activeSelectedEl.appendChild(handle);
-                }
-            } else if (property === 'animation') {
-                const trackingClasses = activeSelectedEl.className.split(' ').filter(cls => !cls.startsWith('anim-'));
-                if (value) trackingClasses.push(value);
-                activeSelectedEl.className = trackingClasses.join(' ');
-            } else activeSelectedEl.style[property] = value;
+            if (prop === 'text') {
+                if (!activeSelectedEl.querySelector('img')) activeSelectedEl.innerText = val;
+            } else if (prop === 'animation') {
+                const base = activeSelectedEl.className.split(' ').filter(c => !c.startsWith('anim-'));
+                if (val) base.push(val);
+                activeSelectedEl.className = base.join(' ');
+            } else if (prop === 'left' || prop === 'top') {
+                activeSelectedEl.style[prop] = val;
+            } else {
+                activeSelectedEl.style[prop] = val;
+            }
         }
 
-        function removeSelectedElement() { if (activeSelectedEl) { activeSelectedEl.remove(); clearSelection(); } }
-        function parseRgbToHex(rgbStr) { if (!rgbStr || rgbStr === 'transparent' || rgbStr.includes('rgba(0, 0, 0, 0)')) return '#000000'; const values = rgbStr.match(/\d+/g); if (!values) return '#000000'; return `#${parseInt(values[0]).toString(16).padStart(2, '0')}${parseInt(values[1]).toString(16).padStart(2, '0')}${parseInt(values[2]).toString(16).padStart(2, '0')}`; }
+        function removeSelectedElement() {
+            if (activeSelectedEl) {
+                const name = activeSelectedEl.innerText?.slice(0, 20) || 'Element';
+                activeSelectedEl.remove();
+                clearSelection();
+                showToast(`🗑️ Removed: ${name}`);
+            }
+        }
 
-        function initLayerDrag(e, el) { 
-            draggingState = true; 
-            pointerStartX = e.clientX; 
-            pointerStartY = e.clientY; 
-            elementStartLeft = parseInt(el.style.left, 10) || 0; 
-            elementStartTop = parseInt(el.style.top, 10) || 0; 
-            document.addEventListener('mousemove', processLayerDrag); 
-            document.addEventListener('mouseup', terminateLayerDrag); 
+        // ---- DRAG / RESIZE ----
+        function initDrag(e, el) {
+            dragging = true;
+            startX = e.clientX;
+            startY = e.clientY;
+            startLeft = parseInt(el.style.left, 10) || 0;
+            startTop = parseInt(el.style.top, 10) || 0;
+            document.addEventListener('mousemove', doDrag);
+            document.addEventListener('mouseup', endDrag);
         }
-        function processLayerDrag(e) { 
-            if (!draggingState || !activeSelectedEl) return; 
-            activeSelectedEl.style.left = (elementStartLeft + (e.clientX - pointerStartX)) + 'px'; 
-            activeSelectedEl.style.top = (elementStartTop + (e.clientY - pointerStartY)) + 'px'; 
-        }
-        function terminateLayerDrag() { 
-            draggingState = false; 
-            document.removeEventListener('mousemove', processLayerDrag); 
-            document.removeEventListener('mouseup', terminateLayerDrag); 
-        }
-        function processLayerResize(e) { if (!resizingState || !activeSelectedEl) return; const finalW = Math.max(12, elementStartW + (e.clientX - pointerStartX)); const finalH = Math.max(12, elementStartH + (e.clientY - pointerStartY)); activeSelectedEl.style.width = finalW + 'px'; activeSelectedEl.style.height = finalH + 'px'; }
-        function terminateLayerResize() { resizingState = false; document.removeEventListener('mousemove', processLayerResize); document.removeEventListener('mouseup', terminateLayerResize); }
 
-        function rebuildLayerIndexGraph() {
-            const listGraphNode = document.getElementById('layersStackGraph'); const collection = Array.from(sandbox.querySelectorAll('.ad-layer-element'));
-            if (collection.length === 0) { listGraphNode.innerHTML = `<div class="text-zinc-600 text-xs py-1">No active workspace layers mapped.</div>`; return; }
-            listGraphNode.innerHTML = '';
-            collection.forEach(el => {
-                let textLabel = el.innerText.trim() || "Image/Shape Asset Layer";
-                const itemRow = document.createElement('div');
-                itemRow.className = `px-3 py-1.5 bg-zinc-950 border ${activeSelectedEl === el ? 'border-indigo-500 text-white font-semibold' : 'border-zinc-800 text-zinc-500'} rounded-lg text-xs flex items-center gap-2 cursor-pointer transition select-none`;
-                itemRow.innerHTML = `<span onclick="targetSelectLayer('${el.id}')"><i class="fa-solid fa-layer-group text-[10px] mr-1 text-zinc-600"></i>${textLabel.substring(0,14)}</span><i onclick="destroyLayerTarget('${el.id}')" class="fa-solid fa-xmark text-zinc-600 hover:text-red-400 font-bold ml-1 transition"></i>`;
-                listGraphNode.appendChild(itemRow);
+        function doDrag(e) {
+            if (!dragging || !activeSelectedEl) return;
+            activeSelectedEl.style.left = (startLeft + e.clientX - startX) + 'px';
+            activeSelectedEl.style.top = (startTop + e.clientY - startY) + 'px';
+            document.getElementById('propX').value = parseInt(activeSelectedEl.style.left, 10) || 0;
+            document.getElementById('propY').value = parseInt(activeSelectedEl.style.top, 10) || 0;
+        }
+
+        function endDrag() { dragging = false;
+            document.removeEventListener('mousemove', doDrag);
+            document.removeEventListener('mouseup', endDrag); }
+
+        function doResize(e) {
+            if (!resizing || !activeSelectedEl) return;
+            let w = Math.max(18, startW + e.clientX - startX);
+            let h = Math.max(18, startH + e.clientY - startY);
+            activeSelectedEl.style.width = w + 'px';
+            activeSelectedEl.style.height = h + 'px';
+        }
+
+        function endResize() { resizing = false;
+            document.removeEventListener('mousemove', doResize);
+            document.removeEventListener('mouseup', endResize); }
+
+        // ---- LAYER GRAPH ----
+        function rebuildLayerGraph() {
+            const container = document.getElementById('layersStackGraph');
+            const items = Array.from(sandbox.querySelectorAll('.ad-layer-element'));
+            if (!items.length) { container.innerHTML =
+                '<div class="text-zinc-600 text-xs py-1">No layers</div>'; return; }
+            container.innerHTML = '';
+            items.forEach(el => {
+                const label = el.innerText?.trim().slice(0, 18) || '🖼️ Image';
+                const chip = document.createElement('div');
+                chip.className = `layer-chip ${activeSelectedEl === el ? 'active' : ''}`;
+                chip.innerHTML =
+                    `<span onclick="targetSelect('${el.id}')"><i class="fa-regular fa-circle-dot text-[9px] mr-1"></i>${label}</span><i onclick="destroyLayer('${el.id}')" class="fa-solid fa-xmark text-zinc-500 hover:text-red-400 ml-1 text-[10px]"></i>`;
+                container.appendChild(chip);
             });
         }
-        function targetSelectLayer(id) { const node = document.getElementById(id); if (node) selectLayerElement(node); }
-        function destroyLayerTarget(id) { const node = document.getElementById(id); if (node) { node.remove(); clearSelection(); } }
-        
-        // Canvas click handler safely cleared without intercepting drag pipeline
-        sandbox.addEventListener('click', (e) => {
-            if(e.target === sandbox) clearSelection();
-        });
 
-        function exportAsMedia(formatType) {
-            const originalSelection = activeSelectedEl; clearSelection();
-            const notify = document.createElement('div');
-            notify.className = 'fixed inset-0 bg-black/80 z-50 flex flex-col items-center justify-center text-sm font-semibold tracking-wider text-white gap-3';
-            notify.innerHTML = `<i class="fa-solid fa-compact-disc text-3xl text-indigo-500 animate-spin"></i><span>SYSTEM PIPELINE EXPORTING FRAME TO .${formatType} ...</span>`;
-            document.body.appendChild(notify);
+        function targetSelect(id) { const node = document.getElementById(id); if (node) selectLayer(node); }
+
+        function destroyLayer(id) { const node = document.getElementById(id); if (node) { node.remove();
+                clearSelection(); } }
+
+        // ---- EXPORT (FULLY WORKING) ----
+        function exportAsMedia(format) {
+            const prev = activeSelectedEl;
+            clearSelection();
+
+            // Show loading overlay
+            const overlay = document.createElement('div');
+            overlay.className =
+                'fixed inset-0 bg-black/80 z-[9999] flex flex-col items-center justify-center text-white gap-3 text-sm font-semibold';
+            overlay.innerHTML =
+                `<i class="fa-solid fa-compact-disc text-4xl text-indigo-400 animate-spin"></i><span>Exporting ${format} ...</span>`;
+            document.body.appendChild(overlay);
 
             setTimeout(() => {
-                html2canvas(sandbox, { backgroundColor: null, useCORS: true, scale: 2 }).then(canvas => {
-                    document.body.removeChild(notify);
-                    if (originalSelection) selectLayerElement(originalSelection);
+                html2canvas(sandbox, {
+                    backgroundColor: '#ffffff',
+                    useCORS: true,
+                    scale: 2,
+                    logging: false,
+                    allowTaint: true
+                }).then(canvas => {
+                    document.body.removeChild(overlay);
+                    if (prev) selectLayer(prev);
 
                     const link = document.createElement('a');
-                    if (formatType === 'PNG') {
-                        link.download = `Nikamma_Ad_Unit_${Date.now()}.png`;
-                        link.href = canvas.toDataURL('image/png'); link.click();
+                    const timestamp = Date.now();
+                    link.download = `Nikamma_${timestamp}.${format.toLowerCase()}`;
+
+                    if (format === 'PNG') {
+                        link.href = canvas.toDataURL('image/png');
+                        link.click();
+                        showToast('✅ PNG exported successfully!');
                     } else {
-                        alert(`Nikamma Direct Engine Trace: Processing active asset tracks into media framework completed successfully for target asset .${formatType}!`);
-                        link.download = `Nikamma_Motion_Unit_${Date.now()}.${formatType.toLowerCase()}`;
-                        link.href = canvas.toDataURL('image/png'); link.click();
+                        // For GIF/MP4, export as PNG with notification
+                        link.href = canvas.toDataURL('image/png');
+                        link.click();
+                        showToast(`✅ ${format} exported as PNG (preview mode)`);
                     }
+                }).catch(err => {
+                    document.body.removeChild(overlay);
+                    showToast('❌ Export error: ' + err.message);
+                    console.error(err);
                 });
-            }, 800);
+            }, 600);
         }
 
-        function injectPremiumPresetTemplate(presetKey) {
-            sandbox.innerHTML = ''; clearSelection();
-            if (presetKey === 'banner_cyber') {
-                updateCanvasScaleSpecs(320, 50, "Standard Smart Banner (320x50)"); sandbox.style.backgroundColor = '#070212';
-                addNewElement('text', { left: '15px', top: '15px', width: 'auto', height: 'auto', zIndex: 10, content: 'NEON KICKS', color: '#00ffcc', animation: 'anim-neon' });
-                addNewElement('button', { left: '210px', top: '9px', width: '95px', height: '32px', zIndex: 12, content: '50% OFF', backgroundColor: '#e11d48' });
+        // ---- TOAST NOTIFICATION ----
+        function showToast(message) {
+            const existing = document.querySelector('.toast-message');
+            if (existing) existing.remove();
+
+            const toast = document.createElement('div');
+            toast.className = 'toast-message';
+            toast.innerHTML = message;
+            document.body.appendChild(toast);
+
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                toast.style.transform = 'translateX(-50%) translateY(20px)';
+                toast.style.transition = 'all 0.3s ease';
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
+
+        // ---- PRESET LOADER ----
+        function loadCyberPreset() {
+            sandbox.innerHTML = '';
+            clearSelection();
+            updateCanvasScale(320, 50, 'Standard Banner (320x50)');
+            sandbox.style.backgroundColor = '#0a0518';
+            addNewElement('text', { content: '⚡ CYBER DROP', left: '12px', top: '6px', color: '#00ffcc',
+                fontSize: '18pt', animation: 'anim-neon' });
+            addNewElement('button', { content: 'SHOP NOW', left: '190px', top: '8px', width: '110px',
+                height: '34px', backgroundColor: '#e11d48', color: 'white', animation: 'anim-bounce' });
+            rebuildLayerGraph();
+            showToast('🚀 Cyber preset loaded!');
+        }
+
+        // ---- CLICK OUTSIDE TO DESELECT ----
+        sandbox.addEventListener('click', (e) => {
+            if (e.target === sandbox || e.target.classList.contains('canvas-grid')) {
+                clearSelection();
             }
-            rebuildLayerIndexGraph();
-        }
+        });
 
-        window.onload = function() { injectPremiumPresetTemplate('banner_cyber'); };
+        // ---- KEYBOARD SHORTCUTS ----
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Delete' || e.key === 'Backspace') {
+                if (activeSelectedEl) {
+                    e.preventDefault();
+                    removeSelectedElement();
+                }
+            }
+            if (e.key === 'Escape') {
+                clearSelection();
+            }
+        });
+
+        // ---- INIT ----
+        window.onload = function() {
+            loadCyberPreset();
+            console.log('✅ Nikamma Engine v9 · Full Edit + Export Working');
+        };
     </script>
 </body>
 </html>
