@@ -6,7 +6,6 @@
     <title>Ad Studio Pro - Animated Banner GIF Export</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js">
     </script>
-    <!-- GIF.js for creating animated GIFs -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gif.js/0.2.0/gif.js">
     </script>
     <style>
@@ -378,7 +377,7 @@
             transition: all 0.2s;
         }
 
-        /* Animation Classes */
+        /* ===== CSS ANIMATIONS - PREVIEW ===== */
         .text-fade {
             animation: textFade 1.5s ease-in-out infinite alternate;
         }
@@ -684,7 +683,6 @@
             font-size: 9px;
         }
 
-        /* GIF Export Options */
         .gif-options {
             display: grid;
             grid-template-columns: 1fr 1fr 1fr;
@@ -807,7 +805,6 @@
             grid-column: 1 / -1;
         }
 
-        /* Progress Bar */
         .progress-bar {
             width: 100%;
             height: 4px;
@@ -859,7 +856,6 @@
             </div>
         </div>
 
-        <!-- Templates -->
         <div class="card">
             <div class="card-title"><span class="title-icon">📋</span> Premium Animated Templates</div>
             <div class="template-grid">
@@ -902,7 +898,6 @@
             </div>
         </div>
 
-        <!-- Controls -->
         <div class="card">
             <div class="card-title"><span class="title-icon">🎛️</span> Format & Dimensions</div>
             <div class="input-grid">
@@ -954,7 +949,6 @@
             </div>
         </div>
 
-        <!-- Elements -->
         <div class="card">
             <div class="card-title"><span class="title-icon">🧩</span> Add Elements</div>
             <div class="btn-row">
@@ -966,7 +960,6 @@
             </div>
         </div>
 
-        <!-- Export -->
         <div class="card">
             <div class="card-title"><span class="title-icon">💾</span> Export Full Banner</div>
             <div class="export-row">
@@ -976,15 +969,14 @@
                 <button class="btn btn-orange" onclick="exportTransparent()">✨ Transparent</button>
             </div>
 
-            <!-- GIF Export Options -->
             <div class="gif-options" id="gifOptions">
                 <div class="input-group">
                     <label>Frames</label>
-                    <input type="number" id="gifFrames" value="24" min="5" max="50">
+                    <input type="number" id="gifFrames" value="20" min="5" max="50">
                 </div>
                 <div class="input-group">
                     <label>Delay (ms)</label>
-                    <input type="number" id="gifDelay" value="60" min="30" max="500">
+                    <input type="number" id="gifDelay" value="80" min="30" max="500">
                 </div>
                 <div class="input-group">
                     <label>Quality (1=Best)</label>
@@ -1001,7 +993,6 @@
             </div>
         </div>
 
-        <!-- Advanced Panel -->
         <div class="adv-panel" id="advPanel">
             <div class="adv-title">⚡ Layer Animation</div>
             <div class="anim-selector" id="animSelector">
@@ -1022,7 +1013,6 @@
             </div>
         </div>
 
-        <!-- Canvas -->
         <div class="canvas-frame" id="canvasFrame">
             <span class="label" id="workspaceLabel">Banner Mode</span>
             <div id="adCanvas" onclick="clearSelection(event)">
@@ -1030,7 +1020,6 @@
             </div>
         </div>
 
-        <!-- Inspector -->
         <div class="inspector" id="inspector">
             <div class="title" id="inspectorTitle">🔧 Layer Inspector</div>
             <div class="inspector-grid">
@@ -1133,41 +1122,96 @@
         let isTransparent = false;
         let nodeCounter = 0;
 
-        // ===== WORKING GIF URLs =====
         const GIFS = {
             movie: 'https://media.tenor.com/UrnVq5VX9_kAAAAC/movie-cinema.gif',
             game: 'https://media.tenor.com/lx2BqN0G_4YAAAAC/gaming.gif',
             interstitial: 'https://media.tenor.com/QkPm5k2lXGcAAAAC/gaming.gif'
         };
 
-        // ===== ANIMATION CLASSES =====
-        const ANIMATIONS = {
+        // ===== ANIMATION CONFIG =====
+        // Each animation has: cssClass (for preview) and frameFn (for GIF export)
+        const ANIMATION_TYPES = {
             text: {
-                fade: 'text-fade',
-                bounce: 'text-bounce',
-                flash: 'text-flash',
-                slide: 'text-slide',
-                rainbow: 'text-rainbow',
-                pulse: 'text-pulse',
-                spin: 'text-spin',
-                glow: 'text-glow'
+                fade: { css: 'text-fade', frameFn: (frame, total) => ({ opacity: 0.2 + ((frame / total) * 0.8) }) },
+                bounce: { css: 'text-bounce', frameFn: (frame, total) => {
+                        const offset = Math.sin((frame / total) * Math.PI * 2) * 8;
+                        return { transform: `translateY(${offset}px)` };
+                    } },
+                flash: { css: 'text-flash', frameFn: (frame, total) => {
+                        const color = frame % 2 === 0 ? '#ff0000' : '#ffaa00';
+                        return { color: color };
+                    } },
+                slide: { css: 'text-slide', frameFn: (frame, total) => {
+                        const offset = Math.sin((frame / total) * Math.PI * 2) * 12;
+                        return { transform: `translateX(${offset}px)` };
+                    } },
+                rainbow: { css: 'text-rainbow', frameFn: (frame, total) => {
+                        const hue = (frame / total) * 360;
+                        return { color: `hsl(${hue}, 100%, 50%)` };
+                    } },
+                pulse: { css: 'text-pulse', frameFn: (frame, total) => {
+                        const scale = 1 + Math.sin((frame / total) * Math.PI * 2) * 0.15;
+                        return { transform: `scale(${scale})` };
+                    } },
+                spin: { css: 'text-spin', frameFn: (frame, total) => {
+                        const angle = (frame / total) * 360;
+                        return { transform: `rotate(${angle}deg)` };
+                    } },
+                glow: { css: 'text-glow', frameFn: (frame, total) => {
+                        const blur = 5 + ((Math.sin((frame / total) * Math.PI * 2) + 1) / 2) * 15;
+                        return { textShadow: `0 0 ${blur}px #3b82f6` };
+                    } }
             },
             image: {
-                zoom: 'img-zoom',
-                shake: 'img-shake',
-                rotate: 'img-rotate',
-                bounce: 'img-bounce',
-                fade: 'img-fade'
+                zoom: { css: 'img-zoom', frameFn: (frame, total) => {
+                        const scale = 0.9 + ((Math.sin((frame / total) * Math.PI * 2) + 1) / 2) * 0.2;
+                        return { transform: `scale(${scale})` };
+                    } },
+                shake: { css: 'img-shake', frameFn: (frame, total) => {
+                        const rot = Math.sin((frame / total) * Math.PI * 4) * 5;
+                        return { transform: `rotate(${rot}deg)` };
+                    } },
+                rotate: { css: 'img-rotate', frameFn: (frame, total) => {
+                        const angle = (frame / total) * 360;
+                        return { transform: `rotate(${angle}deg)` };
+                    } },
+                bounce: { css: 'img-bounce', frameFn: (frame, total) => {
+                        const offset = Math.sin((frame / total) * Math.PI * 2) * 10;
+                        return { transform: `translateY(${offset}px)` };
+                    } },
+                fade: { css: 'img-fade', frameFn: (frame, total) => {
+                        const opacity = 0.4 + ((Math.sin((frame / total) * Math.PI * 2) + 1) / 2) * 0.6;
+                        return { opacity: opacity };
+                    } }
             },
             gif: {
-                pulse: 'gif-pulse',
-                glitch: 'gif-glitch',
-                rainbow: 'gif-rainbow'
+                pulse: { css: 'gif-pulse', frameFn: (frame, total) => {
+                        const scale = 0.95 + ((Math.sin((frame / total) * Math.PI * 2) + 1) / 2) * 0.1;
+                        return { transform: `scale(${scale})` };
+                    } },
+                glitch: { css: 'gif-glitch', frameFn: (frame, total) => {
+                        const hue = Math.sin((frame / total) * Math.PI * 4) * 90;
+                        const x = Math.sin((frame / total) * Math.PI * 8) * 2;
+                        return { filter: `hue-rotate(${hue}deg)`, transform: `translateX(${x}px)` };
+                    } },
+                rainbow: { css: 'gif-rainbow', frameFn: (frame, total) => {
+                        const hue = (frame / total) * 360;
+                        return { filter: `hue-rotate(${hue}deg)` };
+                    } }
             },
             shape: {
-                spin: 'shape-spin',
-                pulse: 'shape-pulse',
-                bounce: 'shape-bounce'
+                spin: { css: 'shape-spin', frameFn: (frame, total) => {
+                        const angle = (frame / total) * 360;
+                        return { transform: `rotate(${angle}deg)` };
+                    } },
+                pulse: { css: 'shape-pulse', frameFn: (frame, total) => {
+                        const scale = 0.8 + ((Math.sin((frame / total) * Math.PI * 2) + 1) / 2) * 0.4;
+                        return { transform: `scale(${scale})` };
+                    } },
+                bounce: { css: 'shape-bounce', frameFn: (frame, total) => {
+                        const offset = Math.sin((frame / total) * Math.PI * 2) * 15;
+                        return { transform: `translateY(${offset}px)` };
+                    } }
             }
         };
 
@@ -1219,7 +1263,6 @@
             dialogData = null;
         }
 
-        // ===== FORCE DOWNLOAD =====
         function forceDownload(dataUrl, filename) {
             try {
                 const link = document.createElement('a');
@@ -1351,14 +1394,15 @@
                 return;
             }
 
-            // Store animation name in element for active frame rendering
+            // Store animation name
             selectedNode.dataset.animName = animName;
 
-            const allAnimClasses = [];
-            Object.values(ANIMATIONS).forEach(cat => {
-                Object.values(cat).forEach(cls => allAnimClasses.push(cls));
+            // Remove all animation CSS classes
+            const allCssClasses = [];
+            Object.values(ANIMATION_TYPES).forEach(cat => {
+                Object.values(cat).forEach(anim => allCssClasses.push(anim.css));
             });
-            allAnimClasses.forEach(cls => {
+            allCssClasses.forEach(cls => {
                 selectedNode.classList.remove(cls);
                 const textEl = selectedNode.querySelector('.text-inside');
                 if (textEl) textEl.classList.remove(cls);
@@ -1366,36 +1410,50 @@
 
             if (animName === 'none') {
                 delete selectedNode.dataset.animName;
+                // Reset any inline styles
+                selectedNode.style.transform = '';
+                selectedNode.style.opacity = '';
+                selectedNode.style.filter = '';
+                const textEl = selectedNode.querySelector('.text-inside');
+                if (textEl) {
+                    textEl.style.color = '';
+                    textEl.style.textShadow = '';
+                }
                 showToast('🧹 Animation removed');
                 return;
             }
 
+            // Get the correct animation config based on node type
             const type = selectedNode.dataset.type;
-            let animClass = null;
+            let animConfig = null;
 
             if (type === 'text') {
-                animClass = ANIMATIONS.text[animName];
+                animConfig = ANIMATION_TYPES.text[animName];
             } else if (type === 'image') {
                 const img = selectedNode.querySelector('img');
-                if (img && (img.src.includes('.gif') || img.src.includes('tenor.com') || img.src.includes('giphy.com'))) {
-                    animClass = ANIMATIONS.gif[animName] || ANIMATIONS.image[animName];
+                // Check if it's a GIF
+                const isGif = img && (img.src.includes('.gif') || img.src.includes('tenor.com') || img.src.includes(
+                'giphy.com'));
+                if (isGif && ANIMATION_TYPES.gif[animName]) {
+                    animConfig = ANIMATION_TYPES.gif[animName];
                 } else {
-                    animClass = ANIMATIONS.image[animName];
+                    animConfig = ANIMATION_TYPES.image[animName];
                 }
             } else if (type === 'shape') {
-                animClass = ANIMATIONS.shape[animName];
+                animConfig = ANIMATION_TYPES.shape[animName];
             }
 
-            if (animClass) {
+            if (animConfig) {
+                // Apply CSS class for preview
                 if (type === 'text') {
                     const textEl = selectedNode.querySelector('.text-inside');
-                    if (textEl) textEl.classList.add(animClass);
+                    if (textEl) textEl.classList.add(animConfig.css);
                 } else {
-                    selectedNode.classList.add(animClass);
+                    selectedNode.classList.add(animConfig.css);
                 }
                 showToast('✅ Animation: ' + animName);
             } else {
-                showToast('❌ Animation not available', 'error');
+                showToast('❌ Animation not available for this layer type', 'error');
             }
         }
 
@@ -1919,15 +1977,15 @@
             }, 500);
         }
 
-        // ===== FIXED: DYNAMIC REAL-TIME ANIMATED GIF EXPORT ENGINE =====
+        // ===== FIXED: GIF EXPORT WITH PROPER ANIMATIONS =====
         function exportFullGIF() {
             clearSelection();
-            showToast('🎞️ Initializing Premium HD GIF Render Engine...');
+            showToast('🎞️ Initializing GIF Render Engine...');
             progressBar.style.display = 'block';
             progressFill.style.width = '0%';
 
-            const totalFrames = parseInt(document.getElementById('gifFrames').value) || 24;
-            const delay = parseInt(document.getElementById('gifDelay').value) || 60;
+            const totalFrames = parseInt(document.getElementById('gifFrames').value) || 20;
+            const delay = parseInt(document.getElementById('gifDelay').value) || 80;
             const quality = parseInt(document.getElementById('gifQuality').value) || 1;
 
             const workerCode = `
@@ -1948,7 +2006,7 @@
             let currentFrame = 0;
             const framesBuffer = [];
 
-            // Store original states before temporary frame mutation snapshots
+            // Store original states
             const originalStates = [];
             const nodes = canvas.querySelectorAll('.ad-node');
             nodes.forEach(node => {
@@ -1958,37 +2016,52 @@
                     transform: node.style.transform || 'none',
                     opacity: parseFloat(node.style.opacity) || 1,
                     color: textInside ? textInside.style.color : null,
-                    textShadow: textInside ? textInside.style.textShadow : null
+                    textShadow: textInside ? textInside.style.textShadow : null,
+                    filter: node.style.filter || 'none'
                 });
             });
 
-            // Function to get animation value based on frame and total frames
-            function getAnimationValue(anim, frame, total) {
-                const progress = frame / total;
-                const angle = progress * Math.PI * 2;
-                const sin = Math.sin(angle);
-                const cos = Math.cos(angle);
-                const normalizedSin = (sin + 1) / 2;
+            // Apply animation frame
+            function applyAnimationToNode(node, frame, total) {
+                const animName = node.dataset.animName;
+                if (!animName || animName === 'none') return;
 
-                switch (anim) {
-                    case 'bounce':
-                        return sin * 8;
-                    case 'pulse':
-                        return 1 + sin * 0.15;
-                    case 'fade':
-                        return 0.2 + normalizedSin * 0.8;
-                    case 'spin':
-                        return progress * 360;
-                    case 'slide':
-                        return sin * 12;
-                    case 'flash':
-                        return frame % 2 === 0 ? '#ff0000' : '#ffaa00';
-                    case 'rainbow':
-                        return progress * 360;
-                    case 'glow':
-                        return 5 + normalizedSin * 7;
-                    default:
-                        return null;
+                const type = node.dataset.type;
+                let animConfig = null;
+
+                if (type === 'text') {
+                    animConfig = ANIMATION_TYPES.text[animName];
+                } else if (type === 'image') {
+                    const img = node.querySelector('img');
+                    const isGif = img && (img.src.includes('.gif') || img.src.includes('tenor.com') || img.src.includes(
+                    'giphy.com'));
+                    if (isGif && ANIMATION_TYPES.gif[animName]) {
+                        animConfig = ANIMATION_TYPES.gif[animName];
+                    } else {
+                        animConfig = ANIMATION_TYPES.image[animName];
+                    }
+                } else if (type === 'shape') {
+                    animConfig = ANIMATION_TYPES.shape[animName];
+                }
+
+                if (animConfig && animConfig.frameFn) {
+                    const result = animConfig.frameFn(frame, total);
+                    // Apply all properties from the frame function result
+                    Object.keys(result).forEach(key => {
+                        if (key === 'transform') {
+                            node.style.transform = result[key];
+                        } else if (key === 'opacity') {
+                            node.style.opacity = result[key];
+                        } else if (key === 'color') {
+                            const textEl = node.querySelector('.text-inside');
+                            if (textEl) textEl.style.color = result[key];
+                        } else if (key === 'textShadow') {
+                            const textEl = node.querySelector('.text-inside');
+                            if (textEl) textEl.style.textShadow = result[key];
+                        } else if (key === 'filter') {
+                            node.style.filter = result[key];
+                        }
+                    });
                 }
             }
 
@@ -1998,6 +2071,7 @@
                     originalStates.forEach(state => {
                         state.node.style.transform = state.transform;
                         state.node.style.opacity = state.opacity;
+                        state.node.style.filter = state.filter;
                         const txt = state.node.querySelector('.text-inside');
                         if (txt) {
                             txt.style.color = state.color || '';
@@ -2008,44 +2082,12 @@
                     return;
                 }
 
-                // Apply animations to each node
+                // Apply animations to all nodes for current frame
                 nodes.forEach(node => {
-                    const anim = node.dataset.animName;
-                    if (!anim || anim === 'none') return;
-
-                    const textInside = node.querySelector('.text-inside');
-                    const value = getAnimationValue(anim, currentFrame, totalFrames);
-
-                    if (value === null) return;
-
-                    switch (anim) {
-                        case 'bounce':
-                            node.style.transform = `translateY(${value}px)`;
-                            break;
-                        case 'pulse':
-                            node.style.transform = `scale(${value})`;
-                            break;
-                        case 'fade':
-                            node.style.opacity = value;
-                            break;
-                        case 'spin':
-                            node.style.transform = `rotate(${value}deg)`;
-                            break;
-                        case 'slide':
-                            node.style.transform = `translateX(${value}px)`;
-                            break;
-                        case 'flash':
-                            if (textInside) textInside.style.color = value;
-                            break;
-                        case 'rainbow':
-                            if (textInside) textInside.style.color = `hsl(${value}, 100%, 50%)`;
-                            break;
-                        case 'glow':
-                            if (textInside) textInside.style.textShadow = `0 0 ${value}px #3b82f6`;
-                            break;
-                    }
+                    applyAnimationToNode(node, currentFrame, totalFrames);
                 });
 
+                // Capture frame
                 html2canvas(canvas, {
                     backgroundColor: isTransparent ? null : window.getComputedStyle(canvas).backgroundColor,
                     logging: false,
@@ -2056,12 +2098,11 @@
                     framesBuffer.push(ctx.getImageData(0, 0, renderedCanvas.width, renderedCanvas.height));
 
                     currentFrame++;
-                    // Use delay as the timing factor - lower delay = faster animation
                     const progressPercent = Math.round((currentFrame / totalFrames) * 50);
                     progressFill.style.width = Math.min(progressPercent, 50) + '%';
 
-                    // Use the actual delay value for frame timing
-                    const frameDelay = Math.max(20, delay * 0.8); // Slightly faster than delay for smoothness
+                    // Use delay for timing
+                    const frameDelay = Math.max(20, delay * 0.9);
                     setTimeout(captureNextFrame, frameDelay);
                 }).catch(err => {
                     console.error(err);
@@ -2072,7 +2113,7 @@
             }
 
             function compileBufferedFrames() {
-                showToast('⚙️ Encoding Perfect HD Frames...');
+                showToast('⚙️ Encoding frames...');
 
                 if (framesBuffer.length === 0) {
                     showToast('❌ Buffer empty', 'error');
@@ -2088,7 +2129,6 @@
                 gif.options.width = tempCanvas.width;
                 gif.options.height = tempCanvas.height;
 
-                // Add all frames to GIF
                 for (let i = 0; i < framesBuffer.length; i++) {
                     tempCtx.putImageData(framesBuffer[i], 0, 0);
                     gif.addFrame(tempCtx, { delay: delay, copy: true });
@@ -2103,14 +2143,13 @@
                     progressBar.style.display = 'none';
                     const finalGifUrl = URL.createObjectURL(blob);
                     showDialog(finalGifUrl, 'ad-animation-' + Date.now() + '.gif', 'gif');
-                    showToast('🎯 GIF Rendered at Max Quality!');
+                    showToast('🎯 GIF Rendered Successfully!');
                     URL.revokeObjectURL(workerUrl);
                 });
 
                 gif.render();
             }
 
-            // Start frame capture
             setTimeout(captureNextFrame, 100);
         }
 
@@ -2136,17 +2175,6 @@
         // ===== INIT =====
         window.onload = function() {
             mutateCanvas();
-            // Set default animation for demo
-            setTimeout(() => {
-                const textNodes = document.querySelectorAll('.ad-node');
-                textNodes.forEach(node => {
-                    if (node.dataset.type === 'text') {
-                        node.dataset.animName = 'fade';
-                        const textEl = node.querySelector('.text-inside');
-                        if (textEl) textEl.classList.add('text-fade');
-                    }
-                });
-            }, 500);
         };
     </script>
 </body>
