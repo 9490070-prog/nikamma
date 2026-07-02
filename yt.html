@@ -1016,7 +1016,6 @@
                 document.body.appendChild(link);
                 link.click();
                 
-                // Cleanup
                 setTimeout(() => {
                     document.body.removeChild(link);
                 }, 1000);
@@ -1045,14 +1044,12 @@
                             closeDialog();
                         })
                         .catch(() => {
-                            // Method 3: Open in new tab
                             window.open(dataUrl, '_blank');
                             showToast('✅ Download started', 'success');
                             closeDialog();
                         });
                     return true;
                 } catch (e2) {
-                    // Method 4: Open in new tab
                     window.open(dataUrl, '_blank');
                     showToast('✅ Download started', 'success');
                     closeDialog();
@@ -1306,10 +1303,11 @@
             });
         }
 
-        // ===== DOWNLOAD GIF =====
+        // ===== DOWNLOAD GIF (FIXED) =====
         function downloadGIF() {
             clearSelection();
 
+            // Check for GIF in canvas
             const gifs = canvas.querySelectorAll('img');
             let gifSrc = null;
             gifs.forEach(img => {
@@ -1319,11 +1317,36 @@
             });
 
             if (gifSrc) {
+                // GIF found - download it directly
                 const filename = 'ad_animated_' + Date.now() + '.gif';
-                showDialog(gifSrc, filename, 'gif');
+                
+                // Check if it's a blob URL or data URL
+                if (gifSrc.startsWith('data:') || gifSrc.startsWith('blob:')) {
+                    // Direct download
+                    showDialog(gifSrc, filename, 'gif');
+                } else {
+                    // Fetch and download
+                    fetch(gifSrc)
+                        .then(res => res.blob())
+                        .then(blob => {
+                            const url = URL.createObjectURL(blob);
+                            showDialog(url, filename, 'gif');
+                            // Cleanup after dialog close
+                            const origClose = closeDialog;
+                            closeDialog = function() {
+                                URL.revokeObjectURL(url);
+                                origClose.call(this);
+                            };
+                        })
+                        .catch(() => {
+                            showToast('❌ Failed to fetch GIF', 'error');
+                            downloadPNG();
+                        });
+                }
                 return;
             }
 
+            // No GIF found - fallback to PNG
             showToast('⚠️ No GIF found, exporting as PNG', 'error');
             downloadPNG();
         }
@@ -1895,7 +1918,7 @@
         window.onload = function() {
             mutateCanvas();
             loadTemplate('movie');
-            showToast('✨ Advanced Studio Ready! Download fixed!');
+            showToast('✨ Advanced Studio Ready! GIF download fixed!');
         };
     </script>
 
