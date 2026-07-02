@@ -3,8 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Ad Studio Pro - Full Banner GIF Export</title>
+    <title>Ad Studio Pro - Animated Banner GIF Export</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <!-- GIF.js for creating animated GIFs -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gif.js/0.2.0/gif.js"></script>
     <style>
         * {
@@ -856,6 +857,7 @@
             </div>
         </div>
 
+        <!-- Templates -->
         <div class="card">
             <div class="card-title"><span class="title-icon">📋</span> Premium Animated Templates</div>
             <div class="template-grid">
@@ -898,6 +900,7 @@
             </div>
         </div>
 
+        <!-- Controls -->
         <div class="card">
             <div class="card-title"><span class="title-icon">🎛️</span> Format & Dimensions</div>
             <div class="input-grid">
@@ -949,6 +952,7 @@
             </div>
         </div>
 
+        <!-- Elements -->
         <div class="card">
             <div class="card-title"><span class="title-icon">🧩</span> Add Elements</div>
             <div class="btn-row">
@@ -960,6 +964,7 @@
             </div>
         </div>
 
+        <!-- Export -->
         <div class="card">
             <div class="card-title"><span class="title-icon">💾</span> Export Full Banner</div>
             <div class="export-row">
@@ -969,14 +974,15 @@
                 <button class="btn btn-orange" onclick="exportTransparent()">✨ Transparent</button>
             </div>
             
+            <!-- GIF Export Options -->
             <div class="gif-options" id="gifOptions">
                 <div class="input-group">
                     <label>Frames</label>
-                    <input type="number" id="gifFrames" value="10" min="5" max="30">
+                    <input type="number" id="gifFrames" value="15" min="5" max="40">
                 </div>
                 <div class="input-group">
                     <label>Delay (ms)</label>
-                    <input type="number" id="gifDelay" value="150" min="50" max="500">
+                    <input type="number" id="gifDelay" value="100" min="40" max="500">
                 </div>
                 <div class="input-group">
                     <label>Quality</label>
@@ -993,6 +999,7 @@
             </div>
         </div>
 
+        <!-- Advanced Panel -->
         <div class="adv-panel" id="advPanel">
             <div class="adv-title">⚡ Layer Animation</div>
             <div class="anim-selector" id="animSelector">
@@ -1013,6 +1020,7 @@
             </div>
         </div>
 
+        <!-- Canvas -->
         <div class="canvas-frame" id="canvasFrame">
             <span class="label" id="workspaceLabel">Banner Mode</span>
             <div id="adCanvas" onclick="clearSelection(event)">
@@ -1020,6 +1028,7 @@
             </div>
         </div>
 
+        <!-- Inspector -->
         <div class="inspector" id="inspector">
             <div class="title" id="inspectorTitle">🔧 Layer Inspector</div>
             <div class="inspector-grid">
@@ -1340,7 +1349,9 @@
                 return;
             }
 
-            // Remove all animation classes
+            // Store animation name in element for active frame rendering
+            selectedNode.dataset.animName = animName;
+
             const allAnimClasses = [];
             Object.values(ANIMATIONS).forEach(cat => {
                 Object.values(cat).forEach(cls => allAnimClasses.push(cls));
@@ -1352,6 +1363,7 @@
             });
 
             if (animName === 'none') {
+                delete selectedNode.dataset.animName;
                 showToast('🧹 Animation removed');
                 return;
             }
@@ -1452,7 +1464,6 @@
             let newX = nodeStartX + dx;
             let newY = nodeStartY + dy;
 
-            // Constrain inside canvas
             const maxW = canvas.offsetWidth - selectedNode.offsetWidth;
             const maxH = canvas.offsetHeight - selectedNode.offsetHeight;
             newX = Math.max(0, Math.min(newX, maxW));
@@ -1759,7 +1770,7 @@
                     selectedNode.style.background = 'rgba(239, 68, 68, 0.85)';
                     selectedNode.style.left = '10px';
                     selectedNode.style.top = '12px';
-                    selectNode(selectedNode);
+                    setAnimation('flash');
                 }
                 showToast(`🚀 Loaded Premium ${type.toUpperCase()} Template`);
             } else if (type === 'sale') {
@@ -1792,7 +1803,7 @@
                     selectedNode.style.background = '#000000';
                     selectedNode.style.left = '10px';
                     selectedNode.style.top = '12px';
-                    selectNode(selectedNode);
+                    setAnimation('bounce');
                 }
                 showToast('🚀 Loaded Premium FLASH SALE Template');
             }
@@ -1904,18 +1915,17 @@
             }, 500);
         }
 
-        // ===== CORS WORKER FIXED GIF EXPORT ENGINE =====
+        // ===== DYNAMIC REAL-TIME ANIMATED GIF EXPORT ENGINE =====
         function exportFullGIF() {
             clearSelection();
-            showToast('🎞️ Initializing GIF Engine Setup...');
+            showToast('🎞️ Initializing Animated GIF Render Engine...');
             progressBar.style.display = 'block';
             progressFill.style.width = '0%';
 
-            const totalFrames = parseInt(document.getElementById('gifFrames').value) || 10;
-            const delay = parseInt(document.getElementById('gifDelay').value) || 150;
+            const totalFrames = parseInt(document.getElementById('gifFrames').value) || 15;
+            const delay = parseInt(document.getElementById('gifDelay').value) || 100;
             const quality = parseInt(document.getElementById('gifQuality').value) || 10;
 
-            // INLINE MUKAMMAL WORKER ENGINE BLOB TO KILL CORS ERROR FOREVER
             const workerCode = `
                 importScripts('https://cdnjs.cloudflare.com/ajax/libs/gif.js/0.2.0/gif.worker.js');
             `;
@@ -1934,11 +1944,63 @@
             let currentFrame = 0;
             const framesBuffer = [];
 
+            // Store original positions & states before temporary snapshot mutations
+            const originalTransforms = [];
+            const nodes = canvas.querySelectorAll('.ad-node');
+            nodes.forEach(node => {
+                originalTransforms.push({
+                    node: node,
+                    left: parseInt(node.style.left) || 0,
+                    top: parseInt(node.style.top) || 0,
+                    opacity: parseFloat(node.style.opacity) || 1,
+                    color: node.querySelector('.text-inside') ? node.querySelector('.text-inside').style.color : null
+                });
+            });
+
             function captureNextFrame() {
                 if (currentFrame >= totalFrames) {
+                    // Restore layers to original structural layouts
+                    originalTransforms.forEach(t => {
+                        t.node.style.left = t.left + 'px';
+                        t.node.style.top = t.top + 'px';
+                        t.node.style.opacity = t.opacity;
+                        const txt = t.node.querySelector('.text-inside');
+                        if (txt && t.color) txt.style.color = t.color;
+                    });
                     compileBufferedFrames();
                     return;
                 }
+
+                // STEP VARIATION MULTIPLIER: Force HTML5 Canvas layout parsing manually 
+                nodes.forEach(node => {
+                    const anim = node.dataset.animName;
+                    if (!anim) return;
+                    
+                    const step = currentFrame;
+                    const textInside = node.querySelector('.text-inside');
+
+                    if (anim === 'bounce' || anim === 'bounce') {
+                        const offset = Math.sin((step / totalFrames) * Math.PI * 2) * 8;
+                        node.style.transform = `translateY(\${offset}px)`;
+                    } else if (anim === 'pulse') {
+                        const scale = 1 + Math.sin((step / totalFrames) * Math.PI * 2) * 0.15;
+                        node.style.transform = `scale(\${scale})`;
+                    } else if (anim === 'fade') {
+                        const opacity = 0.3 + (Math.sin((step / totalFrames) * Math.PI * 2) + 1) * 0.35;
+                        node.style.opacity = opacity;
+                    } else if (anim === 'spin') {
+                        const angle = (step / totalFrames) * 360;
+                        node.style.transform = `rotate(\${angle}deg)`;
+                    } else if (anim === 'slide') {
+                        const offset = Math.sin((step / totalFrames) * Math.PI * 2) * 12;
+                        node.style.transform = `translateX(\${offset}px)`;
+                    } else if (anim === 'flash' && textInside) {
+                        textInside.style.color = step % 2 === 0 ? '#ff0000' : '#ffaa00';
+                    } else if (anim === 'rainbow' && textInside) {
+                        const hue = (step / totalFrames) * 360;
+                        textInside.style.color = `hsl(\${hue}, 100%, 50%)`;
+                    }
+                });
 
                 html2canvas(canvas, {
                     backgroundColor: isTransparent ? null : window.getComputedStyle(canvas).backgroundColor,
@@ -1952,20 +2014,18 @@
                     currentFrame++;
                     progressFill.style.width = Math.round((currentFrame / totalFrames) * 50) + '%';
                     
-                    // Request animation frame layout step safely
-                    setTimeout(captureNextFrame, delay);
+                    setTimeout(captureNextFrame, 60); // Rapid sampling ticks
                 }).catch(err => {
                     console.error(err);
-                    showToast('❌ Frame capture failed: ' + err.message, 'error');
+                    showToast('❌ Frame capture missing: ' + err.message, 'error');
                     progressBar.style.display = 'none';
                     URL.revokeObjectURL(workerUrl);
                 });
             }
 
             function compileBufferedFrames() {
-                showToast('⚙️ Processing & Animating Layout Layers...');
+                showToast('⚙️ Compiling Movie Frame Snapshots...');
                 
-                // Create temporary structural canvas to append data arrays smoothly
                 const tempCanvas = document.createElement('canvas');
                 tempCanvas.width = canvas.offsetWidth;
                 tempCanvas.height = canvas.offsetHeight;
@@ -1984,15 +2044,15 @@
                     progressBar.style.display = 'none';
                     const finalGifUrl = URL.createObjectURL(blob);
                     showDialog(finalGifUrl, 'ad-animation-' + Date.now() + '.gif', 'gif');
-                    showToast('✅ GIF Rendered Successfully!');
+                    showToast('✅ Dynamic GIF Exported Perfectly!');
                     URL.revokeObjectURL(workerUrl);
                 });
 
                 gif.render();
             }
 
-            // Start processing frame stream immediately
-            setTimeout(captureNextFrame, 100);
+            // Fire thread capture engine
+            setTimeout(captureNextFrame, 150);
         }
 
         // ===== UTILITY =====
