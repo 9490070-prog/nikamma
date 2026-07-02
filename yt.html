@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Ad Studio Pro - Advanced Edition</title>
+    <title>Ad Studio Pro - GIF Fixed</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <style>
         * {
@@ -695,7 +695,7 @@
             <h1>⚡ Ad Studio Pro</h1>
             <div>
                 <span class="badge">Android 16+</span>
-                <span class="badge-adv">ADV</span>
+                <span class="badge-adv">GIF FIX</span>
             </div>
         </div>
 
@@ -955,6 +955,14 @@
         let isTransparent = false;
         let nodeCounter = 0;
 
+        // ===== WORKING GIF URLs =====
+        const GIFS = {
+            movie: 'https://media.tenor.com/UrnVq5VX9_kAAAAC/movie-cinema.gif',
+            game: 'https://media.tenor.com/lx2BqN0G_4YAAAAC/gaming.gif',
+            interstitial: 'https://media.tenor.com/QkPm5k2lXGcAAAAC/gaming.gif',
+            fallback: 'https://media.tenor.com/5x-m4nLQQCcAAAAC/animation.gif'
+        };
+
         // ===== TOAST =====
         function showToast(msg, type = 'success') {
             toast.textContent = msg;
@@ -989,11 +997,12 @@
                 img.src = dataUrl;
                 img.style.maxWidth = '100%';
                 img.style.maxHeight = '250px';
+                img.style.objectFit = 'contain';
                 dialogPreview.appendChild(img);
                 const typeName = type === 'gif' ? 'GIF' : 'PNG';
                 const transText = isTransparent ? ' (Transparent BG)' : '';
                 dialogTitle.textContent = '📸 ' + typeName + ' Ready' + transText;
-                dialogDesc.textContent = 'Download or share this image';
+                dialogDesc.textContent = 'Tap Download to save or Share to send';
             }
 
             downloadDialog.style.display = 'flex';
@@ -1008,7 +1017,6 @@
         // ===== FIXED DOWNLOAD FUNCTION =====
         function forceDownload(dataUrl, filename) {
             try {
-                // Method 1: Create anchor tag and click
                 const link = document.createElement('a');
                 link.href = dataUrl;
                 link.download = filename;
@@ -1024,7 +1032,6 @@
                 closeDialog();
                 return true;
             } catch (e) {
-                // Method 2: Fetch and download
                 try {
                     fetch(dataUrl)
                         .then(res => res.blob())
@@ -1303,35 +1310,36 @@
             });
         }
 
-        // ===== DOWNLOAD GIF (FIXED) =====
+        // ===== DOWNLOAD GIF (FIXED - Uses Tenor URLs) =====
         function downloadGIF() {
             clearSelection();
 
             // Check for GIF in canvas
-            const gifs = canvas.querySelectorAll('img');
+            const images = canvas.querySelectorAll('img');
             let gifSrc = null;
-            gifs.forEach(img => {
-                if (img.src && (img.src.includes('.gif') || img.src.startsWith('data:image/gif'))) {
+            images.forEach(img => {
+                if (img.src && (img.src.includes('.gif') || img.src.includes('tenor.com') || 
+                    img.src.includes('giphy.com') || img.src.startsWith('data:image/gif'))) {
                     gifSrc = img.src;
                 }
             });
 
             if (gifSrc) {
-                // GIF found - download it directly
                 const filename = 'ad_animated_' + Date.now() + '.gif';
                 
-                // Check if it's a blob URL or data URL
+                // Check if it's a data URL or blob URL
                 if (gifSrc.startsWith('data:') || gifSrc.startsWith('blob:')) {
-                    // Direct download
                     showDialog(gifSrc, filename, 'gif');
                 } else {
                     // Fetch and download
                     fetch(gifSrc)
-                        .then(res => res.blob())
+                        .then(res => {
+                            if (!res.ok) throw new Error('Network error');
+                            return res.blob();
+                        })
                         .then(blob => {
                             const url = URL.createObjectURL(blob);
                             showDialog(url, filename, 'gif');
-                            // Cleanup after dialog close
                             const origClose = closeDialog;
                             closeDialog = function() {
                                 URL.revokeObjectURL(url);
@@ -1339,8 +1347,9 @@
                             };
                         })
                         .catch(() => {
-                            showToast('❌ Failed to fetch GIF', 'error');
-                            downloadPNG();
+                            // If fetch fails, try direct download
+                            showToast('⚠️ Trying direct download', 'error');
+                            showDialog(gifSrc, filename, 'gif');
                         });
                 }
                 return;
@@ -1524,7 +1533,7 @@
             canvas.style.borderRadius = document.getElementById('canvasRadius').value + 'px';
         }
 
-        // ===== TEMPLATES =====
+        // ===== TEMPLATES (Using working GIF URLs) =====
         function loadTemplate(key) {
             document.querySelectorAll('.ad-node').forEach(el => el.remove());
             clearSelection();
@@ -1538,8 +1547,7 @@
                 document.getElementById('canvasBg').value = '#0b0f19';
                 document.getElementById('canvasBgHex').innerText = '#0B0F19';
                 switchFormat();
-                addImageNode('https://media.giphy.com/media/WwMuwI7SgTf2v86Fno/giphy.gif', '35px', '35px', '10px', '7px',
-                    true);
+                addImageNode(GIFS.movie, '35px', '35px', '10px', '7px', true);
                 addTextNode('🔴 LIVE NOW: 4K Stream', '#ef4444', '12', '55px', '8px');
                 addTextNode('No Buffering • 60 FPS', '#94a3b8', '10', '55px', '26px');
                 addTextNode('WATCH', '#ffffff', '11', '255px', '13px', '#e50914', '4px 10px');
@@ -1551,7 +1559,7 @@
                 document.getElementById('canvasBg').value = '#020617';
                 document.getElementById('canvasBgHex').innerText = '#020617';
                 switchFormat();
-                addImageNode('https://media.giphy.com/media/K89gH5O7F0qR2/giphy.gif', '40px', '40px', '12px', '5px');
+                addImageNode(GIFS.game, '40px', '40px', '12px', '5px');
                 addTextNode('🚀 CRASH WINNER', '#22c55e', '12', '60px', '8px');
                 addTextNode('200% Bonus Instant', '#cbd5e1', '10', '60px', '26px');
                 addTextNode('PLAY', '#000000', '11', '255px', '13px', '#22c55e', '4px 12px');
@@ -1572,8 +1580,7 @@
                 document.getElementById('canvasBg').value = '#070b14';
                 document.getElementById('canvasBgHex').innerText = '#070B14';
                 switchFormat();
-                addImageNode('https://media.giphy.com/media/S8wThZg6mN8tTiditO/giphy.gif', '140px', '140px', '70px',
-                    '45px');
+                addImageNode(GIFS.interstitial, '140px', '140px', '70px', '45px');
                 addTextNode('🎮 CYBER BATTLE', '#38bdf8', '18', '35px', '200px');
                 addTextNode('Season 5 Extreme Rewards', '#f8fafc', '12', '42px', '225px');
                 addTextNode('★ 50,000+ Players ★', '#64748b', '10', '40px', '250px');
@@ -1658,6 +1665,7 @@
             wrapper.style.top = top;
             const img = document.createElement('img');
             img.src = url;
+            img.crossOrigin = 'anonymous';
             img.style.width = width;
             img.style.height = height;
             wrapper.appendChild(img);
@@ -1918,7 +1926,7 @@
         window.onload = function() {
             mutateCanvas();
             loadTemplate('movie');
-            showToast('✨ Advanced Studio Ready! GIF download fixed!');
+            showToast('✨ GIF Download Fixed! Use Tenor GIFs');
         };
     </script>
 
