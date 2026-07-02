@@ -3,8 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Ad Studio Pro - Full Animation</title>
+    <title>Ad Studio Pro - Full Banner GIF Export</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <!-- GIF.js for creating animated GIFs -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gif.js/0.2.0/gif.js"></script>
     <style>
         * {
             margin: 0;
@@ -374,8 +376,7 @@
             transition: all 0.2s;
         }
 
-        /* ===== ANIMATION CLASSES ===== */
-        /* Text Animations */
+        /* Animation Classes */
         .text-fade {
             animation: textFade 1.5s ease-in-out infinite alternate;
         }
@@ -445,7 +446,6 @@
             100% { text-shadow: 0 0 20px rgba(59,130,246,0.8), 0 0 40px rgba(59,130,246,0.4); }
         }
 
-        /* Image Animations */
         .img-zoom {
             animation: imgZoom 1.5s ease-in-out infinite alternate;
         }
@@ -461,14 +461,6 @@
             0%, 100% { transform: rotate(0deg); }
             25% { transform: rotate(-5deg); }
             75% { transform: rotate(5deg); }
-        }
-
-        .img-flip {
-            animation: imgFlip 1.5s ease-in-out infinite alternate;
-        }
-        @keyframes imgFlip {
-            0% { transform: scaleX(1); }
-            100% { transform: scaleX(-1); }
         }
 
         .img-rotate {
@@ -495,7 +487,6 @@
             100% { opacity: 1; transform: scale(1); }
         }
 
-        /* GIF animations - pulse glow */
         .gif-pulse {
             animation: gifPulse 1.2s ease-in-out infinite alternate;
         }
@@ -522,7 +513,6 @@
             100% { filter: hue-rotate(360deg); }
         }
 
-        /* Shape Animations */
         .shape-spin {
             animation: shapeSpin 2s linear infinite;
         }
@@ -653,7 +643,6 @@
             left: 18px;
         }
 
-        /* Animation Selector */
         .anim-selector {
             display: grid;
             grid-template-columns: 1fr 1fr 1fr;
@@ -691,6 +680,25 @@
         .adv-panel .adv-grid .btn {
             padding: 8px 4px;
             font-size: 9px;
+        }
+
+        /* GIF Export Options */
+        .gif-options {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 6px;
+            margin-top: 6px;
+        }
+        .gif-options .input-group {
+            gap: 2px;
+        }
+        .gif-options .input-group label {
+            font-size: 7px;
+        }
+        .gif-options .input-group input {
+            height: 28px;
+            font-size: 10px;
+            padding: 4px 6px;
         }
 
         .toast {
@@ -797,6 +805,24 @@
             grid-column: 1 / -1;
         }
 
+        /* Progress Bar */
+        .progress-bar {
+            width: 100%;
+            height: 4px;
+            background: var(--border-color);
+            border-radius: 2px;
+            margin: 8px 0;
+            overflow: hidden;
+            display: none;
+        }
+        .progress-bar .fill {
+            height: 100%;
+            background: var(--accent-blue);
+            border-radius: 2px;
+            width: 0%;
+            transition: width 0.3s;
+        }
+
         @media (max-width: 400px) {
             .btn-row {
                 grid-template-columns: 1fr 1fr;
@@ -813,6 +839,9 @@
             .anim-selector {
                 grid-template-columns: 1fr 1fr 1fr;
             }
+            .gif-options {
+                grid-template-columns: 1fr 1fr;
+            }
         }
     </style>
 </head>
@@ -823,8 +852,8 @@
         <div class="header">
             <h1>⚡ Ad Studio Pro</h1>
             <div>
-                <span class="badge">Android 16+</span>
-                <span class="badge-adv">ANIMATION</span>
+                <span class="badge">Full Banner</span>
+                <span class="badge-adv">GIF EXPORT</span>
             </div>
         </div>
 
@@ -835,25 +864,25 @@
                 <div class="template-item" onclick="loadTemplate('movie')">
                     <span class="icon">🎬</span>
                     <div class="name">Cinema Live</div>
-                    <div class="tag">Animated Banner</div>
+                    <div class="tag">Full Banner</div>
                     <span class="badge badge-anim">ANIM</span>
                 </div>
                 <div class="template-item" onclick="loadTemplate('game')">
                     <span class="icon">🎮</span>
                     <div class="name">Gaming Zone</div>
-                    <div class="tag">Animated Banner</div>
+                    <div class="tag">Full Banner</div>
                     <span class="badge badge-anim">ANIM</span>
                 </div>
                 <div class="template-item" onclick="loadTemplate('sale')">
                     <span class="icon">🔥</span>
                     <div class="name">Flash Sale</div>
-                    <div class="tag">Animated</div>
+                    <div class="tag">Full Banner</div>
                     <span class="badge badge-anim">ANIM</span>
                 </div>
                 <div class="template-item" onclick="loadTemplate('interstitial')">
                     <span class="icon">📱</span>
                     <div class="name">Full Screen</div>
-                    <div class="tag">Animated</div>
+                    <div class="tag">Full Banner</div>
                     <span class="badge badge-anim">ANIM</span>
                 </div>
                 <div class="template-item" onclick="loadTemplate('transparent')">
@@ -912,7 +941,7 @@
                 </div>
             </div>
             <div class="bg-options">
-                <button class="btn btn-blue" onclick="setSolidBg()">🔲 Solid Color</button>
+                <button class="btn btn-blue" onclick="setSolidBg()">🔲 Solid</button>
                 <button class="btn btn-orange" onclick="setTransparentBg()">✨ Transparent</button>
                 <button class="btn btn-outline" onclick="resetBgColor()">🔄 Reset</button>
             </div>
@@ -937,40 +966,42 @@
 
         <!-- Export -->
         <div class="card">
-            <div class="card-title"><span class="title-icon">💾</span> Export Options</div>
+            <div class="card-title"><span class="title-icon">💾</span> Export Full Banner</div>
             <div class="export-row">
                 <button class="btn btn-green" onclick="exportPNG()">📸 PNG</button>
-                <button class="btn btn-pink" onclick="exportGIF()">🎞️ GIF</button>
+                <button class="btn btn-pink" onclick="exportFullGIF()">🎞️ GIF</button>
                 <button class="btn btn-blue" onclick="exportMP4()">🎥 MP4</button>
                 <button class="btn btn-orange" onclick="exportTransparent()">✨ Transparent</button>
+            </div>
+            
+            <!-- GIF Export Options -->
+            <div class="gif-options" id="gifOptions">
+                <div class="input-group">
+                    <label>Frames</label>
+                    <input type="number" id="gifFrames" value="10" min="5" max="30">
+                </div>
+                <div class="input-group">
+                    <label>Delay (ms)</label>
+                    <input type="number" id="gifDelay" value="150" min="50" max="500">
+                </div>
+                <div class="input-group">
+                    <label>Quality</label>
+                    <input type="number" id="gifQuality" value="10" min="1" max="20">
+                </div>
             </div>
             <div style="margin-top:6px;display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;">
                 <button class="btn btn-orange" onclick="shareAd()">📤 Share</button>
                 <button class="btn btn-purple" onclick="saveToGallery()">🖼️ Save</button>
                 <button class="btn btn-outline" onclick="toggleAdvPanel()">⚡ Advanced</button>
             </div>
+            <div class="progress-bar" id="progressBar">
+                <div class="fill" id="progressFill"></div>
+            </div>
         </div>
 
         <!-- Advanced Panel -->
         <div class="adv-panel" id="advPanel">
-            <div class="adv-title">⚡ Advanced Features</div>
-            <div class="adv-grid">
-                <button class="btn btn-pink" onclick="applyEffect('pulse')">💫 Pulse</button>
-                <button class="btn btn-orange" onclick="applyEffect('rotate')">🔄 Rotate</button>
-                <button class="btn btn-green" onclick="applyEffect('bounce')">📤 Bounce</button>
-                <button class="btn btn-purple" onclick="applyEffect('fade')">🌊 Fade</button>
-                <button class="btn btn-blue" onclick="applyEffect('shadow')">👤 Shadow</button>
-                <button class="btn btn-outline" onclick="applyEffect('outline')">✏️ Outline</button>
-                <button class="btn btn-outline" onclick="applyEffect('italic')">📝 Italic</button>
-                <button class="btn btn-outline" onclick="applyEffect('underline')">📏 Underline</button>
-                <button class="btn btn-red" onclick="applyEffect('clear')">🧹 Clear</button>
-            </div>
-            <div class="adv-grid" style="margin-top:6px;grid-template-columns:1fr 1fr 1fr;">
-                <button class="btn btn-purple" onclick="duplicateLayer()">📋 Duplicate</button>
-                <button class="btn btn-blue" onclick="moveLayer('up')">⬆️ Up</button>
-                <button class="btn btn-blue" onclick="moveLayer('down')">⬇️ Down</button>
-            </div>
-            <div class="adv-title" style="margin-top:8px;">🎬 Apply Animation</div>
+            <div class="adv-title">⚡ Layer Animation</div>
             <div class="anim-selector" id="animSelector">
                 <button class="btn btn-pink" onclick="setAnimation('fade')">Fade</button>
                 <button class="btn btn-orange" onclick="setAnimation('bounce')">Bounce</button>
@@ -981,6 +1012,11 @@
                 <button class="btn btn-blue" onclick="setAnimation('spin')">Spin</button>
                 <button class="btn btn-orange" onclick="setAnimation('glow')">Glow</button>
                 <button class="btn btn-red" onclick="setAnimation('none')">None</button>
+            </div>
+            <div class="adv-grid" style="margin-top:6px;grid-template-columns:1fr 1fr 1fr;">
+                <button class="btn btn-purple" onclick="duplicateLayer()">📋 Duplicate</button>
+                <button class="btn btn-blue" onclick="moveLayer('up')">⬆️ Up</button>
+                <button class="btn btn-blue" onclick="moveLayer('down')">⬇️ Down</button>
             </div>
         </div>
 
@@ -1084,6 +1120,8 @@
         const dialogTitle = document.getElementById('dialogTitle');
         const dialogDesc = document.getElementById('dialogDesc');
         const advPanel = document.getElementById('advPanel');
+        const progressBar = document.getElementById('progressBar');
+        const progressFill = document.getElementById('progressFill');
 
         let selectedNode = null;
         let isDragging = false;
@@ -1098,6 +1136,37 @@
             movie: 'https://media.tenor.com/UrnVq5VX9_kAAAAC/movie-cinema.gif',
             game: 'https://media.tenor.com/lx2BqN0G_4YAAAAC/gaming.gif',
             interstitial: 'https://media.tenor.com/QkPm5k2lXGcAAAAC/gaming.gif'
+        };
+
+        // ===== ANIMATION CLASSES =====
+        const ANIMATIONS = {
+            text: {
+                fade: 'text-fade',
+                bounce: 'text-bounce',
+                flash: 'text-flash',
+                slide: 'text-slide',
+                rainbow: 'text-rainbow',
+                pulse: 'text-pulse',
+                spin: 'text-spin',
+                glow: 'text-glow'
+            },
+            image: {
+                zoom: 'img-zoom',
+                shake: 'img-shake',
+                rotate: 'img-rotate',
+                bounce: 'img-bounce',
+                fade: 'img-fade'
+            },
+            gif: {
+                pulse: 'gif-pulse',
+                glitch: 'gif-glitch',
+                rainbow: 'gif-rainbow'
+            },
+            shape: {
+                spin: 'shape-spin',
+                pulse: 'shape-pulse',
+                bounce: 'shape-bounce'
+            }
         };
 
         // ===== TOAST =====
@@ -1136,7 +1205,7 @@
                 img.style.maxHeight = '250px';
                 img.style.objectFit = 'contain';
                 dialogPreview.appendChild(img);
-                const typeName = type === 'gif' ? 'GIF (Animated)' : 'PNG';
+                const typeName = type === 'gif' ? 'GIF (Animated Full Banner)' : 'PNG';
                 dialogTitle.textContent = '📸 ' + typeName + ' Ready';
                 dialogDesc.textContent = 'Tap Download to save or Share to send';
             }
@@ -1237,94 +1306,6 @@
             }
         }
 
-        // ===== ANIMATION FUNCTIONS =====
-        const ANIMATIONS = {
-            // Text animations
-            text: {
-                fade: 'text-fade',
-                bounce: 'text-bounce',
-                flash: 'text-flash',
-                slide: 'text-slide',
-                rainbow: 'text-rainbow',
-                pulse: 'text-pulse',
-                spin: 'text-spin',
-                glow: 'text-glow'
-            },
-            // Image animations
-            image: {
-                zoom: 'img-zoom',
-                shake: 'img-shake',
-                flip: 'img-flip',
-                rotate: 'img-rotate',
-                bounce: 'img-bounce',
-                fade: 'img-fade'
-            },
-            // GIF animations
-            gif: {
-                pulse: 'gif-pulse',
-                glitch: 'gif-glitch',
-                rainbow: 'gif-rainbow'
-            },
-            // Shape animations
-            shape: {
-                spin: 'shape-spin',
-                pulse: 'shape-pulse',
-                bounce: 'shape-bounce'
-            }
-        };
-
-        function setAnimation(animName) {
-            if (!selectedNode) {
-                showToast('❌ Select a layer first', 'error');
-                return;
-            }
-
-            // Remove all animation classes first
-            const allAnimClasses = [];
-            Object.values(ANIMATIONS).forEach(cat => {
-                Object.values(cat).forEach(cls => allAnimClasses.push(cls));
-            });
-            allAnimClasses.forEach(cls => {
-                selectedNode.classList.remove(cls);
-                const textEl = selectedNode.querySelector('.text-inside');
-                if (textEl) textEl.classList.remove(cls);
-            });
-
-            if (animName === 'none') {
-                showToast('🧹 Animation removed');
-                return;
-            }
-
-            const type = selectedNode.dataset.type;
-            let animClass = null;
-
-            if (type === 'text') {
-                animClass = ANIMATIONS.text[animName];
-            } else if (type === 'image') {
-                // Check if image is GIF
-                const img = selectedNode.querySelector('img');
-                if (img && (img.src.includes('.gif') || img.src.includes('tenor.com') || img.src.includes('giphy.com'))) {
-                    animClass = ANIMATIONS.gif[animName] || ANIMATIONS.image[animName];
-                } else {
-                    animClass = ANIMATIONS.image[animName];
-                }
-            } else if (type === 'shape') {
-                animClass = ANIMATIONS.shape[animName];
-            }
-
-            if (animClass) {
-                if (type === 'text') {
-                    const textEl = selectedNode.querySelector('.text-inside');
-                    if (textEl) textEl.classList.add(animClass);
-                } else {
-                    selectedNode.classList.add(animClass);
-                }
-                showToast('✅ Animation: ' + animName);
-            } else {
-                showToast('❌ Animation not available for this layer type', 'error');
-            }
-        }
-
         // ===== BACKGROUND =====
         function setTransparentBg() {
             isTransparent = true;
@@ -1364,6 +1345,58 @@
             }
         }
 
+        // ===== SET ANIMATION =====
+        function setAnimation(animName) {
+            if (!selectedNode) {
+                showToast('❌ Select a layer first', 'error');
+                return;
+            }
+
+            // Remove all animation classes
+            const allAnimClasses = [];
+            Object.values(ANIMATIONS).forEach(cat => {
+                Object.values(cat).forEach(cls => allAnimClasses.push(cls));
+            });
+            allAnimClasses.forEach(cls => {
+                selectedNode.classList.remove(cls);
+                const textEl = selectedNode.querySelector('.text-inside');
+                if (textEl) textEl.classList.remove(cls);
+            });
+
+            if (animName === 'none') {
+                showToast('🧹 Animation removed');
+                return;
+            }
+
+            const type = selectedNode.dataset.type;
+            let animClass = null;
+
+            if (type === 'text') {
+                animClass = ANIMATIONS.text[animName];
+            } else if (type === 'image') {
+                const img = selectedNode.querySelector('img');
+                if (img && (img.src.includes('.gif') || img.src.includes('tenor.com') || img.src.includes('giphy.com'))) {
+                    animClass = ANIMATIONS.gif[animName] || ANIMATIONS.image[animName];
+                } else {
+                    animClass = ANIMATIONS.image[animName];
+                }
+            } else if (type === 'shape') {
+                animClass = ANIMATIONS.shape[animName];
+            }
+
+            if (animClass) {
+                if (type === 'text') {
+                    const textEl = selectedNode.querySelector('.text-inside');
+                    if (textEl) textEl.classList.add(animClass);
+                } else {
+                    selectedNode.classList.add(animClass);
+                }
+                showToast('✅ Animation: ' + animName);
+            } else {
+                showToast('❌ Animation not available', 'error');
+            }
+        }
+
         // ===== TOGGLE ELEMENT TRANSPARENT =====
         function toggleElementTransparent() {
             if (!selectedNode) return;
@@ -1386,7 +1419,84 @@
             }
         }
 
-        // ===== EXPORT FUNCTIONS =====
+        // ===== EXPORT FULL GIF (Complete Banner) =====
+        function exportFullGIF() {
+            clearSelection();
+            showToast('⏳ Creating animated GIF...');
+
+            const frames = parseInt(document.getElementById('gifFrames').value) || 10;
+            const delay = parseInt(document.getElementById('gifDelay').value) || 150;
+            const quality = parseInt(document.getElementById('gifQuality').value) || 10;
+
+            progressBar.style.display = 'block';
+            progressFill.style.width = '0%';
+
+            const width = canvas.offsetWidth;
+            const height = canvas.offsetHeight;
+            const bgColor = isTransparent ? null : document.getElementById('canvasBg').value;
+
+            // Create GIF encoder
+            const gif = new GIF({
+                workers: 2,
+                quality: quality,
+                width: width,
+                height: height,
+                workerScript: 'https://cdnjs.cloudflare.com/ajax/libs/gif.js/0.2.0/gif.worker.js'
+            });
+
+            let capturedFrames = 0;
+
+            function captureFrame() {
+                html2canvas(canvas, {
+                    useCORS: true,
+                    backgroundColor: bgColor,
+                    scale: 1,
+                    width: width,
+                    height: height,
+                    logging: false
+                }).then(c => {
+                    gif.addFrame(c, { copy: true, delay: delay });
+                    capturedFrames++;
+                    const progress = (capturedFrames / frames) * 100;
+                    progressFill.style.width = Math.min(progress, 100) + '%';
+
+                    if (capturedFrames < frames) {
+                        // Small delay between frames for animation
+                        setTimeout(captureFrame, 50);
+                    } else {
+                        // Finish and render
+                        progressFill.style.width = '100%';
+                        gif.render();
+
+                        gif.on('progress', function(p) {
+                            progressFill.style.width = (p * 100) + '%';
+                        });
+
+                        gif.on('finished', function(blob) {
+                            progressBar.style.display = 'none';
+                            const url = URL.createObjectURL(blob);
+                            const filename = 'ad_full_banner_' + Date.now() + '.gif';
+                            showDialog(url, filename, 'gif');
+                            // Cleanup
+                            const origClose = closeDialog;
+                            closeDialog = function() {
+                                URL.revokeObjectURL(url);
+                                origClose.call(this);
+                            };
+                            showToast('✅ GIF created successfully!');
+                        });
+                    }
+                }).catch(err => {
+                    progressBar.style.display = 'none';
+                    showToast('❌ Frame capture failed: ' + err.message, 'error');
+                });
+            }
+
+            // Start capturing frames
+            setTimeout(captureFrame, 100);
+        }
+
+        // ===== EXPORT PNG =====
         function exportPNG() {
             clearSelection();
             showToast('⏳ Rendering PNG...');
@@ -1409,50 +1519,7 @@
             });
         }
 
-        function exportGIF() {
-            clearSelection();
-
-            // Check for GIF in canvas
-            const images = canvas.querySelectorAll('img');
-            let gifSrc = null;
-            images.forEach(img => {
-                if (img.src && (img.src.includes('.gif') || img.src.includes('tenor.com') ||
-                        img.src.includes('giphy.com') || img.src.startsWith('data:image/gif'))) {
-                    gifSrc = img.src;
-                }
-            });
-
-            if (gifSrc) {
-                const filename = 'ad_animated_' + Date.now() + '.gif';
-
-                if (gifSrc.startsWith('data:') || gifSrc.startsWith('blob:')) {
-                    showDialog(gifSrc, filename, 'gif');
-                } else {
-                    fetch(gifSrc)
-                        .then(res => {
-                            if (!res.ok) throw new Error('Network error');
-                            return res.blob();
-                        })
-                        .then(blob => {
-                            const url = URL.createObjectURL(blob);
-                            showDialog(url, filename, 'gif');
-                            const origClose = closeDialog;
-                            closeDialog = function() {
-                                URL.revokeObjectURL(url);
-                                origClose.call(this);
-                            };
-                        })
-                        .catch(() => {
-                            showDialog(gifSrc, filename, 'gif');
-                        });
-                }
-                return;
-            }
-
-            showToast('⚠️ No GIF found, exporting as PNG', 'error');
-            exportPNG();
-        }
-
+        // ===== EXPORT MP4 =====
         function exportMP4() {
             clearSelection();
             showToast('⏳ Recording video (6s)...');
@@ -1519,6 +1586,7 @@
             }, 6000);
         }
 
+        // ===== EXPORT TRANSPARENT =====
         function exportTransparent() {
             const wasCanvasTransparent = canvas.classList.contains('transparent-bg');
             if (!wasCanvasTransparent) {
@@ -1657,7 +1725,7 @@
             canvas.style.borderRadius = document.getElementById('canvasRadius').value + 'px';
         }
 
-        // ===== TEMPLATES WITH ANIMATIONS =====
+        // ===== TEMPLATES =====
         function loadTemplate(key) {
             document.querySelectorAll('.ad-node').forEach(el => el.remove());
             clearSelection();
@@ -2050,40 +2118,6 @@
             advPanel.style.display = advPanel.style.display === 'none' ? 'block' : 'none';
         }
 
-        function applyEffect(effect) {
-            if (!selectedNode) {
-                showToast('❌ Select a layer first', 'error');
-                return;
-            }
-
-            if (effect === 'clear') {
-                selectedNode.classList.remove('pulse', 'rotate', 'bounce', 'fade');
-                const textEl = selectedNode.querySelector('.text-inside');
-                if (textEl) {
-                    textEl.classList.remove('shadow', 'outline', 'italic', 'underline');
-                }
-                showToast('🧹 Effects cleared');
-                return;
-            }
-
-            const textEl = selectedNode.querySelector('.text-inside');
-            if (effect === 'shadow' || effect === 'outline' || effect === 'italic' || effect === 'underline') {
-                if (textEl) {
-                    textEl.classList.add(effect);
-                    showToast('✅ Effect: ' + effect);
-                } else {
-                    showToast('❌ Text layer required', 'error');
-                }
-                return;
-            }
-
-            selectedNode.classList.remove('pulse', 'rotate', 'bounce', 'fade');
-            if (effect === 'pulse' || effect === 'rotate' || effect === 'bounce' || effect === 'fade') {
-                selectedNode.classList.add(effect);
-                showToast('✅ Effect: ' + effect);
-            }
-        }
-
         function duplicateLayer() {
             if (!selectedNode) {
                 showToast('❌ Select a layer first', 'error');
@@ -2157,7 +2191,7 @@
         window.onload = function() {
             mutateCanvas();
             loadTemplate('movie');
-            showToast('✨ Full Animation Studio Ready!');
+            showToast('✨ Full Banner GIF Export Ready!');
         };
     </script>
 
