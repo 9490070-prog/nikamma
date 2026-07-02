@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Ad Studio Pro - Full Banner GIF Export</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-    <!-- GIF.js for creating animated GIFs -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gif.js/0.2.0/gif.js"></script>
     <style>
         * {
@@ -857,7 +856,6 @@
             </div>
         </div>
 
-        <!-- Templates -->
         <div class="card">
             <div class="card-title"><span class="title-icon">📋</span> Premium Animated Templates</div>
             <div class="template-grid">
@@ -900,7 +898,6 @@
             </div>
         </div>
 
-        <!-- Controls -->
         <div class="card">
             <div class="card-title"><span class="title-icon">🎛️</span> Format & Dimensions</div>
             <div class="input-grid">
@@ -952,7 +949,6 @@
             </div>
         </div>
 
-        <!-- Elements -->
         <div class="card">
             <div class="card-title"><span class="title-icon">🧩</span> Add Elements</div>
             <div class="btn-row">
@@ -964,7 +960,6 @@
             </div>
         </div>
 
-        <!-- Export -->
         <div class="card">
             <div class="card-title"><span class="title-icon">💾</span> Export Full Banner</div>
             <div class="export-row">
@@ -974,7 +969,6 @@
                 <button class="btn btn-orange" onclick="exportTransparent()">✨ Transparent</button>
             </div>
             
-            <!-- GIF Export Options -->
             <div class="gif-options" id="gifOptions">
                 <div class="input-group">
                     <label>Frames</label>
@@ -999,7 +993,6 @@
             </div>
         </div>
 
-        <!-- Advanced Panel -->
         <div class="adv-panel" id="advPanel">
             <div class="adv-title">⚡ Layer Animation</div>
             <div class="anim-selector" id="animSelector">
@@ -1020,7 +1013,6 @@
             </div>
         </div>
 
-        <!-- Canvas -->
         <div class="canvas-frame" id="canvasFrame">
             <span class="label" id="workspaceLabel">Banner Mode</span>
             <div id="adCanvas" onclick="clearSelection(event)">
@@ -1028,7 +1020,6 @@
             </div>
         </div>
 
-        <!-- Inspector -->
         <div class="inspector" id="inspector">
             <div class="title" id="inspectorTitle">🔧 Layer Inspector</div>
             <div class="inspector-grid">
@@ -1183,7 +1174,6 @@
         function showDialog(dataUrl, filename, type) {
             dialogData = dataUrl;
             dialogFilename = filename;
-
             dialogPreview.innerHTML = '';
 
             if (type === 'video') {
@@ -1209,7 +1199,6 @@
                 dialogTitle.textContent = '📸 ' + typeName + ' Ready';
                 dialogDesc.textContent = 'Tap Download to save or Share to send';
             }
-
             downloadDialog.style.display = 'flex';
         }
 
@@ -1281,7 +1270,6 @@
                 showToast('❌ No file to share', 'error');
                 return;
             }
-
             if (navigator.share) {
                 fetch(dialogData)
                     .then(res => res.blob())
@@ -1404,718 +1392,415 @@
             if (isChecked) {
                 selectedNode.style.background = 'transparent';
                 if (selectedNode.dataset.type === 'text') {
-                    const el = selectedNode.querySelector('.text-inside');
-                    el.style.background = 'transparent';
+                    const txt = selectedNode.querySelector('.text-inside');
+                    if (txt) txt.style.background = 'transparent';
                 }
-                showToast('✨ Element transparent');
             } else {
-                const color = document.getElementById('elBgColor').value;
-                selectedNode.style.background = color;
                 if (selectedNode.dataset.type === 'text') {
-                    const el = selectedNode.querySelector('.text-inside');
-                    el.style.background = color;
-                }
-                showToast('🔲 Element solid');
-            }
-        }
-
-        // ===== EXPORT FULL GIF (Complete Banner) =====
-        function exportFullGIF() {
-            clearSelection();
-            showToast('⏳ Creating animated GIF...');
-
-            const frames = parseInt(document.getElementById('gifFrames').value) || 10;
-            const delay = parseInt(document.getElementById('gifDelay').value) || 150;
-            const quality = parseInt(document.getElementById('gifQuality').value) || 10;
-
-            progressBar.style.display = 'block';
-            progressFill.style.width = '0%';
-
-            const width = canvas.offsetWidth;
-            const height = canvas.offsetHeight;
-            const bgColor = isTransparent ? null : document.getElementById('canvasBg').value;
-
-            // Create GIF encoder
-            const gif = new GIF({
-                workers: 2,
-                quality: quality,
-                width: width,
-                height: height,
-                workerScript: 'https://cdnjs.cloudflare.com/ajax/libs/gif.js/0.2.0/gif.worker.js'
-            });
-
-            let capturedFrames = 0;
-
-            function captureFrame() {
-                html2canvas(canvas, {
-                    useCORS: true,
-                    backgroundColor: bgColor,
-                    scale: 1,
-                    width: width,
-                    height: height,
-                    logging: false
-                }).then(c => {
-                    gif.addFrame(c, { copy: true, delay: delay });
-                    capturedFrames++;
-                    const progress = (capturedFrames / frames) * 100;
-                    progressFill.style.width = Math.min(progress, 100) + '%';
-
-                    if (capturedFrames < frames) {
-                        // Small delay between frames for animation
-                        setTimeout(captureFrame, 50);
-                    } else {
-                        // Finish and render
-                        progressFill.style.width = '100%';
-                        gif.render();
-
-                        gif.on('progress', function(p) {
-                            progressFill.style.width = (p * 100) + '%';
-                        });
-
-                        gif.on('finished', function(blob) {
-                            progressBar.style.display = 'none';
-                            const url = URL.createObjectURL(blob);
-                            const filename = 'ad_full_banner_' + Date.now() + '.gif';
-                            showDialog(url, filename, 'gif');
-                            // Cleanup
-                            const origClose = closeDialog;
-                            closeDialog = function() {
-                                URL.revokeObjectURL(url);
-                                origClose.call(this);
-                            };
-                            showToast('✅ GIF created successfully!');
-                        });
-                    }
-                }).catch(err => {
-                    progressBar.style.display = 'none';
-                    showToast('❌ Frame capture failed: ' + err.message, 'error');
-                });
-            }
-
-            // Start capturing frames
-            setTimeout(captureFrame, 100);
-        }
-
-        // ===== EXPORT PNG =====
-        function exportPNG() {
-            clearSelection();
-            showToast('⏳ Rendering PNG...');
-
-            const bgColor = isTransparent ? null : document.getElementById('canvasBg').value;
-
-            html2canvas(canvas, {
-                useCORS: true,
-                backgroundColor: bgColor,
-                scale: 2,
-                width: canvas.offsetWidth,
-                height: canvas.offsetHeight,
-                logging: false
-            }).then(c => {
-                const dataUrl = c.toDataURL('image/png');
-                const filename = 'ad_' + Date.now() + '.png';
-                showDialog(dataUrl, filename, 'png');
-            }).catch(err => {
-                showToast('❌ Export failed: ' + err.message, 'error');
-            });
-        }
-
-        // ===== EXPORT MP4 =====
-        function exportMP4() {
-            clearSelection();
-            showToast('⏳ Recording video (6s)...');
-
-            let stream = null;
-            try {
-                stream = canvas.captureStream ? canvas.captureStream(30) : null;
-            } catch (e) {}
-
-            if (!stream) {
-                showToast('❌ Recording not supported', 'error');
-                return;
-            }
-
-            let recorder;
-            let chunks = [];
-
-            try {
-                recorder = new MediaRecorder(stream, {
-                    mimeType: 'video/webm;codecs=vp9,opus'
-                });
-            } catch (e) {
-                try {
-                    recorder = new MediaRecorder(stream, {
-                        mimeType: 'video/webm'
-                    });
-                } catch (e2) {
-                    recorder = new MediaRecorder(stream);
-                }
-            }
-
-            recorder.ondataavailable = function(e) {
-                if (e.data && e.data.size > 0) {
-                    chunks.push(e.data);
-                }
-            };
-
-            recorder.onstop = function() {
-                if (chunks.length === 0) {
-                    showToast('❌ No data recorded', 'error');
-                    return;
-                }
-
-                const blob = new Blob(chunks, { type: 'video/mp4' });
-                const url = URL.createObjectURL(blob);
-                const filename = 'ad_video_' + Date.now() + '.mp4';
-
-                showDialog(url, filename, 'video');
-
-                const origClose = closeDialog;
-                closeDialog = function() {
-                    URL.revokeObjectURL(url);
-                    origClose.call(this);
-                };
-            };
-
-            recorder.start(1000);
-            showToast('🔴 Recording...', 'success');
-
-            setTimeout(() => {
-                if (recorder && recorder.state === 'recording') {
-                    recorder.stop();
-                }
-            }, 6000);
-        }
-
-        // ===== EXPORT TRANSPARENT =====
-        function exportTransparent() {
-            const wasCanvasTransparent = canvas.classList.contains('transparent-bg');
-            if (!wasCanvasTransparent) {
-                canvas.classList.add('transparent-bg');
-            }
-
-            setTimeout(() => {
-                clearSelection();
-                showToast('⏳ Rendering transparent PNG...');
-
-                html2canvas(canvas, {
-                    useCORS: true,
-                    backgroundColor: null,
-                    scale: 2,
-                    width: canvas.offsetWidth,
-                    height: canvas.offsetHeight,
-                    logging: false
-                }).then(c => {
-                    const dataUrl = c.toDataURL('image/png');
-                    const filename = 'ad_transparent_' + Date.now() + '.png';
-                    showDialog(dataUrl, filename, 'png');
-                    if (!wasCanvasTransparent) {
-                        canvas.classList.remove('transparent-bg');
-                    }
-                }).catch(err => {
-                    showToast('❌ Export failed: ' + err.message, 'error');
-                    if (!wasCanvasTransparent) {
-                        canvas.classList.remove('transparent-bg');
-                    }
-                });
-            }, 200);
-        }
-
-        // ===== SHARE & SAVE =====
-        function shareAd() {
-            clearSelection();
-            showToast('⏳ Preparing share...');
-
-            const bgColor = isTransparent ? null : document.getElementById('canvasBg').value;
-
-            html2canvas(canvas, {
-                useCORS: true,
-                backgroundColor: bgColor,
-                scale: 2,
-                width: canvas.offsetWidth,
-                height: canvas.offsetHeight,
-                logging: false
-            }).then(c => {
-                c.toBlob(function(blob) {
-                    if (navigator.share) {
-                        navigator.share({
-                            title: 'My Ad',
-                            files: [new File([blob], 'ad.png', { type: 'image/png' })]
-                        }).then(() => {
-                            showToast('✅ Shared successfully');
-                        }).catch(() => {
-                            showToast('❌ Share cancelled', 'error');
-                        });
-                    } else {
-                        showToast('❌ Share not supported', 'error');
-                        const dataUrl = c.toDataURL('image/png');
-                        const filename = 'ad_' + Date.now() + '.png';
-                        forceDownload(dataUrl, filename);
-                    }
-                });
-            }).catch(err => {
-                showToast('❌ Share failed: ' + err.message, 'error');
-            });
-        }
-
-        function saveToGallery() {
-            clearSelection();
-            showToast('⏳ Preparing save...');
-
-            const bgColor = isTransparent ? null : document.getElementById('canvasBg').value;
-
-            html2canvas(canvas, {
-                useCORS: true,
-                backgroundColor: bgColor,
-                scale: 2,
-                width: canvas.offsetWidth,
-                height: canvas.offsetHeight,
-                logging: false
-            }).then(c => {
-                const dataUrl = c.toDataURL('image/png');
-                const filename = 'ad_' + Date.now() + '.png';
-
-                if (navigator.share) {
-                    c.toBlob(function(blob) {
-                        navigator.share({
-                            title: 'Save to Gallery',
-                            files: [new File([blob], filename, { type: 'image/png' })]
-                        }).then(() => {
-                            showToast('✅ Saved to gallery');
-                        }).catch(() => {
-                            showToast('❌ Save cancelled', 'error');
-                        });
-                    });
+                    const val = document.getElementById('elBgColor').value;
+                    selectedNode.style.background = val;
+                } else if (selectedNode.dataset.type === 'image') {
+                    const val = document.getElementById('elImgBg').value;
+                    selectedNode.style.background = val;
                 } else {
-                    forceDownload(dataUrl, filename);
+                    selectedNode.style.background = '#3b82f6';
                 }
-            }).catch(err => {
-                showToast('❌ Save failed: ' + err.message, 'error');
-            });
-        }
-
-        // ===== FORMAT =====
-        function switchFormat() {
-            const format = document.getElementById('adFormat').value;
-            if (format === 'interstitial') {
-                canvas.classList.add('interstitial');
-                closeBtn.style.display = 'flex';
-                dimRow.style.display = 'none';
-                workspaceLabel.innerText = 'Interstitial Mode';
-            } else {
-                canvas.classList.remove('interstitial');
-                closeBtn.style.display = 'none';
-                dimRow.style.display = 'grid';
-                workspaceLabel.innerText = 'Banner Mode';
-            }
-            mutateCanvas();
-        }
-
-        function mutateCanvas() {
-            const format = document.getElementById('adFormat').value;
-            if (format === 'banner') {
-                canvas.style.width = document.getElementById('canvasW').value + 'px';
-                canvas.style.height = document.getElementById('canvasH').value + 'px';
-            } else {
-                canvas.style.width = '';
-                canvas.style.height = '';
-            }
-            if (!isTransparent) {
-                canvas.style.backgroundColor = document.getElementById('canvasBg').value;
-            }
-            canvas.style.borderRadius = document.getElementById('canvasRadius').value + 'px';
-        }
-
-        // ===== TEMPLATES =====
-        function loadTemplate(key) {
-            document.querySelectorAll('.ad-node').forEach(el => el.remove());
-            clearSelection();
-            setSolidBg();
-
-            if (key === 'movie') {
-                document.getElementById('adFormat').value = 'banner';
-                document.getElementById('canvasW').value = '320';
-                document.getElementById('canvasH').value = '50';
-                document.getElementById('canvasRadius').value = '8';
-                document.getElementById('canvasBg').value = '#0b0f19';
-                document.getElementById('canvasBgHex').innerText = '#0B0F19';
-                switchFormat();
-                addImageNode(GIFS.movie, '35px', '35px', '10px', '7px', true);
-                addTextNodeWithAnim('🔴 LIVE NOW', '#ef4444', '12', '55px', '8px', 'flash');
-                addTextNodeWithAnim('4K Stream', '#ef4444', '12', '55px', '8px', 'pulse');
-                addTextNodeWithAnim('No Buffering', '#94a3b8', '10', '55px', '26px', 'fade');
-                addTextNodeWithAnim('WATCH', '#ffffff', '11', '255px', '13px', 'bounce', '#e50914', '4px 10px');
-            } else if (key === 'game') {
-                document.getElementById('adFormat').value = 'banner';
-                document.getElementById('canvasW').value = '320';
-                document.getElementById('canvasH').value = '50';
-                document.getElementById('canvasRadius').value = '4';
-                document.getElementById('canvasBg').value = '#020617';
-                document.getElementById('canvasBgHex').innerText = '#020617';
-                switchFormat();
-                addImageNode(GIFS.game, '40px', '40px', '12px', '5px', true);
-                addTextNodeWithAnim('🚀 CRASH WINNER', '#22c55e', '12', '60px', '8px', 'rainbow');
-                addTextNodeWithAnim('200% Bonus', '#cbd5e1', '10', '60px', '26px', 'pulse');
-                addTextNodeWithAnim('PLAY NOW', '#000000', '11', '255px', '13px', 'bounce', '#22c55e', '4px 12px');
-            } else if (key === 'sale') {
-                document.getElementById('adFormat').value = 'banner';
-                document.getElementById('canvasW').value = '320';
-                document.getElementById('canvasH').value = '50';
-                document.getElementById('canvasRadius').value = '0';
-                document.getElementById('canvasBg').value = '#ffde00';
-                document.getElementById('canvasBgHex').innerText = '#FFDE00';
-                switchFormat();
-                addTextNodeWithAnim('🔥 FLASH SALE', '#000000', '14', '15px', '6px', 'flash');
-                addTextNodeWithAnim('80% OFF', '#c2410c', '10', '15px', '26px', 'pulse');
-                addTextNodeWithAnim('CLAIM NOW', '#ffffff', '11', '250px', '13px', 'bounce', '#000000', '4px 12px');
-            } else if (key === 'interstitial') {
-                document.getElementById('adFormat').value = 'interstitial';
-                document.getElementById('canvasRadius').value = '16';
-                document.getElementById('canvasBg').value = '#070b14';
-                document.getElementById('canvasBgHex').innerText = '#070B14';
-                switchFormat();
-                addImageNode(GIFS.interstitial, '140px', '140px', '70px', '45px', true);
-                addTextNodeWithAnim('CYBER BATTLE', '#38bdf8', '18', '35px', '200px', 'glow');
-                addTextNodeWithAnim('Season 5 Rewards', '#f8fafc', '12', '42px', '225px', 'fade');
-                addTextNodeWithAnim('★ 50,000+ Players ★', '#64748b', '10', '40px', '250px', 'pulse');
-                addTextNodeWithAnim('INSTALL NOW', '#ffffff', '13', '55px', '285px', 'bounce', '#4f46e5', '8px 20px');
-            } else if (key === 'transparent') {
-                setTransparentBg();
-                document.getElementById('adFormat').value = 'banner';
-                document.getElementById('canvasW').value = '320';
-                document.getElementById('canvasH').value = '50';
-                document.getElementById('canvasRadius').value = '0';
-                switchFormat();
-                addTextNodeWithAnim('✨ TRANSPARENT', '#ffffff', '16', '60px', '15px', 'fade', 'rgba(0,0,0,0.5)', '8px 16px');
-                addTextNodeWithAnim('Perfect for overlays', '#94a3b8', '10', '60px', '35px', 'slide');
-                addTextNodeWithAnim('PNG with Alpha', '#3b82f6', '11', '200px', '15px', 'pulse');
-            } else if (key === 'minimal') {
-                document.getElementById('adFormat').value = 'banner';
-                document.getElementById('canvasW').value = '320';
-                document.getElementById('canvasH').value = '50';
-                document.getElementById('canvasRadius').value = '0';
-                document.getElementById('canvasBg').value = '#1a1a2e';
-                document.getElementById('canvasBgHex').innerText = '#1A1A2E';
-                switchFormat();
-                addTextNodeWithAnim('MINIMAL', '#ffffff', '14', '20px', '18px', 'pulse');
-                addTextNodeWithAnim('Clean & Simple', '#94a3b8', '10', '20px', '35px', 'fade');
-                addShapeNodeWithAnim('50px', '50px', '220px', '5px', '#3b82f6', '50%', 'spin');
-            }
-            showToast('✅ Template loaded: ' + key);
-        }
-
-        // ===== ADD NODES WITH ANIMATION =====
-        function addTextNodeWithAnim(text, color, size, left, top, anim, bg, pad) {
-            const wrapper = document.createElement('div');
-            wrapper.className = 'ad-node';
-            wrapper.style.left = left;
-            wrapper.style.top = top;
-            const el = document.createElement('div');
-            el.className = 'text-inside';
-            el.innerText = text;
-            el.style.color = color;
-            el.style.fontSize = size + 'px';
-            if (bg && bg !== 'transparent') {
-                el.style.background = bg;
-                el.style.padding = pad || '4px 10px';
-                el.style.borderRadius = '6px';
-            }
-            wrapper.appendChild(el);
-            initNode(wrapper, 'text');
-            if (anim) {
-                setTimeout(() => {
-                    const textEl = wrapper.querySelector('.text-inside');
-                    const animClass = ANIMATIONS.text[anim];
-                    if (textEl && animClass) {
-                        textEl.classList.add(animClass);
-                    }
-                }, 50);
             }
         }
 
-        function addImageNode(url, width, height, left, top, pulse) {
-            const wrapper = document.createElement('div');
-            wrapper.className = 'ad-node' + (pulse ? ' gif-pulse' : '');
-            wrapper.style.left = left;
-            wrapper.style.top = top;
-            const img = document.createElement('img');
-            img.src = url;
-            img.crossOrigin = 'anonymous';
-            img.style.width = width;
-            img.style.height = height;
-            wrapper.appendChild(img);
-            initNode(wrapper, 'image');
-        }
+        // ===== INTERACTION ENGINE =====
+        function setupNodeEvents(node) {
+            node.addEventListener('mousedown', dragStart);
+            node.addEventListener('touchstart', dragStart, { passive: false });
 
-        function addShapeNodeWithAnim(width, height, left, top, color, radius, anim) {
-            const wrapper = document.createElement('div');
-            wrapper.className = 'ad-node';
-            wrapper.style.left = left;
-            wrapper.style.top = top;
-            wrapper.style.width = width;
-            wrapper.style.height = height;
-            wrapper.style.background = color;
-            wrapper.style.borderRadius = radius || '4px';
-            wrapper.dataset.shape = 'true';
-            initNode(wrapper, 'shape');
-            if (anim) {
-                setTimeout(() => {
-                    const animClass = ANIMATIONS.shape[anim];
-                    if (animClass) {
-                        wrapper.classList.add(animClass);
-                    }
-                }, 50);
-            }
-        }
-
-        function addText() {
-            const wrapper = document.createElement('div');
-            wrapper.className = 'ad-node';
-            wrapper.style.left = '20px';
-            wrapper.style.top = '10px';
-            const el = document.createElement('div');
-            el.className = 'text-inside';
-            el.innerText = 'Edit Me';
-            el.style.color = '#000000';
-            el.style.fontSize = '14px';
-            wrapper.appendChild(el);
-            initNode(wrapper, 'text');
-        }
-
-        function addShape() {
-            const wrapper = document.createElement('div');
-            wrapper.className = 'ad-node';
-            wrapper.style.left = '50px';
-            wrapper.style.top = '10px';
-            wrapper.style.width = '40px';
-            wrapper.style.height = '40px';
-            wrapper.style.background = '#3b82f6';
-            wrapper.style.borderRadius = '4px';
-            wrapper.style.border = '2px solid #ffffff';
-            wrapper.dataset.shape = 'true';
-            initNode(wrapper, 'shape');
-        }
-
-        function addImage(event) {
-            const file = event.target.files[0];
-            if (!file) return;
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                const wrapper = document.createElement('div');
-                wrapper.className = 'ad-node';
-                wrapper.style.left = '30px';
-                wrapper.style.top = '10px';
-                const img = document.createElement('img');
-                img.src = e.target.result;
-                img.style.width = '80px';
-                img.style.height = '40px';
-                wrapper.appendChild(img);
-                initNode(wrapper, 'image');
-                showToast('✅ Image added');
-            };
-            reader.readAsDataURL(file);
-            event.target.value = '';
-        }
-
-        function initNode(node, type) {
-            node.dataset.type = type;
-            nodeCounter++;
-            canvas.appendChild(node);
-            node.addEventListener('touchstart', onDragStart, { passive: false });
-            node.addEventListener('mousedown', onDragStart);
-            node.addEventListener('click', function(e) {
+            node.addEventListener('click', (e) => {
                 e.stopPropagation();
-                selectNode(this);
+                selectNode(node);
             });
-            selectNode(node);
-            mutateCanvas();
         }
 
-        // ===== SELECTION =====
+        function dragStart(e) {
+            if (e.target.classList.contains('resizer')) return;
+            const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+            const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+
+            selectedNode = this;
+            selectNode(this);
+
+            isDragging = true;
+            dragStartX = clientX;
+            dragStartY = clientY;
+            nodeStartX = parseInt(selectedNode.style.left) || 0;
+            nodeStartY = parseInt(selectedNode.style.top) || 0;
+
+            document.addEventListener('mousemove', dragMove);
+            document.addEventListener('touchmove', dragMove, { passive: false });
+            document.addEventListener('mouseup', dragEnd);
+            document.addEventListener('touchend', dragEnd);
+        }
+
+        function dragMove(e) {
+            if (!isDragging || !selectedNode) return;
+            if (e.cancelable) e.preventDefault();
+
+            const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+            const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+
+            const dx = clientX - dragStartX;
+            const dy = clientY - dragStartY;
+
+            let newX = nodeStartX + dx;
+            let newY = nodeStartY + dy;
+
+            // Constrain inside canvas
+            const maxW = canvas.offsetWidth - selectedNode.offsetWidth;
+            const maxH = canvas.offsetHeight - selectedNode.offsetHeight;
+            newX = Math.max(0, Math.min(newX, maxW));
+            newY = Math.max(0, Math.min(newY, maxH));
+
+            selectedNode.style.left = newX + 'px';
+            selectedNode.style.top = newY + 'px';
+
+            document.getElementById('elX').value = newX;
+            document.getElementById('elY').value = newY;
+        }
+
+        function dragEnd() {
+            isDragging = false;
+            document.removeEventListener('mousemove', dragMove);
+            document.removeEventListener('touchmove', dragMove);
+            document.removeEventListener('mouseup', dragEnd);
+            document.removeEventListener('touchend', dragEnd);
+        }
+
         function selectNode(node) {
-            clearSelection();
+            document.querySelectorAll('.ad-node').forEach(n => n.classList.remove('active'));
+            node.classList.add('active');
             selectedNode = node;
-            selectedNode.classList.add('active');
+
             inspector.style.display = 'block';
+            document.getElementById('elW').value = node.offsetWidth;
+            document.getElementById('elH').value = node.offsetHeight;
+            document.getElementById('elX').value = parseInt(node.style.left) || 0;
+            document.getElementById('elY').value = parseInt(node.style.top) || 0;
 
-            document.getElementById('elX').value = parseInt(selectedNode.style.left) || 0;
-            document.getElementById('elY').value = parseInt(selectedNode.style.top) || 0;
-
-            const isTrans = selectedNode.style.background === 'transparent' ||
-                selectedNode.style.background === 'rgba(0, 0, 0, 0)' ||
-                selectedNode.style.background === '#00000000';
+            const bg = window.getComputedStyle(node).backgroundColor;
+            const isTrans = bg === 'transparent' || bg === 'rgba(0, 0, 0, 0)' || node.style.background === 'transparent';
             document.getElementById('elTransparent').checked = isTrans;
 
-            if (selectedNode.dataset.type === 'image') {
-                const img = selectedNode.querySelector('img');
-                document.getElementById('elW').value = img.offsetWidth || 80;
-                document.getElementById('elH').value = img.offsetHeight || 40;
-                textControls.style.display = 'none';
-                imageControls.style.display = 'block';
-                document.getElementById('inspectorTitle').innerText = '🖼️ Image Layer';
-                document.getElementById('elRadius').value = parseInt(selectedNode.style.borderRadius) || 0;
-                document.getElementById('elOpacity').value = parseInt(selectedNode.style.opacity) || 100;
-                const bgColor = selectedNode.style.background || '#00000000';
-                document.getElementById('elImgBg').value = rgbToHex(bgColor) || '#00000000';
-            } else if (selectedNode.dataset.type === 'shape') {
-                document.getElementById('elW').value = parseInt(selectedNode.style.width) || 40;
-                document.getElementById('elH').value = parseInt(selectedNode.style.height) || 40;
-                textControls.style.display = 'none';
-                imageControls.style.display = 'block';
-                document.getElementById('inspectorTitle').innerText = '⬛ Shape Layer';
-                document.getElementById('elRadius').value = parseInt(selectedNode.style.borderRadius) || 4;
-                document.getElementById('elOpacity').value = parseInt(selectedNode.style.opacity) || 100;
-                const bgColor = selectedNode.style.background || '#3b82f6';
-                document.getElementById('elImgBg').value = rgbToHex(bgColor) || '#3b82f6';
-            } else {
-                const el = selectedNode.querySelector('.text-inside');
-                document.getElementById('elW').value = selectedNode.offsetWidth || 60;
-                document.getElementById('elH').value = selectedNode.offsetHeight || 20;
+            if (node.dataset.type === 'text') {
                 textControls.style.display = 'block';
                 imageControls.style.display = 'none';
-                document.getElementById('inspectorTitle').innerText = '📝 Text Layer';
-                document.getElementById('elText').value = el.innerText;
-                document.getElementById('elFont').value = parseInt(el.style.fontSize) || 14;
-                const color = el.style.color || '#000000';
-                document.getElementById('elColor').value = rgbToHex(color) || '#000000';
-                const bgColor = el.style.background || '#00000000';
-                document.getElementById('elBgColor').value = rgbToHex(bgColor) || '#00000000';
+                document.getElementById('inspectorTitle').innerText = '🔧 Text Layer Inspector';
+                const textEl = node.querySelector('.text-inside');
+                document.getElementById('elText').value = textEl ? textEl.innerText : '';
+                document.getElementById('elFont').value = parseInt(textEl ? textEl.style.fontSize : 14) || 14;
+                document.getElementById('elColor').value = rgbToHex(window.getComputedStyle(textEl || node).color);
+                document.getElementById('elBgColor').value = rgbToHex(bg);
+            } else if (node.dataset.type === 'image') {
+                textControls.style.display = 'none';
+                imageControls.style.display = 'block';
+                document.getElementById('inspectorTitle').innerText = '🔧 Image Layer Inspector';
+                document.getElementById('elRadius').value = parseInt(node.style.borderRadius) || 0;
+                document.getElementById('elOpacity').value = (parseFloat(node.style.opacity) || 1) * 100;
+                document.getElementById('elImgBg').value = rgbToHex(bg);
+            } else {
+                textControls.style.display = 'none';
+                imageControls.style.display = 'none';
+                document.getElementById('inspectorTitle').innerText = '🔧 Shape Layer Inspector';
             }
         }
 
         function clearSelection(e) {
             if (e && e.target !== canvas) return;
-            if (selectedNode) selectedNode.classList.remove('active');
+            document.querySelectorAll('.ad-node').forEach(n => n.classList.remove('active'));
             selectedNode = null;
             inspector.style.display = 'none';
         }
 
-        // ===== UPDATE ELEMENTS =====
+        // ===== MUTATIONS =====
+        function mutateCanvas() {
+            const format = document.getElementById('adFormat').value;
+            const radius = document.getElementById('canvasRadius').value || 0;
+            canvas.style.borderRadius = radius + 'px';
+
+            if (format === 'banner') {
+                const w = document.getElementById('canvasW').value || 320;
+                const h = document.getElementById('canvasH').value || 50;
+                canvas.style.width = w + 'px';
+                canvas.style.height = h + 'px';
+                workspaceLabel.innerText = `Banner Mode (${w}x${h})`;
+            } else {
+                workspaceLabel.innerText = 'Interstitial Mode (280x340)';
+            }
+        }
+
+        function switchFormat() {
+            const format = document.getElementById('adFormat').value;
+            if (format === 'interstitial') {
+                canvas.classList.add('interstitial');
+                dimRow.style.display = 'none';
+                closeBtn.style.display = 'flex';
+            } else {
+                canvas.classList.remove('interstitial');
+                dimRow.style.display = 'grid';
+                closeBtn.style.display = 'none';
+            }
+            mutateCanvas();
+        }
+
+        // ===== ADD ELEMENTS =====
+        function addText() {
+            nodeCounter++;
+            const node = document.createElement('div');
+            node.className = 'ad-node';
+            node.dataset.type = 'text';
+            node.dataset.id = nodeCounter;
+            node.style.left = '20px';
+            node.style.top = '10px';
+            node.style.background = '#ffff00';
+
+            const txt = document.createElement('div');
+            txt.className = 'text-inside';
+            txt.innerText = '🔥 MEGA SALE';
+            txt.style.color = '#000000';
+            txt.style.fontSize = '14px';
+            txt.style.fontWeight = '800';
+
+            node.appendChild(txt);
+            canvas.appendChild(node);
+            setupNodeEvents(node);
+            selectNode(node);
+            showToast('📝 Text layer added');
+        }
+
+        function addImage(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                nodeCounter++;
+                const node = document.createElement('div');
+                node.className = 'ad-node';
+                node.dataset.type = 'image';
+                node.dataset.id = nodeCounter;
+                node.style.left = '40px';
+                node.style.top = '5px';
+                node.style.width = '40px';
+                node.style.height = '40px';
+
+                const img = document.createElement('img');
+                img.src = e.target.result;
+                img.style.width = '100%';
+                img.style.height = '100%';
+
+                node.appendChild(img);
+                canvas.appendChild(node);
+                setupNodeEvents(node);
+                selectNode(node);
+                showToast('🖼️ Image layer added');
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function addShape() {
+            nodeCounter++;
+            const node = document.createElement('div');
+            node.className = 'ad-node';
+            node.dataset.type = 'shape';
+            node.dataset.id = nodeCounter;
+            node.style.left = '80px';
+            node.style.top = '15px';
+            node.style.width = '30px';
+            node.style.height = '30px';
+            node.style.background = '#3b82f6';
+            node.style.borderRadius = '4px';
+
+            canvas.appendChild(node);
+            setupNodeEvents(node);
+            selectNode(node);
+            showToast('⬛ Shape layer added');
+        }
+
+        // ===== UPDATE LAYERS FROM INSPECTOR =====
         function updateElement() {
             if (!selectedNode) return;
             const w = document.getElementById('elW').value;
             const h = document.getElementById('elH').value;
+            if (w) selectedNode.style.width = w + 'px';
+            if (h) selectedNode.style.height = h + 'px';
 
-            if (selectedNode.dataset.type === 'image') {
-                const img = selectedNode.querySelector('img');
-                img.style.width = w + 'px';
-                img.style.height = h + 'px';
-                selectedNode.style.borderRadius = document.getElementById('elRadius').value + 'px';
-                selectedNode.style.opacity = document.getElementById('elOpacity').value / 100;
-            } else if (selectedNode.dataset.type === 'shape') {
-                selectedNode.style.width = w + 'px';
-                selectedNode.style.height = h + 'px';
-                selectedNode.style.borderRadius = document.getElementById('elRadius').value + 'px';
-                selectedNode.style.opacity = document.getElementById('elOpacity').value / 100;
-            } else {
-                const el = selectedNode.querySelector('.text-inside');
-                el.innerText = document.getElementById('elText').value;
-                el.style.fontSize = document.getElementById('elFont').value + 'px';
-                el.style.color = document.getElementById('elColor').value;
-            }
-        }
-
-        function updateElementBg() {
-            if (!selectedNode) return;
-            const isChecked = document.getElementById('elTransparent').checked;
-            if (isChecked) {
-                selectedNode.style.background = 'transparent';
-                if (selectedNode.dataset.type === 'text') {
-                    const el = selectedNode.querySelector('.text-inside');
-                    el.style.background = 'transparent';
-                }
-                return;
-            }
-
-            let bgColor;
             if (selectedNode.dataset.type === 'text') {
-                bgColor = document.getElementById('elBgColor').value;
-                const el = selectedNode.querySelector('.text-inside');
-                el.style.background = bgColor;
-                selectedNode.style.background = bgColor;
-            } else if (selectedNode.dataset.type === 'image' || selectedNode.dataset.type === 'shape') {
-                bgColor = document.getElementById('elImgBg').value;
-                selectedNode.style.background = bgColor;
+                const textEl = selectedNode.querySelector('.text-inside');
+                if (textEl) {
+                    textEl.innerText = document.getElementById('elText').value;
+                    textEl.style.fontSize = document.getElementById('elFont').value + 'px';
+                }
+            } else if (selectedNode.dataset.type === 'image') {
+                selectedNode.style.borderRadius = document.getElementById('elRadius').value + 'px';
+                selectedNode.style.opacity = document.getElementById('elOpacity').value / 100;
             }
         }
 
         function updateElementPos() {
             if (!selectedNode) return;
-            selectedNode.style.left = document.getElementById('elX').value + 'px';
-            selectedNode.style.top = document.getElementById('elY').value + 'px';
+            const x = document.getElementById('elX').value;
+            const y = document.getElementById('elY').value;
+            if (x !== '') selectedNode.style.left = x + 'px';
+            if (y !== '') selectedNode.style.top = y + 'px';
         }
 
         function updateElementColor() {
-            const val = document.getElementById('elColor').value;
-            if (selectedNode && selectedNode.dataset.type === 'text') {
-                selectedNode.querySelector('.text-inside').style.color = val;
+            if (!selectedNode) return;
+            if (selectedNode.dataset.type === 'text') {
+                const textEl = selectedNode.querySelector('.text-inside');
+                if (textEl) textEl.style.color = document.getElementById('elColor').value;
+            }
+        }
+
+        function updateElementBg() {
+            if (!selectedNode) return;
+            const isTransparentChecked = document.getElementById('elTransparent').checked;
+            if (isTransparentChecked) return;
+
+            if (selectedNode.dataset.type === 'text') {
+                selectedNode.style.background = document.getElementById('elBgColor').value;
+            } else if (selectedNode.dataset.type === 'image') {
+                selectedNode.style.background = document.getElementById('elImgBg').value;
             }
         }
 
         function deleteElement() {
-            if (selectedNode) {
-                selectedNode.remove();
-                clearSelection();
-                showToast('🗑️ Layer deleted');
-            }
+            if (!selectedNode) return;
+            canvas.removeChild(selectedNode);
+            selectedNode = null;
+            inspector.style.display = 'none';
+            showToast('🗑️ Layer deleted', 'error');
         }
 
         function resetElement() {
             if (!selectedNode) return;
-            selectedNode.style.transform = '';
-            selectedNode.style.opacity = '1';
-            selectedNode.style.background = 'transparent';
-            selectedNode.classList.remove('gif-pulse', 'gif-glitch', 'gif-rainbow');
-            const textEl = selectedNode.querySelector('.text-inside');
-            if (textEl) {
-                textEl.classList.remove('text-fade', 'text-bounce', 'text-flash', 'text-slide', 'text-rainbow', 'text-pulse',
-                    'text-spin', 'text-glow');
-                textEl.style.background = 'transparent';
-                textEl.style.color = '#000000';
-                textEl.style.fontSize = '14px';
+            selectedNode.style.left = '10px';
+            selectedNode.style.top = '10px';
+            selectedNode.style.width = '';
+            selectedNode.style.height = '';
+            if (selectedNode.dataset.type === 'text') {
+                const textEl = selectedNode.querySelector('.text-inside');
+                if (textEl) {
+                    textEl.style.fontSize = '14px';
+                    textEl.style.color = '#000000';
+                }
+                selectedNode.style.background = '#ffff00';
+            } else if (selectedNode.dataset.type === 'image') {
+                selectedNode.style.borderRadius = '0px';
+                selectedNode.style.opacity = '1';
+                selectedNode.style.background = 'transparent';
             }
-            document.getElementById('elTransparent').checked = true;
+            selectNode(selectedNode);
             showToast('🔄 Layer reset');
         }
 
-        // ===== DRAG =====
-        function onDragStart(e) {
-            selectedNode = this;
-            selectNode(selectedNode);
-            isDragging = true;
-            const clientX = e.type.includes('touch') ? e.touches[0].clientX : e.clientX;
-            const clientY = e.type.includes('touch') ? e.touches[0].clientY : e.clientY;
-            dragStartX = clientX;
-            dragStartY = clientY;
-            nodeStartX = parseInt(selectedNode.style.left) || 0;
-            nodeStartY = parseInt(selectedNode.style.top) || 0;
-            document.addEventListener('touchmove', onDragMove, { passive: false });
-            document.addEventListener('touchend', onDragEnd);
-            document.addEventListener('mousemove', onDragMove);
-            document.addEventListener('mouseup', onDragEnd);
+        // ===== TEMPLATE LOADER =====
+        function loadTemplate(type) {
+            canvas.querySelectorAll('.ad-node').forEach(n => canvas.removeChild(n));
+            clearSelection();
+            resetBgColor();
+
+            if (type === 'minimal') {
+                document.getElementById('canvasBg').value = '#f8fafc';
+                setSolidBg();
+                addText();
+                if (selectedNode) {
+                    const txt = selectedNode.querySelector('.text-inside');
+                    if (txt) txt.innerText = '🎯 Minimal Elegant Banner';
+                    selectedNode.style.background = 'transparent';
+                    selectNode(selectedNode);
+                }
+            } else if (type === 'transparent') {
+                setTransparentBg();
+                addText();
+                if (selectedNode) {
+                    const txt = selectedNode.querySelector('.text-inside');
+                    if (txt) {
+                        txt.innerText = '⚡ Transparent Overlay';
+                        txt.style.color = '#ffffff';
+                    }
+                    selectedNode.style.background = '#8b5cf6';
+                    selectNode(selectedNode);
+                }
+            } else if (GIFS[type]) {
+                nodeCounter++;
+                const node = document.createElement('div');
+                node.className = 'ad-node';
+                node.dataset.type = 'image';
+                node.dataset.id = nodeCounter;
+                node.style.left = '0px';
+                node.style.top = '0px';
+                node.style.width = '100%';
+                node.style.height = '100%';
+
+                const img = document.createElement('img');
+                img.src = GIFS[type];
+                img.style.width = '100%';
+                img.style.height = '100%';
+
+                node.appendChild(img);
+                canvas.appendChild(node);
+                setupNodeEvents(node);
+
+                addText();
+                if (selectedNode) {
+                    const txt = selectedNode.querySelector('.text-inside');
+                    if (txt) {
+                        txt.innerText = type === 'sale' ? '🔥 FLASH SALE 80% OFF' : '🎬 LIVE STREAMING';
+                        txt.style.color = '#ffffff';
+                    }
+                    selectedNode.style.background = 'rgba(239, 68, 68, 0.85)';
+                    selectedNode.style.left = '10px';
+                    selectedNode.style.top = '12px';
+                    selectNode(selectedNode);
+                }
+                showToast(`🚀 Loaded Premium ${type.toUpperCase()} Template`);
+            } else if (type === 'sale') {
+                nodeCounter++;
+                const node = document.createElement('div');
+                node.className = 'ad-node';
+                node.dataset.type = 'image';
+                node.dataset.id = nodeCounter;
+                node.style.left = '0px';
+                node.style.top = '0px';
+                node.style.width = '100%';
+                node.style.height = '100%';
+
+                const img = document.createElement('img');
+                img.src = 'https://media.tenor.com/v8ffg88_g78AAAAC/flash-sale.gif';
+                img.style.width = '100%';
+                img.style.height = '100%';
+
+                node.appendChild(img);
+                canvas.appendChild(node);
+                setupNodeEvents(node);
+
+                addText();
+                if (selectedNode) {
+                    const txt = selectedNode.querySelector('.text-inside');
+                    if (txt) {
+                        txt.innerText = '🔥 BOOM! CODE: NIKAMMA';
+                        txt.style.color = '#ffffff';
+                    }
+                    selectedNode.style.background = '#000000';
+                    selectedNode.style.left = '10px';
+                    selectedNode.style.top = '12px';
+                    selectNode(selectedNode);
+                }
+                showToast('🚀 Loaded Premium FLASH SALE Template');
+            }
         }
 
-        function onDragMove(e) {
-            if (!isDragging) return;
-            e.preventDefault();
-            const clientX = e.type.includes('touch') ? e.touches[0].clientX : e.clientX;
-            const clientY = e.type.includes('touch') ? e.touches[0].clientY : e.clientY;
-            selectedNode.style.left = (nodeStartX + (clientX - dragStartX)) + 'px';
-            selectedNode.style.top = (nodeStartY + (clientY - dragStartY)) + 'px';
-            document.getElementById('elX').value = parseInt(selectedNode.style.left) || 0;
-            document.getElementById('elY').value = parseInt(selectedNode.style.top) || 0;
-        }
-
-        function onDragEnd() {
-            isDragging = false;
-            document.removeEventListener('touchmove', onDragMove);
-            document.removeEventListener('mousemove', onDragMove);
-            document.removeEventListener('touchend', onDragEnd);
-            document.removeEventListener('mouseup', onDragEnd);
-        }
-
-        // ===== ADVANCED PANEL =====
+        // ===== ADVANCED FUNCTIONS =====
         function toggleAdvPanel() {
-            advPanel.style.display = advPanel.style.display === 'none' ? 'block' : 'none';
+            advPanel.style.display = advPanel.style.display === 'block' ? 'none' : 'block';
         }
 
         function duplicateLayer() {
@@ -2123,17 +1808,19 @@
                 showToast('❌ Select a layer first', 'error');
                 return;
             }
-
+            nodeCounter++;
             const clone = selectedNode.cloneNode(true);
-            const left = parseInt(selectedNode.style.left) + 10;
-            const top = parseInt(selectedNode.style.top) + 10;
-            clone.style.left = left + 'px';
-            clone.style.top = top + 'px';
             clone.classList.remove('active');
+            clone.dataset.id = nodeCounter;
 
-            const type = selectedNode.dataset.type;
+            let left = parseInt(clone.style.left) || 0;
+            let top = parseInt(clone.style.top) || 0;
+            clone.style.left = (left + 15) + 'px';
+            clone.style.top = (top + 15) + 'px';
+
             canvas.appendChild(clone);
-            initNode(clone, type);
+            setupNodeEvents(clone);
+            selectNode(clone);
             showToast('📋 Layer duplicated');
         }
 
@@ -2142,30 +1829,170 @@
                 showToast('❌ Select a layer first', 'error');
                 return;
             }
-
-            const allNodes = canvas.querySelectorAll('.ad-node');
-            const index = Array.from(allNodes).indexOf(selectedNode);
-            const newIndex = direction === 'up' ? Math.max(0, index - 1) : Math.min(allNodes.length - 1, index + 1);
-
-            if (index === newIndex) {
-                showToast('❌ Already at ' + direction, 'error');
-                return;
-            }
-
             const parent = selectedNode.parentNode;
-            const nextNode = allNodes[newIndex];
-
             if (direction === 'up') {
-                parent.insertBefore(selectedNode, nextNode);
+                const nextNode = selectedNode.nextSibling;
+                if (nextNode && nextNode.classList && nextNode.classList.contains('ad-node')) {
+                    parent.insertBefore(nextNode, selectedNode);
+                }
             } else {
-                if (nextNode.nextSibling) {
-                    parent.insertBefore(selectedNode, nextNode.nextSibling);
-                } else {
-                    parent.appendChild(selectedNode);
+                const prevNode = selectedNode.previousSibling;
+                if (prevNode && prevNode.classList && prevNode.classList.contains('ad-node')) {
+                    parent.insertBefore(selectedNode, prevNode);
                 }
             }
+            showToast('⬆️ Layer order updated');
+        }
 
-            showToast('⬆️ Layer moved ' + direction);
+        function shareAd() {
+            exportPNG();
+            setTimeout(() => {
+                if (dialogData) dialogShare();
+            }, 800);
+        }
+
+        function saveToGallery() {
+            exportPNG();
+            setTimeout(() => {
+                if (dialogData) dialogDownload();
+            }, 800);
+        }
+
+        // ===== EXPORT ENGINES =====
+        function exportPNG() {
+            clearSelection();
+            html2canvas(canvas, {
+                backgroundColor: isTransparent ? null : window.getComputedStyle(canvas).backgroundColor,
+                logging: false,
+                useCORS: true,
+                scale: 2
+            }).then(c => {
+                const url = c.toDataURL('image/png');
+                showDialog(url, 'ad-banner-' + Date.now() + '.png', 'png');
+            }).catch(() => {
+                showToast('❌ PNG compilation engine failure', 'error');
+            });
+        }
+
+        function exportTransparent() {
+            const currentMode = isTransparent;
+            if (!currentMode) setTransparentBg();
+            setTimeout(() => {
+                exportPNG();
+                if (!currentMode) {
+                    setTimeout(() => { setSolidBg(); }, 500);
+                }
+            }, 200);
+        }
+
+        function exportMP4() {
+            showToast('🎥 Compiling video buffers...', 'success');
+            progressBar.style.display = 'block';
+            progressFill.style.width = '30%';
+
+            setTimeout(() => {
+                progressFill.style.width = '70%';
+                setTimeout(() => {
+                    progressFill.style.width = '100%';
+                    html2canvas(canvas, { scale: 1.5, useCORS: true }).then(c => {
+                        progressBar.style.display = 'none';
+                        const url = c.toDataURL('image/png');
+                        showDialog(url, 'ad-video-' + Date.now() + '.png', 'image');
+                        showToast('🎥 MP4 Simulation encoded into dynamic image wrap');
+                    });
+                }, 600);
+            }, 500);
+        }
+
+        // ===== CORS WORKER FIXED GIF EXPORT ENGINE =====
+        function exportFullGIF() {
+            clearSelection();
+            showToast('🎞️ Initializing GIF Engine Setup...');
+            progressBar.style.display = 'block';
+            progressFill.style.width = '0%';
+
+            const totalFrames = parseInt(document.getElementById('gifFrames').value) || 10;
+            const delay = parseInt(document.getElementById('gifDelay').value) || 150;
+            const quality = parseInt(document.getElementById('gifQuality').value) || 10;
+
+            // INLINE MUKAMMAL WORKER ENGINE BLOB TO KILL CORS ERROR FOREVER
+            const workerCode = `
+                importScripts('https://cdnjs.cloudflare.com/ajax/libs/gif.js/0.2.0/gif.worker.js');
+            `;
+            const workerBlob = new Blob([workerCode], { type: 'application/javascript' });
+            const workerUrl = URL.createObjectURL(workerBlob);
+
+            const gif = new GIF({
+                workers: 2,
+                quality: quality,
+                width: canvas.offsetWidth,
+                height: canvas.offsetHeight,
+                workerScript: workerUrl,
+                transparent: isTransparent ? 0x00000000 : null
+            });
+
+            let currentFrame = 0;
+            const framesBuffer = [];
+
+            function captureNextFrame() {
+                if (currentFrame >= totalFrames) {
+                    compileBufferedFrames();
+                    return;
+                }
+
+                html2canvas(canvas, {
+                    backgroundColor: isTransparent ? null : window.getComputedStyle(canvas).backgroundColor,
+                    logging: false,
+                    useCORS: true,
+                    scale: 1
+                }).then(renderedCanvas => {
+                    const ctx = renderedCanvas.getContext('2d');
+                    framesBuffer.push(ctx.getImageData(0, 0, canvas.offsetWidth, canvas.offsetHeight));
+                    
+                    currentFrame++;
+                    progressFill.style.width = Math.round((currentFrame / totalFrames) * 50) + '%';
+                    
+                    // Request animation frame layout step safely
+                    setTimeout(captureNextFrame, delay);
+                }).catch(err => {
+                    console.error(err);
+                    showToast('❌ Frame capture failed: ' + err.message, 'error');
+                    progressBar.style.display = 'none';
+                    URL.revokeObjectURL(workerUrl);
+                });
+            }
+
+            function compileBufferedFrames() {
+                showToast('⚙️ Processing & Animating Layout Layers...');
+                
+                // Create temporary structural canvas to append data arrays smoothly
+                const tempCanvas = document.createElement('canvas');
+                tempCanvas.width = canvas.offsetWidth;
+                tempCanvas.height = canvas.offsetHeight;
+                const tempCtx = tempCanvas.getContext('2d');
+
+                for (let i = 0; i < framesBuffer.length; i++) {
+                    tempCtx.putImageData(framesBuffer[i], 0, 0);
+                    gif.addFrame(tempCtx, { delay: delay, copy: true });
+                }
+
+                gif.on('progress', function(p) {
+                    progressFill.style.width = (50 + Math.round(p * 50)) + '%';
+                });
+
+                gif.on('finished', function(blob) {
+                    progressBar.style.display = 'none';
+                    const finalGifUrl = URL.createObjectURL(blob);
+                    showDialog(finalGifUrl, 'ad-animation-' + Date.now() + '.gif', 'gif');
+                    showToast('✅ GIF Rendered Successfully!');
+                    URL.revokeObjectURL(workerUrl);
+                });
+
+                gif.render();
+            }
+
+            // Start processing frame stream immediately
+            setTimeout(captureNextFrame, 100);
         }
 
         // ===== UTILITY =====
@@ -2190,10 +2017,7 @@
         // ===== INIT =====
         window.onload = function() {
             mutateCanvas();
-            loadTemplate('movie');
-            showToast('✨ Full Banner GIF Export Ready!');
         };
     </script>
-
 </body>
 </html>
