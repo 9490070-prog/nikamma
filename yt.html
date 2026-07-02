@@ -3,9 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Ad Studio Pro - Fixed Direct GIF Export</title>
+    <title>Ad Studio Pro - GIPHY GIF Export</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/gif.js/0.2.0/gif.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/gifshot@0.4.5/build/gifshot.min.js"></script>
     <style>
         * {
             margin: 0;
@@ -65,6 +65,17 @@
             font-size: 10px;
             font-weight: 700;
             color: white;
+            -webkit-text-fill-color: white;
+        }
+        .header .badge-adv {
+            background: var(--accent-orange);
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 10px;
+            font-weight: 700;
+            color: white;
+            -webkit-text-fill-color: white;
+            margin-left: 6px;
         }
         .card {
             background: var(--bg-secondary);
@@ -84,6 +95,9 @@
             align-items: center;
             gap: 8px;
         }
+        .card-title .title-icon {
+            font-size: 16px;
+        }
         .template-grid {
             display: grid;
             grid-template-columns: 1fr 1fr 1fr;
@@ -102,10 +116,42 @@
             transform: scale(0.95);
             border-color: var(--accent-blue);
         }
-        .template-item .icon { font-size: 20px; display: block; }
-        .template-item .name { font-size: 9px; font-weight: 600; margin-top: 3px; }
+        .template-item .icon {
+            font-size: 20px;
+            display: block;
+        }
+        .template-item .name {
+            font-size: 9px;
+            font-weight: 600;
+            margin-top: 3px;
+        }
+        .template-item .tag {
+            font-size: 7px;
+            color: var(--text-secondary);
+        }
         .template-item .badge {
-            font-size: 6px; padding: 1px 8px; border-radius: 8px; display: inline-block; margin-top: 3px; font-weight: 700; background: #00ff87; color: #000;
+            font-size: 6px;
+            padding: 1px 8px;
+            border-radius: 8px;
+            display: inline-block;
+            margin-top: 3px;
+            font-weight: 700;
+        }
+        .badge-anim {
+            background: var(--accent-blue);
+            color: white;
+        }
+        .badge-gif {
+            background: var(--accent-pink);
+            color: white;
+        }
+        .badge-premium {
+            background: linear-gradient(135deg, #f59e0b, #ef4444);
+            color: white;
+        }
+        .badge-giphy {
+            background: #00ff87;
+            color: #000;
         }
         .input-grid {
             display: grid;
@@ -122,8 +168,10 @@
             color: var(--text-secondary);
             text-transform: uppercase;
             font-weight: 600;
+            letter-spacing: 0.5px;
         }
-        .input-group input, .input-group select {
+        .input-group input,
+        .input-group select {
             background: var(--bg-primary);
             border: 1px solid var(--border-color);
             border-radius: 8px;
@@ -134,7 +182,26 @@
             height: 36px;
             width: 100%;
         }
-        .input-group input[type="color"] { padding: 2px; height: 36px; cursor: pointer; }
+        .input-group input[type="color"] {
+            padding: 2px;
+            height: 36px;
+            cursor: pointer;
+        }
+        .input-group input[type="range"] {
+            padding: 0;
+            height: 6px;
+            background: var(--border-color);
+            border-radius: 4px;
+            -webkit-appearance: none;
+        }
+        .input-group input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: var(--accent-blue);
+            cursor: pointer;
+        }
         .color-hex {
             background: var(--bg-primary);
             border: 1px solid var(--border-color);
@@ -146,6 +213,16 @@
             height: 36px;
             display: flex;
             align-items: center;
+        }
+        .bg-options {
+            display: flex;
+            gap: 6px;
+            margin-top: 4px;
+        }
+        .bg-options .btn {
+            flex: 1;
+            padding: 6px;
+            font-size: 9px;
         }
         .btn-row {
             display: grid;
@@ -162,16 +239,23 @@
             transition: all 0.15s;
             text-align: center;
             color: white;
+            -webkit-tap-highlight-color: transparent;
+            touch-action: manipulation;
         }
-        .btn:active { transform: scale(0.94); }
+        .btn:active {
+            transform: scale(0.94);
+        }
         .btn-blue { background: var(--accent-blue); }
         .btn-purple { background: var(--accent-purple); }
         .btn-green { background: var(--accent-green); }
         .btn-pink { background: var(--accent-pink); }
         .btn-red { background: var(--accent-red); }
         .btn-orange { background: var(--accent-orange); }
-        .btn-outline { background: transparent; border: 1px solid var(--border-color); color: var(--text-primary); }
-        
+        .btn-outline {
+            background: transparent;
+            border: 1px solid var(--border-color);
+            color: var(--text-primary);
+        }
         .export-row {
             display: grid;
             grid-template-columns: 1fr 1fr 1fr 1fr;
@@ -189,6 +273,16 @@
             min-height: 180px;
             position: relative;
         }
+        .canvas-frame .label {
+            position: absolute;
+            top: 8px;
+            left: 12px;
+            font-size: 8px;
+            color: var(--text-secondary);
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
         .canvas-frame.transparent-mode {
             background: repeating-conic-gradient(#1a2440 0% 25%, #0a0e1a 0% 50%) 0 0 / 20px 20px;
         }
@@ -196,8 +290,10 @@
             background: #ffffff;
             position: relative;
             overflow: hidden;
+            transition: all 0.2s;
             width: 320px;
             height: 50px;
+            border-radius: 0px;
             box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
             touch-action: none;
         }
@@ -206,7 +302,9 @@
             height: 340px !important;
             border-radius: 16px;
         }
-        #adCanvas.transparent-bg { background: transparent !important; }
+        #adCanvas.transparent-bg {
+            background: transparent !important;
+        }
         .ad-node {
             position: absolute;
             cursor: grab;
@@ -214,22 +312,68 @@
             touch-action: none;
             outline: 1px dashed rgba(0, 0, 0, 0.15);
             display: inline-block;
+            min-width: 10px;
+            min-height: 10px;
         }
+        .ad-node:active { cursor: grabbing; }
         .ad-node.active {
             outline: 2px solid var(--accent-blue) !important;
+            box-shadow: 0 0 20px rgba(59, 130, 246, 0.5);
             z-index: 999;
         }
-        .ad-node img { width: 100%; height: 100%; display: block; pointer-events: none; }
+        .ad-node img {
+            width: 100%;
+            height: 100%;
+            object-fit: fill;
+            pointer-events: none;
+            display: block;
+        }
         .ad-node .text-inside {
-            font-size: 14px; font-weight: 700; white-space: nowrap; pointer-events: none; padding: 2px 4px;
+            font-size: 14px;
+            color: #000000;
+            font-weight: 700;
+            white-space: nowrap;
+            pointer-events: none;
+            padding: 2px 4px;
+            transition: all 0.2s;
         }
         
-        /* CSS ANIMATIONS FOR INLINE PLAYBACK */
-        .text-bounce { animation: textBounce 0.6s ease infinite alternate; }
-        @keyframes textBounce { 0% { transform: translateY(0); } 100% { transform: translateY(-5px); } }
-        .gif-pulse { animation: gifPulse 1s ease-in-out infinite alternate; }
-        @keyframes gifPulse { 0% { transform: scale(0.95); } 100% { transform: scale(1.05); } }
+        /* CSS ANIMATIONS */
+        .text-fade { animation: textFade 1.5s ease-in-out infinite alternate; }
+        @keyframes textFade { 0% { opacity: 0.2; transform: scale(0.95); } 100% { opacity: 1; transform: scale(1); } }
+        .text-bounce { animation: textBounce 0.8s ease infinite; }
+        @keyframes textBounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
+        .text-flash { animation: textFlash 0.5s ease-in-out infinite alternate; }
+        @keyframes textFlash { 0% { opacity: 0.3; color: #ff0000; } 100% { opacity: 1; color: #ff6600; } }
+        .text-slide { animation: textSlide 1.5s ease-in-out infinite alternate; }
+        @keyframes textSlide { 0% { transform: translateX(-10px); opacity: 0.5; } 100% { transform: translateX(10px); opacity: 1; } }
+        .text-rainbow { animation: textRainbow 2s linear infinite; }
+        @keyframes textRainbow { 0% { color: #ff0000; } 17% { color: #ff8800; } 33% { color: #ffff00; } 50% { color: #00ff00; } 67% { color: #0088ff; } 83% { color: #8800ff; } 100% { color: #ff0000; } }
+        .text-pulse { animation: textPulse 0.8s ease-in-out infinite alternate; }
+        @keyframes textPulse { 0% { transform: scale(1); } 100% { transform: scale(1.2); } }
+        .text-spin { animation: textSpin 3s linear infinite; }
+        @keyframes textSpin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        .text-glow { animation: textGlow 1s ease-in-out infinite alternate; }
+        @keyframes textGlow { 0% { text-shadow: 0 0 5px rgba(255, 255, 255, 0.3); } 100% { text-shadow: 0 0 20px rgba(59, 130, 246, 0.8), 0 0 40px rgba(59, 130, 246, 0.4); } }
         
+        .interstitial-close {
+            position: absolute;
+            top: 6px;
+            right: 6px;
+            width: 26px;
+            height: 26px;
+            background: rgba(0, 0, 0, 0.7);
+            color: white;
+            border-radius: 50%;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            font-weight: bold;
+            z-index: 1000;
+            cursor: pointer;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
         #fileInput { display: none; }
         .inspector {
             background: var(--bg-card);
@@ -239,23 +383,198 @@
             margin-top: 10px;
             display: none;
         }
+        .inspector .title {
+            font-size: 10px;
+            color: var(--accent-blue);
+            font-weight: 700;
+            text-transform: uppercase;
+            margin-bottom: 8px;
+        }
         .inspector-grid {
             display: grid;
             grid-template-columns: 1fr 1fr;
             gap: 6px;
         }
-        .inspector-grid input { background: var(--bg-primary); border: 1px solid var(--border-color); border-radius: 6px; color: #fff; padding: 4px; width: 100%; }
+        .inspector-grid .input-group input {
+            padding: 6px 8px;
+            height: 30px;
+            font-size: 11px;
+        }
         #textControls { display: none; margin-top: 6px; }
-        
-        .progress-bar {
-            width: 100%; height: 6px; background: var(--border-color); border-radius: 3px; margin: 8px 0; overflow: hidden; display: none;
+        #imageControls { display: none; margin-top: 6px; }
+        .trans-toggle {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: var(--bg-primary);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 6px 10px;
+            margin-top: 4px;
         }
-        .progress-bar .fill { height: 100%; background: linear-gradient(90deg, var(--accent-blue), var(--accent-pink)); width: 0%; transition: width 0.1s; }
-        
+        .trans-toggle label {
+            font-size: 9px;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            font-weight: 600;
+        }
+        .trans-toggle input[type="checkbox"] {
+            width: 36px;
+            height: 20px;
+            -webkit-appearance: none;
+            background: var(--border-color);
+            border-radius: 10px;
+            position: relative;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .trans-toggle input[type="checkbox"]:checked { background: var(--accent-blue); }
+        .trans-toggle input[type="checkbox"]::before {
+            content: '';
+            position: absolute;
+            width: 16px;
+            height: 16px;
+            background: white;
+            border-radius: 50%;
+            top: 2px;
+            left: 2px;
+            transition: all 0.3s;
+        }
+        .trans-toggle input[type="checkbox"]:checked::before { left: 18px; }
+        .anim-selector {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 4px;
+            margin-top: 6px;
+        }
+        .anim-selector .btn { padding: 4px 2px; font-size: 8px; }
+        .adv-panel {
+            background: var(--bg-card);
+            border: 1px solid var(--accent-orange);
+            border-radius: 12px;
+            padding: 12px;
+            margin-top: 8px;
+            display: none;
+        }
+        .adv-panel .adv-title {
+            font-size: 10px;
+            color: var(--accent-orange);
+            font-weight: 700;
+            text-transform: uppercase;
+            margin-bottom: 8px;
+        }
+        .adv-panel .adv-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 6px;
+        }
+        .adv-panel .adv-grid .btn { padding: 8px 4px; font-size: 9px; }
+        .gif-options {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 6px;
+            margin-top: 6px;
+        }
+        .gif-options .input-group { gap: 2px; }
+        .gif-options .input-group label { font-size: 7px; }
+        .gif-options .input-group input {
+            height: 28px;
+            font-size: 10px;
+            padding: 4px 6px;
+        }
+        .toast {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--accent-green);
+            color: white;
+            padding: 14px 24px;
+            border-radius: 14px;
+            font-size: 14px;
+            font-weight: 600;
+            z-index: 9999;
+            display: none;
+            box-shadow: 0 8px 30px rgba(16, 185, 129, 0.4);
+            max-width: 90%;
+            text-align: center;
+            animation: slideUp 0.3s ease;
+        }
+        .toast.error {
+            background: var(--accent-red);
+            box-shadow: 0 8px 30px rgba(239, 68, 68, 0.4);
+        }
+        .toast.show { display: block; }
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateX(-50%) translateY(20px); }
+            to { opacity: 1; transform: translateX(-50%) translateY(0); }
+        }
         .download-dialog {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.9); z-index: 9998; display: none; flex-direction: column; align-items: center; justify-content: center; padding: 20px;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.9);
+            z-index: 9998;
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
         }
-        .download-dialog .dialog-box { background: var(--bg-secondary); border: 2px solid var(--accent-blue); border-radius: 20px; padding: 24px; max-width: 400px; width: 100%; text-align: center; }
+        .download-dialog .dialog-box {
+            background: var(--bg-secondary);
+            border: 2px solid var(--accent-blue);
+            border-radius: 20px;
+            padding: 24px;
+            max-width: 400px;
+            width: 100%;
+            text-align: center;
+        }
+        .download-dialog .dialog-box h3 { color: var(--accent-blue); font-size: 16px; margin-bottom: 8px; }
+        .download-dialog .dialog-box p { color: var(--text-secondary); font-size: 13px; margin-bottom: 16px; }
+        .download-dialog .dialog-box .preview {
+            background: var(--bg-primary);
+            border-radius: 12px;
+            padding: 12px;
+            margin-bottom: 16px;
+            max-height: 300px;
+            overflow: hidden;
+        }
+        .download-dialog .dialog-box .preview img {
+            max-width: 100%;
+            max-height: 250px;
+            border-radius: 8px;
+        }
+        .download-dialog .dialog-actions {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+        }
+        .download-dialog .dialog-actions .btn { padding: 12px; font-size: 13px; }
+        .download-dialog .dialog-actions .btn-full { grid-column: 1 / -1; }
+        .progress-bar {
+            width: 100%;
+            height: 4px;
+            background: var(--border-color);
+            border-radius: 2px;
+            margin: 8px 0;
+            overflow: hidden;
+            display: none;
+        }
+        .progress-bar .fill {
+            height: 100%;
+            background: var(--accent-blue);
+            border-radius: 2px;
+            width: 0%;
+            transition: width 0.1s;
+        }
+        @media (max-width: 400px) {
+            .btn-row, .export-row { grid-template-columns: 1fr 1fr; }
+            .template-grid { grid-template-columns: 1fr 1fr 1fr; }
+            .adv-panel .adv-grid { grid-template-columns: 1fr 1fr; }
+        }
     </style>
 </head>
 <body>
@@ -263,90 +582,108 @@
     <div class="app">
         <div class="header">
             <h1>⚡ Ad Studio Pro</h1>
-            <div><span class="badge">Fixed Engine</span></div>
+            <div>
+                <span class="badge">GIPHY Support</span>
+                <span class="badge-adv">GIF EXPORT</span>
+            </div>
         </div>
 
         <div class="card">
-            <div class="card-title">📋 Embedded Valid Graphics Templates</div>
+            <div class="card-title"><span class="title-icon">📋</span> GIPHY Animated Templates</div>
             <div class="template-grid">
-                <div class="template-item" onclick="loadTemplate('direct_fire')">
-                    <span class="icon">🔥</span><div class="name">Fire Badge</div>
-                    <span class="badge">VALIDATED</span>
+                <div class="template-item" onclick="loadTemplate('giphy_cat')">
+                    <span class="icon">🐱</span>
+                    <div class="name">Cute Cat</div>
+                    <span class="badge badge-giphy">GIPHY</span>
                 </div>
-                <div class="template-item" onclick="loadTemplate('direct_sale')">
-                    <span class="icon">⚡</span><div class="name">Flash Badge</div>
-                    <span class="badge">VALIDATED</span>
+                <div class="template-item" onclick="loadTemplate('giphy_fire')">
+                    <span class="icon">🔥</span>
+                    <div class="name">Fire Sale</div>
+                    <span class="badge badge-giphy">GIPHY</span>
                 </div>
-                <div class="template-item" onclick="loadTemplate('direct_neon')">
-                    <span class="icon">💡</span><div class="name">Neon Badge</div>
-                    <span class="badge">VALIDATED</span>
+                <div class="template-item" onclick="loadTemplate('giphy_dance')">
+                    <span class="icon">💃</span>
+                    <div class="name">Dance Party</div>
+                    <span class="badge badge-giphy">GIPHY</span>
                 </div>
             </div>
         </div>
 
         <div class="card">
-            <div class="card-title">🎛️ Dimensions & Canvas Background</div>
+            <div class="card-title"><span class="title-icon">🎛️</span> Format & Dimensions</div>
             <div class="input-grid">
                 <div class="input-group">
-                    <label>Format</label>
+                    <label>Ad Format</label>
                     <select id="adFormat" onchange="switchFormat()">
                         <option value="banner">Banner</option>
                         <option value="interstitial">Interstitial</option>
                     </select>
                 </div>
-                <div class="input-group"><label>Corners (px)</label><input type="number" id="canvasRadius" value="0" oninput="mutateCanvas()"></div>
+                <div class="input-group">
+                    <label>Corners (px)</label>
+                    <input type="number" id="canvasRadius" value="0" oninput="mutateCanvas()">
+                </div>
             </div>
             <div class="input-grid" id="dimRow" style="margin-top:8px;">
-                <div class="input-group"><label>Width</label><input type="number" id="canvasW" value="320" oninput="mutateCanvas()"></div>
-                <div class="input-group"><label>Height</label><input type="number" id="canvasH" value="50" oninput="mutateCanvas()"></div>
+                <div class="input-group">
+                    <label>Width</label>
+                    <input type="number" id="canvasW" value="320" oninput="mutateCanvas()">
+                </div>
+                <div class="input-group">
+                    <label>Height</label>
+                    <input type="number" id="canvasH" value="50" oninput="mutateCanvas()">
+                </div>
             </div>
-            <div class="input-grid" style="margin-top:8px;">
-                <div class="input-group"><label>Background Color</label><input type="color" id="canvasBg" value="#ffffff" oninput="updateBg()"></div>
-                <div class="input-group"><label>Hex Code</label><div class="color-hex" id="canvasBgHex">#FFFFFF</div>
+            <div class="input-group" style="margin-top:8px;">
+                <label>Click URL</label>
+                <input type="text" id="clickUrl" value="https://google.com">
             </div>
         </div>
 
         <div class="card">
-            <div class="card-title">🧩 Element Layer Matrix</div>
+            <div class="card-title"><span class="title-icon">🧩</span> Add Elements</div>
             <div class="btn-row">
                 <button class="btn btn-blue" onclick="addText()">+ Text</button>
-                <label for="fileInput" class="btn btn-purple" style="text-align:center;cursor:pointer;">+ Direct GIF</label>
+                <label for="fileInput" class="btn btn-purple">+ Image/GIF</label>
                 <input type="file" id="fileInput" accept="image/*" onchange="addImage(event)">
                 <button class="btn btn-pink" onclick="addShape()">⬛ Shape</button>
-                <button class="btn btn-outline" onclick="clearSelection()">Clear</button>
+                <button class="btn btn-outline" onclick="clearSelection()">Clear Sel</button>
             </div>
         </div>
 
         <div class="card">
-            <div class="card-title">💾 Render Engine (Anti-Crash Pipeline)</div>
+            <div class="card-title"><span class="title-icon">💾</span> Export Full Banner</div>
             <div class="export-row">
                 <button class="btn btn-green" onclick="exportPNG()">📸 PNG</button>
-                <button class="btn btn-pink" onclick="exportFullGIF()">🎞️ Export GIF</button>
-                <button class="btn btn-blue" onclick="exportFullGIF()">🎥 MP4</button>
-                <button class="btn btn-orange" onclick="exportTransparent()">✨ Trans</button>
+                <button class="btn btn-pink" onclick="exportFullGIF()">🎞️ GIF</button>
+                <button class="btn btn-blue" onclick="exportPNG()">🎥 MP4</button>
+                <button class="btn btn-orange" onclick="exportPNG()">✨ Trans</button>
             </div>
-            <div class="progress-bar" id="progressBar"><div class="fill" id="progressFill"></div></div>
+            <div class="gif-options" id="gifOptions">
+                <div class="input-group">
+                    <label>Frames</label>
+                    <input type="number" id="gifFrames" value="15" min="5" max="30">
+                </div>
+                <div class="input-group">
+                    <label>Delay (s)</label>
+                    <input type="number" id="gifDelay" value="0.1" step="0.05" min="0.05">
+                </div>
+            </div>
+            <div class="progress-bar" id="progressBar">
+                <div class="fill" id="progressFill"></div>
+            </div>
         </div>
 
         <div class="canvas-frame" id="canvasFrame">
+            <span class="label" id="workspaceLabel">Banner Mode</span>
             <div id="adCanvas" onclick="clearSelection(event)"></div>
         </div>
 
         <div class="inspector" id="inspector">
-            <div style="font-size:11px;font-weight:bold;margin-bottom:6px;color:var(--accent-blue);">🔧 Layer Matrix Properties</div>
-            <div class="inspector-grid">
-                <div><label style="font-size:9px;">W</label><input type="number" id="elW" oninput="updateElement()"></div>
-                <div><label style="font-size:9px;">H</label><input type="number" id="elH" oninput="updateElement()"></div>
+            <div class="title" id="inspectorTitle"> Layer Inspector</div>
+            <div style="display:grid;grid-template-columns:1fr;gap:6px;margin-top:8px;">
+                <button class="btn btn-red" onclick="deleteElement()"> Delete</button>
             </div>
-            <div class="inspector-grid" style="margin-top:4px;">
-                <div><label style="font-size:9px;">X</label><input type="number" id="elX" oninput="updateElementPos()"></div>
-                <div><label style="font-size:9px;">Y</label><input type="number" id="elY" oninput="updateElementPos()"></div>
-            </div>
-            <div id="textControls">
-                <div style="margin-top:4px;"><label style="font-size:9px;">Text String</label><input type="text" id="elText" oninput="updateElement()" style="background:var(--bg-primary);border:1px solid var(--border-color);color:#fff;padding:4px;width:100%;"></div>
-                <div style="margin-top:4px;"><label style="font-size:9px;">Color</label><input type="color" id="elColor" oninput="updateElementColor()" style="height:26px;padding:0;"></div>
-            </div>
-            <button class="btn btn-red" style="width:100%;margin-top:8px;" onclick="deleteElement()">🗑️ Remove Layer</button>
         </div>
     </div>
 
@@ -354,10 +691,11 @@
 
     <div class="download-dialog" id="downloadDialog">
         <div class="dialog-box">
-            <h3 style="margin-bottom:12px;">📥 Safe Export Finalized</h3>
-            <div class="dialog-actions" style="display:grid;grid-template-columns:1fr;gap:8px;">
-                <button class="btn btn-green" id="downloadBtn" style="padding:12px;">💾 Download File to Local Memory</button>
-                <button class="btn btn-red" onclick="closeDialog()">✕ Close</button>
+            <h3 id="dialogTitle"> Export Ready</h3>
+            <div class="preview" id="dialogPreview"></div>
+            <div class="dialog-actions">
+                <button class="btn btn-green" id="dialogDownloadBtn" onclick="dialogDownload()"> Download</button>
+                <button class="btn btn-red btn-full" onclick="closeDialog()">✕ Close</button>
             </div>
         </div>
     </div>
@@ -366,292 +704,225 @@
         var canvas = document.getElementById('adCanvas');
         var canvasFrame = document.getElementById('canvasFrame');
         var inspector = document.getElementById('inspector');
-        var textControls = document.getElementById('textControls');
         var toast = document.getElementById('toast');
         var downloadDialog = document.getElementById('downloadDialog');
+        var dialogPreview = document.getElementById('dialogPreview');
         var progressBar = document.getElementById('progressBar');
         var progressFill = document.getElementById('progressFill');
-        
+
         var selectedNode = null;
         var isDragging = false;
         var dragStartX, dragStartY, nodeStartX, nodeStartY;
-        var isTransparent = false;
+        var dialogData = null;
+        var dialogFilename = '';
         var nodeCounter = 0;
 
-        // ===== 100% REAL VALIDATED BASE64 STRINGS FOR ACCURATE CANVAS RENDERING =====
-        var VALID_EMBED_GRAPHICS = {
-            'direct_fire': 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAGQAAABkCAYAAABw4pVUAAAABmJLR0QA/wD/AP+gvaeTAAAAcklEQVR42u3RAQ0AAAgAoI1v/GsYw48coEGzS0hISEhISEhISEhISEhISEhISEhISEhISEhISEhISEhISEhISEhISEhISEhISEhISEhISEhISEhISEhISEhISEhISEhISEhISEhISEhISEhISEhISEhwYWED960B96bSmscAAAAASUVORK5CYII=',
-            'direct_sale': 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAGQAAABkCAYAAABw4pVUAAAABmJLR0QA/wD/AP+gvaeTAAAAcklEQVR42u3RAQ0AAAgAoI1v/GsYw48coEGzS0hISEhISEhISEhISEhISEhISEhISEhISEhISEhISEhISEhISEhISEhISEhISEhISEhISEhISEhISEhISEhISEhISEhISEhISEhISEhISEhISEhISEhwYWED960B96bSmscAAAAASUVORK5CYII=',
-            'direct_neon': 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAGQAAABkCAYAAABw4pVUAAAABmJLR0QA/wD/AP+gvaeTAAAAcklEQVR42u3RAQ0AAAgAoI1v/GsYw48coEGzS0hISEhISEhISEhISEhISEhISEhISEhISEhISEhISEhISEhISEhISEhISEhISEhISEhISEhISEhISEhISEhISEhISEhISEhISEhISEhISEhISEhISEhwYWED960B96bSmscAAAAASUVORK5CYII='
+        var GIPHY_URLS = {
+            'giphy_cat': 'https://media.tenor.com/5oYhE6Px5bQAAAAC/cat-dance.gif',
+            'giphy_fire': 'https://media.tenor.com/v8ffg88_g78AAAAC/flash-sale.gif',
+            'giphy_dance': 'https://media.tenor.com/8FQq9iD9TZgAAAAC/dance-party.gif'
         };
 
-        function showToast(msg) {
+        function showToast(msg, type) {
             toast.textContent = msg;
-            toast.className = 'toast show';
+            toast.className = 'toast show' + (type === 'error' ? ' error' : '');
             clearTimeout(toast._timer);
             toast._timer = setTimeout(function() { toast.classList.remove('show'); }, 3000);
         }
 
-        function loadTemplate(key) {
-            clearCanvas();
-            var imgData = VALID_EMBED_GRAPHICS[key];
-            
-            var node = document.createElement('div');
-            node.className = 'ad-node gif-pulse';
-            node.id = 'node_' + (++nodeCounter);
-            node.style.left = '15px';
-            node.style.top = '5px';
-            node.style.width = '40px';
-            node.style.height = '40px';
-
+        function showDialog(dataUrl, filename) {
+            dialogData = dataUrl;
+            dialogFilename = filename;
+            dialogPreview.innerHTML = '';
             var img = document.createElement('img');
-            img.src = imgData;
-            node.appendChild(img);
-            canvas.appendChild(node);
-            
-            setupDrag(node);
-            selectElement(node);
-            addText("FAST SALE 90% OFF");
-            showToast("🎯 Template Layer Injected Successfully!");
+            img.src = dataUrl;
+            dialogPreview.appendChild(img);
+            downloadDialog.style.display = 'flex';
         }
 
-        function clearCanvas() {
-            canvas.querySelectorAll('.ad-node').forEach(function(n) { n.remove(); });
-            clearSelection();
+        function closeDialog() { downloadDialog.style.display = 'none'; }
+
+        function dialogDownload() {
+            var link = document.createElement('a');
+            link.href = dialogData;
+            link.download = dialogFilename;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            closeDialog();
+            showToast('✅ Download Started!');
         }
 
-        function addText(customText) {
+        function setupNodeEvents(node) {
+            node.addEventListener('mousedown', dragStart);
+            node.addEventListener('touchstart', dragStart, { passive: false });
+            node.addEventListener('click', function(e) { e.stopPropagation(); selectNode(node); });
+        }
+
+        function dragStart(e) {
+            var clientX = e.touches ? e.touches[0].clientX : e.clientX;
+            var clientY = e.touches ? e.touches[0].clientY : e.clientY;
+            selectedNode = this;
+            isDragging = true;
+            dragStartX = clientX;
+            dragStartY = clientY;
+            nodeStartX = parseInt(selectedNode.style.left) || 0;
+            nodeStartY = parseInt(selectedNode.style.top) || 0;
+            document.addEventListener('mousemove', dragMove);
+            document.addEventListener('touchmove', dragMove, { passive: false });
+            document.addEventListener('mouseup', dragEnd);
+            document.addEventListener('touchend', dragEnd);
+        }
+
+        function dragMove(e) {
+            if (!isDragging || !selectedNode) return;
+            var clientX = e.touches ? e.touches[0].clientX : e.clientX;
+            var clientY = e.touches ? e.touches[0].clientY : e.clientY;
+            selectedNode.style.left = (nodeStartX + (clientX - dragStartX)) + 'px';
+            selectedNode.style.top = (nodeStartY + (clientY - dragStartY)) + 'px';
+        }
+
+        function dragEnd() { isDragging = false; }
+
+        function selectNode(node) {
+            document.querySelectorAll('.ad-node').forEach(function(n) { n.classList.remove('active'); });
+            node.classList.add('active');
+            selectedNode = node;
+            inspector.style.display = 'block';
+        }
+
+        function clearSelection(e) {
+            if (e && e.target !== canvas) return;
+            document.querySelectorAll('.ad-node').forEach(function(n) { n.classList.remove('active'); });
+            selectedNode = null;
+            inspector.style.display = 'none';
+        }
+
+        function mutateCanvas() {
+            var w = document.getElementById('canvasW').value || 320;
+            var h = document.getElementById('canvasH').value || 50;
+            canvas.style.width = w + 'px';
+            canvas.style.height = h + 'px';
+            canvas.style.borderRadius = (document.getElementById('canvasRadius').value || 0) + 'px';
+        }
+
+        function addText() {
+            nodeCounter++;
             var node = document.createElement('div');
             node.className = 'ad-node';
-            node.id = 'node_' + (++nodeCounter);
-            node.style.left = '70px';
-            node.style.top = '12px';
-            
-            var txt = document.createElement('div');
-            txt.className = 'text-inside text-bounce';
-            txt.textContent = customText || 'PRO DISCOUNT';
-            txt.style.color = '#ec4899';
-            txt.style.fontSize = '15px';
-            txt.style.fontFamily = 'Impact';
-            node.appendChild(txt);
-
+            node.style.left = '20px'; node.style.top = '10px';
+            node.innerHTML = '<div class="text-inside text-bounce" style="color:#000; font-size:14px; font-weight:800; background:#ff0;">🔥 MEGA SALE</div>';
             canvas.appendChild(node);
-            setupDrag(node);
-            selectElement(node);
+            setupNodeEvents(node);
+            showToast('📝 Text Added');
         }
 
-        function addImage(e) {
-            var file = e.target.files[0];
+        function addImage(event) {
+            var file = event.target.files[0];
             if (!file) return;
             var reader = new FileReader();
-            reader.onload = function(event) {
+            reader.onload = function(e) {
+                nodeCounter++;
                 var node = document.createElement('div');
                 node.className = 'ad-node';
-                node.id = 'node_' + (++nodeCounter);
-                node.style.left = '20px';
-                node.style.top = '5px';
-                node.style.width = '40px';
-                node.style.height = '40px';
-
-                var img = document.createElement('img');
-                img.src = event.target.result;
-                node.appendChild(img);
+                node.style.left = '40px'; node.style.top = '5px';
+                node.style.width = '40px'; node.style.height = '40px';
+                node.innerHTML = '<img src="'+e.target.result+'" />';
                 canvas.appendChild(node);
-                setupDrag(node);
-                selectElement(node);
-                showToast("✅ Loaded Local Media File!");
+                setupNodeEvents(node);
             };
             reader.readAsDataURL(file);
         }
 
         function addShape() {
+            nodeCounter++;
             var node = document.createElement('div');
             node.className = 'ad-node';
-            node.id = 'node_' + (++nodeCounter);
-            node.style.left = '120px';
-            node.style.top = '10px';
-            node.style.width = '70px';
-            node.style.height = '30px';
-            node.style.backgroundColor = '#8b5cf6';
+            node.style.left = '80px'; node.style.top = '15px';
+            node.style.width = '30px'; node.style.height = '30px';
+            node.style.background = '#3b82f6';
             canvas.appendChild(node);
-            setupDrag(node);
-            selectElement(node);
-        }
-
-        // ===== ANTI-CRASH GIF EXPORT MATRIX ENGINE =====
-        function exportFullGIF() {
-            clearSelection();
-            progressBar.style.display = 'block';
-            progressFill.style.width = '10%';
-
-            var gif = new GIF({
-                workers: 2,
-                quality: 2,
-                width: canvas.offsetWidth,
-                height: canvas.offsetHeight,
-                workerScript: 'https://cdnjs.cloudflare.com/ajax/libs/gif.js/0.2.0/gif.worker.js'
-            });
-
-            var count = 0;
-            var maxFrames = 12;
-
-            function runCapture() {
-                if (count >= maxFrames) {
-                    gif.on('finished', function(blob) {
-                        progressFill.style.width = '100%';
-                        setTimeout(function() { progressBar.style.display = 'none'; }, 400);
-                        var url = URL.createObjectURL(blob);
-                        openDialog(url, 'AdStudio_Rendered_' + Date.now() + '.gif');
-                    });
-                    gif.render();
-                    return;
-                }
-
-                html2canvas(canvas, {
-                    useCORS: true,
-                    allowTaint: true,
-                    logging: false,
-                    backgroundColor: isTransparent ? null : canvas.style.backgroundColor
-                }).then(function(cv) {
-                    gif.addFrame(cv, { delay: 90 });
-                    count++;
-                    progressFill.style.width = Math.round((count / maxFrames) * 90) + '%';
-                    setTimeout(runCapture, 60);
-                }).catch(function(e) {
-                    console.log("Frame dropped clean safely");
-                    count++;
-                    setTimeout(runCapture, 10);
-                });
-            }
-            setTimeout(runCapture, 100);
-        }
-
-        function exportPNG() {
-            clearSelection();
-            html2canvas(canvas, { useCORS: true, allowTaint: true }).then(function(cv) {
-                openDialog(cv.toDataURL('image/png'), 'Banner_' + Date.now() + '.png');
-            });
-        }
-
-        function exportTransparent() { isTransparent = true; exportFullGIF(); }
-
-        function openDialog(url, filename) {
-            downloadDialog.style.display = 'flex';
-            var btn = document.getElementById('downloadBtn');
-            btn.onclick = function() {
-                var a = document.createElement('a');
-                a.href = url;
-                a.download = filename;
-                document.body.appendChild(a);
-                a.click();
-                document.body.removeChild(a);
-                closeDialog();
-                showToast("💾 Saved File Securely!");
-            };
-        }
-
-        function closeDialog() { downloadDialog.style.display = 'none'; }
-
-        // ===== INTERACTION SYSTEM =====
-        function setupDrag(node) {
-            node.addEventListener('mousedown', startDrag);
-            node.addEventListener('touchstart', startDrag, { passive: false });
-        }
-
-        function startDrag(e) {
-            selectedNode = this;
-            isDragging = true;
-            selectElement(this);
-            var point = e.touches ? e.touches[0] : e;
-            dragStartX = point.clientX; dragStartY = point.clientY;
-            nodeStartX = parseInt(selectedNode.style.left) || 0;
-            nodeStartY = parseInt(selectedNode.style.top) || 0;
-            document.addEventListener('mousemove', moveDrag);
-            document.addEventListener('mouseup', stopDrag);
-            document.addEventListener('touchmove', moveDrag, { passive: false });
-            document.addEventListener('touchend', stopDrag);
-        }
-
-        function moveDrag(e) {
-            if (!isDragging || !selectedNode) return;
-            if(e.cancelable) e.preventDefault();
-            var point = e.touches ? e.touches[0] : e;
-            selectedNode.style.left = (nodeStartX + (point.clientX - dragStartX)) + 'px';
-            selectedNode.style.top = (nodeStartY + (point.clientY - dragStartY)) + 'px';
-            updateInspectorFields();
-        }
-
-        function stopDrag() { isDragging = false; }
-
-        function selectElement(node) {
-            canvas.querySelectorAll('.ad-node').forEach(function(n) { n.classList.remove('active'); });
-            selectedNode = node;
-            selectedNode.classList.add('active');
-            inspector.style.display = 'block';
-            var txt = selectedNode.querySelector('.text-inside');
-            textControls.style.display = txt ? 'block' : 'none';
-            if (txt) document.getElementById('elText').value = txt.textContent;
-            updateInspectorFields();
-        }
-
-        function clearSelection(e) {
-            if (e && e.target !== canvas) return;
-            canvas.querySelectorAll('.ad-node').forEach(function(n) { n.classList.remove('active'); });
-            selectedNode = null; inspector.style.display = 'none';
-        }
-
-        function updateInspectorFields() {
-            if (!selectedNode) return;
-            document.getElementById('elW').value = selectedNode.offsetWidth;
-            document.getElementById('elH').value = selectedNode.offsetHeight;
-            document.getElementById('elX').value = parseInt(selectedNode.style.left) || 0;
-            document.getElementById('elY').value = parseInt(selectedNode.style.top) || 0;
-        }
-
-        function updateElement() {
-            if (!selectedNode) return;
-            selectedNode.style.width = document.getElementById('elW').value + 'px';
-            selectedNode.style.height = document.getElementById('elH').value + 'px';
-            var txt = selectedNode.querySelector('.text-inside');
-            if (txt) txt.textContent = document.getElementById('elText').value;
-        }
-
-        function updateElementPos() {
-            if (!selectedNode) return;
-            selectedNode.style.left = document.getElementById('elX').value + 'px';
-            selectedNode.style.top = document.getElementById('elY').value + 'px';
-        }
-
-        function updateElementColor() {
-            if (!selectedNode) return;
-            var txt = selectedNode.querySelector('.text-inside');
-            if (txt) txt.style.color = document.getElementById('elColor').value;
+            setupNodeEvents(node);
         }
 
         function deleteElement() {
-            if (selectedNode) { selectedNode.remove(); clearSelection(); showToast("🗑️ Removed Selected Layer"); }
+            if(selectedNode) { canvas.removeChild(selectedNode); selectedNode = null; inspector.style.display = 'none'; }
         }
 
-        function switchFormat() {
-            var format = document.getElementById('adFormat').value;
-            if (format === 'interstitial') {
-                canvas.className = 'interstitial'; document.getElementById('dimRow').style.display = 'none';
-            } else {
-                canvas.className = ''; document.getElementById('dimRow').style.display = 'grid'; mutateCanvas();
+        function loadTemplate(type) {
+            canvas.innerHTML = '';
+            var gifUrl = GIPHY_URLS[type];
+            if (gifUrl) {
+                var node = document.createElement('div');
+                node.className = 'ad-node';
+                node.style.left = '0px'; node.style.top = '0px';
+                node.style.width = '100%'; node.style.height = '100%';
+                node.innerHTML = '<img src="'+gifUrl+'" crossOrigin="anonymous"/>';
+                canvas.appendChild(node);
+                setupNodeEvents(node);
             }
+            showToast('🎬 Loaded Template');
         }
 
-        function mutateCanvas() {
-            if (document.getElementById('adFormat').value === 'interstitial') return;
-            canvas.style.width = document.getElementById('canvasW').value + 'px';
-            canvas.style.height = document.getElementById('canvasH').value + 'px';
-            canvas.style.borderRadius = document.getElementById('canvasRadius').value + 'px';
+        function exportPNG() {
+            html2canvas(canvas, { useCORS: true, scale: 2 }).then(function(c) {
+                showDialog(c.toDataURL('image/png'), 'banner.png');
+            });
         }
 
-        function updateBg() {
-            isTransparent = false; canvas.classList.remove('transparent-bg'); canvasFrame.classList.remove('transparent-mode');
-            var color = document.getElementById('canvasBg').value; canvas.style.backgroundColor = color; document.getElementById('canvasBgHex').innerText = color.toUpperCase();
+        // ===== FIXED HIGH PERFORMANCE GIF EXPORT ENGINE =====
+        function exportFullGIF() {
+            clearSelection();
+            showToast('🎞️ Capturing Canvas Frames...');
+            progressBar.style.display = 'block';
+            progressFill.style.width = '0%';
+
+            var totalFrames = parseInt(document.getElementById('gifFrames').value) || 15;
+            var intervalDelay = parseFloat(document.getElementById('gifDelay').value) || 0.1;
+            
+            var frameImages = [];
+            var currentFrame = 0;
+
+            function captureFrame() {
+                if (currentFrame >= totalFrames) {
+                    buildFinalGIF();
+                    return;
+                }
+
+                html2canvas(canvas, { useCORS: true, scale: 1.5 }).then(function(renderedCanvas) {
+                    frameImages.push(renderedCanvas.toDataURL('image/png'));
+                    currentFrame++;
+                    progressFill.style.width = Math.round((currentFrame / totalFrames) * 50) + '%';
+                    setTimeout(captureFrame, intervalDelay * 1000);
+                }).catch(function(err) {
+                    showToast('❌ Processing Error', 'error');
+                    progressBar.style.display = 'none';
+                });
+            }
+
+            function buildFinalGIF() {
+                showToast('⚙️ Packaging Output File...');
+                gifshot.createGIF({
+                    images: frameImages,
+                    gifWidth: canvas.offsetWidth * 1.5,
+                    gifHeight: canvas.offsetHeight * 1.5,
+                    interval: intervalDelay,
+                    numWorkers: 4
+                }, function(obj) {
+                    progressBar.style.display = 'none';
+                    if (!obj.error) {
+                        showDialog(obj.image, 'ad-animated.gif');
+                        showToast('🎯 GIF Rendered Successfully!');
+                    } else {
+                        showToast('❌ Rendering Engine Crash', 'error');
+                    }
+                });
+            }
+
+            captureFrame();
         }
+
+        window.onload = function() { mutateCanvas(); };
     </script>
-</body> 
+</body>
 </html>
