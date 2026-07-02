@@ -1,430 +1,1065 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Nikamma Engine Studio Pro - Drag Fix</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;600;700&family=Inter:wght@400;600;700&family=Montserrat:wght@900&display=swap" rel="stylesheet">
-    
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-    
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    fontFamily: {
-                        sans: ['Inter', 'sans-serif'],
-                        heading: ['Space Grotesk', 'sans-serif'],
-                        montserrat: ['Montserrat', 'sans-serif']
-                    }
-                }
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>✨ Pro Animated Banner Designer</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css"/>
+    <!-- gif.js for GIF export -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gif.js/0.2.0/gif.js"></script>
+    <style>
+        /* ===== PREMIUM DARK THEME ===== */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Inter', 'Segoe UI', system-ui, sans-serif;
+        }
+
+        body {
+            background: #0b0b1a;
+            background-image: radial-gradient(ellipse at 20% 50%, #1a1a3e 0%, #0b0b1a 70%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 24px;
+        }
+
+        /* ===== MAIN APP ===== */
+        .app {
+            max-width: 1440px;
+            width: 100%;
+            background: rgba(18, 18, 40, 0.85);
+            backdrop-filter: blur(20px);
+            border-radius: 32px;
+            padding: 28px;
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            box-shadow: 0 40px 100px rgba(0, 0, 0, 0.8), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+        }
+
+        /* ===== HEADER ===== */
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+            flex-wrap: wrap;
+            gap: 16px;
+        }
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+        .logo {
+            font-size: 28px;
+            font-weight: 800;
+            background: linear-gradient(135deg, #f5a623, #ff6b6b);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            letter-spacing: -0.5px;
+        }
+        .logo i {
+            -webkit-text-fill-color: #f5a623;
+            margin-right: 8px;
+        }
+        .badge {
+            background: rgba(245, 166, 35, 0.15);
+            color: #f5a623;
+            padding: 4px 14px;
+            border-radius: 100px;
+            font-size: 11px;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+            border: 1px solid rgba(245, 166, 35, 0.2);
+        }
+        .header-right {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        /* ===== BUTTONS ===== */
+        .btn {
+            padding: 10px 22px;
+            border: none;
+            border-radius: 14px;
+            font-weight: 600;
+            font-size: 13px;
+            cursor: pointer;
+            transition: all 0.25s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            letter-spacing: 0.3px;
+        }
+        .btn:active { transform: scale(0.96); }
+
+        .btn-glow {
+            background: linear-gradient(135deg, #f5a623, #e07c1f);
+            color: #0b0b1a;
+            box-shadow: 0 4px 25px rgba(245, 166, 35, 0.35);
+        }
+        .btn-glow:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 40px rgba(245, 166, 35, 0.5);
+        }
+
+        .btn-outline {
+            background: transparent;
+            color: #ccc;
+            border: 1px solid rgba(255, 255, 255, 0.12);
+        }
+        .btn-outline:hover {
+            background: rgba(255, 255, 255, 0.05);
+            border-color: rgba(255, 255, 255, 0.25);
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, #00d2ff, #3a7bd5);
+            color: #fff;
+            box-shadow: 0 4px 25px rgba(0, 210, 255, 0.25);
+        }
+        .btn-success:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 40px rgba(0, 210, 255, 0.4);
+        }
+
+        .btn-danger {
+            background: linear-gradient(135deg, #ff6b6b, #ee5a24);
+            color: #fff;
+        }
+        .btn-danger:hover { transform: translateY(-2px); }
+
+        .btn-sm {
+            padding: 6px 14px;
+            font-size: 12px;
+            border-radius: 10px;
+        }
+
+        /* ===== LAYOUT ===== */
+        .designer-grid {
+            display: grid;
+            grid-template-columns: 260px 1fr;
+            gap: 28px;
+        }
+
+        /* ===== SIDEBAR ===== */
+        .sidebar {
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 20px;
+            padding: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            max-height: 700px;
+            overflow-y: auto;
+        }
+        .sidebar::-webkit-scrollbar { width: 3px; }
+        .sidebar::-webkit-scrollbar-thumb { background: #f5a623; border-radius: 10px; }
+
+        .sidebar-section {
+            margin-bottom: 22px;
+        }
+        .sidebar-section:last-child { margin-bottom: 0; }
+
+        .sidebar-section h4 {
+            color: #888;
+            font-size: 10px;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .sidebar-section h4 i { color: #f5a623; }
+
+        .control-row {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 8px;
+        }
+        .control-row input,
+        .control-row select {
+            flex: 1;
+            padding: 8px 12px;
+            border-radius: 10px;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            background: rgba(255, 255, 255, 0.04);
+            color: #eee;
+            font-size: 13px;
+            outline: none;
+            transition: 0.2s;
+        }
+        .control-row input:focus,
+        .control-row select:focus {
+            border-color: #f5a623;
+            background: rgba(255, 255, 255, 0.07);
+        }
+        .control-row input[type="color"] {
+            height: 42px;
+            padding: 3px;
+            cursor: pointer;
+            flex: 0 0 50px;
+        }
+        .control-row input[type="file"] {
+            padding: 6px;
+            font-size: 11px;
+        }
+
+        .anim-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 6px;
+        }
+        .anim-grid .btn {
+            font-size: 11px;
+            padding: 6px 8px;
+            justify-content: center;
+            border-radius: 8px;
+        }
+        .anim-grid .btn.active-anim {
+            background: #f5a623;
+            color: #0b0b1a;
+            border-color: #f5a623;
+        }
+
+        .element-props-panel {
+            background: rgba(255, 255, 255, 0.04);
+            border-radius: 12px;
+            padding: 14px;
+            display: none;
+            border: 1px solid rgba(245, 166, 35, 0.15);
+            margin-top: 6px;
+        }
+        .element-props-panel.show {
+            display: block;
+        }
+        .element-props-panel .prop-row {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 8px;
+            align-items: center;
+        }
+        .element-props-panel .prop-row label {
+            color: #aaa;
+            font-size: 12px;
+            min-width: 50px;
+        }
+        .element-props-panel .prop-row input {
+            flex: 1;
+            padding: 6px 10px;
+            border-radius: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            background: rgba(255, 255, 255, 0.04);
+            color: #eee;
+            font-size: 13px;
+            outline: none;
+        }
+        .element-props-panel .prop-row input[type="color"] {
+            flex: 0 0 40px;
+            height: 36px;
+            padding: 2px;
+        }
+
+        /* ===== CANVAS ===== */
+        .canvas-area {
+            background: rgba(255, 255, 255, 0.02);
+            border-radius: 20px;
+            padding: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .canvas-wrapper {
+            position: relative;
+            border-radius: 16px;
+            overflow: hidden;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
+            width: 100%;
+            max-width: 900px;
+        }
+
+        #designCanvas {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            aspect-ratio: 2 / 1;
+            background: #1a1a2e;
+            overflow: hidden;
+            cursor: default;
+            min-height: 250px;
+        }
+
+        /* canvas elements */
+        .canvas-el {
+            position: absolute;
+            cursor: grab;
+            user-select: none;
+            padding: 10px 18px;
+            border-radius: 14px;
+            min-width: 40px;
+            min-height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            z-index: 10;
+            transition: box-shadow 0.2s, transform 0.1s;
+            background: rgba(255, 255, 255, 0.08);
+            backdrop-filter: blur(4px);
+            border: 2px solid rgba(255, 255, 255, 0.06);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+        }
+        .canvas-el:hover {
+            box-shadow: 0 0 0 2px #f5a623, 0 8px 30px rgba(245, 166, 35, 0.2);
+        }
+        .canvas-el.active {
+            border-color: #f5a623;
+            box-shadow: 0 0 0 3px #f5a623, 0 8px 40px rgba(245, 166, 35, 0.3);
+            z-index: 20;
+        }
+        .canvas-el img {
+            max-width: 180px;
+            max-height: 140px;
+            border-radius: 10px;
+            pointer-events: none;
+        }
+        .canvas-el .el-label {
+            pointer-events: none;
+        }
+
+        /* Animations */
+        .anim-fade {
+            animation: fadeAnim 2.4s infinite alternate ease-in-out;
+        }
+        .anim-bounce {
+            animation: bounceAnim 1.8s infinite ease-in-out;
+        }
+        .anim-slide {
+            animation: slideAnim 2.8s infinite alternate ease-in-out;
+        }
+        .anim-pulse {
+            animation: pulseAnim 2s infinite ease-in-out;
+        }
+        .anim-float {
+            animation: floatAnim 3s infinite ease-in-out;
+        }
+        .anim-wiggle {
+            animation: wiggleAnim 1.2s infinite ease-in-out;
+        }
+        .anim-none {
+            animation: none !important;
+        }
+
+        @keyframes fadeAnim {
+            0% { opacity: 0.3; transform: scale(0.92); }
+            100% { opacity: 1; transform: scale(1); }
+        }
+        @keyframes bounceAnim {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-24px); }
+        }
+        @keyframes slideAnim {
+            0% { transform: translateX(-30px); opacity: 0.5; }
+            100% { transform: translateX(30px); opacity: 1; }
+        }
+        @keyframes pulseAnim {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.12); }
+        }
+        @keyframes floatAnim {
+            0%, 100% { transform: translateY(0) rotate(-2deg); }
+            50% { transform: translateY(-16px) rotate(2deg); }
+        }
+        @keyframes wiggleAnim {
+            0%, 100% { transform: rotate(-3deg); }
+            50% { transform: rotate(3deg); }
+        }
+
+        /* ===== FOOTER INFO ===== */
+        .canvas-stats {
+            display: flex;
+            gap: 24px;
+            margin-top: 16px;
+            color: #666;
+            font-size: 12px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+        .canvas-stats span i {
+            color: #f5a623;
+            margin-right: 6px;
+        }
+
+        /* ===== RESPONSIVE ===== */
+        @media (max-width: 900px) {
+            .designer-grid {
+                grid-template-columns: 1fr;
+            }
+            .sidebar {
+                max-height: 300px;
+            }
+            .canvas-wrapper {
+                max-width: 100%;
+            }
+            #designCanvas {
+                aspect-ratio: 2 / 1;
+            }
+            .header {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            .header-right {
+                justify-content: center;
             }
         }
-    </script>
-    <style>
-        ::-webkit-scrollbar { width: 6px; height: 6px; }
-        ::-webkit-scrollbar-track { background: #0b0b0e; }
-        ::-webkit-scrollbar-thumb { background: #27273a; border-radius: 4px; }
-        ::-webkit-scrollbar-thumb:hover { background: #4f46e5; }
 
-        .canvas-grid {
-            background-color: #111116;
-            background-image: linear-gradient(45deg, #181822 25%, transparent 25%), 
-                              linear-gradient(-45deg, #181822 25%, transparent 25%), 
-                              linear-gradient(45deg, transparent 75%, #181822 75%), 
-                              linear-gradient(-45deg, transparent 75%, #181822 75%);
-            background-size: 16px 16px;
+        @media (max-width: 500px) {
+            .app { padding: 12px; }
+            .btn { font-size: 11px; padding: 8px 14px; }
+            .control-row { flex-wrap: wrap; }
         }
 
-        .ad-layer-element {
-            position: absolute;
-            cursor: move;
-            border: 2px dashed transparent;
-            box-sizing: border-box;
-            user-select: none;
-            -webkit-user-drag: none;
+        /* toast */
+        .toast {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0,0,0,0.85);
+            backdrop-filter: blur(12px);
+            color: #fff;
+            padding: 14px 32px;
+            border-radius: 16px;
+            font-weight: 500;
+            font-size: 14px;
+            border: 1px solid rgba(255,255,255,0.06);
+            box-shadow: 0 10px 40px rgba(0,0,0,0.6);
+            opacity: 0;
+            transition: opacity 0.4s;
+            pointer-events: none;
+            z-index: 999;
         }
-        .ad-layer-element:hover { border-color: rgba(99, 102, 241, 0.6); }
-        .ad-layer-element.active-selected {
-            border-color: #6366f1;
-            box-shadow: 0 0 10px rgba(99, 102, 241, 0.4);
+        .toast.show {
+            opacity: 1;
         }
-
-        .scale-handle {
-            display: none;
-            position: absolute;
-            width: 10px;
-            height: 10px;
-            background: #6366f1;
-            border: 1px solid #ffffff;
-            border-radius: 50%;
-            bottom: -5px; right: -5px;
-            cursor: se-resize;
-            z-index: 50;
-        }
-        .ad-layer-element.active-selected .scale-handle { display: block; }
-
-        /* Motion FX Engine Keyframes */
-        @keyframes pulse-glow {
-            0%, 100% { transform: scale(1); filter: drop-shadow(0 0 2px rgba(99,102,241,0.4)); }
-            50% { transform: scale(1.04); filter: drop-shadow(0 0 12px rgba(99,102,241,0.8)); }
-        }
-        @keyframes basic-bounce {
-            0%, 100% { transform: translateY(0); }
-            50% { transform: translateY(-8px); }
-        }
-        @keyframes text-slide-in {
-            from { transform: translateX(-50px); opacity: 0; }
-            to { transform: translateX(0); opacity: 1; }
-        }
-        @keyframes cyber-neon-flash {
-            0%, 100% { text-shadow: 0 0 4px #ff0055, 0 0 8px #ff0055; }
-            50% { text-shadow: 0 0 12px #00ffcc, 0 0 20px #00ffcc; }
-        }
-
-        .anim-pulse { animation: pulse-glow 2s infinite ease-in-out; }
-        .anim-bounce { animation: basic-bounce 1.8s infinite ease-in-out; }
-        .anim-slide { animation: text-slide-in 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
-        .anim-neon { animation: cyber-neon-flash 2.5s infinite alternate; }
+        .toast i { margin-right: 10px; color: #f5a623; }
     </style>
 </head>
-<body class="bg-[#070709] font-sans text-slate-200 h-screen w-screen flex flex-col overflow-hidden select-none">
+<body>
 
-    <header class="h-14 border-b border-zinc-800 bg-[#0f0f14] px-6 flex items-center justify-between shrink-0 z-30 shadow-lg">
-        <div class="flex items-center gap-3">
-            <div class="w-9 h-9 bg-gradient-to-tr from-indigo-600 to-pink-600 rounded-lg flex items-center justify-center shadow-md">
-                <i class="fa-solid fa-arrows-to-dot text-white text-sm"></i>
+<div class="app">
+    <!-- HEADER -->
+    <div class="header">
+        <div class="header-left">
+            <span class="logo"><i class="fas fa-wand-magic-sparkles"></i>BannerForge</span>
+            <span class="badge"><i class="fas fa-circle" style="font-size:6px; vertical-align:middle; margin-right:6px; color:#4ade80;"></i>Live Animation</span>
+        </div>
+        <div class="header-right">
+            <button class="btn btn-outline btn-sm" id="resetBtn"><i class="fas fa-undo"></i> Reset</button>
+            <button class="btn btn-outline btn-sm" id="clearBtn"><i class="fas fa-trash"></i> Clear All</button>
+        </div>
+    </div>
+
+    <!-- DESIGNER GRID -->
+    <div class="designer-grid">
+        <!-- SIDEBAR -->
+        <div class="sidebar">
+            <!-- Size -->
+            <div class="sidebar-section">
+                <h4><i class="fas fa-arrows-alt"></i> Canvas Size</h4>
+                <div class="control-row">
+                    <input type="number" id="canvasW" value="800" min="200" max="1400" step="10" placeholder="Width"/>
+                    <input type="number" id="canvasH" value="400" min="150" max="900" step="10" placeholder="Height"/>
+                    <button class="btn btn-glow btn-sm" id="applySizeBtn"><i class="fas fa-check"></i></button>
+                </div>
             </div>
-            <div>
-                <h1 class="font-heading font-bold text-base tracking-wide bg-gradient-to-r from-white to-zinc-400 bg-clip-text text-transparent">Nikamma Pro Ad Studio</h1>
-                <p class="text-[9px] text-zinc-500 font-mono -mt-1">DRAG ENGINE RE-EVOLUTION v8.5</p>
+
+            <!-- Background -->
+            <div class="sidebar-section">
+                <h4><i class="fas fa-palette"></i> Background</h4>
+                <div class="control-row">
+                    <input type="color" id="bgColor" value="#1a1a2e"/>
+                    <input type="text" id="bgGradient" placeholder="Gradient (e.g. #000,#f5a623)" style="flex:2;"/>
+                    <button class="btn btn-outline btn-sm" id="applyBgBtn"><i class="fas fa-check"></i></button>
+                </div>
+            </div>
+
+            <!-- Add Text -->
+            <div class="sidebar-section">
+                <h4><i class="fas fa-font"></i> Add Text</h4>
+                <div class="control-row">
+                    <input type="text" id="newText" placeholder="Write something..." style="flex:2;"/>
+                    <button class="btn btn-glow btn-sm" id="addTextBtn"><i class="fas fa-plus"></i></button>
+                </div>
+            </div>
+
+            <!-- Add Image -->
+            <div class="sidebar-section">
+                <h4><i class="fas fa-image"></i> Add Image</h4>
+                <input type="file" id="imageUpload" accept="image/*" style="width:100%; padding:6px; border-radius:10px; border:1px solid rgba(255,255,255,0.08); background:rgba(255,255,255,0.04); color:#ccc;"/>
+            </div>
+
+            <!-- Animation -->
+            <div class="sidebar-section">
+                <h4><i class="fas fa-play"></i> Animation <span style="color:#666;font-weight:400;font-size:9px;">(select element first)</span></h4>
+                <div class="anim-grid" id="animGrid">
+                    <button class="btn btn-outline btn-sm anim-btn" data-anim="anim-fade">Fade</button>
+                    <button class="btn btn-outline btn-sm anim-btn" data-anim="anim-bounce">Bounce</button>
+                    <button class="btn btn-outline btn-sm anim-btn" data-anim="anim-slide">Slide</button>
+                    <button class="btn btn-outline btn-sm anim-btn" data-anim="anim-pulse">Pulse</button>
+                    <button class="btn btn-outline btn-sm anim-btn" data-anim="anim-float">Float</button>
+                    <button class="btn btn-outline btn-sm anim-btn" data-anim="anim-wiggle">Wiggle</button>
+                    <button class="btn btn-outline btn-sm anim-btn" data-anim="anim-none" style="grid-column:span 2;">✕ Off</button>
+                </div>
+            </div>
+
+            <!-- Element Props -->
+            <div class="sidebar-section">
+                <h4><i class="fas fa-sliders-h"></i> Element Settings</h4>
+                <div class="element-props-panel" id="elementProps">
+                    <div class="prop-row">
+                        <label>Size</label>
+                        <input type="number" id="elFontSize" value="20" min="8" max="80"/>
+                    </div>
+                    <div class="prop-row">
+                        <label>Color</label>
+                        <input type="color" id="elColor" value="#ffffff"/>
+                    </div>
+                    <div class="prop-row" style="gap:6px;">
+                        <button class="btn btn-danger btn-sm" id="deleteElBtn" style="flex:1;"><i class="fas fa-trash"></i> Delete</button>
+                        <button class="btn btn-outline btn-sm" id="dupElBtn" style="flex:1;"><i class="fas fa-copy"></i> Duplicate</button>
+                    </div>
+                    <div style="font-size:11px;color:#666;margin-top:4px;">
+                        <i class="fas fa-info-circle"></i> Double-click text to edit
+                    </div>
+                </div>
             </div>
         </div>
 
-        <div class="flex items-center gap-2">
-            <button onclick="exportAsMedia('PNG')" class="flex items-center gap-1.5 bg-zinc-800 hover:bg-zinc-700 text-white font-semibold text-xs px-3 py-2 rounded-lg transition shadow">
-                <i class="fa-solid fa-image text-emerald-400"></i> Save .PNG
-            </button>
-            <button onclick="exportAsMedia('GIF')" class="flex items-center gap-1.5 bg-zinc-800 hover:bg-zinc-700 text-white font-semibold text-xs px-3 py-2 rounded-lg transition shadow">
-                <i class="fa-solid fa-file-video text-amber-400"></i> Export .GIF
-            </button>
-            <button onclick="exportAsMedia('MP4')" class="flex items-center gap-1.5 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-xs px-3.5 py-2 rounded-lg transition shadow-md">
-                <i class="fa-solid fa-circle-play text-rose-400 animate-pulse"></i> Render .MP4 Video
-            </button>
+        <!-- CANVAS -->
+        <div class="canvas-area">
+            <div class="canvas-wrapper">
+                <div id="designCanvas">
+                    <!-- elements injected here -->
+                </div>
+            </div>
+            <div class="canvas-stats">
+                <span><i class="fas fa-layer-group"></i> Elements: <span id="elCount">0</span></span>
+                <span><i class="fas fa-arrows-alt"></i> Drag to move</span>
+                <span><i class="fas fa-mouse-pointer"></i> Click to select</span>
+                <span><i class="fas fa-edit"></i> Double-click to edit text</span>
+            </div>
+            <!-- DOWNLOAD BUTTONS -->
+            <div style="display:flex; gap:14px; margin-top:16px; flex-wrap:wrap; justify-content:center;">
+                <button class="btn btn-glow" id="exportPngBtn"><i class="fas fa-image"></i> Download PNG</button>
+                <button class="btn btn-success" id="exportGifBtn"><i class="fas fa-film"></i> Download Animated GIF</button>
+            </div>
+            <p style="color:#555; font-size:11px; margin-top:10px;">
+                <i class="fas fa-info-circle"></i> GIF will capture live animations exactly as seen on canvas
+            </p>
         </div>
-    </header>
+    </div>
+</div>
 
-    <main class="flex-1 overflow-y-auto flex flex-col bg-[#08080a] p-4 gap-4">
+<!-- TOAST -->
+<div class="toast" id="toast"><i class="fas fa-check-circle"></i> <span id="toastMsg">Done!</span></div>
 
-        <section class="grid grid-cols-1 md:grid-cols-3 gap-4 shrink-0 bg-[#0f0f14] border border-zinc-800 rounded-2xl p-4 shadow-xl">
-            
-            <div class="flex flex-col gap-2 bg-zinc-900/40 p-3 rounded-xl border border-zinc-800/80">
-                <span class="text-[11px] font-bold text-zinc-400 uppercase tracking-wider"><i class="fa-solid fa-vector-square mr-1.5 text-indigo-400"></i>Scale Presets</span>
-                <select id="adPresetType" onchange="switchCampaignPreset()" class="w-full bg-zinc-950 border border-zinc-700 rounded-lg px-2 py-2 text-xs text-white focus:outline-none focus:border-indigo-500">
-                    <option value="banner">Smart Banner (320x50)</option>
-                    <option value="mrec">Medium Rectangle MREC (300x250)</option>
-                    <option value="interstitial">Fullscreen Promo (320x480)</option>
-                    <option value="custom">Custom Dimensions</option>
-                </select>
-                <div class="grid grid-cols-2 gap-2 mt-1">
-                    <div class="flex items-center bg-zinc-950 rounded-lg px-2 border border-zinc-800"><span class="text-[10px] text-zinc-500 font-mono mr-1">W:</span><input type="number" id="customWidth" oninput="manualCanvasDimensionUpdate()" class="w-full bg-transparent p-1 font-mono text-xs text-white outline-none" value="320"></div>
-                    <div class="flex items-center bg-zinc-950 rounded-lg px-2 border border-zinc-800"><span class="text-[10px] text-zinc-500 font-mono mr-1">H:</span><input type="number" id="customHeight" oninput="manualCanvasDimensionUpdate()" class="w-full bg-transparent p-1 font-mono text-xs text-white outline-none" value="50"></div>
-                </div>
-            </div>
+<script>
+    (function() {
+        'use strict';
 
-            <div class="flex flex-col gap-2 bg-zinc-900/40 p-3 rounded-xl border border-zinc-800/80">
-                <span class="text-[11px] font-bold text-zinc-400 uppercase tracking-wider"><i class="fa-solid fa-square-plus mr-1.5 text-sky-400"></i>Injection Kit</span>
-                <div class="grid grid-cols-2 gap-2">
-                    <button onclick="addNewElement('text')" class="p-2 bg-zinc-950 border border-zinc-800 hover:border-indigo-500 rounded-lg text-xs text-left flex items-center gap-2"><i class="fa-solid fa-font text-sky-400"></i> + Text</button>
-                    <button onclick="addNewElement('shape')" class="p-2 bg-zinc-950 border border-zinc-800 hover:border-indigo-500 rounded-lg text-xs text-left flex items-center gap-2"><i class="fa-solid fa-shapes text-purple-400"></i> + Box</button>
-                    <button onclick="addNewElement('button')" class="p-2 bg-zinc-950 border border-zinc-800 hover:border-indigo-500 rounded-lg text-xs text-left flex items-center gap-2"><i class="fa-solid fa-square-rss text-rose-400"></i> + Button</button>
-                    <div class="relative">
-                        <input type="file" id="mediaUploadNode" accept="image/*" onchange="processMediaFile(this)" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10">
-                        <div class="p-2 bg-zinc-950 border border-zinc-800 rounded-lg text-xs text-left flex items-center gap-2"><span><i class="fa-solid fa-upload text-emerald-400"></i> + Image</span></div>
-                    </div>
-                </div>
-            </div>
+        // ===== DOM REFS =====
+        const canvas = document.getElementById('designCanvas');
+        const canvasW = document.getElementById('canvasW');
+        const canvasH = document.getElementById('canvasH');
+        const applySizeBtn = document.getElementById('applySizeBtn');
+        const bgColor = document.getElementById('bgColor');
+        const bgGradient = document.getElementById('bgGradient');
+        const applyBgBtn = document.getElementById('applyBgBtn');
+        const newText = document.getElementById('newText');
+        const addTextBtn = document.getElementById('addTextBtn');
+        const imageUpload = document.getElementById('imageUpload');
+        const exportPngBtn = document.getElementById('exportPngBtn');
+        const exportGifBtn = document.getElementById('exportGifBtn');
+        const resetBtn = document.getElementById('resetBtn');
+        const clearBtn = document.getElementById('clearBtn');
+        const elementProps = document.getElementById('elementProps');
+        const elFontSize = document.getElementById('elFontSize');
+        const elColor = document.getElementById('elColor');
+        const deleteElBtn = document.getElementById('deleteElBtn');
+        const dupElBtn = document.getElementById('dupElBtn');
+        const elCount = document.getElementById('elCount');
+        const toast = document.getElementById('toast');
+        const toastMsg = document.getElementById('toastMsg');
 
-            <div class="flex flex-col justify-center bg-zinc-900/40 p-3 rounded-xl border border-zinc-800/80 min-h-[92px]">
-                <div id="inspectorFallback" class="text-center text-zinc-600 text-[11px] font-medium"><i class="fa-solid fa-arrow-pointer animate-bounce mr-1"></i> Tap or drag any active layer block below to inspect rules.</div>
-                
-                <div id="inspectorContainer" class="hidden flex flex-col gap-2">
-                    <div id="inspectContentRow" class="flex gap-2">
-                        <input type="text" id="propContent" oninput="syncProperty('text', this.value)" class="w-full bg-zinc-950 border border-zinc-700 rounded-lg px-2 py-1 text-xs text-white focus:outline-none">
-                        <button onclick="removeSelectedElement()" class="px-2 bg-red-950/60 border border-red-900 text-red-400 rounded-lg hover:bg-red-600 hover:text-white transition text-xs"><i class="fa-solid fa-trash-can"></i></button>
-                    </div>
-                    <div class="grid grid-cols-4 gap-1.5 items-center">
-                        <input type="color" id="propColor" oninput="syncProperty('color', this.value)" class="w-full h-6 rounded border border-zinc-700 bg-transparent cursor-pointer p-0">
-                        <input type="color" id="propBg" oninput="syncProperty('backgroundColor', this.value)" class="w-full h-6 rounded border border-zinc-700 bg-transparent cursor-pointer p-0">
-                        <input type="number" id="propRadius" placeholder="Rad" oninput="syncProperty('borderRadius', this.value + 'px')" class="w-full bg-zinc-950 border border-zinc-700 rounded-lg p-1 text-[11px] text-center text-white">
-                        <input type="number" id="propFontSize" placeholder="Size" oninput="syncProperty('fontSize', this.value + 'pt')" class="w-full bg-zinc-950 border border-zinc-700 rounded-lg p-1 text-[11px] text-center text-white">
-                    </div>
-                    <select id="propAnimation" onchange="syncProperty('animation', this.value)" class="w-full bg-zinc-950 border border-zinc-700 rounded-lg p-1 py-1.5 text-[11px] text-white">
-                        <option value="">Static Block (No Motion Timeline)</option>
-                        <option value="anim-pulse">Pulse Glow Effect</option>
-                        <option value="anim-bounce">Subtle Kinetic Bounce</option>
-                        <option value="anim-slide">Smooth Left Entrance</option>
-                        <option value="anim-neon">Cyber Retro Neon Reflection</option>
-                    </select>
-                </div>
-            </div>
-        </section>
+        let selectedEl = null;
+        let elIdCounter = 0;
+        let dragData = null;
 
-        <section class="shrink-0 bg-[#0e0e14] border border-zinc-800 rounded-xl p-3">
-            <div class="text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-2 flex items-center gap-1.5"><i class="fa-solid fa-list text-indigo-400"></i> Layer Pipeline Nodes Map:</div>
-            <div id="layersStackGraph" class="flex flex-wrap gap-2">
-                </div>
-        </section>
-
-        <section class="flex-1 min-h-[380px] border border-zinc-800 bg-[#0b0b10] rounded-2xl flex flex-col overflow-hidden shadow-2xl">
-            <div class="h-9 border-b border-zinc-800 bg-[#0f0f16] px-5 flex items-center justify-between text-xs font-bold text-zinc-400 shrink-0">
-                <div class="flex items-center gap-2">
-                    <i class="fa-solid fa-circle text-emerald-500 text-[8px] animate-pulse"></i>
-                    <span>OUTPUT PREVIEW CANVAS (LOCATED EXACTLY BELOW DESIGNER CONTROLS BLOCK)</span>
-                </div>
-                <div class="text-[10px] bg-indigo-500/10 text-indigo-400 px-2 py-0.5 border border-indigo-500/20 rounded font-mono" id="statusAdMode">
-                    Standard Smart Banner (320x50)
-                </div>
-            </div>
-            
-            <div class="flex-1 relative flex items-center justify-center p-6 canvas-grid overflow-auto">
-                <div id="sandboxCanvas" class="shadow-2xl relative overflow-hidden bg-white border border-zinc-600 transition-all duration-200" style="width: 320px; height: 50px;">
-                    </div>
-            </div>
-        </section>
-
-    </main>
-
-    <script>
-        const sandbox = document.getElementById('sandboxCanvas');
-        const adPresetType = document.getElementById('adPresetType');
-        const customWidth = document.getElementById('customWidth');
-        const customHeight = document.getElementById('customHeight');
-        const statusAdMode = document.getElementById('statusAdMode');
-
-        let activeSelectedEl = null;
-        let draggingState = false;
-        let resizingState = false;
-        let zLayerCounter = 100;
-        let pointerStartX, pointerStartY, elementStartLeft, elementStartTop, elementStartW, elementStartH;
-
-        function switchCampaignPreset() {
-            const mode = adPresetType.value;
-            sandbox.innerHTML = '';
-            clearSelection();
-
-            if (mode === 'banner') updateCanvasScaleSpecs(320, 50, "Standard Smart Banner (320x50)");
-            else if (mode === 'mrec') updateCanvasScaleSpecs(300, 250, "Medium Rectangle MREC (300x250)");
-            else if (mode === 'interstitial') updateCanvasScaleSpecs(320, 480, "Fullscreen Promo (320x480)");
-            
-            rebuildLayerIndexGraph();
+        // ===== TOAST =====
+        function showToast(msg) {
+            toastMsg.textContent = msg;
+            toast.classList.add('show');
+            clearTimeout(toast._timer);
+            toast._timer = setTimeout(() => toast.classList.remove('show'), 2200);
         }
 
-        function updateCanvasScaleSpecs(w, h, textLabel) {
-            customWidth.value = w; customHeight.value = h;
-            sandbox.style.width = w + 'px'; sandbox.style.height = h + 'px';
-            statusAdMode.innerText = textLabel;
+        // ===== UPDATE COUNT =====
+        function updateCount() {
+            const count = canvas.querySelectorAll('.canvas-el').length;
+            elCount.textContent = count;
         }
 
-        function manualCanvasDimensionUpdate() {
-            const w = customWidth.value || 320; const h = customHeight.value || 50;
-            sandbox.style.width = w + 'px'; sandbox.style.height = h + 'px';
-            adPresetType.value = 'custom';
-            statusAdMode.innerText = `Custom Scale Dimensions (${w}x${h})`;
+        // ===== DESELECT =====
+        function deselectAll() {
+            canvas.querySelectorAll('.canvas-el').forEach(el => el.classList.remove('active'));
+            selectedEl = null;
+            elementProps.classList.remove('show');
         }
 
-        function addNewElement(type, forcedProperties = null) {
+        // ===== SELECT ELEMENT =====
+        function selectElement(el) {
+            deselectAll();
+            if (!el) return;
+            el.classList.add('active');
+            selectedEl = el;
+            elementProps.classList.add('show');
+            // populate props
+            const fs = el.dataset.fontSize || '20';
+            const clr = el.dataset.color || '#ffffff';
+            elFontSize.value = fs;
+            elColor.value = clr;
+            // highlight animation button
+            document.querySelectorAll('.anim-btn').forEach(b => b.classList.remove('active-anim'));
+            const animClass = Array.from(el.classList).find(c => c.startsWith('anim-'));
+            if (animClass) {
+                document.querySelectorAll('.anim-btn').forEach(b => {
+                    if (b.dataset.anim === animClass) b.classList.add('active-anim');
+                });
+            }
+        }
+
+        // ===== APPLY PROPS =====
+        function applyProps() {
+            if (!selectedEl) return;
+            const fs = parseInt(elFontSize.value) || 20;
+            const clr = elColor.value;
+            selectedEl.style.fontSize = fs + 'px';
+            selectedEl.style.color = clr;
+            selectedEl.dataset.fontSize = fs;
+            selectedEl.dataset.color = clr;
+            // if text, update
+            if (selectedEl.dataset.type === 'text') {
+                // keep text content
+            }
+        }
+
+        // ===== CREATE ELEMENT =====
+        function createElement(type, content, x, y, extra = {}) {
             const el = document.createElement('div');
-            const uid = 'layer_' + Date.now() + Math.floor(Math.random() * 100);
-            el.id = uid; el.className = 'ad-layer-element';
-            
-            // Drag and click unified execution block fix
-            el.addEventListener('mousedown', (e) => {
-                if (resizingState) return;
-                selectLayerElement(el);
-                initLayerDrag(e, el);
-            });
+            el.className = 'canvas-el';
+            el.dataset.id = elIdCounter++;
+            el.dataset.type = type;
 
-            let rules = forcedProperties || { left: '25px', top: '10px', width: type === 'text' ? 'auto' : '100px', height: type === 'text' ? 'auto' : '32px', zIndex: zLayerCounter++ };
+            const rect = canvas.getBoundingClientRect();
+            const cw = canvas.clientWidth || 800;
+            const ch = canvas.clientHeight || 400;
+            const posX = x !== undefined ? x : 20 + Math.random() * (cw - 160);
+            const posY = y !== undefined ? y : 20 + Math.random() * (ch - 100);
+
+            el.style.left = posX + 'px';
+            el.style.top = posY + 'px';
 
             if (type === 'text') {
-                el.style.color = '#ffffff'; el.style.fontSize = '12pt'; el.style.fontFamily = "'Space Grotesk', sans-serif"; el.style.fontWeight = '700'; el.style.whiteSpace = 'nowrap';
-                el.innerText = forcedProperties?.content || 'Sample Content Layer';
-            } else if (type === 'shape') {
-                el.style.backgroundColor = '#4f46e5'; el.style.borderRadius = '4px';
-            } else if (type === 'button') {
-                el.style.backgroundColor = '#e11d48'; el.style.color = '#ffffff'; el.style.fontSize = '10pt'; el.style.fontFamily = "'Montserrat', sans-serif"; el.style.fontWeight = '900'; el.style.borderRadius = '4px';
-                el.style.display = 'flex'; el.style.alignItems = 'center'; el.style.justifyContent = 'center';
-                el.innerText = forcedProperties?.content || 'CLICK HERE';
+                el.textContent = content || '✨ New Text';
+                el.style.fontSize = (extra.fontSize || 20) + 'px';
+                el.style.color = extra.color || '#ffffff';
+                el.style.background = 'rgba(0,0,0,0.4)';
+                el.style.backdropFilter = 'blur(8px)';
+                el.style.border = '1px solid rgba(255,255,255,0.1)';
+                el.style.padding = '10px 20px';
+                el.style.borderRadius = '16px';
+                el.dataset.fontSize = extra.fontSize || 20;
+                el.dataset.color = extra.color || '#ffffff';
+                el.style.fontWeight = '700';
+            } else if (type === 'image') {
+                const img = document.createElement('img');
+                img.src = content;
+                img.style.maxWidth = '200px';
+                img.style.maxHeight = '160px';
+                img.style.borderRadius = '12px';
+                img.style.boxShadow = '0 8px 30px rgba(0,0,0,0.4)';
+                el.appendChild(img);
+                el.style.background = 'transparent';
+                el.style.border = '2px solid rgba(255,255,255,0.08)';
+                el.style.padding = '4px';
+                el.style.backdropFilter = 'none';
             }
 
-            el.style.left = rules.left; el.style.top = rules.top; el.style.width = rules.width; el.style.height = rules.height; el.style.zIndex = rules.zIndex;
+            // animation
+            const anim = extra.animation || 'anim-fade';
+            el.classList.add(anim);
 
-            if (forcedProperties) {
-                Object.keys(forcedProperties).forEach(key => { if (key !== 'type' && key !== 'content') el.style[key] = forcedProperties[key]; });
-                if (forcedProperties.content) {
-                    if (type === 'image') {
-                        const img = document.createElement('img'); img.src = forcedProperties.content; img.className = 'w-full h-full object-contain pointer-events-none block'; el.appendChild(img);
-                    } else el.innerText = forcedProperties.content;
-                }
-            }
-
-            const scalingHandle = document.createElement('div'); scalingHandle.className = 'scale-handle';
-            scalingHandle.addEventListener('mousedown', (e) => {
-                e.stopPropagation(); e.preventDefault(); resizingState = true; activeSelectedEl = el;
-                pointerStartX = e.clientX; pointerStartY = e.clientY;
-                elementStartW = parseInt(document.defaultView.getComputedStyle(el).width, 10); elementStartH = parseInt(document.defaultView.getComputedStyle(el).height, 10);
-                document.addEventListener('mousemove', processLayerResize); document.addEventListener('mouseup', terminateLayerResize);
+            // events
+            el.addEventListener('mousedown', startDrag);
+            el.addEventListener('click', function(e) {
+                e.stopPropagation();
+                selectElement(this);
             });
-            el.appendChild(scalingHandle);
+            el.addEventListener('dblclick', function(e) {
+                if (this.dataset.type === 'text') {
+                    const newTxt = prompt('Edit text:', this.textContent);
+                    if (newTxt !== null) this.textContent = newTxt;
+                }
+            });
 
-            sandbox.appendChild(el); selectLayerElement(el); rebuildLayerIndexGraph();
+            canvas.appendChild(el);
+            updateCount();
             return el;
         }
 
-        function processMediaFile(input) {
-            if (input.files && input.files[0]) {
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    addNewElement('image', { left: '15px', top: '15px', width: '60px', height: '60px', zIndex: zLayerCounter++, content: e.target.result });
-                };
-                reader.readAsDataURL(input.files[0]); input.value = '';
-            }
+        // ===== DRAG =====
+        function startDrag(e) {
+            if (e.button !== 0) return;
+            const el = this;
+            selectElement(el);
+            const rect = canvas.getBoundingClientRect();
+            const offsetX = e.clientX - rect.left - parseFloat(el.style.left);
+            const offsetY = e.clientY - rect.top - parseFloat(el.style.top);
+            dragData = { el, offsetX, offsetY };
+            document.addEventListener('mousemove', onDrag);
+            document.addEventListener('mouseup', endDrag);
+            e.preventDefault();
         }
 
-        function selectLayerElement(el) {
-            if (activeSelectedEl) activeSelectedEl.classList.remove('active-selected');
-            activeSelectedEl = el; el.classList.add('active-selected');
-
-            document.getElementById('inspectorFallback').classList.add('hidden');
-            document.getElementById('inspectorContainer').classList.remove('hidden');
-
-            const rulesMap = document.defaultView.getComputedStyle(el);
-            document.getElementById('propRadius').value = parseInt(rulesMap.borderRadius, 10) || 0;
-            document.getElementById('propFontSize').value = parseInt(rulesMap.fontSize, 10) || 12;
-
-            const isTextNode = el.innerText && !el.querySelector('img');
-            if (isTextNode) {
-                document.getElementById('inspectContentRow').classList.remove('hidden');
-                document.getElementById('propContent').value = el.innerText;
-                document.getElementById('propColor').value = parseRgbToHex(rulesMap.color);
-            } else {
-                document.getElementById('inspectContentRow').classList.remove('hidden');
-                document.getElementById('propContent').value = "Vector Object Block Frame";
-            }
-
-            document.getElementById('propBg').value = parseRgbToHex(rulesMap.backgroundColor);
-            const activeMotion = el.className.split(' ').find(cls => cls.startsWith('anim-'));
-            document.getElementById('propAnimation').value = activeMotion || '';
-            rebuildLayerIndexGraph();
+        function onDrag(e) {
+            if (!dragData) return;
+            const rect = canvas.getBoundingClientRect();
+            let x = e.clientX - rect.left - dragData.offsetX;
+            let y = e.clientY - rect.top - dragData.offsetY;
+            const maxX = canvas.clientWidth - 20;
+            const maxY = canvas.clientHeight - 20;
+            x = Math.max(0, Math.min(maxX, x));
+            y = Math.max(0, Math.min(maxY, y));
+            dragData.el.style.left = x + 'px';
+            dragData.el.style.top = y + 'px';
         }
 
-        function clearSelection() {
-            if (activeSelectedEl) activeSelectedEl.classList.remove('active-selected');
-            activeSelectedEl = null;
-            document.getElementById('inspectorFallback').classList.remove('hidden');
-            document.getElementById('inspectorContainer').classList.add('hidden');
-            rebuildLayerIndexGraph();
+        function endDrag() {
+            dragData = null;
+            document.removeEventListener('mousemove', onDrag);
+            document.removeEventListener('mouseup', endDrag);
         }
 
-        function syncProperty(property, value) {
-            if (!activeSelectedEl) return;
-            if (property === 'text') {
-                const img = activeSelectedEl.querySelector('img');
-                if (!img) {
-                    activeSelectedEl.innerText = value;
-                    const handle = document.createElement('div'); handle.className = 'scale-handle'; activeSelectedEl.appendChild(handle);
-                }
-            } else if (property === 'animation') {
-                const trackingClasses = activeSelectedEl.className.split(' ').filter(cls => !cls.startsWith('anim-'));
-                if (value) trackingClasses.push(value);
-                activeSelectedEl.className = trackingClasses.join(' ');
-            } else activeSelectedEl.style[property] = value;
-        }
-
-        function removeSelectedElement() { if (activeSelectedEl) { activeSelectedEl.remove(); clearSelection(); } }
-        function parseRgbToHex(rgbStr) { if (!rgbStr || rgbStr === 'transparent' || rgbStr.includes('rgba(0, 0, 0, 0)')) return '#000000'; const values = rgbStr.match(/\d+/g); if (!values) return '#000000'; return `#${parseInt(values[0]).toString(16).padStart(2, '0')}${parseInt(values[1]).toString(16).padStart(2, '0')}${parseInt(values[2]).toString(16).padStart(2, '0')}`; }
-
-        function initLayerDrag(e, el) { 
-            draggingState = true; 
-            pointerStartX = e.clientX; 
-            pointerStartY = e.clientY; 
-            elementStartLeft = parseInt(el.style.left, 10) || 0; 
-            elementStartTop = parseInt(el.style.top, 10) || 0; 
-            document.addEventListener('mousemove', processLayerDrag); 
-            document.addEventListener('mouseup', terminateLayerDrag); 
-        }
-        function processLayerDrag(e) { 
-            if (!draggingState || !activeSelectedEl) return; 
-            activeSelectedEl.style.left = (elementStartLeft + (e.clientX - pointerStartX)) + 'px'; 
-            activeSelectedEl.style.top = (elementStartTop + (e.clientY - pointerStartY)) + 'px'; 
-        }
-        function terminateLayerDrag() { 
-            draggingState = false; 
-            document.removeEventListener('mousemove', processLayerDrag); 
-            document.removeEventListener('mouseup', terminateLayerDrag); 
-        }
-        function processLayerResize(e) { if (!resizingState || !activeSelectedEl) return; const finalW = Math.max(12, elementStartW + (e.clientX - pointerStartX)); const finalH = Math.max(12, elementStartH + (e.clientY - pointerStartY)); activeSelectedEl.style.width = finalW + 'px'; activeSelectedEl.style.height = finalH + 'px'; }
-        function terminateLayerResize() { resizingState = false; document.removeEventListener('mousemove', processLayerResize); document.removeEventListener('mouseup', terminateLayerResize); }
-
-        function rebuildLayerIndexGraph() {
-            const listGraphNode = document.getElementById('layersStackGraph'); const collection = Array.from(sandbox.querySelectorAll('.ad-layer-element'));
-            if (collection.length === 0) { listGraphNode.innerHTML = `<div class="text-zinc-600 text-xs py-1">No active workspace layers mapped.</div>`; return; }
-            listGraphNode.innerHTML = '';
-            collection.forEach(el => {
-                let textLabel = el.innerText.trim() || "Image/Shape Asset Layer";
-                const itemRow = document.createElement('div');
-                itemRow.className = `px-3 py-1.5 bg-zinc-950 border ${activeSelectedEl === el ? 'border-indigo-500 text-white font-semibold' : 'border-zinc-800 text-zinc-500'} rounded-lg text-xs flex items-center gap-2 cursor-pointer transition select-none`;
-                itemRow.innerHTML = `<span onclick="targetSelectLayer('${el.id}')"><i class="fa-solid fa-layer-group text-[10px] mr-1 text-zinc-600"></i>${textLabel.substring(0,14)}</span><i onclick="destroyLayerTarget('${el.id}')" class="fa-solid fa-xmark text-zinc-600 hover:text-red-400 font-bold ml-1 transition"></i>`;
-                listGraphNode.appendChild(itemRow);
-            });
-        }
-        function targetSelectLayer(id) { const node = document.getElementById(id); if (node) selectLayerElement(node); }
-        function destroyLayerTarget(id) { const node = document.getElementById(id); if (node) { node.remove(); clearSelection(); } }
-        
-        // Canvas click handler safely cleared without intercepting drag pipeline
-        sandbox.addEventListener('click', (e) => {
-            if(e.target === sandbox) clearSelection();
+        // ===== CANVAS CLICK =====
+        canvas.addEventListener('click', function(e) {
+            if (e.target === this) deselectAll();
         });
 
-        function exportAsMedia(formatType) {
-            const originalSelection = activeSelectedEl; clearSelection();
-            const notify = document.createElement('div');
-            notify.className = 'fixed inset-0 bg-black/80 z-50 flex flex-col items-center justify-center text-sm font-semibold tracking-wider text-white gap-3';
-            notify.innerHTML = `<i class="fa-solid fa-compact-disc text-3xl text-indigo-500 animate-spin"></i><span>SYSTEM PIPELINE EXPORTING FRAME TO .${formatType} ...</span>`;
-            document.body.appendChild(notify);
+        // ===== ADD TEXT =====
+        addTextBtn.addEventListener('click', function() {
+            const txt = newText.value.trim() || '🔥 New Text';
+            newText.value = '';
+            const el = createElement('text', txt, undefined, undefined, {
+                fontSize: 22,
+                color: '#ffffff',
+                animation: 'anim-fade'
+            });
+            selectElement(el);
+            showToast('Text added!');
+        });
+        newText.addEventListener('keydown', e => { if (e.key === 'Enter') addTextBtn.click(); });
 
-            setTimeout(() => {
-                html2canvas(sandbox, { backgroundColor: null, useCORS: true, scale: 2 }).then(canvas => {
-                    document.body.removeChild(notify);
-                    if (originalSelection) selectLayerElement(originalSelection);
+        // ===== ADD IMAGE =====
+        imageUpload.addEventListener('change', function() {
+            const file = this.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function(ev) {
+                const el = createElement('image', ev.target.result, undefined, undefined, {
+                    animation: 'anim-fade'
+                });
+                selectElement(el);
+                imageUpload.value = '';
+                showToast('Image added!');
+            };
+            reader.readAsDataURL(file);
+        });
 
+        // ===== ANIMATION BUTTONS =====
+        document.querySelectorAll('.anim-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                if (!selectedEl) {
+                    showToast('⚠️ Pehle kisi element ko select karo!');
+                    return;
+                }
+                const anim = this.dataset.anim;
+                // remove all anim classes
+                const animClasses = ['anim-fade','anim-bounce','anim-slide','anim-pulse','anim-float','anim-wiggle','anim-none'];
+                animClasses.forEach(c => selectedEl.classList.remove(c));
+                selectedEl.classList.add(anim);
+                // update active state
+                document.querySelectorAll('.anim-btn').forEach(b => b.classList.remove('active-anim'));
+                this.classList.add('active-anim');
+                showToast('Animation: ' + anim.replace('anim-',''));
+            });
+        });
+
+        // ===== APPLY SIZE =====
+        applySizeBtn.addEventListener('click', function() {
+            const w = parseInt(canvasW.value) || 800;
+            const h = parseInt(canvasH.value) || 400;
+            canvas.style.aspectRatio = w + ' / ' + h;
+            // reposition elements
+            const cw = canvas.clientWidth;
+            const ch = canvas.clientHeight;
+            canvas.querySelectorAll('.canvas-el').forEach(el => {
+                let l = parseFloat(el.style.left) || 0;
+                let t = parseFloat(el.style.top) || 0;
+                const ew = el.offsetWidth || 60;
+                const eh = el.offsetHeight || 40;
+                if (l + ew > cw) l = Math.max(0, cw - ew - 10);
+                if (t + eh > ch) t = Math.max(0, ch - eh - 10);
+                el.style.left = l + 'px';
+                el.style.top = t + 'px';
+            });
+            showToast('Canvas size updated!');
+        });
+
+        // ===== BACKGROUND =====
+        applyBgBtn.addEventListener('click', function() {
+            const color = bgColor.value;
+            const grad = bgGradient.value.trim();
+            if (grad) {
+                canvas.style.background = 'linear-gradient(135deg, ' + grad + ')';
+            } else {
+                canvas.style.background = color;
+            }
+            showToast('Background updated!');
+        });
+        bgColor.addEventListener('input', function() {
+            if (!bgGradient.value.trim()) {
+                canvas.style.background = this.value;
+            }
+        });
+
+        // ===== ELEMENT PROPS =====
+        elFontSize.addEventListener('input', applyProps);
+        elColor.addEventListener('input', applyProps);
+
+        deleteElBtn.addEventListener('click', function() {
+            if (!selectedEl) return;
+            if (confirm('Delete this element?')) {
+                selectedEl.remove();
+                deselectAll();
+                updateCount();
+                showToast('Element deleted');
+            }
+        });
+
+        dupElBtn.addEventListener('click', function() {
+            if (!selectedEl) return;
+            const clone = selectedEl.cloneNode(true);
+            // reset id
+            clone.dataset.id = elIdCounter++;
+            // offset position
+            let l = parseFloat(clone.style.left) || 0;
+            let t = parseFloat(clone.style.top) || 0;
+            clone.style.left = (l + 25) + 'px';
+            clone.style.top = (t + 25) + 'px';
+            // re-add events
+            clone.addEventListener('mousedown', startDrag);
+            clone.addEventListener('click', function(e) {
+                e.stopPropagation();
+                selectElement(this);
+            });
+            clone.addEventListener('dblclick', function(e) {
+                if (this.dataset.type === 'text') {
+                    const newTxt = prompt('Edit text:', this.textContent);
+                    if (newTxt !== null) this.textContent = newTxt;
+                }
+            });
+            canvas.appendChild(clone);
+            updateCount();
+            selectElement(clone);
+            showToast('Duplicated!');
+        });
+
+        // ===== RESET =====
+        resetBtn.addEventListener('click', function() {
+            if (confirm('Reset to sample design?')) {
+                canvas.innerHTML = '';
+                deselectAll();
+                initSample();
+                showToast('Reset to sample!');
+            }
+        });
+
+        // ===== CLEAR ALL =====
+        clearBtn.addEventListener('click', function() {
+            if (confirm('Delete all elements?')) {
+                canvas.innerHTML = '';
+                deselectAll();
+                updateCount();
+                showToast('All cleared!');
+            }
+        });
+
+        // ===== EXPORT PNG =====
+        exportPngBtn.addEventListener('click', function() {
+            // temporarily remove animations for clean capture
+            const els = canvas.querySelectorAll('.canvas-el');
+            const anims = [];
+            els.forEach(el => {
+                const classes = Array.from(el.classList).filter(c => c.startsWith('anim-'));
+                anims.push({ el, classes });
+                classes.forEach(c => el.classList.remove(c));
+            });
+
+            if (typeof html2canvas === 'undefined') {
+                const script = document.createElement('script');
+                script.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js';
+                script.onload = function() { doPngExport(anims); };
+                document.head.appendChild(script);
+            } else {
+                doPngExport(anims);
+            }
+
+            function doPngExport(anims) {
+                html2canvas(canvas, {
+                    backgroundColor: canvas.style.background || '#1a1a2e',
+                    scale: 2,
+                    allowTaint: true,
+                    useCORS: true,
+                    logging: false
+                }).then(function(img) {
                     const link = document.createElement('a');
-                    if (formatType === 'PNG') {
-                        link.download = `Nikamma_Ad_Unit_${Date.now()}.png`;
-                        link.href = canvas.toDataURL('image/png'); link.click();
+                    link.download = 'banner.png';
+                    link.href = img.toDataURL('image/png');
+                    link.click();
+                    showToast('PNG downloaded!');
+                    // restore animations
+                    anims.forEach(({ el, classes }) => classes.forEach(c => el.classList.add(c)));
+                }).catch(() => {
+                    showToast('⚠️ Export failed, try screenshot');
+                    anims.forEach(({ el, classes }) => classes.forEach(c => el.classList.add(c)));
+                });
+            }
+        });
+
+        // ===== EXPORT ANIMATED GIF =====
+        exportGifBtn.addEventListener('click', function() {
+            // Use gif.js to capture frames
+            showToast('⏳ Generating GIF... please wait');
+
+            const gif = new GIF({
+                workers: 2,
+                quality: 10,
+                width: canvas.clientWidth || 800,
+                height: canvas.clientHeight || 400,
+                workerURL: 'https://cdnjs.cloudflare.com/ajax/libs/gif.js/0.2.0/gif.worker.js'
+            });
+
+            // Capture frames over animation cycle
+            const frames = 20;
+            const interval = 80; // ms
+            let captured = 0;
+
+            // temporarily remove transition for smooth capture? No, we want animation
+            // We'll capture frames as they animate naturally
+            function captureFrame() {
+                html2canvas(canvas, {
+                    backgroundColor: canvas.style.background || '#1a1a2e',
+                    scale: 1,
+                    allowTaint: true,
+                    useCORS: true,
+                    logging: false
+                }).then(function(img) {
+                    gif.addFrame(img, { copy: true, delay: 100 });
+                    captured++;
+                    if (captured < frames) {
+                        setTimeout(captureFrame, interval);
                     } else {
-                        alert(`Nikamma Direct Engine Trace: Processing active asset tracks into media framework completed successfully for target asset .${formatType}!`);
-                        link.download = `Nikamma_Motion_Unit_${Date.now()}.${formatType.toLowerCase()}`;
-                        link.href = canvas.toDataURL('image/png'); link.click();
+                        gif.render();
+                    }
+                }).catch(function() {
+                    // fallback: just add a blank
+                    const ctx = document.createElement('canvas').getContext('2d');
+                    ctx.canvas.width = canvas.clientWidth || 800;
+                    ctx.canvas.height = canvas.clientHeight || 400;
+                    ctx.fillStyle = '#1a1a2e';
+                    ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+                    gif.addFrame(ctx.canvas, { copy: true, delay: 100 });
+                    captured++;
+                    if (captured < frames) {
+                        setTimeout(captureFrame, interval);
+                    } else {
+                        gif.render();
                     }
                 });
-            }, 800);
-        }
-
-        function injectPremiumPresetTemplate(presetKey) {
-            sandbox.innerHTML = ''; clearSelection();
-            if (presetKey === 'banner_cyber') {
-                updateCanvasScaleSpecs(320, 50, "Standard Smart Banner (320x50)"); sandbox.style.backgroundColor = '#070212';
-                addNewElement('text', { left: '15px', top: '15px', width: 'auto', height: 'auto', zIndex: 10, content: 'NEON KICKS', color: '#00ffcc', animation: 'anim-neon' });
-                addNewElement('button', { left: '210px', top: '9px', width: '95px', height: '32px', zIndex: 12, content: '50% OFF', backgroundColor: '#e11d48' });
             }
-            rebuildLayerIndexGraph();
+
+            gif.on('progress', function(p) {
+                // console.log(p);
+            });
+
+            gif.on('finished', function(blob) {
+                const link = document.createElement('a');
+                link.download = 'animated-banner.gif';
+                link.href = URL.createObjectURL(blob);
+                link.click();
+                showToast('🎉 Animated GIF downloaded!');
+            });
+
+            // start capturing
+            captureFrame();
+        });
+
+        // ===== SAMPLE INIT =====
+        function initSample() {
+            const t1 = createElement('text', '🎨 Create Your Banner', 60, 60, {
+                fontSize: 36,
+                color: '#ffffff',
+                animation: 'anim-bounce'
+            });
+            const t2 = createElement('text', 'Drag · Drop · Animate', 70, 150, {
+                fontSize: 24,
+                color: '#f5a623',
+                animation: 'anim-fade'
+            });
+            const t3 = createElement('text', '✨ Pro Edition', 60, 250, {
+                fontSize: 18,
+                color: '#4ade80',
+                animation: 'anim-pulse'
+            });
+            const t4 = createElement('text', '↓ Double-click to edit', 350, 320, {
+                fontSize: 14,
+                color: '#888',
+                animation: 'anim-none'
+            });
+            // select first
+            selectElement(t1);
+            updateCount();
         }
 
-        window.onload = function() { injectPremiumPresetTemplate('banner_cyber'); };
-    </script>
+        // ===== INIT =====
+        canvas.style.background = '#1a1a2e';
+        bgColor.value = '#1a1a2e';
+        initSample();
+
+        // set size on load
+        setTimeout(() => {
+            applySizeBtn.click();
+        }, 150);
+
+        console.log('🚀 BannerForge ready!');
+        console.log('👉 Click element → select, drag → move, double-click → edit text');
+    })();
+</script>
+
 </body>
 </html>
