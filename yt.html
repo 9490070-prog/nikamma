@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Ad Studio Pro - GIPHY GIF Export</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/gifshot@0.4.5/build/gifshot.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gif.js/0.2.0/gif.js"></script>
     <style>
         * {
             margin: 0;
@@ -65,7 +65,6 @@
             font-size: 10px;
             font-weight: 700;
             color: white;
-            -webkit-text-fill-color: white;
         }
         .header .badge-adv {
             background: var(--accent-orange);
@@ -74,7 +73,6 @@
             font-size: 10px;
             font-weight: 700;
             color: white;
-            -webkit-text-fill-color: white;
             margin-left: 6px;
         }
         .card {
@@ -137,18 +135,6 @@
             margin-top: 3px;
             font-weight: 700;
         }
-        .badge-anim {
-            background: var(--accent-blue);
-            color: white;
-        }
-        .badge-gif {
-            background: var(--accent-pink);
-            color: white;
-        }
-        .badge-premium {
-            background: linear-gradient(135deg, #f59e0b, #ef4444);
-            color: white;
-        }
         .badge-giphy {
             background: #00ff87;
             color: #000;
@@ -185,21 +171,6 @@
         .input-group input[type="color"] {
             padding: 2px;
             height: 36px;
-            cursor: pointer;
-        }
-        .input-group input[type="range"] {
-            padding: 0;
-            height: 6px;
-            background: var(--border-color);
-            border-radius: 4px;
-            -webkit-appearance: none;
-        }
-        .input-group input[type="range"]::-webkit-slider-thumb {
-            -webkit-appearance: none;
-            width: 16px;
-            height: 16px;
-            border-radius: 50%;
-            background: var(--accent-blue);
             cursor: pointer;
         }
         .color-hex {
@@ -239,7 +210,6 @@
             transition: all 0.15s;
             text-align: center;
             color: white;
-            -webkit-tap-highlight-color: transparent;
             touch-action: manipulation;
         }
         .btn:active {
@@ -258,8 +228,8 @@
         }
         .export-row {
             display: grid;
-            grid-template-columns: 1fr 1fr 1fr 1fr;
-            gap: 5px;
+            grid-template-columns: 1fr 1fr;
+            gap: 6px;
             margin-top: 8px;
         }
         .canvas-frame {
@@ -312,10 +282,7 @@
             touch-action: none;
             outline: 1px dashed rgba(0, 0, 0, 0.15);
             display: inline-block;
-            min-width: 10px;
-            min-height: 10px;
         }
-        .ad-node:active { cursor: grabbing; }
         .ad-node.active {
             outline: 2px solid var(--accent-blue) !important;
             box-shadow: 0 0 20px rgba(59, 130, 246, 0.5);
@@ -324,7 +291,7 @@
         .ad-node img {
             width: 100%;
             height: 100%;
-            object-fit: fill;
+            object-fit: contain;
             pointer-events: none;
             display: block;
         }
@@ -335,153 +302,24 @@
             white-space: nowrap;
             pointer-events: none;
             padding: 2px 4px;
-            transition: all 0.2s;
         }
-        
-        /* CSS ANIMATIONS */
-        .text-fade { animation: textFade 1.5s ease-in-out infinite alternate; }
-        @keyframes textFade { 0% { opacity: 0.2; transform: scale(0.95); } 100% { opacity: 1; transform: scale(1); } }
-        .text-bounce { animation: textBounce 0.8s ease infinite; }
-        @keyframes textBounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
-        .text-flash { animation: textFlash 0.5s ease-in-out infinite alternate; }
-        @keyframes textFlash { 0% { opacity: 0.3; color: #ff0000; } 100% { opacity: 1; color: #ff6600; } }
-        .text-slide { animation: textSlide 1.5s ease-in-out infinite alternate; }
-        @keyframes textSlide { 0% { transform: translateX(-10px); opacity: 0.5; } 100% { transform: translateX(10px); opacity: 1; } }
-        .text-rainbow { animation: textRainbow 2s linear infinite; }
-        @keyframes textRainbow { 0% { color: #ff0000; } 17% { color: #ff8800; } 33% { color: #ffff00; } 50% { color: #00ff00; } 67% { color: #0088ff; } 83% { color: #8800ff; } 100% { color: #ff0000; } }
-        .text-pulse { animation: textPulse 0.8s ease-in-out infinite alternate; }
-        @keyframes textPulse { 0% { transform: scale(1); } 100% { transform: scale(1.2); } }
-        .text-spin { animation: textSpin 3s linear infinite; }
-        @keyframes textSpin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-        .text-glow { animation: textGlow 1s ease-in-out infinite alternate; }
-        @keyframes textGlow { 0% { text-shadow: 0 0 5px rgba(255, 255, 255, 0.3); } 100% { text-shadow: 0 0 20px rgba(59, 130, 246, 0.8), 0 0 40px rgba(59, 130, 246, 0.4); } }
-        
-        .interstitial-close {
-            position: absolute;
-            top: 6px;
-            right: 6px;
-            width: 26px;
-            height: 26px;
-            background: rgba(0, 0, 0, 0.7);
-            color: white;
-            border-radius: 50%;
-            display: none;
-            align-items: center;
-            justify-content: center;
-            font-size: 16px;
-            font-weight: bold;
-            z-index: 1000;
-            cursor: pointer;
-            border: 1px solid rgba(255, 255, 255, 0.2);
-        }
-        #fileInput { display: none; }
-        .inspector {
-            background: var(--bg-card);
-            border: 1px solid var(--accent-blue);
-            border-radius: 12px;
-            padding: 12px;
-            margin-top: 10px;
-            display: none;
-        }
-        .inspector .title {
-            font-size: 10px;
-            color: var(--accent-blue);
-            font-weight: 700;
-            text-transform: uppercase;
-            margin-bottom: 8px;
-        }
-        .inspector-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 6px;
-        }
-        .inspector-grid .input-group input {
-            padding: 6px 8px;
-            height: 30px;
-            font-size: 11px;
-        }
-        #textControls { display: none; margin-top: 6px; }
-        #imageControls { display: none; margin-top: 6px; }
-        .trans-toggle {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            background: var(--bg-primary);
-            border: 1px solid var(--border-color);
-            border-radius: 8px;
-            padding: 6px 10px;
-            margin-top: 4px;
-        }
-        .trans-toggle label {
-            font-size: 9px;
-            color: var(--text-secondary);
-            text-transform: uppercase;
-            font-weight: 600;
-        }
-        .trans-toggle input[type="checkbox"] {
-            width: 36px;
-            height: 20px;
-            -webkit-appearance: none;
-            background: var(--border-color);
-            border-radius: 10px;
-            position: relative;
-            cursor: pointer;
-            transition: all 0.3s;
-        }
-        .trans-toggle input[type="checkbox"]:checked { background: var(--accent-blue); }
-        .trans-toggle input[type="checkbox"]::before {
-            content: '';
-            position: absolute;
-            width: 16px;
-            height: 16px;
-            background: white;
-            border-radius: 50%;
-            top: 2px;
-            left: 2px;
-            transition: all 0.3s;
-        }
-        .trans-toggle input[type="checkbox"]:checked::before { left: 18px; }
-        .anim-selector {
-            display: grid;
-            grid-template-columns: 1fr 1fr 1fr;
-            gap: 4px;
-            margin-top: 6px;
-        }
-        .anim-selector .btn { padding: 4px 2px; font-size: 8px; }
-        .adv-panel {
-            background: var(--bg-card);
-            border: 1px solid var(--accent-orange);
-            border-radius: 12px;
-            padding: 12px;
-            margin-top: 8px;
-            display: none;
-        }
-        .adv-panel .adv-title {
-            font-size: 10px;
-            color: var(--accent-orange);
-            font-weight: 700;
-            text-transform: uppercase;
-            margin-bottom: 8px;
-        }
-        .adv-panel .adv-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr 1fr;
-            gap: 6px;
-        }
-        .adv-panel .adv-grid .btn { padding: 8px 4px; font-size: 9px; }
-        .gif-options {
-            display: grid;
-            grid-template-columns: 1fr 1fr 1fr;
-            gap: 6px;
-            margin-top: 6px;
-        }
-        .gif-options .input-group { gap: 2px; }
-        .gif-options .input-group label { font-size: 7px; }
-        .gif-options .input-group input {
-            height: 28px;
-            font-size: 10px;
-            padding: 4px 6px;
-        }
+
+        /* ANIMATION IMPLEMENTATIONS */
+        .anim-fade { animation: aFade 1s ease-in-out infinite alternate; }
+        @keyframes aFade { 0% { opacity: 0.3; } 100% { opacity: 1; } }
+
+        .anim-bounce { animation: aBounce 0.6s ease-in-out infinite alternate; }
+        @keyframes aBounce { 0% { transform: translateY(0); } 100% { transform: translateY(-8px); } }
+
+        .anim-pulse { animation: aPulse 0.8s ease-in-out infinite alternate; }
+        @keyframes aPulse { 0% { transform: scale(0.95); } 100% { transform: scale(1.1); } }
+
+        .anim-flash { animation: aFlash 0.4s steps(2, start) infinite; }
+        @keyframes aFlash { 0%, 100% { visibility: visible; } 50% { visibility: hidden; } }
+
+        .anim-spin { animation: aSpin 2s linear infinite; }
+        @keyframes aSpin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
         .toast {
             position: fixed;
             bottom: 30px;
@@ -489,33 +327,32 @@
             transform: translateX(-50%);
             background: var(--accent-green);
             color: white;
-            padding: 14px 24px;
-            border-radius: 14px;
-            font-size: 14px;
+            padding: 12px 20px;
+            border-radius: 10px;
+            font-size: 12px;
             font-weight: 600;
             z-index: 9999;
             display: none;
-            box-shadow: 0 8px 30px rgba(16, 185, 129, 0.4);
-            max-width: 90%;
-            text-align: center;
-            animation: slideUp 0.3s ease;
-        }
-        .toast.error {
-            background: var(--accent-red);
-            box-shadow: 0 8px 30px rgba(239, 68, 68, 0.4);
         }
         .toast.show { display: block; }
-        @keyframes slideUp {
-            from { opacity: 0; transform: translateX(-50%) translateY(20px); }
-            to { opacity: 1; transform: translateX(-50%) translateY(0); }
+        .progress-bar {
+            width: 100%;
+            height: 6px;
+            background: var(--border-color);
+            border-radius: 3px;
+            margin-top: 8px;
+            display: none;
+            overflow: hidden;
+        }
+        .progress-bar .fill {
+            height: 100%;
+            background: var(--accent-pink);
+            width: 0%;
         }
         .download-dialog {
             position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.9);
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.85);
             z-index: 9998;
             display: none;
             flex-direction: column;
@@ -523,58 +360,22 @@
             justify-content: center;
             padding: 20px;
         }
-        .download-dialog .dialog-box {
+        .dialog-box {
             background: var(--bg-secondary);
             border: 2px solid var(--accent-blue);
-            border-radius: 20px;
-            padding: 24px;
-            max-width: 400px;
+            border-radius: 16px;
+            padding: 20px;
+            max-width: 360px;
             width: 100%;
             text-align: center;
         }
-        .download-dialog .dialog-box h3 { color: var(--accent-blue); font-size: 16px; margin-bottom: 8px; }
-        .download-dialog .dialog-box p { color: var(--text-secondary); font-size: 13px; margin-bottom: 16px; }
-        .download-dialog .dialog-box .preview {
-            background: var(--bg-primary);
-            border-radius: 12px;
-            padding: 12px;
-            margin-bottom: 16px;
-            max-height: 300px;
-            overflow: hidden;
-        }
-        .download-dialog .dialog-box .preview img {
+        .dialog-box .preview img {
             max-width: 100%;
-            max-height: 250px;
-            border-radius: 8px;
+            max-height: 200px;
+            margin: 12px 0;
+            border: 1px solid var(--border-color);
         }
-        .download-dialog .dialog-actions {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 8px;
-        }
-        .download-dialog .dialog-actions .btn { padding: 12px; font-size: 13px; }
-        .download-dialog .dialog-actions .btn-full { grid-column: 1 / -1; }
-        .progress-bar {
-            width: 100%;
-            height: 4px;
-            background: var(--border-color);
-            border-radius: 2px;
-            margin: 8px 0;
-            overflow: hidden;
-            display: none;
-        }
-        .progress-bar .fill {
-            height: 100%;
-            background: var(--accent-blue);
-            border-radius: 2px;
-            width: 0%;
-            transition: width 0.1s;
-        }
-        @media (max-width: 400px) {
-            .btn-row, .export-row { grid-template-columns: 1fr 1fr; }
-            .template-grid { grid-template-columns: 1fr 1fr 1fr; }
-            .adv-panel .adv-grid { grid-template-columns: 1fr 1fr; }
-        }
+        #fileInput { display: none; }
     </style>
 </head>
 <body>
@@ -583,48 +384,35 @@
         <div class="header">
             <h1>⚡ Ad Studio Pro</h1>
             <div>
-                <span class="badge">GIPHY Support</span>
-                <span class="badge-adv">GIF EXPORT</span>
+                <span class="badge">Engine Fixed</span>
+                <span class="badge-adv">GIF INLINE</span>
             </div>
         </div>
 
         <div class="card">
-            <div class="card-title"><span class="title-icon">📋</span> GIPHY Animated Templates</div>
+            <div class="card-title"><span class="title-icon">📋</span> Animated Ad Templates</div>
             <div class="template-grid">
-                <div class="template-item" onclick="loadTemplate('giphy_cat')">
-                    <span class="icon">🐱</span>
-                    <div class="name">Cute Cat</div>
-                    <span class="badge badge-giphy">GIPHY</span>
-                </div>
-                <div class="template-item" onclick="loadTemplate('giphy_fire')">
+                <div class="template-item" onclick="loadTemplate('fire_sale')">
                     <span class="icon">🔥</span>
-                    <div class="name">Fire Sale</div>
-                    <span class="badge badge-giphy">GIPHY</span>
+                    <div class="name">Mega Sale</div>
+                    <span class="badge badge-giphy">BOUNCE</span>
                 </div>
-                <div class="template-item" onclick="loadTemplate('giphy_dance')">
-                    <span class="icon">💃</span>
-                    <div class="name">Dance Party</div>
-                    <span class="badge badge-giphy">GIPHY</span>
+                <div class="template-item" onclick="loadTemplate('neon_vibes')">
+                    <span class="icon">⚡</span>
+                    <div class="name">Neon Flash</div>
+                    <span class="badge badge-giphy">FLASH</span>
+                </div>
+                <div class="template-item" onclick="loadTemplate('spin_pro')">
+                    <span class="icon">🌀</span>
+                    <div class="name">Spin Art</div>
+                    <span class="badge badge-giphy">SPIN</span>
                 </div>
             </div>
         </div>
 
         <div class="card">
-            <div class="card-title"><span class="title-icon">🎛️</span> Format & Dimensions</div>
+            <div class="card-title"><span class="title-icon">🎛&zwj;️</span> Dimensions & Assets</div>
             <div class="input-grid">
-                <div class="input-group">
-                    <label>Ad Format</label>
-                    <select id="adFormat" onchange="switchFormat()">
-                        <option value="banner">Banner</option>
-                        <option value="interstitial">Interstitial</option>
-                    </select>
-                </div>
-                <div class="input-group">
-                    <label>Corners (px)</label>
-                    <input type="number" id="canvasRadius" value="0" oninput="mutateCanvas()">
-                </div>
-            </div>
-            <div class="input-grid" id="dimRow" style="margin-top:8px;">
                 <div class="input-group">
                     <label>Width</label>
                     <input type="number" id="canvasW" value="320" oninput="mutateCanvas()">
@@ -634,40 +422,38 @@
                     <input type="number" id="canvasH" value="50" oninput="mutateCanvas()">
                 </div>
             </div>
-            <div class="input-group" style="margin-top:8px;">
-                <label>Click URL</label>
-                <input type="text" id="clickUrl" value="https://google.com">
+            <div class="input-grid" style="margin-top: 8px;">
+                <div class="input-group">
+                    <label>Background</label>
+                    <input type="color" id="canvasBg" value="#ffffff" oninput="updateBg()">
+                </div>
+                <div class="input-group">
+                    <label>Hex Code</label>
+                    <div class="color-hex" id="canvasBgHex">#FFFFFF</div>
+                </div>
+            </div>
+            <div class="bg-options">
+                <button class="btn btn-blue" onclick="setSolidBg()">🔲 Solid</button>
+                <button class="btn btn-orange" onclick="setTransparentBg()">✨ Transparent</button>
             </div>
         </div>
 
         <div class="card">
-            <div class="card-title"><span class="title-icon">🧩</span> Add Elements</div>
+            <div class="card-title"><span class="title-icon">🧩</span> Elements Creator</div>
             <div class="btn-row">
-                <button class="btn btn-blue" onclick="addText()">+ Text</button>
-                <label for="fileInput" class="btn btn-purple">+ Image/GIF</label>
+                <button class="btn btn-blue" onclick="addText('⚡ BUY NOW ⚡', 'anim-pulse')">+ Pulsing Text</button>
+                <button class="btn btn-pink" onclick="addText('🔥 50% OFF', 'anim-bounce')">+ Bouncing Text</button>
+                <label for="fileInput" class="btn btn-purple" style="text-align:center;cursor:pointer;">+ Image/GIF</label>
                 <input type="file" id="fileInput" accept="image/*" onchange="addImage(event)">
-                <button class="btn btn-pink" onclick="addShape()">⬛ Shape</button>
-                <button class="btn btn-outline" onclick="clearSelection()">Clear Sel</button>
+                <button class="btn btn-outline" onclick="clearSelection()">Clear</button>
             </div>
         </div>
 
         <div class="card">
-            <div class="card-title"><span class="title-icon">💾</span> Export Full Banner</div>
+            <div class="card-title"><span class="title-icon">💾</span> Compile Studio Asset</div>
             <div class="export-row">
-                <button class="btn btn-green" onclick="exportPNG()">📸 PNG</button>
-                <button class="btn btn-pink" onclick="exportFullGIF()">🎞️ GIF</button>
-                <button class="btn btn-blue" onclick="exportPNG()">🎥 MP4</button>
-                <button class="btn btn-orange" onclick="exportPNG()">✨ Trans</button>
-            </div>
-            <div class="gif-options" id="gifOptions">
-                <div class="input-group">
-                    <label>Frames</label>
-                    <input type="number" id="gifFrames" value="15" min="5" max="30">
-                </div>
-                <div class="input-group">
-                    <label>Delay (s)</label>
-                    <input type="number" id="gifDelay" value="0.1" step="0.05" min="0.05">
-                </div>
+                <button class="btn btn-green" onclick="exportPNG()">📸 Instant PNG</button>
+                <button class="btn btn-pink" onclick="exportFullGIF()">🎞️ Render Engine GIF</button>
             </div>
             <div class="progress-bar" id="progressBar">
                 <div class="fill" id="progressFill"></div>
@@ -675,15 +461,8 @@
         </div>
 
         <div class="canvas-frame" id="canvasFrame">
-            <span class="label" id="workspaceLabel">Banner Mode</span>
+            <span class="label">Live Workspace Canvas</span>
             <div id="adCanvas" onclick="clearSelection(event)"></div>
-        </div>
-
-        <div class="inspector" id="inspector">
-            <div class="title" id="inspectorTitle"> Layer Inspector</div>
-            <div style="display:grid;grid-template-columns:1fr;gap:6px;margin-top:8px;">
-                <button class="btn btn-red" onclick="deleteElement()"> Delete</button>
-            </div>
         </div>
     </div>
 
@@ -691,46 +470,244 @@
 
     <div class="download-dialog" id="downloadDialog">
         <div class="dialog-box">
-            <h3 id="dialogTitle"> Export Ready</h3>
+            <h3>📥 Output Compiled</h3>
             <div class="preview" id="dialogPreview"></div>
-            <div class="dialog-actions">
-                <button class="btn btn-green" id="dialogDownloadBtn" onclick="dialogDownload()"> Download</button>
-                <button class="btn btn-red btn-full" onclick="closeDialog()">✕ Close</button>
-            </div>
+            <button class="btn btn-green" onclick="dialogDownload()" style="width:100%; padding:12px; font-size:14px;">⬇️ Download File</button>
+            <button class="btn btn-red" onclick="closeDialog()" style="width:100%; margin-top:8px; padding:8px;">✕ Close</button>
         </div>
     </div>
 
     <script>
         var canvas = document.getElementById('adCanvas');
-        var canvasFrame = document.getElementById('canvasFrame');
-        var inspector = document.getElementById('inspector');
         var toast = document.getElementById('toast');
         var downloadDialog = document.getElementById('downloadDialog');
         var dialogPreview = document.getElementById('dialogPreview');
         var progressBar = document.getElementById('progressBar');
         var progressFill = document.getElementById('progressFill');
-
         var selectedNode = null;
-        var isDragging = false;
-        var dragStartX, dragStartY, nodeStartX, nodeStartY;
+        var nodeCounter = 0;
+        var isTransparent = false;
         var dialogData = null;
         var dialogFilename = '';
-        var nodeCounter = 0;
 
-        var GIPHY_URLS = {
-            'giphy_cat': 'https://media.tenor.com/5oYhE6Px5bQAAAAC/cat-dance.gif',
-            'giphy_fire': 'https://media.tenor.com/v8ffg88_g78AAAAC/flash-sale.gif',
-            'giphy_dance': 'https://media.tenor.com/8FQq9iD9TZgAAAAC/dance-party.gif'
-        };
-
-        function showToast(msg, type) {
+        function showToast(msg) {
             toast.textContent = msg;
-            toast.className = 'toast show' + (type === 'error' ? ' error' : '');
-            clearTimeout(toast._timer);
-            toast._timer = setTimeout(function() { toast.classList.remove('show'); }, 3000);
+            toast.style.display = 'block';
+            setTimeout(function() { toast.style.display = 'none'; }, 3000);
         }
 
-        function showDialog(dataUrl, filename) {
+        function mutateCanvas() {
+            canvas.style.width = document.getElementById('canvasW').value + 'px';
+            canvas.style.height = document.getElementById('canvasH').value + 'px';
+        }
+
+        function updateBg() {
+            var col = document.getElementById('canvasBg').value;
+            document.getElementById('canvasBgHex').textContent = col.toUpperCase();
+            canvas.style.backgroundColor = col;
+            isTransparent = false;
+        }
+
+        function setTransparentBg() {
+            isTransparent = true;
+            canvas.style.backgroundColor = 'transparent';
+            document.getElementById('canvasBgHex').textContent = 'TRANSPARENT';
+            showToast('✨ Transparent Mode Enabled');
+        }
+
+        function setSolidBg() {
+            isTransparent = false;
+            updateBg();
+        }
+
+        function addText(customText, animClass) {
+            nodeCounter++;
+            var node = document.createElement('div');
+            node.className = 'ad-node active ' + (animClass || '');
+            node.id = 'node_' + nodeCounter;
+            node.style.left = '20px';
+            node.style.top = '10px';
+
+            var inner = document.createElement('div');
+            inner.className = 'text-inside';
+            inner.textContent = customText || 'New Text';
+            inner.style.color = '#ffffff';
+            inner.style.backgroundColor = '#ec4899';
+            inner.style.borderRadius = '4px';
+
+            node.appendChild(inner);
+            canvas.appendChild(node);
+            setupDrag(node);
+            selectNode(node);
+        }
+
+        function addImage(e) {
+            var file = e.target.files[0];
+            if(!file) return;
+            var reader = new FileReader();
+            reader.onload = function(event) {
+                nodeCounter++;
+                var node = document.createElement('div');
+                node.className = 'ad-node active';
+                node.id = 'node_' + nodeCounter;
+                node.style.left = '50px';
+                node.style.top = '5px';
+                node.style.width = '40px';
+                node.style.height = '40px';
+
+                var img = document.createElement('img');
+                img.src = event.target.result;
+                node.appendChild(img);
+                canvas.appendChild(node);
+                setupDrag(node);
+                selectNode(node);
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function loadTemplate(type) {
+            canvas.innerHTML = '';
+            if(type === 'fire_sale') {
+                canvas.style.backgroundColor = '#131b2e';
+                addText('🔥 MEGA WEEKEND SALE', 'anim-bounce');
+            } else if(type === 'neon_vibes') {
+                canvas.style.backgroundColor = '#000000';
+                addText('⚡ FLASH 90% OFF ⚡', 'anim-flash');
+            } else if(type === 'spin_pro') {
+                canvas.style.backgroundColor = '#ffffff';
+                addText('🌀 SPECIAL OFFER', 'anim-spin');
+            }
+            showToast('🎯 Loaded Template Module');
+        }
+
+        function setupDrag(el) {
+            var posX = 0, posY = 0, mouseX = 0, mouseY = 0;
+            el.addEventListener('mousedown', dragMouseDown);
+            el.addEventListener('touchstart', dragTouchStart, {passive: false});
+
+            function dragMouseDown(e) {
+                e.preventDefault();
+                selectNode(el);
+                mouseX = e.clientX;
+                mouseY = e.clientY;
+                document.onmouseup = closeDragElement;
+                document.onmousemove = elementDrag;
+            }
+
+            function dragTouchStart(e) {
+                selectNode(el);
+                var touch = e.touches[0];
+                mouseX = touch.clientX;
+                mouseY = touch.clientY;
+                document.ontouchend = closeDragElement;
+                document.ontouchmove = elementTouchDrag;
+            }
+
+            function elementDrag(e) {
+                posX = mouseX - e.clientX;
+                posY = mouseY - e.clientY;
+                mouseX = e.clientX;
+                mouseY = e.clientY;
+                el.style.top = (el.offsetTop - posY) + "px";
+                el.style.left = (el.offsetLeft - posX) + "px";
+            }
+
+            function elementTouchDrag(e) {
+                var touch = e.touches[0];
+                posX = mouseX - touch.clientX;
+                posY = mouseY - touch.clientY;
+                mouseX = touch.clientX;
+                mouseY = touch.clientY;
+                el.style.top = (el.offsetTop - posY) + "px";
+                el.style.left = (el.offsetLeft - posX) + "px";
+            }
+
+            function closeDragElement() {
+                document.onmouseup = null;
+                document.onmousemove = null;
+                document.ontouchend = null;
+                document.ontouchmove = null;
+            }
+        }
+
+        function selectNode(el) {
+            clearSelection();
+            selectedNode = el;
+            el.classList.add('active');
+        }
+
+        function clearSelection(e) {
+            if(e && e.target !== canvas) return;
+            var nodes = canvas.querySelectorAll('.ad-node');
+            nodes.forEach(function(n) { n.classList.remove('active'); });
+            selectedNode = null;
+        }
+
+        function exportPNG() {
+            clearSelection();
+            html2canvas(canvas, { backgroundColor: isTransparent ? null : undefined }).then(function(cv) {
+                showDialog(cv.toDataURL('image/png'), 'ad-output.png', 'png');
+            });
+        }
+
+        function exportFullGIF() {
+            clearSelection();
+            progressBar.style.display = 'block';
+            progressFill.style.width = '0%';
+            showToast('⏳ Generating Render engine...');
+
+            // Standalone inline worker build inject logic to avoid freeze/stop loop
+            var workerCode = `
+                importScripts("https://cdnjs.cloudflare.com/ajax/libs/gif.js/0.2.0/gif.worker.js");
+            `;
+            var workerBlob = new Blob([workerCode], {type: "application/javascript"});
+            var workerUrl = URL.createObjectURL(workerBlob);
+
+            var gif = new GIF({
+                workers: 2,
+                quality: 2,
+                workerScript: workerUrl,
+                background: isTransparent ? 'rgba(0,0,0,0)' : '#ffffff',
+                transparent: isTransparent ? 0x00000000 : null
+            });
+
+            var framesCount = 12;
+            var currentFrame = 0;
+
+            function processFrameLoop() {
+                if(currentFrame >= framesCount) {
+                    showToast('📦 Packing Output Files... Please wait');
+                    progressFill.style.width = '90%';
+                    
+                    gif.on('finished', function(blob) {
+                        progressFill.style.width = '100%';
+                        setTimeout(function() { progressBar.style.display = 'none'; }, 500);
+                        var finalUrl = URL.createObjectURL(blob);
+                        showDialog(finalUrl, 'animated-ad.gif', 'gif');
+                        URL.revokeObjectURL(workerUrl);
+                    });
+
+                    gif.render();
+                    return;
+                }
+
+                progressFill.style.width = ((currentFrame / framesCount) * 80) + '%';
+                
+                html2canvas(canvas, {
+                    backgroundColor: isTransparent ? null : undefined,
+                    logging: false,
+                    useCORS: true
+                }).then(function(cv) {
+                    gif.addFrame(cv, {delay: 100, copy: true});
+                    currentFrame++;
+                    setTimeout(processFrameLoop, 60);
+                });
+            }
+
+            processFrameLoop();
+        }
+
+        function showDialog(dataUrl, filename, type) {
             dialogData = dataUrl;
             dialogFilename = filename;
             dialogPreview.innerHTML = '';
@@ -740,189 +717,20 @@
             downloadDialog.style.display = 'flex';
         }
 
-        function closeDialog() { downloadDialog.style.display = 'none'; }
+        function closeDialog() {
+            downloadDialog.style.display = 'none';
+        }
 
         function dialogDownload() {
-            var link = document.createElement('a');
-            link.href = dialogData;
-            link.download = dialogFilename;
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
+            var a = document.createElement('a');
+            a.href = dialogData;
+            a.download = dialogFilename;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
             closeDialog();
-            showToast('✅ Download Started!');
+            showToast('🎉 Download Started successfully!');
         }
-
-        function setupNodeEvents(node) {
-            node.addEventListener('mousedown', dragStart);
-            node.addEventListener('touchstart', dragStart, { passive: false });
-            node.addEventListener('click', function(e) { e.stopPropagation(); selectNode(node); });
-        }
-
-        function dragStart(e) {
-            var clientX = e.touches ? e.touches[0].clientX : e.clientX;
-            var clientY = e.touches ? e.touches[0].clientY : e.clientY;
-            selectedNode = this;
-            isDragging = true;
-            dragStartX = clientX;
-            dragStartY = clientY;
-            nodeStartX = parseInt(selectedNode.style.left) || 0;
-            nodeStartY = parseInt(selectedNode.style.top) || 0;
-            document.addEventListener('mousemove', dragMove);
-            document.addEventListener('touchmove', dragMove, { passive: false });
-            document.addEventListener('mouseup', dragEnd);
-            document.addEventListener('touchend', dragEnd);
-        }
-
-        function dragMove(e) {
-            if (!isDragging || !selectedNode) return;
-            var clientX = e.touches ? e.touches[0].clientX : e.clientX;
-            var clientY = e.touches ? e.touches[0].clientY : e.clientY;
-            selectedNode.style.left = (nodeStartX + (clientX - dragStartX)) + 'px';
-            selectedNode.style.top = (nodeStartY + (clientY - dragStartY)) + 'px';
-        }
-
-        function dragEnd() { isDragging = false; }
-
-        function selectNode(node) {
-            document.querySelectorAll('.ad-node').forEach(function(n) { n.classList.remove('active'); });
-            node.classList.add('active');
-            selectedNode = node;
-            inspector.style.display = 'block';
-        }
-
-        function clearSelection(e) {
-            if (e && e.target !== canvas) return;
-            document.querySelectorAll('.ad-node').forEach(function(n) { n.classList.remove('active'); });
-            selectedNode = null;
-            inspector.style.display = 'none';
-        }
-
-        function mutateCanvas() {
-            var w = document.getElementById('canvasW').value || 320;
-            var h = document.getElementById('canvasH').value || 50;
-            canvas.style.width = w + 'px';
-            canvas.style.height = h + 'px';
-            canvas.style.borderRadius = (document.getElementById('canvasRadius').value || 0) + 'px';
-        }
-
-        function addText() {
-            nodeCounter++;
-            var node = document.createElement('div');
-            node.className = 'ad-node';
-            node.style.left = '20px'; node.style.top = '10px';
-            node.innerHTML = '<div class="text-inside text-bounce" style="color:#000; font-size:14px; font-weight:800; background:#ff0;">🔥 MEGA SALE</div>';
-            canvas.appendChild(node);
-            setupNodeEvents(node);
-            showToast('📝 Text Added');
-        }
-
-        function addImage(event) {
-            var file = event.target.files[0];
-            if (!file) return;
-            var reader = new FileReader();
-            reader.onload = function(e) {
-                nodeCounter++;
-                var node = document.createElement('div');
-                node.className = 'ad-node';
-                node.style.left = '40px'; node.style.top = '5px';
-                node.style.width = '40px'; node.style.height = '40px';
-                node.innerHTML = '<img src="'+e.target.result+'" />';
-                canvas.appendChild(node);
-                setupNodeEvents(node);
-            };
-            reader.readAsDataURL(file);
-        }
-
-        function addShape() {
-            nodeCounter++;
-            var node = document.createElement('div');
-            node.className = 'ad-node';
-            node.style.left = '80px'; node.style.top = '15px';
-            node.style.width = '30px'; node.style.height = '30px';
-            node.style.background = '#3b82f6';
-            canvas.appendChild(node);
-            setupNodeEvents(node);
-        }
-
-        function deleteElement() {
-            if(selectedNode) { canvas.removeChild(selectedNode); selectedNode = null; inspector.style.display = 'none'; }
-        }
-
-        function loadTemplate(type) {
-            canvas.innerHTML = '';
-            var gifUrl = GIPHY_URLS[type];
-            if (gifUrl) {
-                var node = document.createElement('div');
-                node.className = 'ad-node';
-                node.style.left = '0px'; node.style.top = '0px';
-                node.style.width = '100%'; node.style.height = '100%';
-                node.innerHTML = '<img src="'+gifUrl+'" crossOrigin="anonymous"/>';
-                canvas.appendChild(node);
-                setupNodeEvents(node);
-            }
-            showToast('🎬 Loaded Template');
-        }
-
-        function exportPNG() {
-            html2canvas(canvas, { useCORS: true, scale: 2 }).then(function(c) {
-                showDialog(c.toDataURL('image/png'), 'banner.png');
-            });
-        }
-
-        // ===== FIXED HIGH PERFORMANCE GIF EXPORT ENGINE =====
-        function exportFullGIF() {
-            clearSelection();
-            showToast('🎞️ Capturing Canvas Frames...');
-            progressBar.style.display = 'block';
-            progressFill.style.width = '0%';
-
-            var totalFrames = parseInt(document.getElementById('gifFrames').value) || 15;
-            var intervalDelay = parseFloat(document.getElementById('gifDelay').value) || 0.1;
-            
-            var frameImages = [];
-            var currentFrame = 0;
-
-            function captureFrame() {
-                if (currentFrame >= totalFrames) {
-                    buildFinalGIF();
-                    return;
-                }
-
-                html2canvas(canvas, { useCORS: true, scale: 1.5 }).then(function(renderedCanvas) {
-                    frameImages.push(renderedCanvas.toDataURL('image/png'));
-                    currentFrame++;
-                    progressFill.style.width = Math.round((currentFrame / totalFrames) * 50) + '%';
-                    setTimeout(captureFrame, intervalDelay * 1000);
-                }).catch(function(err) {
-                    showToast('❌ Processing Error', 'error');
-                    progressBar.style.display = 'none';
-                });
-            }
-
-            function buildFinalGIF() {
-                showToast('⚙️ Packaging Output File...');
-                gifshot.createGIF({
-                    images: frameImages,
-                    gifWidth: canvas.offsetWidth * 1.5,
-                    gifHeight: canvas.offsetHeight * 1.5,
-                    interval: intervalDelay,
-                    numWorkers: 4
-                }, function(obj) {
-                    progressBar.style.display = 'none';
-                    if (!obj.error) {
-                        showDialog(obj.image, 'ad-animated.gif');
-                        showToast('🎯 GIF Rendered Successfully!');
-                    } else {
-                        showToast('❌ Rendering Engine Crash', 'error');
-                    }
-                });
-            }
-
-            captureFrame();
-        }
-
-        window.onload = function() { mutateCanvas(); };
     </script>
 </body>
 </html>
