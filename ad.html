@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>🎯 GIF Banner Pro · HD/4K Quality</title>
+    <title>🎯 GIF Banner · Dynamic Image Layers</title>
     <style>
         * {
             box-sizing: border-box;
@@ -14,6 +14,7 @@
             --bg-primary: #0a0a16;
             --bg-secondary: #12122a;
             --bg-card: #1a1a3a;
+            --bg-input: #0f0f25;
             --accent: #f5a623;
             --accent-glow: rgba(245, 166, 35, 0.4);
             --text-main: #f0f0ff;
@@ -113,78 +114,74 @@
             padding: 2px 3px;
             font-size: 8px;
         }
-        .file-upload-btn {
-            background: var(--bg-card);
-            border: 1px dashed rgba(255,255,255,0.2);
-            padding: 3px 6px;
-            border-radius: 5px;
-            text-align: center;
-            font-size: 9px;
-            font-weight: 500;
-            cursor: pointer;
-            transition: 0.2s;
-            color: var(--text-muted);
-        }
-        .file-upload-btn:hover {
-            background: rgba(255,255,255,0.05);
-            border-color: var(--accent);
-        }
 
-        /* Image Custom Panel - Text Boxes Only */
-        .image-custom-panel {
-            background: rgba(0,0,0,0.35);
-            border-radius: 12px;
-            padding: 8px 10px;
+        /* Image Layers Container */
+        .image-layers-container {
+            background: rgba(0,0,0,0.2);
+            padding: 6px;
+            border-radius: 10px;
+            max-height: 280px;
+            overflow-y: auto;
             margin-bottom: 8px;
             border: 1px solid var(--border-subtle);
-            display: none;
         }
-        .image-custom-panel.active {
-            display: block;
+        .image-layer-row {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 4px;
+            background: var(--bg-card);
+            padding: 5px 8px;
+            border-radius: 8px;
+            margin-bottom: 4px;
+            border: 1px solid rgba(255,255,255,0.05);
         }
-        .image-custom-panel .panel-title {
-            font-size: 10px;
+        .image-layer-row .layer-label {
+            font-size: 8px;
             font-weight: 700;
             color: var(--accent);
-            margin-bottom: 5px;
-            display: flex;
-            align-items: center;
-            gap: 5px;
-            flex-wrap: wrap;
+            min-width: 30px;
         }
-        .image-custom-panel .custom-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
-            gap: 4px;
+        .image-layer-row input[type="file"] {
+            display: none;
         }
-        .image-custom-panel .custom-grid .ctrl {
-            display: flex;
-            flex-direction: column;
-            gap: 1px;
-        }
-        .image-custom-panel .custom-grid .ctrl label {
-            font-size: 6.5px;
-            text-transform: uppercase;
+        .image-layer-row .file-label {
+            background: rgba(255,255,255,0.05);
+            border: 1px dashed var(--border-subtle);
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 7px;
+            cursor: pointer;
             color: var(--text-muted);
-            font-weight: 600;
-            letter-spacing: 0.3px;
+            transition: 0.2s;
         }
-        .image-custom-panel .custom-grid .ctrl input[type="number"],
-        .image-custom-panel .custom-grid .ctrl input[type="text"] {
-            background: var(--bg-card);
+        .image-layer-row .file-label:hover {
+            border-color: var(--accent);
+            color: #fff;
+        }
+        .image-layer-row .img-preview {
+            width: 30px;
+            height: 30px;
+            object-fit: cover;
+            border-radius: 4px;
+            border: 1px solid var(--border-subtle);
+            background: #000;
+        }
+        .image-layer-row input[type="number"] {
+            background: rgba(0,0,0,0.3);
             border: 1px solid var(--border-subtle);
             padding: 2px 4px;
             border-radius: 4px;
             color: #fff;
-            font-size: 9px;
+            font-size: 8px;
+            width: 40px;
             outline: none;
-            width: 100%;
         }
-        .image-custom-panel .custom-grid .ctrl input:focus {
+        .image-layer-row input[type="number"]:focus {
             border-color: var(--accent);
         }
-        .image-custom-panel .custom-grid .ctrl select {
-            background: var(--bg-card);
+        .image-layer-row select {
+            background: rgba(0,0,0,0.4);
             border: 1px solid var(--border-subtle);
             padding: 2px 3px;
             border-radius: 4px;
@@ -192,34 +189,41 @@
             font-size: 7px;
             outline: none;
             cursor: pointer;
-            width: 100%;
         }
-        .image-custom-panel .custom-grid .ctrl .btn-small {
-            background: var(--bg-card);
-            border: 1px solid var(--border-subtle);
-            color: #fff;
-            padding: 1px 4px;
-            border-radius: 3px;
-            font-size: 7px;
-            cursor: pointer;
-            transition: 0.15s;
-        }
-        .image-custom-panel .custom-grid .ctrl .btn-small:hover {
-            background: rgba(255,255,255,0.1);
-            border-color: var(--accent);
-        }
-        .image-custom-panel .custom-grid .ctrl .btn-small.danger {
-            border-color: var(--danger);
-            color: var(--danger);
-        }
-        .image-custom-panel .custom-grid .ctrl .btn-small.danger:hover {
+        .image-layer-row .btn-del-img {
             background: var(--danger);
-            color: #fff;
+            border: none;
+            color: white;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-weight: 700;
+            cursor: pointer;
+            font-size: 8px;
         }
-        .image-custom-panel .custom-grid .ctrl .btn-group {
-            display: flex;
-            gap: 2px;
-            flex-wrap: wrap;
+        .image-layer-row .btn-del-img:hover { background: #e03a5a; }
+        .image-layer-row .layer-order {
+            font-size: 7px;
+            color: var(--text-muted);
+            min-width: 20px;
+        }
+
+        .btn-add-image {
+            background: rgba(255,255,255,0.03);
+            border: 1px dashed rgba(255,255,255,0.15);
+            color: var(--text-muted);
+            padding: 4px;
+            width: 100%;
+            border-radius: 6px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: 0.2s;
+            margin-bottom: 6px;
+            font-size: 9px;
+        }
+        .btn-add-image:hover {
+            background: rgba(255,255,255,0.06);
+            color: #fff;
+            border-color: var(--accent);
         }
 
         .text-rows-container {
@@ -400,17 +404,16 @@
         @media (max-width: 600px) {
             .box { padding: 8px; }
             .top-row { grid-template-columns: repeat(2, 1fr); }
-            .image-custom-panel .custom-grid { grid-template-columns: repeat(2, 1fr); }
+            .image-layer-row { flex-wrap: wrap; }
         }
         @media (max-width: 400px) {
             .top-row { grid-template-columns: 1fr; }
-            .image-custom-panel .custom-grid { grid-template-columns: 1fr 1fr; }
         }
     </style>
 </head>
 <body>
 <div class="box">
-    <h2>🎯 <span>GIF Pro · HD/4K Quality</span></h2>
+    <h2>🖼️ <span>Dynamic Image Layers · Multiple Images</span></h2>
 
     <!-- TOP CONTROLS -->
     <div class="top-row">
@@ -439,162 +442,18 @@
                 <input type="text" id="bannerBgHex" value="#0b0b1a" readonly>
             </div>
         </div>
-        <div class="item">
-            <label>Upload Image</label>
-            <label for="gifUpload" class="file-upload-btn">📂 Choose</label>
-            <input type="file" id="gifUpload" accept="image/*" style="display:none;" onchange="handleImageUpload(event)">
-        </div>
     </div>
 
-    <!-- IMAGE CUSTOM PANEL - Text Boxes Only -->
-    <div class="image-custom-panel" id="imageCustomPanel">
-        <div class="panel-title">
-            🎨 Image Customization
-            <span style="font-size:7px;color:var(--text-muted);font-weight:400;margin-left:3px;">
-                W: <span id="imgWidthDisplay">200</span> | H: <span id="imgHeightDisplay">200</span>
-            </span>
-        </div>
-        <div class="custom-grid">
-            <!-- Image Width & Height - Text Boxes -->
-            <div class="ctrl">
-                <label>Image Width</label>
-                <input type="number" id="imgWidth" value="200" min="10" max="1000" oninput="updateImageSize()">
-            </div>
-            <div class="ctrl">
-                <label>Image Height</label>
-                <input type="number" id="imgHeight" value="200" min="10" max="1000" oninput="updateImageSize()">
-            </div>
-            <div class="ctrl">
-                <label>Brightness</label>
-                <input type="number" id="imgBrightness" value="0" min="-100" max="100" oninput="applyFilters()">
-            </div>
-            <div class="ctrl">
-                <label>Contrast</label>
-                <input type="number" id="imgContrast" value="0" min="-100" max="100" oninput="applyFilters()">
-            </div>
-            <div class="ctrl">
-                <label>Saturation</label>
-                <input type="number" id="imgSaturation" value="0" min="-100" max="100" oninput="applyFilters()">
-            </div>
-            <div class="ctrl">
-                <label>Blur</label>
-                <input type="number" id="imgBlur" value="0" min="0" max="20" oninput="applyFilters()">
-            </div>
-            <div class="ctrl">
-                <label>Opacity %</label>
-                <input type="number" id="imgOpacity" value="100" min="10" max="100" oninput="applyFilters()">
-            </div>
-            <div class="ctrl">
-                <label>Corner Radius</label>
-                <input type="number" id="imgRadius" value="0" min="0" max="50" oninput="applyFilters()">
-            </div>
-            <div class="ctrl">
-                <label>Border Width</label>
-                <input type="number" id="imgBorder" value="0" min="0" max="10" oninput="applyFilters()">
-            </div>
-            <div class="ctrl">
-                <label>Border Color</label>
-                <input type="color" id="imgBorderColor" value="#f5a623" oninput="applyFilters()" style="width:100%;height:20px;padding:0;border:none;background:transparent;cursor:pointer;">
-            </div>
-            <div class="ctrl">
-                <label>Shadow Blur</label>
-                <input type="number" id="imgShadow" value="0" min="0" max="30" oninput="applyFilters()">
-            </div>
-            <div class="ctrl">
-                <label>Animation Time (sec)</label>
-                <input type="number" id="animTime" value="8" min="1" max="30" oninput="applyFilters()">
-            </div>
-            <div class="ctrl">
-                <label>Image Animation</label>
-                <select id="imgAnimation" onchange="applyFilters()">
-                    <optgroup label="⭐ Basic">
-                        <option value="none">None</option>
-                        <option value="zoom">Zoom</option>
-                        <option value="rotate">Rotate</option>
-                        <option value="bounce">Bounce</option>
-                        <option value="fade">Fade</option>
-                        <option value="slide">Slide</option>
-                    </optgroup>
-                    <optgroup label="🌀 Wave & Pulse">
-                        <option value="wave">Wave</option>
-                        <option value="pulse">Pulse</option>
-                        <option value="heartbeat">Heartbeat</option>
-                        <option value="ripple">Ripple</option>
-                    </optgroup>
-                    <optgroup label="🎯 Spin & Flip">
-                        <option value="spin">Spin</option>
-                        <option value="flip">Flip</option>
-                        <option value="tilt">Tilt</option>
-                        <option value="wobble">Wobble</option>
-                    </optgroup>
-                    <optgroup label="🌟 Glow & Shine">
-                        <option value="glow">Glow</option>
-                        <option value="shine">Shine</option>
-                        <option value="neon">Neon</option>
-                        <option value="sparkle">Sparkle</option>
-                    </optgroup>
-                    <optgroup label="🎨 Color Effects">
-                        <option value="hueShift">Hue Shift</option>
-                        <option value="colorPulse">Color Pulse</option>
-                        <option value="rainbow">Rainbow</option>
-                        <option value="chromatic">Chromatic</option>
-                    </optgroup>
-                    <optgroup label="🏃 Motion">
-                        <option value="swing">Swing</option>
-                        <option value="sway">Sway</option>
-                        <option value="drift">Drift</option>
-                        <option value="float">Float</option>
-                        <option value="hover">Hover</option>
-                    </optgroup>
-                    <optgroup label="💥 Dynamic">
-                        <option value="shake">Shake</option>
-                        <option value="jitter">Jitter</option>
-                        <option value="pop">Pop</option>
-                        <option value="explode">Explode</option>
-                        <option value="morph">Morph</option>
-                    </optgroup>
-                    <optgroup label="🌀 Complex">
-                        <option value="spiral">Spiral</option>
-                        <option value="sineWave">Sine Wave</option>
-                        <option value="figure8">Figure 8</option>
-                        <option value="butterfly">Butterfly</option>
-                        <option value="zigzag">Zigzag</option>
-                    </optgroup>
-                    <optgroup label="✨ Special">
-                        <option value="blink">Blink</option>
-                        <option value="pulseGlow">Pulse Glow</option>
-                        <option value="rainbowGlow">Rainbow Glow</option>
-                        <option value="neonPulse">Neon Pulse</option>
-                        <option value="fire">Fire</option>
-                        <option value="water">Water</option>
-                        <option value="wind">Wind</option>
-                        <option value="earth">Earth</option>
-                    </optgroup>
-                </select>
-            </div>
-            <div class="ctrl">
-                <label>Flip</label>
-                <div class="btn-group">
-                    <button class="btn-small" onclick="flipImage('horizontal')">↔H</button>
-                    <button class="btn-small" onclick="flipImage('vertical')">↕V</button>
-                </div>
-            </div>
-            <div class="ctrl">
-                <label>Rotate</label>
-                <div class="btn-group">
-                    <button class="btn-small" onclick="rotateImage(90)">90°</button>
-                    <button class="btn-small" onclick="rotateImage(180)">180°</button>
-                    <button class="btn-small" onclick="rotateImage(270)">270°</button>
-                    <button class="btn-small danger" onclick="resetFilters()">↺</button>
-                </div>
-            </div>
-            <div class="ctrl">
-                <label>GIF Frames</label>
-                <input type="number" id="gifFrames" value="20" min="5" max="60" oninput="applyFilters()">
-            </div>
+    <!-- ===== DYNAMIC IMAGE LAYERS ===== -->
+    <div class="image-layers-container" id="imageLayersContainer">
+        <!-- Image layers will be added here -->
+        <div style="text-align:center;padding:8px;color:var(--text-muted);font-size:8px;" id="noImageMsg">
+            No images added. Click "Add Image Layer" below.
         </div>
     </div>
+    <button class="btn-add-image" onclick="addImageLayer()">🖼️ Add Image Layer</button>
 
+    <!-- TEXT LAYERS -->
     <div class="text-rows-container" id="rowsContainer"></div>
     <button class="btn-add" onclick="addNewRow()">➕ Add Text Layer</button>
 
@@ -612,7 +471,7 @@
     <div class="status-box">
         <div class="progress" id="progress"><div class="fill" id="fill"></div></div>
         <div class="plabel" id="plabel">Processing...</div>
-        <div class="status" id="status">✅ Upload image · Text boxes for precise control</div>
+        <div class="status" id="status">✅ Add multiple images · Each image has own settings</div>
     </div>
 </div>
 <script>
@@ -624,38 +483,191 @@
         const fill = document.getElementById('fill');
         const plabel = document.getElementById('plabel');
         const rowsContainer = document.getElementById('rowsContainer');
+        const imageLayersContainer = document.getElementById('imageLayersContainer');
+        const noImageMsg = document.getElementById('noImageMsg');
         const bannerWidthInput = document.getElementById('bannerWidth');
         const bannerHeightInput = document.getElementById('bannerHeight');
         const bannerBgInput = document.getElementById('bannerBg');
         const bannerBgHex = document.getElementById('bannerBgHex');
-        const imageCustomPanel = document.getElementById('imageCustomPanel');
         const gifQualitySelect = document.getElementById('gifQuality');
 
-        // Image filters state
-        let imageFilters = {
-            brightness: 0, contrast: 0, saturation: 0, blur: 0,
-            opacity: 100, radius: 0, border: 0, borderColor: '#f5a623',
-            shadow: 0, flipH: false, flipV: false, rotate: 0,
-            animation: 'none', animTime: 8,
-            imgWidth: 200, imgHeight: 200,
-            gifFrames: 20
-        };
+        // ===== IMAGE LAYERS STORE =====
+        let imageLayers = [];
+        let imageLayerIdCounter = 0;
 
-        let uploadedImage = null;
-        let imageConfig = { x: 0, y: 0, width: 200, height: 200 };
-        let isDragging = false;
-        let draggedElement = null;
-        let dragOffset = { x: 0, y: 0 };
+        // Text layers store
         const layerCoords = {};
         let canvasWidth = 600, canvasHeight = 300;
         let currentQuality = 'medium';
+        let isDragging = false;
+        let draggedElement = null;
+        let dragOffset = { x: 0, y: 0 };
+        let draggedLayerType = null;
 
         const initialLayers = [
-            { text: '✨ HD/4K Quality', color: '#f5a623', size: 36, font: 'Arial', anim: 'wave' },
-            { text: '✦ Text Box Controls ✦', color: '#b0b0ff', size: 16, font: 'Arial', anim: 'pulse' }
+            { text: '✨ Multiple Images', color: '#f5a623', size: 32, font: 'Arial', anim: 'wave' },
+            { text: '✦ Each layer customizable ✦', color: '#b0b0ff', size: 14, font: 'Arial', anim: 'pulse' }
         ];
 
-        // ===== QUALITY CONTROL =====
+        // ===== ADD IMAGE LAYER =====
+        function addImageLayer(imageDataUrl = null) {
+            const id = 'img_' + (++imageLayerIdCounter) + '_' + Date.now();
+            const layer = {
+                id: id,
+                image: null,
+                dataUrl: imageDataUrl || null,
+                x: 50 + (imageLayers.length * 20),
+                y: 50 + (imageLayers.length * 20),
+                width: 150,
+                height: 150,
+                opacity: 100,
+                brightness: 0,
+                contrast: 0,
+                saturation: 0,
+                blur: 0,
+                radius: 0,
+                border: 0,
+                borderColor: '#f5a623',
+                shadow: 0,
+                rotation: 0,
+                flipH: false,
+                flipV: false,
+                animation: 'none',
+                animTime: 8,
+                visible: true
+            };
+            imageLayers.push(layer);
+            renderImageLayers();
+            
+            // If image data provided, load it
+            if (imageDataUrl) {
+                const img = new Image();
+                img.onload = function() {
+                    layer.image = img;
+                    renderImageLayers();
+                    preview();
+                };
+                img.src = imageDataUrl;
+            }
+            
+            noImageMsg.style.display = 'none';
+            preview();
+        }
+
+        // ===== RENDER IMAGE LAYERS UI =====
+        function renderImageLayers() {
+            if (imageLayers.length === 0) {
+                noImageMsg.style.display = 'block';
+                imageLayersContainer.innerHTML = `<div style="text-align:center;padding:8px;color:var(--text-muted);font-size:8px;" id="noImageMsg">No images added. Click "Add Image Layer" below.</div>`;
+                return;
+            }
+            
+            let html = '';
+            imageLayers.forEach((layer, index) => {
+                const previewSrc = layer.dataUrl || '';
+                html += `
+                    <div class="image-layer-row" data-id="${layer.id}">
+                        <span class="layer-order">#${index + 1}</span>
+                        <span class="layer-label">🖼️</span>
+                        ${previewSrc ? `<img src="${previewSrc}" class="img-preview" id="preview_${layer.id}" alt="preview">` : '<span style="font-size:7px;color:var(--text-muted);">No image</span>'}
+                        <label class="file-label" for="file_${layer.id}">📂 Upload</label>
+                        <input type="file" id="file_${layer.id}" accept="image/*" onchange="uploadImageToLayer('${layer.id}', event)">
+                        
+                        <input type="number" value="${layer.width}" min="10" max="800" placeholder="W" onchange="updateImageLayer('${layer.id}', 'width', this.value)">
+                        <input type="number" value="${layer.height}" min="10" max="800" placeholder="H" onchange="updateImageLayer('${layer.id}', 'height', this.value)">
+                        
+                        <select onchange="updateImageLayer('${layer.id}', 'animation', this.value)">
+                            <option value="none" ${layer.animation==='none'?'selected':''}>None</option>
+                            <option value="zoom" ${layer.animation==='zoom'?'selected':''}>Zoom</option>
+                            <option value="rotate" ${layer.animation==='rotate'?'selected':''}>Rotate</option>
+                            <option value="bounce" ${layer.animation==='bounce'?'selected':''}>Bounce</option>
+                            <option value="fade" ${layer.animation==='fade'?'selected':''}>Fade</option>
+                            <option value="slide" ${layer.animation==='slide'?'selected':''}>Slide</option>
+                            <option value="wave" ${layer.animation==='wave'?'selected':''}>Wave</option>
+                            <option value="pulse" ${layer.animation==='pulse'?'selected':''}>Pulse</option>
+                            <option value="spin" ${layer.animation==='spin'?'selected':''}>Spin</option>
+                            <option value="glow" ${layer.animation==='glow'?'selected':''}>Glow</option>
+                            <option value="shake" ${layer.animation==='shake'?'selected':''}>Shake</option>
+                            <option value="flip" ${layer.animation==='flip'?'selected':''}>Flip</option>
+                            <option value="swing" ${layer.animation==='swing'?'selected':''}>Swing</option>
+                            <option value="float" ${layer.animation==='float'?'selected':''}>Float</option>
+                        </select>
+                        
+                        <input type="number" value="${layer.opacity}" min="10" max="100" placeholder="Op" onchange="updateImageLayer('${layer.id}', 'opacity', this.value)" style="width:30px;">
+                        
+                        <button class="btn-del-img" onclick="removeImageLayer('${layer.id}')">✕</button>
+                    </div>
+                `;
+            });
+            imageLayersContainer.innerHTML = html;
+        }
+
+        // ===== UPLOAD IMAGE TO LAYER =====
+        window.uploadImageToLayer = function(layerId, event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const img = new Image();
+                img.onload = function() {
+                    const layer = imageLayers.find(l => l.id === layerId);
+                    if (layer) {
+                        layer.image = img;
+                        layer.dataUrl = e.target.result;
+                        // Auto-size image
+                        let maxW = canvasWidth * 0.4, maxH = canvasHeight * 0.4;
+                        let w = Math.min(img.width, maxW);
+                        let h = Math.min(img.height, maxH);
+                        layer.width = w;
+                        layer.height = h;
+                        renderImageLayers();
+                        preview();
+                        statusEl.textContent = '✅ Image uploaded to layer!';
+                    }
+                };
+                img.src = e.target.result;
+            };
+            reader.readAsDataURL(file);
+        };
+
+        // ===== UPDATE IMAGE LAYER =====
+        window.updateImageLayer = function(layerId, key, value) {
+            const layer = imageLayers.find(l => l.id === layerId);
+            if (!layer) return;
+            if (key === 'width' || key === 'height' || key === 'opacity' || key === 'brightness' || 
+                key === 'contrast' || key === 'saturation' || key === 'blur' || key === 'radius' ||
+                key === 'border' || key === 'shadow' || key === 'rotation' || key === 'animTime') {
+                layer[key] = parseFloat(value) || 0;
+            } else if (key === 'animation') {
+                layer[key] = value;
+            } else {
+                layer[key] = value;
+            }
+            // Clamp values
+            if (key === 'width' || key === 'height') {
+                layer[key] = Math.max(10, Math.min(800, layer[key]));
+            }
+            if (key === 'opacity') {
+                layer[key] = Math.max(10, Math.min(100, layer[key]));
+            }
+            if (key === 'blur') {
+                layer[key] = Math.max(0, Math.min(20, layer[key]));
+            }
+            renderImageLayers();
+            preview();
+        };
+
+        // ===== REMOVE IMAGE LAYER =====
+        window.removeImageLayer = function(layerId) {
+            imageLayers = imageLayers.filter(l => l.id !== layerId);
+            renderImageLayers();
+            if (imageLayers.length === 0) {
+                noImageMsg.style.display = 'block';
+            }
+            preview();
+        };
+
+        // ===== QUALITY =====
         function updateQuality() {
             currentQuality = gifQualitySelect.value;
             const qualityMap = {
@@ -666,68 +678,11 @@
                 '4k': { w: 1920, h: 1080, label: '4K (2160p)' }
             };
             const q = qualityMap[currentQuality] || qualityMap.medium;
-            statusEl.textContent = `✅ Quality: ${q.label} (${q.w}×${q.h})`;
+            statusEl.textContent = `✅ Quality: ${q.label}`;
             preview();
         }
 
-        // ===== 50+ ANIMATIONS ENGINE =====
-        function getAnimationValue(t, animType, imgW, imgH, w, h) {
-            let result = { dx: 0, dy: 0, dw: 0, dh: 0, rotation: 0, opacity: 1, scale: 1, glow: 0, hue: 0 };
-            const speed = 1 / (imageFilters.animTime || 8);
-            const phase = t * speed;
-            
-            switch(animType) {
-                case 'none': break;
-                case 'zoom': result.scale = 1 + 0.15 * Math.sin(phase); break;
-                case 'rotate': result.rotation = phase * 0.5; break;
-                case 'bounce': result.dy = -Math.abs(Math.sin(phase)) * 25; break;
-                case 'fade': result.opacity = 0.4 + 0.6 * (0.5 + 0.5 * Math.sin(phase)); break;
-                case 'slide': result.dx = Math.sin(phase) * w * 0.08; break;
-                case 'wave': result.dy = Math.sin(phase) * h * 0.06; break;
-                case 'pulse': result.glow = 10 + Math.sin(phase) * 15; break;
-                case 'heartbeat': result.scale = 1 + 0.2 * Math.pow(Math.sin(phase * 2), 8); break;
-                case 'ripple': result.scale = 1 + 0.1 * Math.sin(phase * 3); result.dy = Math.sin(phase * 3) * 5; break;
-                case 'spin': result.rotation = phase * 2; break;
-                case 'flip': result.scale = Math.sin(phase) > 0 ? 1 : -1; break;
-                case 'tilt': result.rotation = Math.sin(phase * 0.7) * 0.3; break;
-                case 'wobble': result.dx = Math.sin(phase * 1.5) * 10; result.dy = Math.cos(phase * 1.3) * 8; break;
-                case 'glow': result.glow = 5 + Math.sin(phase) * 20; break;
-                case 'shine': result.opacity = 0.5 + 0.5 * Math.pow(Math.sin(phase), 2); break;
-                case 'neon': result.glow = 20 + Math.sin(phase * 1.5) * 15; break;
-                case 'sparkle': result.opacity = 0.3 + 0.7 * Math.pow(Math.sin(phase * 2), 4); break;
-                case 'hueShift': result.hue = phase * 360; break;
-                case 'colorPulse': result.hue = Math.sin(phase) * 60; break;
-                case 'rainbow': result.hue = phase * 720; break;
-                case 'chromatic': result.hue = phase * 360; result.glow = 15; break;
-                case 'swing': result.dx = Math.sin(phase * 0.8) * 20; result.rotation = Math.sin(phase * 0.8) * 0.2; break;
-                case 'sway': result.dx = Math.sin(phase * 0.5) * 30; break;
-                case 'drift': result.dx = Math.sin(phase * 0.3) * 40; result.dy = Math.cos(phase * 0.4) * 20; break;
-                case 'float': result.dy = Math.sin(phase * 0.7) * 20; break;
-                case 'hover': result.dy = Math.sin(phase * 0.5) * 15; result.glow = 5 + Math.sin(phase * 1.2) * 10; break;
-                case 'shake': result.dx = Math.sin(phase * 20) * 3; result.dy = Math.cos(phase * 22) * 3; break;
-                case 'jitter': result.dx = Math.sin(phase * 30) * 2; result.dy = Math.sin(phase * 28) * 2; break;
-                case 'pop': result.scale = 1 + 0.3 * Math.sin(phase * 2) * Math.sin(phase * 2); break;
-                case 'explode': result.scale = 1 + 0.4 * Math.pow(Math.sin(phase), 2); result.opacity = 0.3 + 0.7 * Math.pow(Math.cos(phase), 2); break;
-                case 'morph': result.scale = 1 + 0.2 * Math.sin(phase); result.rotation = Math.sin(phase * 0.8) * 0.2; break;
-                case 'spiral': result.dx = Math.sin(phase * 2) * 30; result.dy = Math.cos(phase * 2) * 20; result.rotation = phase * 0.5; break;
-                case 'sineWave': result.dy = Math.sin(phase * 3) * 20; break;
-                case 'figure8': result.dx = Math.sin(phase * 2) * 30; result.dy = Math.sin(phase * 4) * 15; break;
-                case 'butterfly': result.dx = Math.sin(phase * 3) * 25; result.dy = Math.cos(phase * 2.5) * 18; result.rotation = Math.sin(phase * 2) * 0.2; break;
-                case 'zigzag': result.dx = Math.sin(phase * 4) * 20; result.dy = Math.sin(phase * 8) * 10; break;
-                case 'blink': result.opacity = Math.sin(phase * 3) > 0.5 ? 1 : 0.1; break;
-                case 'pulseGlow': result.glow = 10 + Math.sin(phase * 1.5) * 20; result.scale = 1 + 0.05 * Math.sin(phase * 1.5); break;
-                case 'rainbowGlow': result.glow = 15 + Math.sin(phase) * 15; result.hue = phase * 360; break;
-                case 'neonPulse': result.glow = 20 + Math.sin(phase * 2) * 15; result.opacity = 0.5 + 0.5 * Math.sin(phase * 2); break;
-                case 'fire': result.dy = -Math.sin(phase * 5) * 10; result.scale = 1 + 0.1 * Math.sin(phase * 7); break;
-                case 'water': result.dy = Math.sin(phase * 2) * 8; result.dx = Math.sin(phase * 1.7) * 5; break;
-                case 'wind': result.dx = Math.sin(phase * 0.8) * 35; result.dy = Math.sin(phase * 0.6) * 10; break;
-                case 'earth': result.dy = Math.sin(phase * 0.5) * 12; result.rotation = Math.sin(phase * 0.3) * 0.05; break;
-                default: break;
-            }
-            return result;
-        }
-
-        // ===== Canvas Size =====
+        // ===== CANVAS SIZE =====
         function updateCanvasSize() {
             let w = parseInt(bannerWidthInput.value) || 600;
             let h = parseInt(bannerHeightInput.value) || 300;
@@ -747,16 +702,6 @@
                 c.style.width = w + 'px';
                 c.style.height = h + 'px';
             }
-            
-            if (uploadedImage) {
-                let maxW = w * 0.6, maxH = h * 0.6;
-                let iw = Math.min(imageFilters.imgWidth || 200, maxW);
-                let ih = Math.min(imageFilters.imgHeight || 200, maxH);
-                imageConfig.width = iw;
-                imageConfig.height = ih;
-                imageConfig.x = (w - iw) / 2;
-                imageConfig.y = (h - ih) / 2;
-            }
             preview();
         }
 
@@ -765,123 +710,153 @@
             preview();
         }
 
-        // ===== Image Size Control - Text Box =====
-        function updateImageSize() {
-            let w = parseInt(document.getElementById('imgWidth').value) || 200;
-            let h = parseInt(document.getElementById('imgHeight').value) || 200;
-            w = Math.max(10, Math.min(1000, w));
-            h = Math.max(10, Math.min(1000, h));
-            imageFilters.imgWidth = w;
-            imageFilters.imgHeight = h;
-            document.getElementById('imgWidthDisplay').textContent = w;
-            document.getElementById('imgHeightDisplay').textContent = h;
+        // ===== ANIMATION ENGINE FOR IMAGE LAYERS =====
+        function getLayerAnimation(t, layer, w, h) {
+            let result = { dx: 0, dy: 0, scale: 1, rotation: 0, opacity: 1, glow: 0, hue: 0 };
+            const speed = 1 / (layer.animTime || 8);
+            const phase = t * speed;
+            const animType = layer.animation || 'none';
             
-            if (uploadedImage) {
-                let maxW = canvasWidth * 0.6, maxH = canvasHeight * 0.6;
-                let iw = Math.min(w, maxW);
-                let ih = Math.min(h, maxH);
-                imageConfig.width = iw;
-                imageConfig.height = ih;
-                imageConfig.x = (canvasWidth - iw) / 2;
-                imageConfig.y = (canvasHeight - ih) / 2;
+            switch(animType) {
+                case 'none': break;
+                case 'zoom': result.scale = 1 + 0.15 * Math.sin(phase); break;
+                case 'rotate': result.rotation = phase * 0.5; break;
+                case 'bounce': result.dy = -Math.abs(Math.sin(phase)) * 25; break;
+                case 'fade': result.opacity = 0.4 + 0.6 * (0.5 + 0.5 * Math.sin(phase)); break;
+                case 'slide': result.dx = Math.sin(phase) * w * 0.08; break;
+                case 'wave': result.dy = Math.sin(phase) * h * 0.06; break;
+                case 'pulse': result.glow = 10 + Math.sin(phase) * 15; break;
+                case 'spin': result.rotation = phase * 2; break;
+                case 'glow': result.glow = 5 + Math.sin(phase) * 20; break;
+                case 'shake': result.dx = Math.sin(phase * 20) * 3; result.dy = Math.cos(phase * 22) * 3; break;
+                case 'flip': result.scale = Math.sin(phase) > 0 ? 1 : -1; break;
+                case 'swing': result.dx = Math.sin(phase * 0.8) * 20; result.rotation = Math.sin(phase * 0.8) * 0.2; break;
+                case 'float': result.dy = Math.sin(phase * 0.7) * 20; break;
+                default: break;
             }
-            preview();
+            return result;
         }
 
-        // ===== Image Upload =====
-        function handleImageUpload(event) {
-            const file = event.target.files[0];
-            if (!file) return;
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                const img = new Image();
-                img.onload = function() {
-                    uploadedImage = img;
-                    let w = canvasWidth, h = canvasHeight;
-                    let maxW = w * 0.6, maxH = h * 0.6;
-                    let iw = Math.min(img.width, maxW);
-                    let ih = Math.min(img.height, maxH);
-                    imageConfig.width = iw;
-                    imageConfig.height = ih;
-                    imageConfig.x = (w - iw) / 2;
-                    imageConfig.y = (h - ih) / 2;
-                    document.getElementById('imgWidth').value = iw;
-                    document.getElementById('imgHeight').value = ih;
-                    imageFilters.imgWidth = iw;
-                    imageFilters.imgHeight = ih;
-                    document.getElementById('imgWidthDisplay').textContent = iw;
-                    document.getElementById('imgHeightDisplay').textContent = ih;
-                    imageCustomPanel.classList.add('active');
-                    statusEl.textContent = '✅ Image loaded! Use text boxes for precise control.';
-                    resetFilters();
-                    preview();
-                };
-                img.src = e.target.result;
-            };
-            reader.readAsDataURL(file);
-        }
-
-        // ===== Filters - Text Boxes =====
-        function applyFilters() {
-            imageFilters.brightness = parseInt(document.getElementById('imgBrightness').value) || 0;
-            imageFilters.contrast = parseInt(document.getElementById('imgContrast').value) || 0;
-            imageFilters.saturation = parseInt(document.getElementById('imgSaturation').value) || 0;
-            imageFilters.blur = parseInt(document.getElementById('imgBlur').value) || 0;
-            imageFilters.opacity = parseInt(document.getElementById('imgOpacity').value) || 100;
-            imageFilters.radius = parseInt(document.getElementById('imgRadius').value) || 0;
-            imageFilters.border = parseInt(document.getElementById('imgBorder').value) || 0;
-            imageFilters.borderColor = document.getElementById('imgBorderColor').value;
-            imageFilters.shadow = parseInt(document.getElementById('imgShadow').value) || 0;
-            imageFilters.animation = document.getElementById('imgAnimation').value;
-            imageFilters.animTime = parseInt(document.getElementById('animTime').value) || 8;
-            imageFilters.gifFrames = parseInt(document.getElementById('gifFrames').value) || 20;
+        // ===== DRAW =====
+        function draw(layers, frameIndex = 0, totalFrames = 1) {
+            const w = canvasWidth, h = canvasHeight;
+            const baseBg = bannerBgInput.value;
             
-            // Clamp values
-            imageFilters.brightness = Math.max(-100, Math.min(100, imageFilters.brightness));
-            imageFilters.contrast = Math.max(-100, Math.min(100, imageFilters.contrast));
-            imageFilters.saturation = Math.max(-100, Math.min(100, imageFilters.saturation));
-            imageFilters.blur = Math.max(0, Math.min(20, imageFilters.blur));
-            imageFilters.opacity = Math.max(10, Math.min(100, imageFilters.opacity));
-            imageFilters.radius = Math.max(0, Math.min(50, imageFilters.radius));
-            imageFilters.border = Math.max(0, Math.min(10, imageFilters.border));
-            imageFilters.shadow = Math.max(0, Math.min(30, imageFilters.shadow));
-            imageFilters.animTime = Math.max(1, Math.min(30, imageFilters.animTime));
-            imageFilters.gifFrames = Math.max(5, Math.min(60, imageFilters.gifFrames));
+            ctx.clearRect(0, 0, w, h);
             
-            preview();
+            const grad = ctx.createRadialGradient(w*0.5, h*0.5, 10, w*0.5, h*0.5, w*0.7);
+            grad.addColorStop(0, baseBg);
+            grad.addColorStop(0.7, adjustColorBrightness(baseBg, -25));
+            ctx.fillStyle = grad;
+            ctx.fillRect(0, 0, w, h);
+
+            // ===== DRAW ALL IMAGE LAYERS =====
+            const t = totalFrames > 1 ? (frameIndex / totalFrames) * Math.PI * 2 : 0;
+            
+            imageLayers.forEach(layer => {
+                if (!layer.image || !layer.visible) return;
+                
+                const anim = getLayerAnimation(t, layer, w, h);
+                let dx = layer.x + (anim.dx || 0);
+                let dy = layer.y + (anim.dy || 0);
+                let dw = layer.width * (anim.scale || 1);
+                let dh = layer.height * (anim.scale || 1);
+                let rotation = (layer.rotation || 0) * Math.PI / 180 + (anim.rotation || 0);
+                let opacity = (anim.opacity || 1) * (layer.opacity / 100);
+                let glow = (layer.shadow || 0) + (anim.glow || 0);
+
+                dx = dx - (dw - layer.width) / 2;
+                dy = dy - (dh - layer.height) / 2;
+
+                let filterStr = '';
+                if (layer.brightness !== 0) filterStr += `brightness(${100 + layer.brightness}%) `;
+                if (layer.contrast !== 0) filterStr += `contrast(${100 + layer.contrast}%) `;
+                if (layer.saturation !== 0) filterStr += `saturate(${100 + layer.saturation}%) `;
+                if (layer.blur > 0) filterStr += `blur(${layer.blur}px) `;
+
+                let flipX = layer.flipH ? -1 : 1;
+                let flipY = layer.flipV ? -1 : 1;
+
+                ctx.save();
+                ctx.globalAlpha = Math.max(0, Math.min(1, opacity));
+                ctx.shadowColor = layer.borderColor;
+                ctx.shadowBlur = glow;
+
+                let cx = dx + dw/2, cy = dy + dh/2;
+                ctx.translate(cx, cy);
+                ctx.rotate(rotation);
+                ctx.scale(flipX, flipY);
+                ctx.translate(-cx, -cy);
+
+                if (layer.radius > 0) {
+                    ctx.beginPath();
+                    roundRect(ctx, dx, dy, dw, dh, layer.radius);
+                    ctx.clip();
+                }
+
+                if (filterStr) ctx.filter = filterStr;
+                ctx.drawImage(layer.image, dx, dy, dw, dh);
+                ctx.filter = 'none';
+
+                if (layer.border > 0) {
+                    ctx.shadowBlur = 0;
+                    ctx.strokeStyle = layer.borderColor;
+                    ctx.lineWidth = layer.border;
+                    if (layer.radius > 0) {
+                        ctx.beginPath();
+                        roundRect(ctx, dx, dy, dw, dh, layer.radius);
+                        ctx.stroke();
+                    } else {
+                        ctx.strokeRect(dx, dy, dw, dh);
+                    }
+                }
+                ctx.restore();
+            });
+
+            // ===== DRAW TEXT LAYERS =====
+            const textT = totalFrames > 1 ? (frameIndex / totalFrames) * Math.PI * 2 : 0;
+            layers.forEach(layer => {
+                ctx.save();
+                let targetX = layer.x, targetY = layer.y;
+                let glow = 12, opacity = 1;
+                if (layer.anim === 'wave') targetY += Math.sin(textT) * canvasHeight * 0.04;
+                else if (layer.anim === 'pulse') glow = 12 + Math.sin(textT)*10;
+                else if (layer.anim === 'slide') targetX += Math.sin(textT) * canvasWidth * 0.05;
+                else if (layer.anim === 'flicker') opacity = Math.random() > 0.8 ? 0.3 : 1;
+
+                ctx.globalAlpha = opacity;
+                ctx.shadowColor = layer.color + '99';
+                ctx.shadowBlur = glow;
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillStyle = layer.color;
+                ctx.font = `bold ${layer.size}px "${layer.font}"`;
+                ctx.fillText(layer.text || '', targetX, targetY);
+                ctx.restore();
+            });
         }
 
-        function resetFilters() {
-            document.getElementById('imgBrightness').value = 0;
-            document.getElementById('imgContrast').value = 0;
-            document.getElementById('imgSaturation').value = 0;
-            document.getElementById('imgBlur').value = 0;
-            document.getElementById('imgOpacity').value = 100;
-            document.getElementById('imgRadius').value = 0;
-            document.getElementById('imgBorder').value = 0;
-            document.getElementById('imgShadow').value = 0;
-            document.getElementById('imgAnimation').value = 'none';
-            document.getElementById('animTime').value = 8;
-            document.getElementById('gifFrames').value = 20;
-            imageFilters.flipH = false;
-            imageFilters.flipV = false;
-            imageFilters.rotate = 0;
-            applyFilters();
+        function roundRect(ctx, x, y, w, h, r) {
+            if (r > w/2) r = w/2;
+            if (r > h/2) r = h/2;
+            ctx.moveTo(x + r, y);
+            ctx.arcTo(x + w, y, x + w, y + h, r);
+            ctx.arcTo(x + w, y + h, x, y + h, r);
+            ctx.arcTo(x, y + h, x, y, r);
+            ctx.arcTo(x, y, x + w, y, r);
+            return ctx;
         }
 
-        function flipImage(direction) {
-            if (direction === 'horizontal') imageFilters.flipH = !imageFilters.flipH;
-            if (direction === 'vertical') imageFilters.flipV = !imageFilters.flipV;
-            preview();
+        function adjustColorBrightness(hex, percent) {
+            let r = parseInt(hex.slice(1,3),16), g = parseInt(hex.slice(3,5),16), b = parseInt(hex.slice(5,7),16);
+            r = Math.min(255, Math.max(0, r + percent));
+            g = Math.min(255, Math.max(0, g + percent));
+            b = Math.min(255, Math.max(0, b + percent));
+            return '#' + [r,g,b].map(c => c.toString(16).padStart(2,'0')).join('');
         }
 
-        function rotateImage(deg) {
-            imageFilters.rotate = (imageFilters.rotate + deg) % 360;
-            preview();
-        }
-
-        // ===== Text Layers =====
-        function addNewRow(text = 'New Layer', color = '#ffffff', size = 20, font = 'Arial', anim = 'static') {
+        // ===== TEXT LAYERS =====
+        function addNewRow(text = 'New Layer', color = '#ffffff', size = 18, font = 'Arial', anim = 'static') {
             const rowId = 'row_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4);
             const rowHtml = `
                 <div class="text-row" id="${rowId}" data-id="${rowId}">
@@ -935,7 +910,7 @@
                     id: id,
                     text: row.querySelector('.layer-text').value || '',
                     color: row.querySelector('.layer-clr').value,
-                    size: parseInt(row.querySelector('.layer-size').value) || 20,
+                    size: parseInt(row.querySelector('.layer-size').value) || 18,
                     font: row.querySelector('.layer-font').value,
                     anim: row.querySelector('.layer-anim').value,
                     x: coords.x,
@@ -945,128 +920,9 @@
             return layers;
         }
 
-        // ===== DRAW =====
-        function draw(layers, frameIndex = 0, totalFrames = 1) {
-            const w = canvasWidth, h = canvasHeight;
-            const baseBg = bannerBgInput.value;
-            
-            ctx.clearRect(0, 0, w, h);
-            
-            const grad = ctx.createRadialGradient(w*0.5, h*0.5, 10, w*0.5, h*0.5, w*0.7);
-            grad.addColorStop(0, baseBg);
-            grad.addColorStop(0.7, adjustColorBrightness(baseBg, -25));
-            ctx.fillStyle = grad;
-            ctx.fillRect(0, 0, w, h);
-
-            // Draw Image with 50+ animations
-            if (uploadedImage) {
-                const t = totalFrames > 1 ? (frameIndex / totalFrames) * Math.PI * 2 : 0;
-                const animType = imageFilters.animation;
-                const animResult = getAnimationValue(t, animType, imageConfig.width, imageConfig.height, w, h);
-                
-                let dx = imageConfig.x + (animResult.dx || 0);
-                let dy = imageConfig.y + (animResult.dy || 0);
-                let dw = imageConfig.width * (animResult.scale || 1);
-                let dh = imageConfig.height * (animResult.scale || 1);
-                let rotation = (imageFilters.rotate || 0) * Math.PI / 180 + (animResult.rotation || 0);
-                let opacity = (animResult.opacity || 1) * (imageFilters.opacity / 100);
-                let glow = imageFilters.shadow + (animResult.glow || 0);
-                let hue = animResult.hue || 0;
-
-                dx = dx - (dw - imageConfig.width) / 2;
-                dy = dy - (dh - imageConfig.height) / 2;
-
-                let filterStr = '';
-                if (imageFilters.brightness !== 0) filterStr += `brightness(${100 + imageFilters.brightness}%) `;
-                if (imageFilters.contrast !== 0) filterStr += `contrast(${100 + imageFilters.contrast}%) `;
-                if (imageFilters.saturation !== 0) filterStr += `saturate(${100 + imageFilters.saturation}%) `;
-                if (imageFilters.blur > 0) filterStr += `blur(${imageFilters.blur}px) `;
-                if (hue !== 0) filterStr += `hue-rotate(${hue}deg) `;
-
-                let flipScaleX = imageFilters.flipH ? -1 : 1;
-                let flipScaleY = imageFilters.flipV ? -1 : 1;
-
-                ctx.save();
-                ctx.globalAlpha = opacity;
-                ctx.shadowColor = imageFilters.borderColor;
-                ctx.shadowBlur = glow;
-
-                let cx = dx + dw/2, cy = dy + dh/2;
-                ctx.translate(cx, cy);
-                ctx.rotate(rotation);
-                ctx.scale(flipScaleX, flipScaleY);
-                ctx.translate(-cx, -cy);
-
-                if (imageFilters.radius > 0) {
-                    ctx.beginPath();
-                    roundRect(ctx, dx, dy, dw, dh, imageFilters.radius);
-                    ctx.clip();
-                }
-
-                if (filterStr) ctx.filter = filterStr;
-                ctx.drawImage(uploadedImage, dx, dy, dw, dh);
-                ctx.filter = 'none';
-
-                if (imageFilters.border > 0) {
-                    ctx.shadowBlur = 0;
-                    ctx.strokeStyle = imageFilters.borderColor;
-                    ctx.lineWidth = imageFilters.border;
-                    if (imageFilters.radius > 0) {
-                        ctx.beginPath();
-                        roundRect(ctx, dx, dy, dw, dh, imageFilters.radius);
-                        ctx.stroke();
-                    } else {
-                        ctx.strokeRect(dx, dy, dw, dh);
-                    }
-                }
-                ctx.restore();
-            }
-
-            // Draw Text
-            const t = totalFrames > 1 ? (frameIndex / totalFrames) * Math.PI * 2 : 0;
-            layers.forEach(layer => {
-                ctx.save();
-                let targetX = layer.x, targetY = layer.y;
-                let glow = 12, opacity = 1;
-                if (layer.anim === 'wave') targetY += Math.sin(t) * canvasHeight * 0.04;
-                else if (layer.anim === 'pulse') glow = 12 + Math.sin(t)*10;
-                else if (layer.anim === 'slide') targetX += Math.sin(t) * canvasWidth * 0.05;
-                else if (layer.anim === 'flicker') opacity = Math.random() > 0.8 ? 0.3 : 1;
-
-                ctx.globalAlpha = opacity;
-                ctx.shadowColor = layer.color + '99';
-                ctx.shadowBlur = glow;
-                ctx.textAlign = 'center';
-                ctx.textBaseline = 'middle';
-                ctx.fillStyle = layer.color;
-                ctx.font = `bold ${layer.size}px "${layer.font}"`;
-                ctx.fillText(layer.text || '', targetX, targetY);
-                ctx.restore();
-            });
-        }
-
-        function roundRect(ctx, x, y, w, h, r) {
-            if (r > w/2) r = w/2;
-            if (r > h/2) r = h/2;
-            ctx.moveTo(x + r, y);
-            ctx.arcTo(x + w, y, x + w, y + h, r);
-            ctx.arcTo(x + w, y + h, x, y + h, r);
-            ctx.arcTo(x, y + h, x, y, r);
-            ctx.arcTo(x, y, x + w, y, r);
-            return ctx;
-        }
-
-        function adjustColorBrightness(hex, percent) {
-            let r = parseInt(hex.slice(1,3),16), g = parseInt(hex.slice(3,5),16), b = parseInt(hex.slice(5,7),16);
-            r = Math.min(255, Math.max(0, r + percent));
-            g = Math.min(255, Math.max(0, g + percent));
-            b = Math.min(255, Math.max(0, b + percent));
-            return '#' + [r,g,b].map(c => c.toString(16).padStart(2,'0')).join('');
-        }
-
         function preview() {
             draw(getActiveLayers(), 0, 1);
-            statusEl.textContent = '✅ Preview · ' + imageFilters.animation;
+            statusEl.textContent = `✅ Preview · ${imageLayers.length} images loaded`;
             statusEl.style.color = '#00e676';
         }
 
@@ -1084,7 +940,7 @@
             }
         }
 
-        // ===== DRAG =====
+        // ===== DRAG for Image Layers =====
         function getEventCoords(e) {
             const rect = c.getBoundingClientRect();
             const scaleX = canvasWidth / rect.width;
@@ -1099,6 +955,23 @@
 
         function dragStart(e) {
             const coords = getEventCoords(e);
+            
+            // Check image layers first (top to bottom)
+            for (let i = imageLayers.length - 1; i >= 0; i--) {
+                const layer = imageLayers[i];
+                if (!layer.image || !layer.visible) continue;
+                if (coords.x >= layer.x && coords.x <= layer.x + layer.width &&
+                    coords.y >= layer.y && coords.y <= layer.y + layer.height) {
+                    isDragging = true;
+                    draggedElement = layer.id;
+                    draggedLayerType = 'image';
+                    dragOffset.x = coords.x - layer.x;
+                    dragOffset.y = coords.y - layer.y;
+                    return;
+                }
+            }
+            
+            // Check text layers
             const layers = getActiveLayers();
             for (let i = layers.length-1; i>=0; i--) {
                 const l = layers[i];
@@ -1109,17 +982,11 @@
                     coords.y >= l.y - th/2 && coords.y <= l.y + th/2) {
                     isDragging = true;
                     draggedElement = l.id;
+                    draggedLayerType = 'text';
                     dragOffset.x = coords.x - l.x;
                     dragOffset.y = coords.y - l.y;
                     return;
                 }
-            }
-            if (uploadedImage && coords.x >= imageConfig.x && coords.x <= imageConfig.x+imageConfig.width &&
-                coords.y >= imageConfig.y && coords.y <= imageConfig.y+imageConfig.height) {
-                isDragging = true;
-                draggedElement = 'image';
-                dragOffset.x = coords.x - imageConfig.x;
-                dragOffset.y = coords.y - imageConfig.y;
             }
         }
 
@@ -1127,17 +994,23 @@
             if (!isDragging) return;
             e.preventDefault();
             const coords = getEventCoords(e);
-            if (draggedElement === 'image') {
-                imageConfig.x = coords.x - dragOffset.x;
-                imageConfig.y = coords.y - dragOffset.y;
-            } else if (draggedElement) {
+            
+            if (draggedLayerType === 'image') {
+                const layer = imageLayers.find(l => l.id === draggedElement);
+                if (layer) {
+                    layer.x = coords.x - dragOffset.x;
+                    layer.y = coords.y - dragOffset.y;
+                    renderImageLayers();
+                    preview();
+                }
+            } else if (draggedLayerType === 'text') {
                 layerCoords[draggedElement].x = coords.x - dragOffset.x;
                 layerCoords[draggedElement].y = coords.y - dragOffset.y;
+                preview();
             }
-            preview();
         }
 
-        function dragEnd() { isDragging = false; draggedElement = null; }
+        function dragEnd() { isDragging = false; draggedElement = null; draggedLayerType = null; }
 
         c.addEventListener('mousedown', dragStart);
         window.addEventListener('mousemove', dragMove);
@@ -1146,11 +1019,10 @@
         window.addEventListener('touchmove', dragMove, { passive: false });
         window.addEventListener('touchend', dragEnd);
 
-        // ===== GIF Download with Quality Control =====
+        // ===== GIF Download =====
         function downloadGIF() {
             const layers = getActiveLayers();
             
-            // Get quality settings
             const qualityMap = {
                 low: { scale: 0.5, label: 'Low (240p)' },
                 medium: { scale: 1, label: 'Medium (480p)' },
@@ -1160,10 +1032,8 @@
             };
             const quality = qualityMap[currentQuality] || qualityMap.medium;
             
-            // Calculate output size
             let outW = Math.round(canvasWidth * quality.scale);
             let outH = Math.round(canvasHeight * quality.scale);
-            // Cap at 4K
             outW = Math.min(outW, 3840);
             outH = Math.min(outH, 2160);
             
@@ -1173,12 +1043,11 @@
             plabel.style.display = 'block';
             fill.style.width = '0%';
             
-            const totalFrames = imageFilters.gifFrames || 20;
+            const totalFrames = 20;
             const delay = Math.round(10 / quality.scale);
             const frames = [];
             let frameIndex = 0;
 
-            // Create temp canvas for high quality rendering
             const tempCanvas = document.createElement('canvas');
             tempCanvas.width = outW;
             tempCanvas.height = outH;
@@ -1187,18 +1056,15 @@
             function captureFrame() {
                 const pct = Math.round((frameIndex/totalFrames)*100);
                 fill.style.width = pct + '%';
-                plabel.textContent = `Frame ${frameIndex+1}/${totalFrames} · ${quality.label}`;
+                plabel.textContent = `Frame ${frameIndex+1}/${totalFrames}`;
                 
-                // Draw on main canvas
                 draw(layers, frameIndex, totalFrames);
                 
-                // Render to temp canvas with quality scaling
                 tempCtx.clearRect(0, 0, outW, outH);
                 tempCtx.imageSmoothingEnabled = true;
                 tempCtx.imageSmoothingQuality = 'high';
                 tempCtx.drawImage(c, 0, 0, canvasWidth, canvasHeight, 0, 0, outW, outH);
                 
-                // Copy to frame
                 const frameCanvas = document.createElement('canvas');
                 frameCanvas.width = outW;
                 frameCanvas.height = outH;
@@ -1229,7 +1095,7 @@
                             
                             progress.style.display = 'none';
                             plabel.style.display = 'none';
-                            statusEl.textContent = `✅ GIF downloaded! ${quality.label} (${outW}×${outH})`;
+                            statusEl.textContent = `✅ GIF saved! ${quality.label} (${outW}×${outH})`;
                             statusEl.style.color = '#00e676';
                             setTimeout(() => draw(layers, 0, 1), 200);
                         } catch(e) {
@@ -1356,13 +1222,11 @@
         window.downloadGIF = downloadGIF;
         window.updateCanvasSize = updateCanvasSize;
         window.updateBg = updateBg;
-        window.handleImageUpload = handleImageUpload;
-        window.applyFilters = applyFilters;
-        window.resetFilters = resetFilters;
-        window.flipImage = flipImage;
-        window.rotateImage = rotateImage;
-        window.updateImageSize = updateImageSize;
         window.updateQuality = updateQuality;
+        window.addImageLayer = addImageLayer;
+        window.uploadImageToLayer = uploadImageToLayer;
+        window.updateImageLayer = updateImageLayer;
+        window.removeImageLayer = removeImageLayer;
 
         // ===== INIT =====
         initialLayers.forEach(l => addNewRow(l.text, l.color, l.size, l.font, l.anim));
@@ -1378,7 +1242,12 @@
         window.addEventListener('resize', handleResize);
         updateQuality();
         
-        statusEl.textContent = '✅ Upload image · Text boxes for precise control · HD/4K ready!';
+        // Add default image layer with demo
+        setTimeout(() => {
+            addImageLayer();
+        }, 100);
+        
+        statusEl.textContent = '✅ Add multiple images · Each layer has own settings!';
         statusEl.style.color = '#00e676';
     })();
 </script>
