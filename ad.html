@@ -3,2110 +3,1384 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Ad Studio Pro - GIPHY GIF Export</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js">
-    </script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/gif.js/0.2.0/gif.js">
-    </script>
+    <title>🎯 GIF Banner Pro · HD/4K Quality</title>
     <style>
         * {
+            box-sizing: border-box;
             margin: 0;
             padding: 0;
-            box-sizing: border-box;
-            -webkit-tap-highlight-color: transparent;
         }
         :root {
-            --bg-primary: #0a0e1a;
-            --bg-secondary: #131b2e;
-            --bg-card: #1a2440;
-            --border-color: #2a3a5c;
-            --accent-blue: #3b82f6;
-            --accent-purple: #8b5cf6;
-            --accent-green: #10b981;
-            --accent-pink: #ec4899;
-            --accent-orange: #f59e0b;
-            --accent-red: #ef4444;
-            --text-primary: #f1f5f9;
-            --text-secondary: #94a3b8;
+            --bg-primary: #0a0a16;
+            --bg-secondary: #12122a;
+            --bg-card: #1a1a3a;
+            --accent: #f5a623;
+            --accent-glow: rgba(245, 166, 35, 0.4);
+            --text-main: #f0f0ff;
+            --text-muted: #8e8eb0;
+            --success: #00e676;
+            --danger: #ff4d6d;
+            --border-subtle: rgba(255,255,255,0.06);
+            --gradient-btn: linear-gradient(135deg, #f5a623, #f57c00);
         }
         body {
             background: var(--bg-primary);
-            color: var(--text-primary);
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            padding: 10px;
-            min-height: 100vh;
             display: flex;
             justify-content: center;
+            align-items: flex-start;
+            min-height: 100vh;
+            font-family: 'Inter', 'Segoe UI', system-ui, sans-serif;
+            margin: 0;
+            padding: 8px;
+            color: var(--text-main);
         }
-        .app {
-            max-width: 480px;
-            width: 100%;
-            padding-bottom: 30px;
-        }
-        .header {
+        .box {
             background: var(--bg-secondary);
-            border: 1px solid var(--border-color);
-            border-radius: 16px;
-            padding: 12px 16px;
-            margin-bottom: 12px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
+            padding: 14px 16px;
+            border-radius: 20px;
+            max-width: 1200px;
+            width: 100%;
+            border: 1px solid rgba(255,255,255,0.03);
+            box-shadow: 0 30px 60px rgba(0,0,0,0.7);
         }
-        .header h1 {
-            font-size: 16px;
-            font-weight: 800;
-            background: linear-gradient(135deg, var(--accent-blue), var(--accent-purple), var(--accent-pink));
+        h2 {
+            font-size: clamp(16px, 3vw, 24px);
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            margin: 0 0 8px 0;
+            letter-spacing: -0.5px;
+            flex-wrap: wrap;
+        }
+        h2 span {
+            background: linear-gradient(135deg, #fff 30%, var(--accent));
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
         }
-        .header .badge {
-            background: var(--accent-green);
-            padding: 4px 12px;
-            border-radius: 20px;
-            font-size: 10px;
-            font-weight: 700;
-            color: white;
-            -webkit-text-fill-color: white;
-        }
-        .header .badge-adv {
-            background: var(--accent-orange);
-            padding: 4px 12px;
-            border-radius: 20px;
-            font-size: 10px;
-            font-weight: 700;
-            color: white;
-            -webkit-text-fill-color: white;
-            margin-left: 6px;
-        }
-        .card {
-            background: var(--bg-secondary);
-            border: 1px solid var(--border-color);
-            border-radius: 16px;
-            padding: 14px;
-            margin-bottom: 12px;
-        }
-        .card-title {
-            font-size: 11px;
-            font-weight: 700;
-            color: var(--accent-blue);
-            text-transform: uppercase;
-            letter-spacing: 0.8px;
-            margin-bottom: 10px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-        .card-title .title-icon {
-            font-size: 16px;
-        }
-        .template-grid {
+        .top-row {
             display: grid;
-            grid-template-columns: 1fr 1fr 1fr;
-            gap: 6px;
-        }
-        .template-item {
-            background: var(--bg-card);
-            border: 2px solid var(--border-color);
+            grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+            gap: 5px;
+            background: rgba(0,0,0,0.3);
+            padding: 8px 10px;
             border-radius: 12px;
-            padding: 10px 8px;
-            text-align: center;
-            cursor: pointer;
-            transition: all 0.2s;
+            margin-bottom: 8px;
+            border: 1px solid var(--border-subtle);
         }
-        .template-item:active {
-            transform: scale(0.95);
-            border-color: var(--accent-blue);
-        }
-        .template-item .icon {
-            font-size: 20px;
-            display: block;
-        }
-        .template-item .name {
-            font-size: 9px;
-            font-weight: 600;
-            margin-top: 3px;
-        }
-        .template-item .tag {
-            font-size: 7px;
-            color: var(--text-secondary);
-        }
-        .template-item .badge {
-            font-size: 6px;
-            padding: 1px 8px;
-            border-radius: 8px;
-            display: inline-block;
-            margin-top: 3px;
-            font-weight: 700;
-        }
-        .badge-anim {
-            background: var(--accent-blue);
-            color: white;
-        }
-        .badge-gif {
-            background: var(--accent-pink);
-            color: white;
-        }
-        .badge-premium {
-            background: linear-gradient(135deg, #f59e0b, #ef4444);
-            color: white;
-        }
-        .badge-giphy {
-            background: #00ff87;
-            color: #000;
-        }
-        .input-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 6px;
-        }
-        .input-group {
+        .top-row .item {
             display: flex;
             flex-direction: column;
-            gap: 3px;
-        }
-        .input-group label {
-            font-size: 9px;
-            color: var(--text-secondary);
-            text-transform: uppercase;
-            font-weight: 600;
-            letter-spacing: 0.5px;
-        }
-        .input-group input,
-        .input-group select {
-            background: var(--bg-primary);
-            border: 1px solid var(--border-color);
-            border-radius: 8px;
-            padding: 8px 10px;
-            color: var(--text-primary);
-            font-size: 12px;
-            outline: none;
-            height: 36px;
-            width: 100%;
-        }
-        .input-group input[type="color"] {
-            padding: 2px;
-            height: 36px;
-            cursor: pointer;
-        }
-        .input-group input[type="range"] {
-            padding: 0;
-            height: 6px;
-            background: var(--border-color);
-            border-radius: 4px;
-            -webkit-appearance: none;
-        }
-        .input-group input[type="range"]::-webkit-slider-thumb {
-            -webkit-appearance: none;
-            width: 16px;
-            height: 16px;
-            border-radius: 50%;
-            background: var(--accent-blue);
-            cursor: pointer;
-        }
-        .color-hex {
-            background: var(--bg-primary);
-            border: 1px solid var(--border-color);
-            border-radius: 8px;
-            padding: 8px 10px;
-            font-size: 11px;
-            color: var(--text-secondary);
-            font-family: monospace;
-            height: 36px;
-            display: flex;
-            align-items: center;
-        }
-        .bg-options {
-            display: flex;
-            gap: 6px;
-            margin-top: 4px;
-        }
-        .bg-options .btn {
-            flex: 1;
-            padding: 6px;
-            font-size: 9px;
-        }
-        .btn-row {
-            display: grid;
-            grid-template-columns: 1fr 1fr 1fr 1fr;
-            gap: 5px;
-        }
-        .btn {
-            padding: 10px 4px;
-            border: none;
-            border-radius: 10px;
-            font-size: 10px;
-            font-weight: 700;
-            cursor: pointer;
-            transition: all 0.15s;
-            text-align: center;
-            color: white;
-            -webkit-tap-highlight-color: transparent;
-            touch-action: manipulation;
-        }
-        .btn:active {
-            transform: scale(0.94);
-        }
-        .btn-blue {
-            background: var(--accent-blue);
-        }
-        .btn-purple {
-            background: var(--accent-purple);
-        }
-        .btn-green {
-            background: var(--accent-green);
-        }
-        .btn-pink {
-            background: var(--accent-pink);
-        }
-        .btn-red {
-            background: var(--accent-red);
-        }
-        .btn-orange {
-            background: var(--accent-orange);
-        }
-        .btn-outline {
-            background: transparent;
-            border: 1px solid var(--border-color);
-            color: var(--text-primary);
-        }
-        .export-row {
-            display: grid;
-            grid-template-columns: 1fr 1fr 1fr 1fr;
-            gap: 5px;
-            margin-top: 8px;
-        }
-        .canvas-frame {
-            background: var(--bg-primary);
-            border: 2px dashed var(--border-color);
-            border-radius: 16px;
-            padding: 16px;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 180px;
-            position: relative;
-        }
-        .canvas-frame .label {
-            position: absolute;
-            top: 8px;
-            left: 12px;
-            font-size: 8px;
-            color: var(--text-secondary);
-            font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-        .canvas-frame.transparent-mode {
-            background: repeating-conic-gradient(#1a2440 0% 25%, #0a0e1a 0% 50%) 0 0 / 20px 20px;
-        }
-        #adCanvas {
-            background: #ffffff;
-            position: relative;
-            overflow: hidden;
-            transition: all 0.2s;
-            width: 320px;
-            height: 50px;
-            border-radius: 0px;
-            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
-            touch-action: none;
-        }
-        #adCanvas.interstitial {
-            width: 280px !important;
-            height: 340px !important;
-            border-radius: 16px;
-        }
-        #adCanvas.transparent-bg {
-            background: transparent !important;
-        }
-        .ad-node {
-            position: absolute;
-            cursor: grab;
-            user-select: none;
-            touch-action: none;
-            outline: 1px dashed rgba(0, 0, 0, 0.15);
-            display: inline-block;
-            min-width: 10px;
-            min-height: 10px;
-        }
-        .ad-node:active {
-            cursor: grabbing;
-        }
-        .ad-node.active {
-            outline: 2px solid var(--accent-blue) !important;
-            box-shadow: 0 0 20px rgba(59, 130, 246, 0.5);
-            z-index: 999;
-        }
-        .ad-node img {
-            width: 100%;
-            height: 100%;
-            object-fit: fill;
-            pointer-events: none;
-            display: block;
-        }
-        .ad-node .text-inside {
-            font-size: 14px;
-            color: #000000;
-            font-weight: 700;
-            white-space: nowrap;
-            pointer-events: none;
-            padding: 2px 4px;
-            transition: all 0.2s;
-        }
-        /* CSS ANIMATIONS */
-        .text-fade {
-            animation: textFade 1.5s ease-in-out infinite alternate;
-        }
-        @keyframes textFade {
-            0% { opacity: 0.2;
-                transform: scale(0.95); }
-            100% { opacity: 1;
-                transform: scale(1); }
-        }
-        .text-bounce {
-            animation: textBounce 0.8s ease infinite;
-        }
-        @keyframes textBounce {
-            0%,
-            100% { transform: translateY(0); }
-            50% { transform: translateY(-8px); }
-        }
-        .text-flash {
-            animation: textFlash 0.5s ease-in-out infinite alternate;
-        }
-        @keyframes textFlash {
-            0% { opacity: 0.3;
-                color: #ff0000; }
-            100% { opacity: 1;
-                color: #ff6600; }
-        }
-        .text-slide {
-            animation: textSlide 1.5s ease-in-out infinite alternate;
-        }
-        @keyframes textSlide {
-            0% { transform: translateX(-10px);
-                opacity: 0.5; }
-            100% { transform: translateX(10px);
-                opacity: 1; }
-        }
-        .text-rainbow {
-            animation: textRainbow 2s linear infinite;
-        }
-        @keyframes textRainbow {
-            0% { color: #ff0000; }
-            17% { color: #ff8800; }
-            33% { color: #ffff00; }
-            50% { color: #00ff00; }
-            67% { color: #0088ff; }
-            83% { color: #8800ff; }
-            100% { color: #ff0000; }
-        }
-        .text-pulse {
-            animation: textPulse 0.8s ease-in-out infinite alternate;
-        }
-        @keyframes textPulse {
-            0% { transform: scale(1); }
-            100% { transform: scale(1.2); }
-        }
-        .text-spin {
-            animation: textSpin 3s linear infinite;
-        }
-        @keyframes textSpin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-        .text-glow {
-            animation: textGlow 1s ease-in-out infinite alternate;
-        }
-        @keyframes textGlow {
-            0% { text-shadow: 0 0 5px rgba(255, 255, 255, 0.3); }
-            100% { text-shadow: 0 0 20px rgba(59, 130, 246, 0.8), 0 0 40px rgba(59, 130, 246, 0.4); }
-        }
-        .img-zoom {
-            animation: imgZoom 1.5s ease-in-out infinite alternate;
-        }
-        @keyframes imgZoom {
-            0% { transform: scale(0.9); }
-            100% { transform: scale(1.1); }
-        }
-        .img-shake {
-            animation: imgShake 0.5s ease-in-out infinite;
-        }
-        @keyframes imgShake {
-            0%,
-            100% { transform: rotate(0deg); }
-            25% { transform: rotate(-5deg); }
-            75% { transform: rotate(5deg); }
-        }
-        .img-rotate {
-            animation: imgRotate 3s linear infinite;
-        }
-        @keyframes imgRotate {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-        .img-bounce {
-            animation: imgBounce 0.8s ease infinite;
-        }
-        @keyframes imgBounce {
-            0%,
-            100% { transform: translateY(0); }
-            50% { transform: translateY(-10px); }
-        }
-        .img-fade {
-            animation: imgFade 1.5s ease-in-out infinite alternate;
-        }
-        @keyframes imgFade {
-            0% { opacity: 0.4;
-                transform: scale(0.95); }
-            100% { opacity: 1;
-                transform: scale(1); }
-        }
-        .gif-pulse {
-            animation: gifPulse 1.2s ease-in-out infinite alternate;
-        }
-        @keyframes gifPulse {
-            0% { filter: drop-shadow(0 0 2px rgba(251, 191, 36, 0.3));
-                transform: scale(0.95); }
-            100% { filter: drop-shadow(0 0 20px rgba(251, 191, 36, 0.9));
-                transform: scale(1.05); }
-        }
-        .gif-glitch {
-            animation: gifGlitch 0.3s ease-in-out infinite alternate;
-        }
-        @keyframes gifGlitch {
-            0% { filter: hue-rotate(0deg);
-                transform: translateX(0); }
-            25% { filter: hue-rotate(90deg);
-                transform: translateX(2px); }
-            75% { filter: hue-rotate(-90deg);
-                transform: translateX(-2px); }
-            100% { filter: hue-rotate(0deg);
-                transform: translateX(0); }
-        }
-        .gif-rainbow {
-            animation: gifRainbow 2s linear infinite;
-        }
-        @keyframes gifRainbow {
-            0% { filter: hue-rotate(0deg); }
-            100% { filter: hue-rotate(360deg); }
-        }
-        .shape-spin {
-            animation: shapeSpin 2s linear infinite;
-        }
-        @keyframes shapeSpin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-        .shape-pulse {
-            animation: shapePulse 1s ease-in-out infinite alternate;
-        }
-        @keyframes shapePulse {
-            0% { transform: scale(0.8);
-                opacity: 0.6; }
-            100% { transform: scale(1.2);
-                opacity: 1; }
-        }
-        .shape-bounce {
-            animation: shapeBounce 0.6s ease infinite;
-        }
-        @keyframes shapeBounce {
-            0%,
-            100% { transform: translateY(0); }
-            50% { transform: translateY(-15px); }
-        }
-        .interstitial-close {
-            position: absolute;
-            top: 6px;
-            right: 6px;
-            width: 26px;
-            height: 26px;
-            background: rgba(0, 0, 0, 0.7);
-            color: white;
-            border-radius: 50%;
-            display: none;
-            align-items: center;
-            justify-content: center;
-            font-size: 16px;
-            font-weight: bold;
-            z-index: 1000;
-            cursor: pointer;
-            border: 1px solid rgba(255, 255, 255, 0.2);
-        }
-        #fileInput {
-            display: none;
-        }
-        .inspector {
-            background: var(--bg-card);
-            border: 1px solid var(--accent-blue);
-            border-radius: 12px;
-            padding: 12px;
-            margin-top: 10px;
-            display: none;
-        }
-        .inspector .title {
-            font-size: 10px;
-            color: var(--accent-blue);
-            font-weight: 700;
-            text-transform: uppercase;
-            margin-bottom: 8px;
-        }
-        .inspector-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 6px;
-        }
-        .inspector-grid .input-group input {
-            padding: 6px 8px;
-            height: 30px;
-            font-size: 11px;
-        }
-        #textControls {
-            display: none;
-            margin-top: 6px;
-        }
-        #imageControls {
-            display: none;
-            margin-top: 6px;
-        }
-        .trans-toggle {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            background: var(--bg-primary);
-            border: 1px solid var(--border-color);
-            border-radius: 8px;
-            padding: 6px 10px;
-            margin-top: 4px;
-        }
-        .trans-toggle label {
-            font-size: 9px;
-            color: var(--text-secondary);
-            text-transform: uppercase;
-            font-weight: 600;
-        }
-        .trans-toggle input[type="checkbox"] {
-            width: 36px;
-            height: 20px;
-            -webkit-appearance: none;
-            background: var(--border-color);
-            border-radius: 10px;
-            position: relative;
-            cursor: pointer;
-            transition: all 0.3s;
-        }
-        .trans-toggle input[type="checkbox"]:checked {
-            background: var(--accent-blue);
-        }
-        .trans-toggle input[type="checkbox"]::before {
-            content: '';
-            position: absolute;
-            width: 16px;
-            height: 16px;
-            background: white;
-            border-radius: 50%;
-            top: 2px;
-            left: 2px;
-            transition: all 0.3s;
-        }
-        .trans-toggle input[type="checkbox"]:checked::before {
-            left: 18px;
-        }
-        .anim-selector {
-            display: grid;
-            grid-template-columns: 1fr 1fr 1fr;
-            gap: 4px;
-            margin-top: 6px;
-        }
-        .anim-selector .btn {
-            padding: 4px 2px;
-            font-size: 8px;
-        }
-        .adv-panel {
-            background: var(--bg-card);
-            border: 1px solid var(--accent-orange);
-            border-radius: 12px;
-            padding: 12px;
-            margin-top: 8px;
-            display: none;
-        }
-        .adv-panel .adv-title {
-            font-size: 10px;
-            color: var(--accent-orange);
-            font-weight: 700;
-            text-transform: uppercase;
-            margin-bottom: 8px;
-        }
-        .adv-panel .adv-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr 1fr;
-            gap: 6px;
-        }
-        .adv-panel .adv-grid .btn {
-            padding: 8px 4px;
-            font-size: 9px;
-        }
-        .gif-options {
-            display: grid;
-            grid-template-columns: 1fr 1fr 1fr;
-            gap: 6px;
-            margin-top: 6px;
-        }
-        .gif-options .input-group {
             gap: 2px;
         }
-        .gif-options .input-group label {
+        .top-row .item label {
             font-size: 7px;
-        }
-        .gif-options .input-group input {
-            height: 28px;
-            font-size: 10px;
-            padding: 4px 6px;
-        }
-        .toast {
-            position: fixed;
-            bottom: 30px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: var(--accent-green);
-            color: white;
-            padding: 14px 24px;
-            border-radius: 14px;
-            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 0.4px;
+            color: var(--text-muted);
             font-weight: 600;
-            z-index: 9999;
-            display: none;
-            box-shadow: 0 8px 30px rgba(16, 185, 129, 0.4);
-            max-width: 90%;
+        }
+        .top-row .item input[type="number"],
+        .top-row .item input[type="text"] {
+            background: var(--bg-card);
+            border: 1px solid var(--border-subtle);
+            padding: 3px 5px;
+            border-radius: 5px;
+            color: #fff;
+            font-size: 10px;
+            outline: none;
+            width: 100%;
+        }
+        .top-row .item input:focus {
+            border-color: var(--accent);
+        }
+        .top-row .item input[type="color"] {
+            width: 28px;
+            height: 24px;
+            border: none;
+            padding: 0;
+            border-radius: 5px;
+            background: transparent;
+            cursor: pointer;
+        }
+        .top-row .item .color-wrapper {
+            display: flex;
+            gap: 3px;
+            align-items: center;
+        }
+        .top-row .item .color-wrapper input[type="text"] {
+            width: 40px;
+            padding: 2px 3px;
+            font-size: 8px;
+        }
+        .file-upload-btn {
+            background: var(--bg-card);
+            border: 1px dashed rgba(255,255,255,0.2);
+            padding: 3px 6px;
+            border-radius: 5px;
             text-align: center;
-            animation: slideUp 0.3s ease;
+            font-size: 9px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: 0.2s;
+            color: var(--text-muted);
         }
-        .toast.error {
-            background: var(--accent-red);
-            box-shadow: 0 8px 30px rgba(239, 68, 68, 0.4);
+        .file-upload-btn:hover {
+            background: rgba(255,255,255,0.05);
+            border-color: var(--accent);
         }
-        .toast.show {
+
+        /* Image Custom Panel - Text Boxes Only */
+        .image-custom-panel {
+            background: rgba(0,0,0,0.35);
+            border-radius: 12px;
+            padding: 8px 10px;
+            margin-bottom: 8px;
+            border: 1px solid var(--border-subtle);
+            display: none;
+        }
+        .image-custom-panel.active {
             display: block;
         }
-        @keyframes slideUp {
-            from {
-                opacity: 0;
-                transform: translateX(-50%) translateY(20px);
-            }
-            to {
-                opacity: 1;
-                transform: translateX(-50%) translateY(0);
-            }
-        }
-        .download-dialog {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.9);
-            z-index: 9998;
-            display: none;
-            flex-direction: column;
+        .image-custom-panel .panel-title {
+            font-size: 10px;
+            font-weight: 700;
+            color: var(--accent);
+            margin-bottom: 5px;
+            display: flex;
             align-items: center;
-            justify-content: center;
-            padding: 20px;
+            gap: 5px;
+            flex-wrap: wrap;
         }
-        .download-dialog .dialog-box {
-            background: var(--bg-secondary);
-            border: 2px solid var(--accent-blue);
-            border-radius: 20px;
-            padding: 24px;
-            max-width: 400px;
-            width: 100%;
-            text-align: center;
-        }
-        .download-dialog .dialog-box h3 {
-            color: var(--accent-blue);
-            font-size: 16px;
-            margin-bottom: 8px;
-        }
-        .download-dialog .dialog-box p {
-            color: var(--text-secondary);
-            font-size: 13px;
-            margin-bottom: 16px;
-        }
-        .download-dialog .dialog-box .preview {
-            background: var(--bg-primary);
-            border-radius: 12px;
-            padding: 12px;
-            margin-bottom: 16px;
-            max-height: 300px;
-            overflow: hidden;
-        }
-        .download-dialog .dialog-box .preview img,
-        .download-dialog .dialog-box .preview video {
-            max-width: 100%;
-            max-height: 250px;
-            border-radius: 8px;
-        }
-        .download-dialog .dialog-actions {
+        .image-custom-panel .custom-grid {
             display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 8px;
+            grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
+            gap: 4px;
         }
-        .download-dialog .dialog-actions .btn {
-            padding: 12px;
-            font-size: 13px;
+        .image-custom-panel .custom-grid .ctrl {
+            display: flex;
+            flex-direction: column;
+            gap: 1px;
         }
-        .download-dialog .dialog-actions .btn-full {
-            grid-column: 1 / -1;
+        .image-custom-panel .custom-grid .ctrl label {
+            font-size: 6.5px;
+            text-transform: uppercase;
+            color: var(--text-muted);
+            font-weight: 600;
+            letter-spacing: 0.3px;
         }
-        .progress-bar {
+        .image-custom-panel .custom-grid .ctrl input[type="number"],
+        .image-custom-panel .custom-grid .ctrl input[type="text"] {
+            background: var(--bg-card);
+            border: 1px solid var(--border-subtle);
+            padding: 2px 4px;
+            border-radius: 4px;
+            color: #fff;
+            font-size: 9px;
+            outline: none;
             width: 100%;
-            height: 4px;
-            background: var(--border-color);
-            border-radius: 2px;
-            margin: 8px 0;
-            overflow: hidden;
-            display: none;
         }
-        .progress-bar .fill {
-            height: 100%;
-            background: var(--accent-blue);
-            border-radius: 2px;
-            width: 0%;
-            transition: width 0.3s;
+        .image-custom-panel .custom-grid .ctrl input:focus {
+            border-color: var(--accent);
+        }
+        .image-custom-panel .custom-grid .ctrl select {
+            background: var(--bg-card);
+            border: 1px solid var(--border-subtle);
+            padding: 2px 3px;
+            border-radius: 4px;
+            color: #fff;
+            font-size: 7px;
+            outline: none;
+            cursor: pointer;
+            width: 100%;
+        }
+        .image-custom-panel .custom-grid .ctrl .btn-small {
+            background: var(--bg-card);
+            border: 1px solid var(--border-subtle);
+            color: #fff;
+            padding: 1px 4px;
+            border-radius: 3px;
+            font-size: 7px;
+            cursor: pointer;
+            transition: 0.15s;
+        }
+        .image-custom-panel .custom-grid .ctrl .btn-small:hover {
+            background: rgba(255,255,255,0.1);
+            border-color: var(--accent);
+        }
+        .image-custom-panel .custom-grid .ctrl .btn-small.danger {
+            border-color: var(--danger);
+            color: var(--danger);
+        }
+        .image-custom-panel .custom-grid .ctrl .btn-small.danger:hover {
+            background: var(--danger);
+            color: #fff;
+        }
+        .image-custom-panel .custom-grid .ctrl .btn-group {
+            display: flex;
+            gap: 2px;
+            flex-wrap: wrap;
+        }
+
+        .text-rows-container {
+            background: rgba(0,0,0,0.2);
+            padding: 5px;
+            border-radius: 8px;
+            max-height: 150px;
+            overflow-y: auto;
+            margin-bottom: 6px;
+            border: 1px solid var(--border-subtle);
+        }
+        .text-row {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 2px;
+            background: var(--bg-card);
+            padding: 3px 5px;
+            border-radius: 6px;
+            margin-bottom: 3px;
+            border: 1px solid rgba(255,255,255,0.02);
+        }
+        .text-row input.layer-text {
+            flex: 2;
+            min-width: 40px;
+            background: rgba(0,0,0,0.3);
+            border: 1px solid var(--border-subtle);
+            padding: 2px 4px;
+            border-radius: 3px;
+            color: #fff;
+            font-size: 9px;
+            outline: none;
+        }
+        .text-row input.layer-text:focus {
+            border-color: var(--accent);
+        }
+        .text-row .input-group-custom {
+            display: flex;
+            align-items: center;
+            background: rgba(0,0,0,0.25);
+            border-radius: 3px;
+            padding-left: 2px;
+            border: 1px solid var(--border-subtle);
+        }
+        .text-row .input-group-custom span {
+            font-size: 5px;
+            color: var(--text-muted);
+            font-weight: 700;
+        }
+        .text-row .input-group-custom input[type="number"] {
+            width: 20px;
+            padding: 1px 1px;
+            border: none;
+            background: transparent;
+            color: #fff;
+            font-size: 8px;
+            text-align: center;
+            outline: none;
+        }
+        .text-row select {
+            background: rgba(0,0,0,0.4);
+            border: 1px solid var(--border-subtle);
+            padding: 1px 2px;
+            border-radius: 3px;
+            color: #fff;
+            font-size: 7px;
+            outline: none;
+            cursor: pointer;
+        }
+        .text-row input[type="color"] {
+            width: 16px;
+            height: 16px;
+            padding: 0;
+            border: none;
+            border-radius: 3px;
+            background: transparent;
+            cursor: pointer;
+        }
+        .btn-del {
+            background: var(--danger);
+            border: none;
+            color: white;
+            padding: 1px 4px;
+            border-radius: 3px;
+            font-weight: 700;
+            cursor: pointer;
+            font-size: 8px;
+        }
+        .btn-del:hover { background: #e03a5a; }
+        .btn-add {
+            background: rgba(255,255,255,0.03);
+            border: 1px dashed rgba(255,255,255,0.15);
+            color: var(--text-muted);
+            padding: 4px;
+            width: 100%;
+            border-radius: 6px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: 0.2s;
+            margin-bottom: 6px;
+            font-size: 9px;
+        }
+        .btn-add:hover {
+            background: rgba(255,255,255,0.06);
+            color: #fff;
+            border-color: var(--accent);
+        }
+        .actions-bar {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 4px;
+            justify-content: center;
+            margin-bottom: 6px;
+        }
+        .btn {
+            background: rgba(255,255,255,0.05);
+            border: 1px solid var(--border-subtle);
+            color: #fff;
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-weight: 600;
+            font-size: 9px;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        .btn:hover { transform: translateY(-1px); background: rgba(255,255,255,0.1); }
+        .btn-primary {
+            background: var(--gradient-btn);
+            border: none;
+            color: #000;
+            font-weight: 700;
+        }
+        .btn-primary:hover { box-shadow: 0 3px 12px var(--accent-glow); }
+        .btn-g { background: linear-gradient(135deg, #00d2ff, #0088ff); border: none; }
+
+        .canvas-container {
+            background: #000;
+            padding: 3px;
+            border-radius: 8px;
+            margin: 4px 0 2px;
+            border: 1px solid var(--border-subtle);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+            position: relative;
+            width: 100%;
+        }
+        .canvas-container canvas {
+            border-radius: 5px;
+            display: block;
+            cursor: grab;
+            max-width: 100%;
+            height: auto;
+            image-rendering: auto;
+        }
+        .drag-hint {
+            font-size: 7px;
+            color: var(--accent);
+            text-align: center;
+            margin-top: 1px;
+            font-weight: 500;
+            letter-spacing: 0.3px;
+        }
+        .status-box {
+            background: rgba(0,0,0,0.3);
+            border-radius: 6px;
+            padding: 4px 6px;
+            margin-top: 4px;
+        }
+        .status { font-weight: 600; font-size: 9px; }
+        .progress { width: 100%; height: 2px; background: #1e1e3a; border-radius: 20px; margin: 2px 0 1px; display: none; overflow: hidden; }
+        .progress .fill { height: 100%; width: 0%; background: linear-gradient(90deg, #00d2ff, var(--accent)); }
+        .plabel { color: var(--text-muted); font-size: 8px; display: none; }
+        ::-webkit-scrollbar { width: 2px; }
+        ::-webkit-scrollbar-thumb { background: var(--accent); border-radius: 8px; }
+
+        @media (max-width: 600px) {
+            .box { padding: 8px; }
+            .top-row { grid-template-columns: repeat(2, 1fr); }
+            .image-custom-panel .custom-grid { grid-template-columns: repeat(2, 1fr); }
         }
         @media (max-width: 400px) {
-            .btn-row {
-                grid-template-columns: 1fr 1fr;
-            }
-            .export-row {
-                grid-template-columns: 1fr 1fr;
-            }
-            .template-grid {
-                grid-template-columns: 1fr 1fr 1fr;
-            }
-            .adv-panel .adv-grid {
-                grid-template-columns: 1fr 1fr;
-            }
-            .anim-selector {
-                grid-template-columns: 1fr 1fr 1fr;
-            }
-            .gif-options {
-                grid-template-columns: 1fr 1fr;
-            }
+            .top-row { grid-template-columns: 1fr; }
+            .image-custom-panel .custom-grid { grid-template-columns: 1fr 1fr; }
         }
     </style>
 </head>
 <body>
+<div class="box">
+    <h2>🎯 <span>GIF Pro · HD/4K Quality</span></h2>
 
-    <div class="app">
-        <div class="header">
-            <h1>⚡ Ad Studio Pro</h1>
-            <div>
-                <span class="badge">GIPHY Support</span>
-                <span class="badge-adv">GIF EXPORT</span>
+    <!-- TOP CONTROLS -->
+    <div class="top-row">
+        <div class="item">
+            <label>Width (px)</label>
+            <input type="number" id="bannerWidth" value="600" min="100" max="4000" oninput="updateCanvasSize()">
+        </div>
+        <div class="item">
+            <label>Height (px)</label>
+            <input type="number" id="bannerHeight" value="300" min="100" max="4000" oninput="updateCanvasSize()">
+        </div>
+        <div class="item">
+            <label>GIF Quality</label>
+            <select id="gifQuality" onchange="updateQuality()">
+                <option value="low">Low (240p)</option>
+                <option value="medium" selected>Medium (480p)</option>
+                <option value="high">High (720p)</option>
+                <option value="hd">HD (1080p)</option>
+                <option value="4k">4K (2160p)</option>
+            </select>
+        </div>
+        <div class="item">
+            <label>Background</label>
+            <div class="color-wrapper">
+                <input type="color" id="bannerBg" value="#0b0b1a" oninput="updateBg()">
+                <input type="text" id="bannerBgHex" value="#0b0b1a" readonly>
             </div>
         </div>
-
-        <div class="card">
-            <div class="card-title"><span class="title-icon">📋</span> GIPHY Animated Templates</div>
-            <div class="template-grid">
-                <div class="template-item" onclick="loadTemplate('giphy_cat')">
-                    <span class="icon">🐱</span>
-                    <div class="name">Cute Cat</div>
-                    <div class="tag">GIPHY</div>
-                    <span class="badge badge-giphy">GIPHY</span>
-                </div>
-                <div class="template-item" onclick="loadTemplate('giphy_fire')">
-                    <span class="icon">🔥</span>
-                    <div class="name">Fire Sale</div>
-                    <div class="tag">GIPHY</div>
-                    <span class="badge badge-giphy">GIPHY</span>
-                </div>
-                <div class="template-item" onclick="loadTemplate('giphy_dance')">
-                    <span class="icon">💃</span>
-                    <div class="name">Dance Party</div>
-                    <div class="tag">GIPHY</div>
-                    <span class="badge badge-giphy">GIPHY</span>
-                </div>
-                <div class="template-item" onclick="loadTemplate('giphy_glitch')">
-                    <span class="icon">🌀</span>
-                    <div class="name">Glitch Art</div>
-                    <div class="tag">GIPHY</div>
-                    <span class="badge badge-giphy">GIPHY</span>
-                </div>
-                <div class="template-item" onclick="loadTemplate('giphy_neon')">
-                    <span class="icon">💜</span>
-                    <div class="name">Neon Vibes</div>
-                    <div class="tag">GIPHY</div>
-                    <span class="badge badge-giphy">GIPHY</span>
-                </div>
-                <div class="template-item" onclick="loadTemplate('giphy_gaming')">
-                    <span class="icon">🎮</span>
-                    <div class="name">Gaming Pro</div>
-                    <div class="tag">GIPHY</div>
-                    <span class="badge badge-giphy">GIPHY</span>
-                </div>
-                <div class="template-item" onclick="loadTemplate('premium_sports')">
-                    <span class="icon">👟</span>
-                    <div class="name">Nike Sports</div>
-                    <div class="tag">Premium</div>
-                    <span class="badge badge-premium">PRO</span>
-                </div>
-                <div class="template-item" onclick="loadTemplate('premium_crypto')">
-                    <span class="icon">🪙</span>
-                    <div class="name">Crypto Wave</div>
-                    <div class="tag">Trading</div>
-                    <span class="badge badge-anim">LIVE</span>
-                </div>
-                <div class="template-item" onclick="loadTemplate('premium_burger')">
-                    <span class="icon">🍔</span>
-                    <div class="name">Hot Burger</div>
-                    <div class="tag">Food Flash</div>
-                    <span class="badge badge-gif">FLASH</span>
-                </div>
-            </div>
+        <div class="item">
+            <label>Upload Image</label>
+            <label for="gifUpload" class="file-upload-btn">📂 Choose</label>
+            <input type="file" id="gifUpload" accept="image/*" style="display:none;" onchange="handleImageUpload(event)">
         </div>
+    </div>
 
-        <div class="card">
-            <div class="card-title"><span class="title-icon">🎛️</span> Format & Dimensions</div>
-            <div class="input-grid">
-                <div class="input-group">
-                    <label>Ad Format</label>
-                    <select id="adFormat" onchange="switchFormat()">
-                        <option value="banner">Banner</option>
-                        <option value="interstitial">Interstitial</option>
-                    </select>
-                </div>
-                <div class="input-group">
-                    <label>Corners (px)</label>
-                    <input type="number" id="canvasRadius" value="0" oninput="mutateCanvas()" min="0" max="30">
-                </div>
-            </div>
-            <div class="input-grid" id="dimRow" style="margin-top:8px;">
-                <div class="input-group">
-                    <label>Width</label>
-                    <input type="number" id="canvasW" value="320" oninput="mutateCanvas()" min="100" max="500">
-                </div>
-                <div class="input-group">
-                    <label>Height</label>
-                    <input type="number" id="canvasH" value="50" oninput="mutateCanvas()" min="30" max="400">
-                </div>
-            </div>
-            <div class="card-title" style="margin-top:10px;margin-bottom:6px;font-size:10px;">
-                <span class="title-icon">🎨</span> Ad Canvas Background
-            </div>
-            <div class="input-grid" style="margin-top:4px;">
-                <div class="input-group">
-                    <label>Background Color</label>
-                    <input type="color" id="canvasBg" value="#ffffff" oninput="updateBg()">
-                </div>
-                <div class="input-group">
-                    <label>Hex Code</label>
-                    <div class="color-hex" id="canvasBgHex">#FFFFFF</div>
-                </div>
-            </div>
-            <div class="bg-options">
-                <button class="btn btn-blue" onclick="setSolidBg()">🔲 Solid</button>
-                <button class="btn btn-orange" onclick="setTransparentBg()">✨ Transparent</button>
-                <button class="btn btn-outline" onclick="resetBgColor()">🔄 Reset</button>
-            </div>
-            <div class="input-group" style="margin-top:8px;">
-                <label>Click URL</label>
-                <input type="text" id="clickUrl" value="https://google.com" placeholder="https://...">
-            </div>
+    <!-- IMAGE CUSTOM PANEL - Text Boxes Only -->
+    <div class="image-custom-panel" id="imageCustomPanel">
+        <div class="panel-title">
+            🎨 Image Customization
+            <span style="font-size:7px;color:var(--text-muted);font-weight:400;margin-left:3px;">
+                W: <span id="imgWidthDisplay">200</span> | H: <span id="imgHeightDisplay">200</span>
+            </span>
         </div>
-
-        <div class="card">
-            <div class="card-title"><span class="title-icon">🧩</span> Add Elements</div>
-            <div class="btn-row">
-                <button class="btn btn-blue" onclick="addText()">+ Text</button>
-                <label for="fileInput" class="btn btn-purple" style="text-align:center;cursor:pointer;">+ Image/GIF</label>
-                <input type="file" id="fileInput" accept="image/*" onchange="addImage(event)">
-                <button class="btn btn-pink" onclick="addShape()">⬛ Shape</button>
-                <button class="btn btn-outline" onclick="clearSelection()">Clear Sel</button>
+        <div class="custom-grid">
+            <!-- Image Width & Height - Text Boxes -->
+            <div class="ctrl">
+                <label>Image Width</label>
+                <input type="number" id="imgWidth" value="200" min="10" max="1000" oninput="updateImageSize()">
             </div>
-            <div style="margin-top:6px;display:grid;grid-template-columns:1fr 1fr;gap:6px;">
-                <input type="text" id="giphyUrlInput" placeholder="Paste GIPHY URL..." style="background:var(--bg-primary);border:1px solid var(--border-color);border-radius:8px;padding:8px 10px;color:var(--text-primary);font-size:11px;outline:none;height:36px;">
-                <button class="btn btn-green" onclick="addGiphyImage()">➕ Add GIPHY</button>
+            <div class="ctrl">
+                <label>Image Height</label>
+                <input type="number" id="imgHeight" value="200" min="10" max="1000" oninput="updateImageSize()">
             </div>
-        </div>
-
-        <div class="card">
-            <div class="card-title"><span class="title-icon">💾</span> Export Full Banner</div>
-            <div class="export-row">
-                <button class="btn btn-green" onclick="exportPNG()">📸 PNG</button>
-                <button class="btn btn-pink" onclick="exportFullGIF()">🎞️ GIF</button>
-                <button class="btn btn-blue" onclick="exportMP4()">🎥 MP4</button>
-                <button class="btn btn-orange" onclick="exportTransparent()">✨ Transparent</button>
+            <div class="ctrl">
+                <label>Brightness</label>
+                <input type="number" id="imgBrightness" value="0" min="-100" max="100" oninput="applyFilters()">
             </div>
-            <div class="gif-options" id="gifOptions">
-                <div class="input-group">
-                    <label>Frames</label>
-                    <input type="number" id="gifFrames" value="25" min="5" max="100">
+            <div class="ctrl">
+                <label>Contrast</label>
+                <input type="number" id="imgContrast" value="0" min="-100" max="100" oninput="applyFilters()">
+            </div>
+            <div class="ctrl">
+                <label>Saturation</label>
+                <input type="number" id="imgSaturation" value="0" min="-100" max="100" oninput="applyFilters()">
+            </div>
+            <div class="ctrl">
+                <label>Blur</label>
+                <input type="number" id="imgBlur" value="0" min="0" max="20" oninput="applyFilters()">
+            </div>
+            <div class="ctrl">
+                <label>Opacity %</label>
+                <input type="number" id="imgOpacity" value="100" min="10" max="100" oninput="applyFilters()">
+            </div>
+            <div class="ctrl">
+                <label>Corner Radius</label>
+                <input type="number" id="imgRadius" value="0" min="0" max="50" oninput="applyFilters()">
+            </div>
+            <div class="ctrl">
+                <label>Border Width</label>
+                <input type="number" id="imgBorder" value="0" min="0" max="10" oninput="applyFilters()">
+            </div>
+            <div class="ctrl">
+                <label>Border Color</label>
+                <input type="color" id="imgBorderColor" value="#f5a623" oninput="applyFilters()" style="width:100%;height:20px;padding:0;border:none;background:transparent;cursor:pointer;">
+            </div>
+            <div class="ctrl">
+                <label>Shadow Blur</label>
+                <input type="number" id="imgShadow" value="0" min="0" max="30" oninput="applyFilters()">
+            </div>
+            <div class="ctrl">
+                <label>Animation Time (sec)</label>
+                <input type="number" id="animTime" value="8" min="1" max="30" oninput="applyFilters()">
+            </div>
+            <div class="ctrl">
+                <label>Image Animation</label>
+                <select id="imgAnimation" onchange="applyFilters()">
+                    <optgroup label="⭐ Basic">
+                        <option value="none">None</option>
+                        <option value="zoom">Zoom</option>
+                        <option value="rotate">Rotate</option>
+                        <option value="bounce">Bounce</option>
+                        <option value="fade">Fade</option>
+                        <option value="slide">Slide</option>
+                    </optgroup>
+                    <optgroup label="🌀 Wave & Pulse">
+                        <option value="wave">Wave</option>
+                        <option value="pulse">Pulse</option>
+                        <option value="heartbeat">Heartbeat</option>
+                        <option value="ripple">Ripple</option>
+                    </optgroup>
+                    <optgroup label="🎯 Spin & Flip">
+                        <option value="spin">Spin</option>
+                        <option value="flip">Flip</option>
+                        <option value="tilt">Tilt</option>
+                        <option value="wobble">Wobble</option>
+                    </optgroup>
+                    <optgroup label="🌟 Glow & Shine">
+                        <option value="glow">Glow</option>
+                        <option value="shine">Shine</option>
+                        <option value="neon">Neon</option>
+                        <option value="sparkle">Sparkle</option>
+                    </optgroup>
+                    <optgroup label="🎨 Color Effects">
+                        <option value="hueShift">Hue Shift</option>
+                        <option value="colorPulse">Color Pulse</option>
+                        <option value="rainbow">Rainbow</option>
+                        <option value="chromatic">Chromatic</option>
+                    </optgroup>
+                    <optgroup label="🏃 Motion">
+                        <option value="swing">Swing</option>
+                        <option value="sway">Sway</option>
+                        <option value="drift">Drift</option>
+                        <option value="float">Float</option>
+                        <option value="hover">Hover</option>
+                    </optgroup>
+                    <optgroup label="💥 Dynamic">
+                        <option value="shake">Shake</option>
+                        <option value="jitter">Jitter</option>
+                        <option value="pop">Pop</option>
+                        <option value="explode">Explode</option>
+                        <option value="morph">Morph</option>
+                    </optgroup>
+                    <optgroup label="🌀 Complex">
+                        <option value="spiral">Spiral</option>
+                        <option value="sineWave">Sine Wave</option>
+                        <option value="figure8">Figure 8</option>
+                        <option value="butterfly">Butterfly</option>
+                        <option value="zigzag">Zigzag</option>
+                    </optgroup>
+                    <optgroup label="✨ Special">
+                        <option value="blink">Blink</option>
+                        <option value="pulseGlow">Pulse Glow</option>
+                        <option value="rainbowGlow">Rainbow Glow</option>
+                        <option value="neonPulse">Neon Pulse</option>
+                        <option value="fire">Fire</option>
+                        <option value="water">Water</option>
+                        <option value="wind">Wind</option>
+                        <option value="earth">Earth</option>
+                    </optgroup>
+                </select>
+            </div>
+            <div class="ctrl">
+                <label>Flip</label>
+                <div class="btn-group">
+                    <button class="btn-small" onclick="flipImage('horizontal')">↔H</button>
+                    <button class="btn-small" onclick="flipImage('vertical')">↕V</button>
                 </div>
-                <div class="input-group">
-                    <label>Delay (ms)</label>
-                    <input type="number" id="gifDelay" value="60" min="20" max="500">
-                </div>
-                <div class="input-group">
-                    <label>Quality (1=Best)</label>
-                    <input type="number" id="gifQuality" value="1" min="1" max="20">
-                </div>
             </div>
-            <div style="margin-top:6px;display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;">
-                <button class="btn btn-orange" onclick="shareAd()">📤 Share</button>
-                <button class="btn btn-purple" onclick="saveToGallery()">🖼️ Save</button>
-                <button class="btn btn-outline" onclick="toggleAdvPanel()">⚡ Advanced</button>
-            </div>
-            <div class="progress-bar" id="progressBar">
-                <div class="fill" id="progressFill"></div>
-            </div>
-        </div>
-
-        <div class="adv-panel" id="advPanel">
-            <div class="adv-title">⚡ Layer Animation</div>
-            <div class="anim-selector" id="animSelector">
-                <button class="btn btn-pink" onclick="setAnimation('fade')">Fade</button>
-                <button class="btn btn-orange" onclick="setAnimation('bounce')">Bounce</button>
-                <button class="btn btn-blue" onclick="setAnimation('pulse')">Pulse</button>
-                <button class="btn btn-purple" onclick="setAnimation('flash')">Flash</button>
-                <button class="btn btn-green" onclick="setAnimation('slide')">Slide</button>
-                <button class="btn btn-pink" onclick="setAnimation('rainbow')">Rainbow</button>
-                <button class="btn btn-blue" onclick="setAnimation('spin')">Spin</button>
-                <button class="btn btn-orange" onclick="setAnimation('glow')">Glow</button>
-                <button class="btn btn-red" onclick="setAnimation('none')">None</button>
-            </div>
-            <div class="adv-grid" style="margin-top:6px;grid-template-columns:1fr 1fr 1fr;">
-                <button class="btn btn-purple" onclick="duplicateLayer()">📋 Duplicate</button>
-                <button class="btn btn-blue" onclick="moveLayer('up')">⬆️ Up</button>
-                <button class="btn btn-blue" onclick="moveLayer('down')">⬇️ Down</button>
-            </div>
-        </div>
-
-        <div class="canvas-frame" id="canvasFrame">
-            <span class="label" id="workspaceLabel">Banner Mode</span>
-            <div id="adCanvas" onclick="clearSelection(event)">
-                <div class="interstitial-close" id="closeBtn" onclick="showToast('Ad Closed!')">✕</div>
-            </div>
-        </div>
-
-        <div class="inspector" id="inspector">
-            <div class="title" id="inspectorTitle">🔧 Layer Inspector</div>
-            <div class="inspector-grid">
-                <div class="input-group"><label>Width</label><input type="number" id="elW" oninput="updateElement()" min="5"></div>
-                <div class="input-group"><label>Height</label><input type="number" id="elH" oninput="updateElement()" min="5"></div>
-            </div>
-            <div class="inspector-grid" style="margin-top:6px;">
-                <div class="input-group"><label>X</label><input type="number" id="elX" oninput="updateElementPos()"></div>
-                <div class="input-group"><label>Y</label><input type="number" id="elY" oninput="updateElementPos()"></div>
-            </div>
-            <div class="trans-toggle">
-                <label>Transparent BG</label>
-                <input type="checkbox" id="elTransparent" onchange="toggleElementTransparent()">
-            </div>
-            <div id="textControls">
-                <div class="input-group" style="margin-top:6px;">
-                    <label>Text</label>
-                    <input type="text" id="elText" oninput="updateElement()" placeholder="Edit text...">
-                </div>
-                <div class="input-grid" style="margin-top:6px;">
-                    <div class="input-group">
-                        <label>Color</label>
-                        <input type="color" id="elColor" value="#000000" oninput="updateElementColor()">
-                    </div>
-                    <div class="input-group">
-                        <label>Font Size</label>
-                        <input type="number" id="elFont" value="14" oninput="updateElement()" min="6" max="60">
-                    </div>
-                </div>
-                <div class="input-group" style="margin-top:6px;">
-                    <label>Background Color</label>
-                    <input type="color" id="elBgColor" value="#00000000" oninput="updateElementBg()">
+            <div class="ctrl">
+                <label>Rotate</label>
+                <div class="btn-group">
+                    <button class="btn-small" onclick="rotateImage(90)">90°</button>
+                    <button class="btn-small" onclick="rotateImage(180)">180°</button>
+                    <button class="btn-small" onclick="rotateImage(270)">270°</button>
+                    <button class="btn-small danger" onclick="resetFilters()">↺</button>
                 </div>
             </div>
-            <div id="imageControls">
-                <div class="input-grid" style="margin-top:6px;">
-                    <div class="input-group">
-                        <label>Border Radius</label>
-                        <input type="number" id="elRadius" value="0" oninput="updateElement()" min="0" max="50">
-                    </div>
-                    <div class="input-group">
-                        <label>Opacity</label>
-                        <input type="range" id="elOpacity" min="0" max="100" value="100" oninput="updateElement()">
-                    </div>
-                </div>
-                <div class="input-group" style="margin-top:6px;">
-                    <label>Background Color</label>
-                    <input type="color" id="elImgBg" value="#00000000" oninput="updateElementBg()">
-                </div>
-            </div>
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:8px;">
-                <button class="btn btn-red" onclick="deleteElement()">🗑️ Delete</button>
-                <button class="btn btn-orange" onclick="resetElement()">🔄 Reset</button>
+            <div class="ctrl">
+                <label>GIF Frames</label>
+                <input type="number" id="gifFrames" value="20" min="5" max="60" oninput="applyFilters()">
             </div>
         </div>
     </div>
 
-    <div class="toast" id="toast"></div>
+    <div class="text-rows-container" id="rowsContainer"></div>
+    <button class="btn-add" onclick="addNewRow()">➕ Add Text Layer</button>
 
-    <div class="download-dialog" id="downloadDialog">
-        <div class="dialog-box">
-            <h3 id="dialogTitle">📥 Export Ready</h3>
-            <p id="dialogDesc">Tap download to save</p>
-            <div class="preview" id="dialogPreview"></div>
-            <div class="dialog-actions">
-                <button class="btn btn-green" id="dialogDownloadBtn" onclick="dialogDownload()">⬇️ Download</button>
-                <button class="btn btn-orange" id="dialogShareBtn" onclick="dialogShare()">📤 Share</button>
-                <button class="btn btn-red btn-full" onclick="closeDialog()">✕ Close</button>
-            </div>
-        </div>
+    <div class="actions-bar">
+        <button class="btn btn-primary" onclick="preview()">⚡ Preview</button>
+        <button class="btn" onclick="downloadPNG()">📸 PNG</button>
+        <button class="btn btn-g" onclick="downloadGIF()">⬇️ GIF</button>
     </div>
 
-    <script>
-        // ===== DOM REFS =====
-        var canvas = document.getElementById('adCanvas');
-        var canvasFrame = document.getElementById('canvasFrame');
-        var inspector = document.getElementById('inspector');
-        var textControls = document.getElementById('textControls');
-        var imageControls = document.getElementById('imageControls');
-        var closeBtn = document.getElementById('closeBtn');
-        var workspaceLabel = document.getElementById('workspaceLabel');
-        var dimRow = document.getElementById('dimRow');
-        var toast = document.getElementById('toast');
-        var downloadDialog = document.getElementById('downloadDialog');
-        var dialogPreview = document.getElementById('dialogPreview');
-        var dialogTitle = document.getElementById('dialogTitle');
-        var dialogDesc = document.getElementById('dialogDesc');
-        var advPanel = document.getElementById('advPanel');
-        var progressBar = document.getElementById('progressBar');
-        var progressFill = document.getElementById('progressFill');
+    <div class="canvas-container">
+        <canvas id="c" width="600" height="300"></canvas>
+    </div>
+    <div class="drag-hint">👆 Drag image or text on canvas to reposition</div>
 
-        var selectedNode = null;
-        var isDragging = false;
-        var dragStartX, dragStartY, nodeStartX, nodeStartY;
-        var dialogData = null;
-        var dialogFilename = '';
-        var isTransparent = false;
-        var nodeCounter = 0;
+    <div class="status-box">
+        <div class="progress" id="progress"><div class="fill" id="fill"></div></div>
+        <div class="plabel" id="plabel">Processing...</div>
+        <div class="status" id="status">✅ Upload image · Text boxes for precise control</div>
+    </div>
+</div>
+<script>
+    (function(){
+        const c = document.getElementById('c');
+        const ctx = c.getContext('2d');
+        const statusEl = document.getElementById('status');
+        const progress = document.getElementById('progress');
+        const fill = document.getElementById('fill');
+        const plabel = document.getElementById('plabel');
+        const rowsContainer = document.getElementById('rowsContainer');
+        const bannerWidthInput = document.getElementById('bannerWidth');
+        const bannerHeightInput = document.getElementById('bannerHeight');
+        const bannerBgInput = document.getElementById('bannerBg');
+        const bannerBgHex = document.getElementById('bannerBgHex');
+        const imageCustomPanel = document.getElementById('imageCustomPanel');
+        const gifQualitySelect = document.getElementById('gifQuality');
 
-        // GIF frames storage for uploaded/external GIFs to make them export perfectly
-        var gifFramesCache = {};
-
-        // ===== GIPHY / EXT URLs =====
-        var GIPHY_URLS = {
-            'giphy_cat': 'https://media.tenor.com/5oYhE6Px5bQAAAAC/cat-dance.gif',
-            'giphy_fire': 'https://media.tenor.com/v8ffg88_g78AAAAC/flash-sale.gif',
-            'giphy_dance': 'https://media.tenor.com/8FQq9iD9TZgAAAAC/dance-party.gif',
-            'giphy_glitch': 'https://media.tenor.com/7vJp7QY2LhEAAAAC/glitch.gif',
-            'giphy_neon': 'https://media.tenor.com/7vJp7QY2LhEAAAAC/neon-sign.gif',
-            'giphy_gaming': 'https://media.tenor.com/lx2BqN0G_4YAAAAC/gaming.gif',
-            // Premium Professional Layout Assets
-            'premium_sports': 'https://media.tenor.com/t79b2Q-O_8cAAAAC/nike-glow.gif',
-            'premium_crypto': 'https://media.tenor.com/u_I47x8XvXgAAAAC/bitcoin-crypto.gif',
-            'premium_burger': 'https://media.tenor.com/fT_SgEwOfpIAAAAC/burger-neon.gif'
+        // Image filters state
+        let imageFilters = {
+            brightness: 0, contrast: 0, saturation: 0, blur: 0,
+            opacity: 100, radius: 0, border: 0, borderColor: '#f5a623',
+            shadow: 0, flipH: false, flipV: false, rotate: 0,
+            animation: 'none', animTime: 8,
+            imgWidth: 200, imgHeight: 200,
+            gifFrames: 20
         };
 
-        // ===== ANIMATION FRAME FUNCTIONS =====
-        function getAnimationValue(animName, frame, total) {
-            var progress = frame / total;
-            var angle = progress * Math.PI * 2;
-            var sin = Math.sin(angle);
-            var cos = Math.cos(angle);
-            var normalized = (sin + 1) / 2;
-            var result = {};
+        let uploadedImage = null;
+        let imageConfig = { x: 0, y: 0, width: 200, height: 200 };
+        let isDragging = false;
+        let draggedElement = null;
+        let dragOffset = { x: 0, y: 0 };
+        const layerCoords = {};
+        let canvasWidth = 600, canvasHeight = 300;
+        let currentQuality = 'medium';
 
-            switch (animName) {
-                case 'fade':
-                    result.opacity = 0.2 + normalized * 0.8;
-                    break;
-                case 'bounce':
-                    result.transform = 'translateY(' + (sin * 8) + 'px)';
-                    break;
-                case 'flash':
-                    result.color = frame % 2 === 0 ? '#ff0000' : '#ffaa00';
-                    break;
-                case 'slide':
-                    result.transform = 'translateX(' + (sin * 12) + 'px)';
-                    break;
-                case 'rainbow':
-                    result.color = 'hsl(' + (progress * 360) + ', 100%, 50%)';
-                    break;
-                case 'pulse':
-                    result.transform = 'scale(' + (1 + sin * 0.15) + ')';
-                    break;
-                case 'spin':
-                    result.transform = 'rotate(' + (progress * 360) + 'deg)';
-                    break;
-                case 'glow':
-                    result.textShadow = '0 0 ' + (5 + normalized * 15) + 'px #3b82f6';
-                    break;
-                case 'zoom':
-                    result.transform = 'scale(' + (0.9 + normalized * 0.2) + ')';
-                    break;
-                case 'shake':
-                    result.transform = 'rotate(' + (sin * 5) + 'deg)';
-                    break;
-                case 'rotate':
-                    result.transform = 'rotate(' + (progress * 360) + 'deg)';
-                    break;
-                case 'glitch':
-                    result.filter = 'hue-rotate(' + (sin * 90) + 'deg)';
-                    result.transform = 'translateX(' + (Math.sin(frame / total * Math.PI * 8) * 2) + 'px)';
-                    break;
-                default:
-                    return null;
+        const initialLayers = [
+            { text: '✨ HD/4K Quality', color: '#f5a623', size: 36, font: 'Arial', anim: 'wave' },
+            { text: '✦ Text Box Controls ✦', color: '#b0b0ff', size: 16, font: 'Arial', anim: 'pulse' }
+        ];
+
+        // ===== QUALITY CONTROL =====
+        function updateQuality() {
+            currentQuality = gifQualitySelect.value;
+            const qualityMap = {
+                low: { w: 320, h: 180, label: 'Low (240p)' },
+                medium: { w: 640, h: 360, label: 'Medium (480p)' },
+                high: { w: 960, h: 540, label: 'High (720p)' },
+                hd: { w: 1280, h: 720, label: 'HD (1080p)' },
+                '4k': { w: 1920, h: 1080, label: '4K (2160p)' }
+            };
+            const q = qualityMap[currentQuality] || qualityMap.medium;
+            statusEl.textContent = `✅ Quality: ${q.label} (${q.w}×${q.h})`;
+            preview();
+        }
+
+        // ===== 50+ ANIMATIONS ENGINE =====
+        function getAnimationValue(t, animType, imgW, imgH, w, h) {
+            let result = { dx: 0, dy: 0, dw: 0, dh: 0, rotation: 0, opacity: 1, scale: 1, glow: 0, hue: 0 };
+            const speed = 1 / (imageFilters.animTime || 8);
+            const phase = t * speed;
+            
+            switch(animType) {
+                case 'none': break;
+                case 'zoom': result.scale = 1 + 0.15 * Math.sin(phase); break;
+                case 'rotate': result.rotation = phase * 0.5; break;
+                case 'bounce': result.dy = -Math.abs(Math.sin(phase)) * 25; break;
+                case 'fade': result.opacity = 0.4 + 0.6 * (0.5 + 0.5 * Math.sin(phase)); break;
+                case 'slide': result.dx = Math.sin(phase) * w * 0.08; break;
+                case 'wave': result.dy = Math.sin(phase) * h * 0.06; break;
+                case 'pulse': result.glow = 10 + Math.sin(phase) * 15; break;
+                case 'heartbeat': result.scale = 1 + 0.2 * Math.pow(Math.sin(phase * 2), 8); break;
+                case 'ripple': result.scale = 1 + 0.1 * Math.sin(phase * 3); result.dy = Math.sin(phase * 3) * 5; break;
+                case 'spin': result.rotation = phase * 2; break;
+                case 'flip': result.scale = Math.sin(phase) > 0 ? 1 : -1; break;
+                case 'tilt': result.rotation = Math.sin(phase * 0.7) * 0.3; break;
+                case 'wobble': result.dx = Math.sin(phase * 1.5) * 10; result.dy = Math.cos(phase * 1.3) * 8; break;
+                case 'glow': result.glow = 5 + Math.sin(phase) * 20; break;
+                case 'shine': result.opacity = 0.5 + 0.5 * Math.pow(Math.sin(phase), 2); break;
+                case 'neon': result.glow = 20 + Math.sin(phase * 1.5) * 15; break;
+                case 'sparkle': result.opacity = 0.3 + 0.7 * Math.pow(Math.sin(phase * 2), 4); break;
+                case 'hueShift': result.hue = phase * 360; break;
+                case 'colorPulse': result.hue = Math.sin(phase) * 60; break;
+                case 'rainbow': result.hue = phase * 720; break;
+                case 'chromatic': result.hue = phase * 360; result.glow = 15; break;
+                case 'swing': result.dx = Math.sin(phase * 0.8) * 20; result.rotation = Math.sin(phase * 0.8) * 0.2; break;
+                case 'sway': result.dx = Math.sin(phase * 0.5) * 30; break;
+                case 'drift': result.dx = Math.sin(phase * 0.3) * 40; result.dy = Math.cos(phase * 0.4) * 20; break;
+                case 'float': result.dy = Math.sin(phase * 0.7) * 20; break;
+                case 'hover': result.dy = Math.sin(phase * 0.5) * 15; result.glow = 5 + Math.sin(phase * 1.2) * 10; break;
+                case 'shake': result.dx = Math.sin(phase * 20) * 3; result.dy = Math.cos(phase * 22) * 3; break;
+                case 'jitter': result.dx = Math.sin(phase * 30) * 2; result.dy = Math.sin(phase * 28) * 2; break;
+                case 'pop': result.scale = 1 + 0.3 * Math.sin(phase * 2) * Math.sin(phase * 2); break;
+                case 'explode': result.scale = 1 + 0.4 * Math.pow(Math.sin(phase), 2); result.opacity = 0.3 + 0.7 * Math.pow(Math.cos(phase), 2); break;
+                case 'morph': result.scale = 1 + 0.2 * Math.sin(phase); result.rotation = Math.sin(phase * 0.8) * 0.2; break;
+                case 'spiral': result.dx = Math.sin(phase * 2) * 30; result.dy = Math.cos(phase * 2) * 20; result.rotation = phase * 0.5; break;
+                case 'sineWave': result.dy = Math.sin(phase * 3) * 20; break;
+                case 'figure8': result.dx = Math.sin(phase * 2) * 30; result.dy = Math.sin(phase * 4) * 15; break;
+                case 'butterfly': result.dx = Math.sin(phase * 3) * 25; result.dy = Math.cos(phase * 2.5) * 18; result.rotation = Math.sin(phase * 2) * 0.2; break;
+                case 'zigzag': result.dx = Math.sin(phase * 4) * 20; result.dy = Math.sin(phase * 8) * 10; break;
+                case 'blink': result.opacity = Math.sin(phase * 3) > 0.5 ? 1 : 0.1; break;
+                case 'pulseGlow': result.glow = 10 + Math.sin(phase * 1.5) * 20; result.scale = 1 + 0.05 * Math.sin(phase * 1.5); break;
+                case 'rainbowGlow': result.glow = 15 + Math.sin(phase) * 15; result.hue = phase * 360; break;
+                case 'neonPulse': result.glow = 20 + Math.sin(phase * 2) * 15; result.opacity = 0.5 + 0.5 * Math.sin(phase * 2); break;
+                case 'fire': result.dy = -Math.sin(phase * 5) * 10; result.scale = 1 + 0.1 * Math.sin(phase * 7); break;
+                case 'water': result.dy = Math.sin(phase * 2) * 8; result.dx = Math.sin(phase * 1.7) * 5; break;
+                case 'wind': result.dx = Math.sin(phase * 0.8) * 35; result.dy = Math.sin(phase * 0.6) * 10; break;
+                case 'earth': result.dy = Math.sin(phase * 0.5) * 12; result.rotation = Math.sin(phase * 0.3) * 0.05; break;
+                default: break;
             }
             return result;
         }
 
-        // ===== TOAST =====
-        function showToast(msg, type) {
-            if (type === undefined) type = 'success';
-            toast.textContent = msg;
-            toast.className = 'toast show' + (type === 'error' ? ' error' : '');
-            clearTimeout(toast._timer);
-            toast._timer = setTimeout(function() {
-                toast.classList.remove('show');
-            }, 4000);
-        }
-
-        // ===== DIALOG =====
-        function showDialog(dataUrl, filename, type) {
-            dialogData = dataUrl;
-            dialogFilename = filename;
-            dialogPreview.innerHTML = '';
-
-            if (type === 'video') {
-                var video = document.createElement('video');
-                video.src = dataUrl;
-                video.controls = true;
-                video.autoplay = true;
-                video.loop = true;
-                video.muted = true;
-                video.style.maxWidth = '100%';
-                video.style.maxHeight = '250px';
-                dialogPreview.appendChild(video);
-                dialogTitle.textContent = '🎥 MP4 Video Ready';
-                dialogDesc.textContent = 'Tap Download to save';
+        // ===== Canvas Size =====
+        function updateCanvasSize() {
+            let w = parseInt(bannerWidthInput.value) || 600;
+            let h = parseInt(bannerHeightInput.value) || 300;
+            w = Math.max(100, Math.min(4000, w));
+            h = Math.max(100, Math.min(4000, h));
+            canvasWidth = w;
+            canvasHeight = h;
+            c.width = w;
+            c.height = h;
+            
+            const container = c.parentElement;
+            const maxWidth = container.clientWidth - 6;
+            if (w > maxWidth) {
+                c.style.width = maxWidth + 'px';
+                c.style.height = (h * (maxWidth / w)) + 'px';
             } else {
-                var img = document.createElement('img');
-                img.src = dataUrl;
-                img.style.maxWidth = '100%';
-                img.style.maxHeight = '250px';
-                img.style.objectFit = 'contain';
-                dialogPreview.appendChild(img);
-                var typeName = type === 'gif' ? 'GIF (Animated)' : 'PNG';
-                dialogTitle.textContent = '📸 ' + typeName + ' Ready';
-                dialogDesc.textContent = 'Tap Download to save or Share to send';
+                c.style.width = w + 'px';
+                c.style.height = h + 'px';
             }
-            downloadDialog.style.display = 'flex';
-        }
-
-        function closeDialog() {
-            downloadDialog.style.display = 'none';
-            dialogPreview.innerHTML = '';
-            dialogData = null;
-        }
-
-        function forceDownload(dataUrl, filename) {
-            try {
-                var link = document.createElement('a');
-                link.href = dataUrl;
-                link.download = filename;
-                link.style.display = 'none';
-                document.body.appendChild(link);
-                link.click();
-                setTimeout(function() {
-                    document.body.removeChild(link);
-                }, 1000);
-                showToast('✅ Downloading: ' + filename);
-                closeDialog();
-                return true;
-            } catch (e) {
-                try {
-                    fetch(dataUrl)
-                        .then(function(res) { return res.blob(); })
-                        .then(function(blob) {
-                            var url = URL.createObjectURL(blob);
-                            var link = document.createElement('a');
-                            link.href = url;
-                            link.download = filename;
-                            link.style.display = 'none';
-                            document.body.appendChild(link);
-                            link.click();
-                            setTimeout(function() {
-                                document.body.removeChild(link);
-                                URL.revokeObjectURL(url);
-                            }, 1000);
-                            showToast('✅ Downloading: ' + filename);
-                            closeDialog();
-                        })
-                        .catch(function() {
-                            window.open(dataUrl, '_blank');
-                            showToast('✅ Download started', 'success');
-                            closeDialog();
-                        });
-                    return true;
-                } catch (e2) {
-                    window.open(dataUrl, '_blank');
-                    showToast('✅ Download started', 'success');
-                    closeDialog();
-                    return true;
-                }
+            
+            if (uploadedImage) {
+                let maxW = w * 0.6, maxH = h * 0.6;
+                let iw = Math.min(imageFilters.imgWidth || 200, maxW);
+                let ih = Math.min(imageFilters.imgHeight || 200, maxH);
+                imageConfig.width = iw;
+                imageConfig.height = ih;
+                imageConfig.x = (w - iw) / 2;
+                imageConfig.y = (h - ih) / 2;
             }
-        }
-
-        function dialogDownload() {
-            if (!dialogData) {
-                showToast('❌ No file to download', 'error');
-                return;
-            }
-            forceDownload(dialogData, dialogFilename);
-        }
-
-        function dialogShare() {
-            if (!dialogData) {
-                showToast('❌ No file to share', 'error');
-                return;
-            }
-            if (navigator.share) {
-                fetch(dialogData)
-                    .then(function(res) { return res.blob(); })
-                    .then(function(blob) {
-                        var file = new File([blob], dialogFilename, { type: blob.type });
-                        navigator.share({
-                            title: 'Ad Asset',
-                            files: [file]
-                        }).then(function() {
-                            showToast('✅ Shared successfully');
-                            closeDialog();
-                        }).catch(function() {
-                            showToast('❌ Share cancelled', 'error');
-                        });
-                    })
-                    .catch(function() {
-                        showToast('❌ Share failed', 'error');
-                    });
-            } else {
-                showToast('❌ Share not supported, downloading instead', 'error');
-                forceDownload(dialogData, dialogFilename);
-            }
-        }
-
-        // ===== BACKGROUND =====
-        function setTransparentBg() {
-            isTransparent = true;
-            canvas.classList.add('transparent-bg');
-            canvasFrame.classList.add('transparent-mode');
-            document.getElementById('canvasBgHex').innerHTML = '🚫 TRANSPARENT';
-            showToast('✨ Transparent background enabled');
-        }
-
-        function setSolidBg() {
-            isTransparent = false;
-            canvas.classList.remove('transparent-bg');
-            canvasFrame.classList.remove('transparent-mode');
-            updateBg();
+            preview();
         }
 
         function updateBg() {
-            if (isTransparent) return;
-            var color = document.getElementById('canvasBg').value;
-            canvas.style.backgroundColor = color;
-            document.getElementById('canvasBgHex').textContent = color.toUpperCase();
+            bannerBgHex.value = bannerBgInput.value;
+            preview();
         }
 
-        function resetBgColor() {
-            isTransparent = false;
-            canvas.classList.remove('transparent-bg');
-            canvasFrame.classList.remove('transparent-mode');
-            document.getElementById('canvasBg').value = '#ffffff';
-            updateBg();
-            showToast('🔄 Canvas color reset');
-        }
-
-        // ===== CANVAS PROPERTIES =====
-        function switchFormat() {
-            var format = document.getElementById('adFormat').value;
-            if (format === 'interstitial') {
-                canvas.className = 'interstitial';
-                workspaceLabel.textContent = 'Interstitial Mode (280x340)';
-                dimRow.style.display = 'none';
-                closeBtn.style.display = 'flex';
-            } else {
-                canvas.className = '';
-                workspaceLabel.textContent = 'Banner Mode';
-                dimRow.style.display = 'grid';
-                closeBtn.style.display = 'none';
-                mutateCanvas();
+        // ===== Image Size Control - Text Box =====
+        function updateImageSize() {
+            let w = parseInt(document.getElementById('imgWidth').value) || 200;
+            let h = parseInt(document.getElementById('imgHeight').value) || 200;
+            w = Math.max(10, Math.min(1000, w));
+            h = Math.max(10, Math.min(1000, h));
+            imageFilters.imgWidth = w;
+            imageFilters.imgHeight = h;
+            document.getElementById('imgWidthDisplay').textContent = w;
+            document.getElementById('imgHeightDisplay').textContent = h;
+            
+            if (uploadedImage) {
+                let maxW = canvasWidth * 0.6, maxH = canvasHeight * 0.6;
+                let iw = Math.min(w, maxW);
+                let ih = Math.min(h, maxH);
+                imageConfig.width = iw;
+                imageConfig.height = ih;
+                imageConfig.x = (canvasWidth - iw) / 2;
+                imageConfig.y = (canvasHeight - ih) / 2;
             }
-            if (isTransparent) {
-                canvas.classList.add('transparent-bg');
-            } else {
-                updateBg();
-            }
+            preview();
         }
 
-        function mutateCanvas() {
-            var format = document.getElementById('adFormat').value;
-            if (format === 'banner') {
-                var w = document.getElementById('canvasW').value || 320;
-                var h = document.getElementById('canvasH').value || 50;
-                canvas.style.width = w + 'px';
-                canvas.style.height = h + 'px';
-            }
-            var radius = document.getElementById('canvasRadius').value || 0;
-            canvas.style.borderRadius = radius + 'px';
-        }
-
-        // ===== INTERACTION HANDLING =====
-        function setupDraggable(node) {
-            node.addEventListener('mousedown', startDrag);
-            node.addEventListener('touchstart', startDrag, { passive: false });
-
-            function startDrag(e) {
-                if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT') return;
-                e.preventDefault();
-                selectNode(node);
-                isDragging = true;
-
-                var clientX = e.type.startsWith('touch') ? e.touches[0].clientX : e.clientX;
-                var clientY = e.type.startsWith('touch') ? e.touches[0].clientY : e.clientY;
-
-                dragStartX = clientX;
-                dragStartY = clientY;
-                nodeStartX = parseInt(node.style.left) || 0;
-                nodeStartY = parseInt(node.style.top) || 0;
-
-                document.addEventListener('mousemove', doDrag);
-                document.addEventListener('touchmove', doDrag, { passive: false });
-                document.addEventListener('mouseup', stopDrag);
-                document.getElementById('adCanvas').addEventListener('touchend', stopDrag);
-            }
-
-            function doDrag(e) {
-                if (!isDragging) return;
-                e.preventDefault();
-                var clientX = e.type.startsWith('touch') ? e.touches[0].clientX : e.clientX;
-                var clientY = e.type.startsWith('touch') ? e.touches[0].clientY : e.clientY;
-
-                var dx = clientX - dragStartX;
-                var dy = clientY - dragStartY;
-
-                var newX = nodeStartX + dx;
-                var newY = nodeStartY + dy;
-
-                node.style.left = newX + 'px';
-                node.style.top = newY + 'px';
-
-                document.getElementById('elX').value = newX;
-                document.getElementById('elY').value = newY;
-            }
-
-            function stopDrag() {
-                isDragging = false;
-                document.removeEventListener('mousemove', doDrag);
-                document.removeEventListener('touchmove', doDrag);
-                document.removeEventListener('mouseup', stopDrag);
-            }
-        }
-
-        function selectNode(node) {
-            clearSelection();
-            selectedNode = node;
-            selectedNode.classList.add('active');
-            inspector.style.display = 'block';
-
-            document.getElementById('elW').value = parseInt(node.style.width) || node.offsetWidth;
-            document.getElementById('elH').value = parseInt(node.style.height) || node.offsetHeight;
-            document.getElementById('elX').value = parseInt(node.style.left) || 0;
-            document.getElementById('elY').value = parseInt(node.style.top) || 0;
-
-            var isText = node.getAttribute('data-type') === 'text';
-            var isShape = node.getAttribute('data-type') === 'shape';
-
-            if (isText) {
-                textControls.style.display = 'block';
-                imageControls.style.display = 'none';
-                document.getElementById('inspectorTitle').textContent = '🔧 Text Layer Inspector';
-                var textEl = node.querySelector('.text-inside');
-                document.getElementById('elText').value = textEl.textContent;
-                document.getElementById('elFont').value = parseInt(textEl.style.fontSize) || 14;
-                document.getElementById('elColor').value = rgbToHex(textEl.style.color || '#000000');
-                document.getElementById('elBgColor').value = rgbToHex(node.style.backgroundColor || '#00000000');
-            } else {
-                textControls.style.display = 'none';
-                imageControls.style.display = 'block';
-                document.getElementById('inspectorTitle').textContent = isShape ? '🔧 Shape Layer Inspector' : '🔧 Image Layer Inspector';
-                document.getElementById('elRadius').value = parseInt(node.style.borderRadius) || 0;
-                document.getElementById('elOpacity').value = (node.style.opacity !== undefined && node.style.opacity !== '') ? parseFloat(node.style.opacity) * 100 : 100;
-                document.getElementById('elImgBg').value = rgbToHex(node.style.backgroundColor || '#00000000');
-            }
-
-            document.getElementById('elTransparent').checked = node.style.backgroundColor === 'transparent' || node.style.backgroundColor === 'rgba(0, 0, 0, 0)';
-        }
-
-        function clearSelection(e) {
-            if (e && e.target !== canvas && !canvas.contains(e.target)) return;
-            if (selectedNode) {
-                selectedNode.classList.remove('active');
-                selectedNode = null;
-            }
-            inspector.style.display = 'none';
-        }
-
-        // ===== NODE FACTORIES =====
-        function createBaseNode(type) {
-            nodeCounter++;
-            var node = document.createElement('div');
-            node.className = 'ad-node';
-            node.id = 'node_' + nodeCounter;
-            node.setAttribute('data-type', type);
-            node.setAttribute('data-anim', 'none');
-            node.style.left = '20px';
-            node.style.top = '10px';
-            setupDraggable(node);
-            return node;
-        }
-
-        function addText() {
-            var node = createBaseNode('text');
-            var txt = document.createElement('div');
-            txt.className = 'text-inside';
-            txt.textContent = 'CRISTIANO RONALDO';
-            txt.style.fontSize = '14px';
-            txt.style.color = '#000000';
-            txt.style.fontFamily = 'Impact, sans-serif';
-            node.appendChild(txt);
-            canvas.appendChild(node);
-            selectNode(node);
-            showToast('📝 Text layer added');
-        }
-
-        function addShape() {
-            var node = createBaseNode('shape');
-            node.style.width = '60px';
-            node.style.height = '30px';
-            node.style.backgroundColor = '#ef4444';
-            canvas.appendChild(node);
-            selectNode(node);
-            showToast('⬛ Shape layer added');
-        }
-
-        function addImage(e) {
-            var file = e.target.files[0];
+        // ===== Image Upload =====
+        function handleImageUpload(event) {
+            const file = event.target.files[0];
             if (!file) return;
-
-            var reader = new FileReader();
-            reader.onload = function(event) {
-                var srcData = event.target.result;
-                var node = createBaseNode('image');
-                node.style.width = '50px';
-                node.style.height = '50px';
-
-                var img = document.createElement('img');
-                img.src = srcData;
-                node.appendChild(img);
-                
-                // If it is a GIF file, cache the file url for advanced frame parsing
-                if (file.type === 'image/gif') {
-                    node.setAttribute('data-gif-src', srcData);
-                    analyzeGIF(srcData, node.id);
-                }
-
-                canvas.appendChild(node);
-                selectNode(node);
-                showToast('🖼️ Layer added successfully!');
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const img = new Image();
+                img.onload = function() {
+                    uploadedImage = img;
+                    let w = canvasWidth, h = canvasHeight;
+                    let maxW = w * 0.6, maxH = h * 0.6;
+                    let iw = Math.min(img.width, maxW);
+                    let ih = Math.min(img.height, maxH);
+                    imageConfig.width = iw;
+                    imageConfig.height = ih;
+                    imageConfig.x = (w - iw) / 2;
+                    imageConfig.y = (h - ih) / 2;
+                    document.getElementById('imgWidth').value = iw;
+                    document.getElementById('imgHeight').value = ih;
+                    imageFilters.imgWidth = iw;
+                    imageFilters.imgHeight = ih;
+                    document.getElementById('imgWidthDisplay').textContent = iw;
+                    document.getElementById('imgHeightDisplay').textContent = ih;
+                    imageCustomPanel.classList.add('active');
+                    statusEl.textContent = '✅ Image loaded! Use text boxes for precise control.';
+                    resetFilters();
+                    preview();
+                };
+                img.src = e.target.result;
             };
             reader.readAsDataURL(file);
         }
 
-        function addGiphyImage() {
-            var url = document.getElementById('giphyUrlInput').value.trim();
-            if (!url) {
-                showToast('❌ Please paste a valid URL', 'error');
-                return;
-            }
-            var node = createBaseNode('image');
-            node.style.width = '60px';
-            node.style.height = '60px';
-
-            var img = document.createElement('img');
-            img.src = url;
-            img.crossOrigin = 'anonymous';
-            node.appendChild(img);
-            node.setAttribute('data-gif-src', url);
+        // ===== Filters - Text Boxes =====
+        function applyFilters() {
+            imageFilters.brightness = parseInt(document.getElementById('imgBrightness').value) || 0;
+            imageFilters.contrast = parseInt(document.getElementById('imgContrast').value) || 0;
+            imageFilters.saturation = parseInt(document.getElementById('imgSaturation').value) || 0;
+            imageFilters.blur = parseInt(document.getElementById('imgBlur').value) || 0;
+            imageFilters.opacity = parseInt(document.getElementById('imgOpacity').value) || 100;
+            imageFilters.radius = parseInt(document.getElementById('imgRadius').value) || 0;
+            imageFilters.border = parseInt(document.getElementById('imgBorder').value) || 0;
+            imageFilters.borderColor = document.getElementById('imgBorderColor').value;
+            imageFilters.shadow = parseInt(document.getElementById('imgShadow').value) || 0;
+            imageFilters.animation = document.getElementById('imgAnimation').value;
+            imageFilters.animTime = parseInt(document.getElementById('animTime').value) || 8;
+            imageFilters.gifFrames = parseInt(document.getElementById('gifFrames').value) || 20;
             
-            // Automatically prefetch and extract GIF frames to ensure full preservation in export
-            analyzeGIF(url, node.id);
-
-            canvas.appendChild(node);
-            selectNode(node);
-            document.getElementById('giphyUrlInput').value = '';
-            showToast('🚀 GIPHY / External image added');
+            // Clamp values
+            imageFilters.brightness = Math.max(-100, Math.min(100, imageFilters.brightness));
+            imageFilters.contrast = Math.max(-100, Math.min(100, imageFilters.contrast));
+            imageFilters.saturation = Math.max(-100, Math.min(100, imageFilters.saturation));
+            imageFilters.blur = Math.max(0, Math.min(20, imageFilters.blur));
+            imageFilters.opacity = Math.max(10, Math.min(100, imageFilters.opacity));
+            imageFilters.radius = Math.max(0, Math.min(50, imageFilters.radius));
+            imageFilters.border = Math.max(0, Math.min(10, imageFilters.border));
+            imageFilters.shadow = Math.max(0, Math.min(30, imageFilters.shadow));
+            imageFilters.animTime = Math.max(1, Math.min(30, imageFilters.animTime));
+            imageFilters.gifFrames = Math.max(5, Math.min(60, imageFilters.gifFrames));
+            
+            preview();
         }
 
-        // ===== GIF FRAGMENTATION & CACHING FOR EXPORT PERFECT ANIMATION =====
-        function analyzeGIF(src, nodeId) {
-            // High-fidelity solution to ensure loaded GIFs animate beautifully on export
-            // We create an internal offscreen image array buffer mock to simulate sequential playback
-            gifFramesCache[nodeId] = [];
-            var img = new Image();
-            img.crossOrigin = 'anonymous';
-            img.src = src;
-            img.onload = function() {
-                // Generate simulated sub-frames with slight color variations or positions to retain true rendering
-                for (var i = 0; i < 30; i++) {
-                    gifFramesCache[nodeId].push({
-                        frameIdx: i,
-                        ready: true,
-                        image: img
-                    });
+        function resetFilters() {
+            document.getElementById('imgBrightness').value = 0;
+            document.getElementById('imgContrast').value = 0;
+            document.getElementById('imgSaturation').value = 0;
+            document.getElementById('imgBlur').value = 0;
+            document.getElementById('imgOpacity').value = 100;
+            document.getElementById('imgRadius').value = 0;
+            document.getElementById('imgBorder').value = 0;
+            document.getElementById('imgShadow').value = 0;
+            document.getElementById('imgAnimation').value = 'none';
+            document.getElementById('animTime').value = 8;
+            document.getElementById('gifFrames').value = 20;
+            imageFilters.flipH = false;
+            imageFilters.flipV = false;
+            imageFilters.rotate = 0;
+            applyFilters();
+        }
+
+        function flipImage(direction) {
+            if (direction === 'horizontal') imageFilters.flipH = !imageFilters.flipH;
+            if (direction === 'vertical') imageFilters.flipV = !imageFilters.flipV;
+            preview();
+        }
+
+        function rotateImage(deg) {
+            imageFilters.rotate = (imageFilters.rotate + deg) % 360;
+            preview();
+        }
+
+        // ===== Text Layers =====
+        function addNewRow(text = 'New Layer', color = '#ffffff', size = 20, font = 'Arial', anim = 'static') {
+            const rowId = 'row_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4);
+            const rowHtml = `
+                <div class="text-row" id="${rowId}" data-id="${rowId}">
+                    <input type="text" class="layer-text" value="${text}" placeholder="Text..." oninput="preview()">
+                    <div class="input-group-custom">
+                        <span>SZ</span>
+                        <input type="number" class="layer-size" value="${size}" min="8" max="200" oninput="preview()">
+                    </div>
+                    <select class="layer-font" onchange="preview()">
+                        <option value="Arial" ${font==='Arial'?'selected':''}>Arial</option>
+                        <option value="Times New Roman" ${font==='Times New Roman'?'selected':''}>Times</option>
+                        <option value="Courier New" ${font==='Courier New'?'selected':''}>Courier</option>
+                        <option value="Impact" ${font==='Impact'?'selected':''}>Impact</option>
+                        <option value="Comic Sans MS" ${font==='Comic Sans MS'?'selected':''}>Comic</option>
+                    </select>
+                    <select class="layer-anim" onchange="preview()">
+                        <option value="static" ${anim==='static'?'selected':''}>Static</option>
+                        <option value="wave" ${anim==='wave'?'selected':''}>Wave</option>
+                        <option value="pulse" ${anim==='pulse'?'selected':''}>Pulse</option>
+                        <option value="slide" ${anim==='slide'?'selected':''}>Slide</option>
+                        <option value="flicker" ${anim==='flicker'?'selected':''}>Flicker</option>
+                    </select>
+                    <input type="color" class="layer-clr" value="${color}" oninput="preview()">
+                    <button class="btn-del" onclick="removeRow('${rowId}')">✕</button>
+                </div>
+            `;
+            rowsContainer.insertAdjacentHTML('beforeend', rowHtml);
+            preview();
+        }
+
+        function removeRow(id) {
+            const row = document.getElementById(id);
+            if (row) { row.remove(); delete layerCoords[id]; preview(); }
+        }
+
+        function getActiveLayers() {
+            const rows = rowsContainer.querySelectorAll('.text-row');
+            const layers = [];
+            const total = rows.length;
+            const h = canvasHeight, w = canvasWidth;
+            rows.forEach((row, idx) => {
+                const id = row.getAttribute('data-id');
+                let x = w/2, y = h/2;
+                if (layerCoords[id] === undefined) {
+                    if (total === 2) y = (idx === 0) ? h*0.32 : h*0.72;
+                    else if (total > 2) y = h*0.18 + (idx * ((h*0.64)/(total-1)));
+                    layerCoords[id] = { x: w/2, y: y };
                 }
+                const coords = layerCoords[id];
+                layers.push({
+                    id: id,
+                    text: row.querySelector('.layer-text').value || '',
+                    color: row.querySelector('.layer-clr').value,
+                    size: parseInt(row.querySelector('.layer-size').value) || 20,
+                    font: row.querySelector('.layer-font').value,
+                    anim: row.querySelector('.layer-anim').value,
+                    x: coords.x,
+                    y: coords.y
+                });
+            });
+            return layers;
+        }
+
+        // ===== DRAW =====
+        function draw(layers, frameIndex = 0, totalFrames = 1) {
+            const w = canvasWidth, h = canvasHeight;
+            const baseBg = bannerBgInput.value;
+            
+            ctx.clearRect(0, 0, w, h);
+            
+            const grad = ctx.createRadialGradient(w*0.5, h*0.5, 10, w*0.5, h*0.5, w*0.7);
+            grad.addColorStop(0, baseBg);
+            grad.addColorStop(0.7, adjustColorBrightness(baseBg, -25));
+            ctx.fillStyle = grad;
+            ctx.fillRect(0, 0, w, h);
+
+            // Draw Image with 50+ animations
+            if (uploadedImage) {
+                const t = totalFrames > 1 ? (frameIndex / totalFrames) * Math.PI * 2 : 0;
+                const animType = imageFilters.animation;
+                const animResult = getAnimationValue(t, animType, imageConfig.width, imageConfig.height, w, h);
+                
+                let dx = imageConfig.x + (animResult.dx || 0);
+                let dy = imageConfig.y + (animResult.dy || 0);
+                let dw = imageConfig.width * (animResult.scale || 1);
+                let dh = imageConfig.height * (animResult.scale || 1);
+                let rotation = (imageFilters.rotate || 0) * Math.PI / 180 + (animResult.rotation || 0);
+                let opacity = (animResult.opacity || 1) * (imageFilters.opacity / 100);
+                let glow = imageFilters.shadow + (animResult.glow || 0);
+                let hue = animResult.hue || 0;
+
+                dx = dx - (dw - imageConfig.width) / 2;
+                dy = dy - (dh - imageConfig.height) / 2;
+
+                let filterStr = '';
+                if (imageFilters.brightness !== 0) filterStr += `brightness(${100 + imageFilters.brightness}%) `;
+                if (imageFilters.contrast !== 0) filterStr += `contrast(${100 + imageFilters.contrast}%) `;
+                if (imageFilters.saturation !== 0) filterStr += `saturate(${100 + imageFilters.saturation}%) `;
+                if (imageFilters.blur > 0) filterStr += `blur(${imageFilters.blur}px) `;
+                if (hue !== 0) filterStr += `hue-rotate(${hue}deg) `;
+
+                let flipScaleX = imageFilters.flipH ? -1 : 1;
+                let flipScaleY = imageFilters.flipV ? -1 : 1;
+
+                ctx.save();
+                ctx.globalAlpha = opacity;
+                ctx.shadowColor = imageFilters.borderColor;
+                ctx.shadowBlur = glow;
+
+                let cx = dx + dw/2, cy = dy + dh/2;
+                ctx.translate(cx, cy);
+                ctx.rotate(rotation);
+                ctx.scale(flipScaleX, flipScaleY);
+                ctx.translate(-cx, -cy);
+
+                if (imageFilters.radius > 0) {
+                    ctx.beginPath();
+                    roundRect(ctx, dx, dy, dw, dh, imageFilters.radius);
+                    ctx.clip();
+                }
+
+                if (filterStr) ctx.filter = filterStr;
+                ctx.drawImage(uploadedImage, dx, dy, dw, dh);
+                ctx.filter = 'none';
+
+                if (imageFilters.border > 0) {
+                    ctx.shadowBlur = 0;
+                    ctx.strokeStyle = imageFilters.borderColor;
+                    ctx.lineWidth = imageFilters.border;
+                    if (imageFilters.radius > 0) {
+                        ctx.beginPath();
+                        roundRect(ctx, dx, dy, dw, dh, imageFilters.radius);
+                        ctx.stroke();
+                    } else {
+                        ctx.strokeRect(dx, dy, dw, dh);
+                    }
+                }
+                ctx.restore();
+            }
+
+            // Draw Text
+            const t = totalFrames > 1 ? (frameIndex / totalFrames) * Math.PI * 2 : 0;
+            layers.forEach(layer => {
+                ctx.save();
+                let targetX = layer.x, targetY = layer.y;
+                let glow = 12, opacity = 1;
+                if (layer.anim === 'wave') targetY += Math.sin(t) * canvasHeight * 0.04;
+                else if (layer.anim === 'pulse') glow = 12 + Math.sin(t)*10;
+                else if (layer.anim === 'slide') targetX += Math.sin(t) * canvasWidth * 0.05;
+                else if (layer.anim === 'flicker') opacity = Math.random() > 0.8 ? 0.3 : 1;
+
+                ctx.globalAlpha = opacity;
+                ctx.shadowColor = layer.color + '99';
+                ctx.shadowBlur = glow;
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillStyle = layer.color;
+                ctx.font = `bold ${layer.size}px "${layer.font}"`;
+                ctx.fillText(layer.text || '', targetX, targetY);
+                ctx.restore();
+            });
+        }
+
+        function roundRect(ctx, x, y, w, h, r) {
+            if (r > w/2) r = w/2;
+            if (r > h/2) r = h/2;
+            ctx.moveTo(x + r, y);
+            ctx.arcTo(x + w, y, x + w, y + h, r);
+            ctx.arcTo(x + w, y + h, x, y + h, r);
+            ctx.arcTo(x, y + h, x, y, r);
+            ctx.arcTo(x, y, x + w, y, r);
+            return ctx;
+        }
+
+        function adjustColorBrightness(hex, percent) {
+            let r = parseInt(hex.slice(1,3),16), g = parseInt(hex.slice(3,5),16), b = parseInt(hex.slice(5,7),16);
+            r = Math.min(255, Math.max(0, r + percent));
+            g = Math.min(255, Math.max(0, g + percent));
+            b = Math.min(255, Math.max(0, b + percent));
+            return '#' + [r,g,b].map(c => c.toString(16).padStart(2,'0')).join('');
+        }
+
+        function preview() {
+            draw(getActiveLayers(), 0, 1);
+            statusEl.textContent = '✅ Preview · ' + imageFilters.animation;
+            statusEl.style.color = '#00e676';
+        }
+
+        function downloadPNG() {
+            draw(getActiveLayers(), 0, 1);
+            try {
+                const link = document.createElement('a');
+                link.download = 'custom-banner.png';
+                link.href = c.toDataURL('image/png');
+                link.click();
+                statusEl.textContent = '✅ PNG saved!';
+            } catch(e) {
+                statusEl.textContent = '❌ Error: ' + e.message;
+                statusEl.style.color = '#ff4d6d';
+            }
+        }
+
+        // ===== DRAG =====
+        function getEventCoords(e) {
+            const rect = c.getBoundingClientRect();
+            const scaleX = canvasWidth / rect.width;
+            const scaleY = canvasHeight / rect.height;
+            const cx = e.touches ? e.touches[0].clientX : e.clientX;
+            const cy = e.touches ? e.touches[0].clientY : e.clientY;
+            return {
+                x: (cx - rect.left) * scaleX,
+                y: (cy - rect.top) * scaleY
             };
         }
 
-        // ===== MUTATORS =====
-        function updateElement() {
-            if (!selectedNode) return;
-            var w = document.getElementById('elW').value;
-            var h = document.getElementById('elH').value;
-            if (w) selectedNode.style.width = w + 'px';
-            if (h) selectedNode.style.height = h + 'px';
-
-            var isText = selectedNode.getAttribute('data-type') === 'text';
-            if (isText) {
-                var textEl = selectedNode.querySelector('.text-inside');
-                textEl.textContent = document.getElementById('elText').value;
-                textEl.style.fontSize = document.getElementById('elFont').value + 'px';
-            } else {
-                selectedNode.style.borderRadius = document.getElementById('elRadius').value + 'px';
-                selectedNode.style.opacity = document.getElementById('elOpacity').value / 100;
-            }
-        }
-
-        function updateElementPos() {
-            if (!selectedNode) return;
-            var x = document.getElementById('elX').value;
-            var y = document.getElementById('elY').value;
-            if (x !== '') selectedNode.style.left = x + 'px';
-            if (y !== '') selectedNode.style.top = y + 'px';
-        }
-
-        function updateElementColor() {
-            if (!selectedNode) return;
-            var txt = selectedNode.querySelector('.text-inside');
-            if (txt) txt.style.color = document.getElementById('elColor').value;
-        }
-
-        function updateElementBg() {
-            if (!selectedNode) return;
-            var isText = selectedNode.getAttribute('data-type') === 'text';
-            var colorId = isText ? 'elBgColor' : 'elImgBg';
-            selectedNode.style.backgroundColor = document.getElementById(colorId).value;
-            document.getElementById('elTransparent').checked = false;
-        }
-
-        function toggleElementTransparent() {
-            if (!selectedNode) return;
-            var isChecked = document.getElementById('elTransparent').checked;
-            if (isChecked) {
-                selectedNode.style.backgroundColor = 'transparent';
-            } else {
-                var isText = selectedNode.getAttribute('data-type') === 'text';
-                var colorId = isText ? 'elBgColor' : 'elImgBg';
-                selectedNode.style.backgroundColor = document.getElementById(colorId).value;
-            }
-        }
-
-        function deleteElement() {
-            if (!selectedNode) return;
-            if (selectedNode.id && gifFramesCache[selectedNode.id]) {
-                delete gifFramesCache[selectedNode.id];
-            }
-            selectedNode.remove();
-            selectedNode = null;
-            inspector.style.display = 'none';
-            showToast('🗑️ Layer deleted successfully');
-        }
-
-        function resetElement() {
-            if (!selectedNode) return;
-            selectedNode.style.transform = 'none';
-            selectedNode.style.opacity = '1';
-            selectedNode.className = 'ad-node active';
-            selectedNode.setAttribute('data-anim', 'none');
-            showToast('🔄 Layer animation reset');
-        }
-
-        function duplicateLayer() {
-            if (!selectedNode) {
-                showToast('❌ Select a layer first!', 'error');
-                return;
-            }
-            nodeCounter++;
-            var clone = selectedNode.cloneNode(true);
-            clone.id = 'node_' + nodeCounter;
-            clone.classList.remove('active');
-            
-            var left = parseInt(selectedNode.style.left) || 0;
-            var top = parseInt(selectedNode.style.top) || 0;
-            clone.style.left = (left + 15) + 'px';
-            clone.style.top = (top + 15) + 'px';
-            
-            setupDraggable(clone);
-            canvas.appendChild(clone);
-            
-            if (gifFramesCache[selectedNode.id]) {
-                gifFramesCache[clone.id] = gifFramesCache[selectedNode.id];
-            }
-            
-            selectNode(clone);
-            showToast('📋 Layer duplicated successfully');
-        }
-
-        function moveLayer(dir) {
-            if (!selectedNode) {
-                showToast('❌ Select a layer first!', 'error');
-                return;
-            }
-            if (dir === 'up' && selectedNode.nextElementSibling) {
-                selectedNode.parentNode.insertBefore(selectedNode.nextElementSibling, selectedNode);
-                showToast('⬆️ Layer moved up');
-            } else if (dir === 'down' && selectedNode.previousElementSibling && selectedNode.previousElementSibling.id !== 'closeBtn') {
-                selectedNode.parentNode.insertBefore(selectedNode, selectedNode.previousElementSibling);
-                showToast('⬇️ Layer moved down');
-            }
-        }
-
-        function setAnimation(type) {
-            if (!selectedNode) {
-                showToast('❌ Select a layer first!', 'error');
-                return;
-            }
-            selectedNode.className = 'ad-node active';
-            selectedNode.setAttribute('data-anim', type);
-
-            var isText = selectedNode.getAttribute('data-type') === 'text';
-            var prefix = isText ? 'text-' : (selectedNode.getAttribute('data-type') === 'shape' ? 'shape-' : 'img-');
-
-            if (type !== 'none') {
-                selectedNode.classList.add(prefix + type);
-                showToast('⚡ Applied ' + type + ' animation');
-            } else {
-                showToast('🚫 Animation removed');
-            }
-        }
-
-        function toggleAdvPanel() {
-            advPanel.style.display = advPanel.style.display === 'block' ? 'none' : 'block';
-        }
-
-        // ===== ADVANCED PROFESSIONAL TEMPLATE LOADER =====
-        function loadTemplate(key) {
-            // Reset existing items but don't delete background settings
-            var nodes = canvas.querySelectorAll('.ad-node');
-            nodes.forEach(function(n) { n.remove(); });
-            gifFramesCache = {};
-
-            var formatSelect = document.getElementById('adFormat');
-            var canvasW = document.getElementById('canvasW');
-            var canvasH = document.getElementById('canvasH');
-
-            // Check template configuration type
-            if (key.startsWith('giphy_') || key.startsWith('premium_')) {
-                var url = GIPHY_URLS[key];
-                isTransparent = false;
-                canvas.classList.remove('transparent-bg');
-                canvasFrame.classList.remove('transparent-mode');
-
-                if (key === 'giphy_cat') {
-                    formatSelect.value = 'banner';
-                    canvasW.value = 320;
-                    canvasH.value = 50;
-                    mutateCanvas();
-                    canvas.style.backgroundColor = '#1e1b4b';
-
-                    var nodeImg = createBaseNode('image');
-                    nodeImg.style.width = '45px';
-                    nodeImg.style.height = '45px';
-                    nodeImg.style.left = '8px';
-                    nodeImg.style.top = '2px';
-                    var img = document.createElement('img'); img.src = url;
-                    nodeImg.appendChild(img);
-                    nodeImg.setAttribute('data-gif-src', url);
-                    nodeImg.setAttribute('data-anim', 'pulse');
-                    nodeImg.classList.add('img-zoom');
-                    canvas.appendChild(nodeImg);
-
-                    var nodeTxt = createBaseNode('text');
-                    nodeTxt.style.left = '65px'; nodeTxt.style.top = '14px';
-                    var txt = document.createElement('div'); txt.className = 'text-inside';
-                    txt.textContent = 'CUTE CAT EMPIRE'; txt.style.color = '#f472b6';
-                    txt.style.fontFamily = 'Impact, sans-serif'; txt.style.fontSize = '16px';
-                    nodeTxt.appendChild(txt);
-                    canvas.appendChild(nodeTxt);
-                } 
-                else if (key === 'giphy_fire') {
-                    formatSelect.value = 'banner';
-                    canvasW.value = 320; canvasH.value = 50;
-                    mutateCanvas();
-                    canvas.style.backgroundColor = '#000000';
-
-                    var nodeImg = createBaseNode('image');
-                    nodeImg.style.width = '320px'; nodeImg.style.height = '50px';
-                    nodeImg.style.left = '0px'; nodeImg.style.top = '0px';
-                    var img = document.createElement('img'); img.src = url;
-                    nodeImg.appendChild(img);
-                    nodeImg.setAttribute('data-gif-src', url);
-                    canvas.appendChild(nodeImg);
-
-                    var nodeTxt = createBaseNode('text');
-                    nodeTxt.style.left = '85px'; nodeTxt.style.top = '12px';
-                    var txt = document.createElement('div'); txt.className = 'text-inside';
-                    txt.textContent = 'MEGA FLASH SALE 80% OFF'; txt.style.color = '#ffffff';
-                    txt.style.fontFamily = 'Arial Black, sans-serif'; txt.style.fontSize = '13px';
-                    nodeTxt.appendChild(txt);
-                    nodeTxt.setAttribute('data-anim', 'flash');
-                    nodeTxt.classList.add('text-flash');
-                    canvas.appendChild(nodeTxt);
-                }
-                else if (key === 'giphy_dance') {
-                    formatSelect.value = 'interstitial';
-                    switchFormat();
-                    canvas.style.backgroundColor = '#ec4899';
-
-                    var nodeImg = createBaseNode('image');
-                    nodeImg.style.width = '240px'; nodeImg.style.height = '180px';
-                    nodeImg.style.left = '20px'; nodeImg.style.top = '30px';
-                    var img = document.createElement('img'); img.src = url;
-                    nodeImg.appendChild(img);
-                    nodeImg.setAttribute('data-gif-src', url);
-                    canvas.appendChild(nodeImg);
-
-                    var nodeTxt = createBaseNode('text');
-                    nodeTxt.style.left = '40px'; nodeTxt.style.top = '240px';
-                    var txt = document.createElement('div'); txt.className = 'text-inside';
-                    txt.textContent = 'FRIDAY NIGHT PARTY!'; txt.style.color = '#ffffff';
-                    txt.style.fontFamily = 'Impact'; txt.style.fontSize = '20px';
-                    nodeTxt.appendChild(txt);
-                    nodeTxt.setAttribute('data-anim', 'bounce');
-                    nodeTxt.classList.add('text-bounce');
-                    canvas.appendChild(nodeTxt);
-                }
-                else if (key === 'giphy_glitch') {
-                    formatSelect.value = 'banner';
-                    canvasW.value = 320; canvasH.value = 50;
-                    mutateCanvas();
-                    canvas.style.backgroundColor = '#111827';
-
-                    var nodeImg = createBaseNode('image');
-                    nodeImg.style.width = '320px'; nodeImg.style.height = '50px';
-                    nodeImg.style.left = '0px'; nodeImg.style.top = '0px';
-                    nodeImg.style.opacity = '0.4';
-                    var img = document.createElement('img'); img.src = url;
-                    nodeImg.appendChild(img);
-                    nodeImg.setAttribute('data-gif-src', url);
-                    canvas.appendChild(nodeImg);
-
-                    var nodeTxt = createBaseNode('text');
-                    nodeTxt.style.left = '60px'; nodeTxt.style.top = '12px';
-                    var txt = document.createElement('div'); txt.className = 'text-inside';
-                    txt.textContent = 'CYBERPUNK GLITCH SYSTEM'; txt.style.color = '#00ffcc';
-                    txt.style.fontFamily = 'Courier New, monospace'; txt.style.fontSize = '14px';
-                    nodeTxt.appendChild(txt);
-                    nodeTxt.setAttribute('data-anim', 'glitch');
-                    canvas.appendChild(nodeTxt);
-                }
-                else if (key === 'giphy_neon') {
-                    formatSelect.value = 'banner';
-                    canvasW.value = 320; canvasH.value = 50;
-                    mutateCanvas();
-                    canvas.style.backgroundColor = '#050510';
-
-                    var nodeImg = createBaseNode('image');
-                    nodeImg.style.width = '60px'; nodeImg.style.height = '45px';
-                    nodeImg.style.left = '10px'; nodeImg.style.top = '2px';
-                    var img = document.createElement('img'); img.src = url;
-                    nodeImg.appendChild(img);
-                    nodeImg.setAttribute('data-gif-src', url);
-                    canvas.appendChild(nodeImg);
-
-                    var nodeTxt = createBaseNode('text');
-                    nodeTxt.style.left = '85px'; nodeTxt.style.top = '14px';
-                    var txt = document.createElement('div'); txt.className = 'text-inside';
-                    txt.textContent = 'NEON NIGHT CLUB OPEN'; txt.style.color = '#ff00ff';
-                    txt.style.fontFamily = 'sans-serif'; txt.style.fontSize = '13px';
-                    nodeTxt.appendChild(txt);
-                    nodeTxt.setAttribute('data-anim', 'glow');
-                    nodeTxt.classList.add('text-glow');
-                    canvas.appendChild(nodeTxt);
-                }
-                else if (key === 'giphy_gaming') {
-                    formatSelect.value = 'interstitial';
-                    switchFormat();
-                    canvas.style.backgroundColor = '#020617';
-
-                    var nodeImg = createBaseNode('image');
-                    nodeImg.style.width = '260px'; nodeImg.style.height = '200px';
-                    nodeImg.style.left = '10px'; nodeImg.style.top = '20px';
-                    var img = document.createElement('img'); img.src = url;
-                    nodeImg.appendChild(img);
-                    nodeImg.setAttribute('data-gif-src', url);
-                    canvas.appendChild(nodeImg);
-
-                    var nodeTxt = createBaseNode('text');
-                    nodeTxt.style.left = '50px'; nodeTxt.style.top = '250px';
-                    var txt = document.createElement('div'); txt.className = 'text-inside';
-                    txt.textContent = 'LEVEL UP YOUR SKILLS'; txt.style.color = '#3b82f6';
-                    txt.style.fontFamily = 'Impact'; txt.style.fontSize = '18px';
-                    nodeTxt.appendChild(txt);
-                    nodeTxt.setAttribute('data-anim', 'rainbow');
-                    nodeTxt.classList.add('text-rainbow');
-                    canvas.appendChild(nodeTxt);
-                }
-                // --- NEW ADVANCED PROFESSIONAL TEMPLATES WITH PREMIUM GIF ANIMATIONS ---
-                else if (key === 'premium_sports') {
-                    formatSelect.value = 'banner';
-                    canvasW.value = 320; canvasH.value = 50;
-                    mutateCanvas();
-                    canvas.style.backgroundColor = '#000000';
-
-                    var nodeImg = createBaseNode('image');
-                    nodeImg.style.width = '70px'; nodeImg.style.height = '46px';
-                    nodeImg.style.left = '5px'; nodeImg.style.top = '2px';
-                    var img = document.createElement('img'); img.src = url;
-                    nodeImg.appendChild(img);
-                    nodeImg.setAttribute('data-gif-src', url);
-                    canvas.appendChild(nodeImg);
-
-                    var nodeTxt = createBaseNode('text');
-                    nodeTxt.style.left = '90px'; nodeTxt.style.top = '14px';
-                    var txt = document.createElement('div'); txt.className = 'text-inside';
-                    txt.textContent = 'JUST DO IT. NEW SNEAKERS'; txt.style.color = '#00ff66';
-                    txt.style.fontFamily = 'Arial Black', sans-serif; txt.style.fontSize = '12px';
-                    nodeTxt.appendChild(txt);
-                    nodeTxt.setAttribute('data-anim', 'slide');
-                    nodeTxt.classList.add('text-slide');
-                    canvas.appendChild(nodeTxt);
-                }
-                else if (key === 'premium_crypto') {
-                    formatSelect.value = 'banner';
-                    canvasW.value = 320; canvasH.value = 50;
-                    mutateCanvas();
-                    canvas.style.backgroundColor = '#0b0f19';
-
-                    var nodeImg = createBaseNode('image');
-                    nodeImg.style.width = '45px'; nodeImg.style.height = '45px';
-                    nodeImg.style.left = '12px'; nodeImg.style.top = '3px';
-                    var img = document.createElement('img'); img.src = url;
-                    nodeImg.appendChild(img);
-                    nodeImg.setAttribute('data-gif-src', url);
-                    canvas.appendChild(nodeImg);
-
-                    var nodeTxt = createBaseNode('text');
-                    nodeTxt.style.left = '70px'; nodeTxt.style.top = '13px';
-                    var txt = document.createElement('div'); txt.className = 'text-inside';
-                    txt.textContent = 'CRYPTO TRADING TO THE MOON'; txt.style.color = '#f59e0b';
-                    txt.style.fontFamily = 'Impact'; txt.style.fontSize = '14px';
-                    nodeTxt.appendChild(txt);
-                    nodeTxt.setAttribute('data-anim', 'pulse');
-                    nodeTxt.classList.add('text-pulse');
-                    canvas.appendChild(nodeTxt);
-                }
-                else if (key === 'premium_burger') {
-                    formatSelect.value = 'interstitial';
-                    switchFormat();
-                    canvas.style.backgroundColor = '#1c0a00';
-
-                    var nodeImg = createBaseNode('image');
-                    nodeImg.style.width = '240px'; nodeImg.style.height = '220px';
-                    nodeImg.style.left = '20px'; nodeImg.style.top = '15px';
-                    var img = document.createElement('img'); img.src = url;
-                    nodeImg.appendChild(img);
-                    nodeImg.setAttribute('data-gif-src', url);
-                    canvas.appendChild(nodeImg);
-
-                    var nodeTxt = createBaseNode('text');
-                    nodeTxt.style.left = '35px'; nodeTxt.style.top = '260px';
-                    var txt = document.createElement('div'); txt.className = 'text-inside';
-                    txt.textContent = 'CRAZY DELICIOUS BURGER BURST!'; txt.style.color = '#ff3300';
-                    txt.style.fontFamily = 'Impact'; txt.style.fontSize = '16px';
-                    nodeTxt.appendChild(txt);
-                    nodeTxt.setAttribute('data-anim', 'glow');
-                    nodeTxt.classList.add('text-glow');
-                    canvas.appendChild(nodeTxt);
-                }
-
-                // Trigger frame analysis for all template elements
-                canvas.querySelectorAll('.ad-node[data-gif-src]').forEach(function(n) {
-                    analyzeGIF(n.getAttribute('data-gif-src'), n.id);
-                });
-
-                updateBg();
-                showToast('🚀 Loaded Professional Template: ' + key);
-            }
-        }
-
-        // ===== HIGH-END ADVANCED EXPORT SYSTEM (PRESERVES GIF ANIMATION & INNER IMAGES) =====
-        function exportPNG() {
-            clearSelection();
-            showToast('📸 Capturing high quality image...');
-            html2canvas(canvas, {
-                backgroundColor: isTransparent ? null : undefined,
-                logging: false,
-                useCORS: true,
-                scale: 2
-            }).then(function(cv) {
-                var dataUrl = cv.toDataURL('image/png');
-                showDialog(dataUrl, 'ad-snapshot-' + Date.now() + '.png', 'png');
-                showToast('🎯 PNG Capture Ready!');
-            }).catch(function(err) {
-                showToast('❌ Snapshot failed', 'error');
-            });
-        }
-
-        function exportFullGIF() {
-            clearSelection();
-            progressBar.style.display = 'block';
-            progressFill.style.width = '0%';
-            showToast('🎞️ Encoding High-Fi GIF Sequence...');
-
-            var totalFrames = parseInt(document.getElementById('gifFrames').value) || 25;
-            var frameDelay = parseInt(document.getElementById('gifDelay').value) || 60;
-            var quality = parseInt(document.getElementById('gifQuality').value) || 1;
-
-            var gifEncoder = new GIF({
-                workers: 2,
-                quality: quality,
-                width: canvas.offsetWidth,
-                height: canvas.offsetHeight,
-                workerScript: 'https://cdnjs.cloudflare.com/ajax/libs/gif.js/0.2.0/gif.worker.js',
-                transparent: isTransparent ? '#00000000' : null
-            });
-
-            var currentFrame = 0;
-            var nodes = canvas.querySelectorAll('.ad-node');
-
-            // Temporarily suppress native CSS loops to allow structural frame sync injection
-            nodes.forEach(function(n) {
-                n.setAttribute('data-old-style', n.style.cssText);
-            });
-
-            function compileNextFrame() {
-                if (currentFrame >= totalFrames) {
-                    // Restore default styling after loop finishes
-                    nodes.forEach(function(n) {
-                        if (n.getAttribute('data-old-style')) {
-                            n.style.cssText = n.getAttribute('data-old-style');
-                        }
-                    });
-
-                    progressFill.style.width = '90%';
-                    showToast('🧬 Processing finalized file bytes...');
-
-                    gifEncoder.on('finished', function(blob) {
-                        progressBar.style.display = 'none';
-                        var finalGifUrl = URL.createObjectURL(blob);
-                        showDialog(finalGifUrl, 'ad-animation-' + Date.now() + '.gif', 'gif');
-                        showToast('🎯 GIF Rendered Successfully!');
-                    });
-
-                    gifEncoder.render();
+        function dragStart(e) {
+            const coords = getEventCoords(e);
+            const layers = getActiveLayers();
+            for (let i = layers.length-1; i>=0; i--) {
+                const l = layers[i];
+                ctx.font = `bold ${l.size}px "${l.font}"`;
+                const tw = ctx.measureText(l.text || ' ').width;
+                const th = l.size;
+                if (coords.x >= l.x - tw/2 && coords.x <= l.x + tw/2 &&
+                    coords.y >= l.y - th/2 && coords.y <= l.y + th/2) {
+                    isDragging = true;
+                    draggedElement = l.id;
+                    dragOffset.x = coords.x - l.x;
+                    dragOffset.y = coords.y - l.y;
                     return;
                 }
-
-                // Inject advanced synchronous modifications for active layers based on accurate frame offset
-                nodes.forEach(function(n) {
-                    var animType = n.getAttribute('data-anim');
-                    var isText = n.getAttribute('data-type') === 'text';
-                    var val = getAnimationValue(animType, currentFrame, totalFrames);
-
-                    if (val) {
-                        if (val.opacity) n.style.opacity = val.opacity;
-                        if (val.transform) n.style.transform = val.transform;
-                        if (val.filter) n.style.filter = val.filter;
-                        if (isText && val.color) {
-                            var t = n.querySelector('.text-inside');
-                            if (t) t.style.color = val.color;
-                        }
-                    }
-
-                    // CRITICAL CRUX: Look up whether an active GIF cache match exists, then dynamically swap source matrix
-                    if (n.getAttribute('data-gif-src') && gifFramesCache[n.id] && gifFramesCache[n.id].length > 0) {
-                        var cacheArr = gifFramesCache[n.id];
-                        var targetIdx = currentFrame % cacheArr.length;
-                        var imgTag = n.querySelector('img');
-                        if (imgTag && cacheArr[targetIdx]) {
-                            imgTag.src = cacheArr[targetIdx].image.src;
-                        }
-                    }
-                });
-
-                // Take exact snapshot matching this frame's dynamic timestamp state
-                html2canvas(canvas, {
-                    backgroundColor: isTransparent ? null : undefined,
-                    useCORS: true,
-                    logging: false,
-                    scale: 1.2
-                }).then(function(renderedCanvas) {
-                    gifEncoder.addFrame(renderedCanvas, { delay: frameDelay, copy: true });
-                    currentFrame++;
-                    progressFill.style.width = Math.round((currentFrame / totalFrames) * 85) + '%';
-                    setTimeout(compileNextFrame, 40);
-                }).catch(function() {
-                    currentFrame++;
-                    setTimeout(compileNextFrame, 10);
-                });
             }
-
-            // Begin rendering iteration process loops
-            setTimeout(compileNextFrame, 100);
-        }
-
-        function exportMP4() {
-            showToast('🎥 MP4 Export started via High-Fi WebStream...');
-            exportFullGIF(); 
-        }
-
-        function exportTransparent() {
-            setTransparentBg();
-            exportFullGIF();
-        }
-
-        function shareAd() {
-            exportFullGIF();
-        }
-
-        function saveToGallery() {
-            exportFullGIF();
-        }
-
-        // ===== UTILITY =====
-        function rgbToHex(rgb) {
-            if (!rgb || rgb === 'transparent' || rgb === 'rgba(0, 0, 0, 0)') return '#00000000';
-            if (!rgb.startsWith('rgb')) return rgb;
-            var parts = rgb.match(/\d+/g);
-            if (!parts) return '#00000000';
-            if (parts.length === 3) {
-                return '#' + ((1 << 24) + (parseInt(parts[0]) << 16) + (parseInt(parts[1]) << 8) + parseInt(parts[2]))
-                    .toString(16).slice(1);
+            if (uploadedImage && coords.x >= imageConfig.x && coords.x <= imageConfig.x+imageConfig.width &&
+                coords.y >= imageConfig.y && coords.y <= imageConfig.y+imageConfig.height) {
+                isDragging = true;
+                draggedElement = 'image';
+                dragOffset.x = coords.x - imageConfig.x;
+                dragOffset.y = coords.y - imageConfig.y;
             }
-            var alpha = Math.round(parseFloat(parts[3]) * 255);
-            var hex = '#' +
-                parseInt(parts[0]).toString(16).padStart(2, '0') +
-                parseInt(parts[1]).toString(16).padStart(2, '0') +
-                parseInt(parts[2]).toString(16).padStart(2, '0') +
-                alpha.toString(16).padStart(2, '0');
-            return hex;
         }
 
-        // ===== INITIALIZATION =====
-        window.onload = function() {
-            updateBg();
-            mutateCanvas();
-            // Automatically prefetch initial background template states
-            loadTemplate('giphy_cat');
-        };
-    </script>
+        function dragMove(e) {
+            if (!isDragging) return;
+            e.preventDefault();
+            const coords = getEventCoords(e);
+            if (draggedElement === 'image') {
+                imageConfig.x = coords.x - dragOffset.x;
+                imageConfig.y = coords.y - dragOffset.y;
+            } else if (draggedElement) {
+                layerCoords[draggedElement].x = coords.x - dragOffset.x;
+                layerCoords[draggedElement].y = coords.y - dragOffset.y;
+            }
+            preview();
+        }
+
+        function dragEnd() { isDragging = false; draggedElement = null; }
+
+        c.addEventListener('mousedown', dragStart);
+        window.addEventListener('mousemove', dragMove);
+        window.addEventListener('mouseup', dragEnd);
+        c.addEventListener('touchstart', dragStart, { passive: false });
+        window.addEventListener('touchmove', dragMove, { passive: false });
+        window.addEventListener('touchend', dragEnd);
+
+        // ===== GIF Download with Quality Control =====
+        function downloadGIF() {
+            const layers = getActiveLayers();
+            
+            // Get quality settings
+            const qualityMap = {
+                low: { scale: 0.5, label: 'Low (240p)' },
+                medium: { scale: 1, label: 'Medium (480p)' },
+                high: { scale: 1.5, label: 'High (720p)' },
+                hd: { scale: 2, label: 'HD (1080p)' },
+                '4k': { scale: 3.5, label: '4K (2160p)' }
+            };
+            const quality = qualityMap[currentQuality] || qualityMap.medium;
+            
+            // Calculate output size
+            let outW = Math.round(canvasWidth * quality.scale);
+            let outH = Math.round(canvasHeight * quality.scale);
+            // Cap at 4K
+            outW = Math.min(outW, 3840);
+            outH = Math.min(outH, 2160);
+            
+            statusEl.textContent = `⏳ Generating ${quality.label} (${outW}×${outH})...`;
+            statusEl.style.color = '#f5a623';
+            progress.style.display = 'block';
+            plabel.style.display = 'block';
+            fill.style.width = '0%';
+            
+            const totalFrames = imageFilters.gifFrames || 20;
+            const delay = Math.round(10 / quality.scale);
+            const frames = [];
+            let frameIndex = 0;
+
+            // Create temp canvas for high quality rendering
+            const tempCanvas = document.createElement('canvas');
+            tempCanvas.width = outW;
+            tempCanvas.height = outH;
+            const tempCtx = tempCanvas.getContext('2d');
+
+            function captureFrame() {
+                const pct = Math.round((frameIndex/totalFrames)*100);
+                fill.style.width = pct + '%';
+                plabel.textContent = `Frame ${frameIndex+1}/${totalFrames} · ${quality.label}`;
+                
+                // Draw on main canvas
+                draw(layers, frameIndex, totalFrames);
+                
+                // Render to temp canvas with quality scaling
+                tempCtx.clearRect(0, 0, outW, outH);
+                tempCtx.imageSmoothingEnabled = true;
+                tempCtx.imageSmoothingQuality = 'high';
+                tempCtx.drawImage(c, 0, 0, canvasWidth, canvasHeight, 0, 0, outW, outH);
+                
+                // Copy to frame
+                const frameCanvas = document.createElement('canvas');
+                frameCanvas.width = outW;
+                frameCanvas.height = outH;
+                const fCtx = frameCanvas.getContext('2d');
+                fCtx.drawImage(tempCanvas, 0, 0);
+                frames.push(frameCanvas);
+                
+                frameIndex++;
+                
+                if (frameIndex < totalFrames) {
+                    setTimeout(captureFrame, 50);
+                } else {
+                    plabel.textContent = 'Encoding GIF...';
+                    setTimeout(() => {
+                        try {
+                            const gifData = createGIF(frames, outW, outH, delay);
+                            const blob = new Blob([gifData], { type: 'image/gif' });
+                            const url = URL.createObjectURL(blob);
+                            
+                            const link = document.createElement('a');
+                            link.download = `custom-banner-${outW}x${outH}-${currentQuality}.gif`;
+                            link.href = url;
+                            document.body.appendChild(link);
+                            link.click();
+                            document.body.removeChild(link);
+                            
+                            setTimeout(() => URL.revokeObjectURL(url), 1000);
+                            
+                            progress.style.display = 'none';
+                            plabel.style.display = 'none';
+                            statusEl.textContent = `✅ GIF downloaded! ${quality.label} (${outW}×${outH})`;
+                            statusEl.style.color = '#00e676';
+                            setTimeout(() => draw(layers, 0, 1), 200);
+                        } catch(e) {
+                            progress.style.display = 'none';
+                            plabel.style.display = 'none';
+                            statusEl.textContent = '❌ Error: ' + e.message;
+                            statusEl.style.color = '#ff4d6d';
+                            draw(layers, 0, 1);
+                        }
+                    }, 100);
+                }
+            }
+            captureFrame();
+        }
+
+        // ===== GIF Encoder =====
+        function createGIF(frames, w, h, delay) {
+            let out = [];
+            out.push(0x47,0x49,0x46,0x38,0x39,0x61);
+            out.push(w & 0xFF, (w>>8)&0xFF);
+            out.push(h & 0xFF, (h>>8)&0xFF);
+            out.push(0xF7,0x00,0x00);
+            
+            let palette = [];
+            let bg = bannerBgInput.value;
+            let br = parseInt(bg.slice(1,3),16)||11, bg_ = parseInt(bg.slice(3,5),16)||11, bb = parseInt(bg.slice(5,7),16)||26;
+            for (let i=0;i<32;i++) palette.push(br, bg_, Math.min(255, bb+i));
+            for (let i=0;i<32;i++) palette.push(Math.min(255, br+i), bg_, Math.min(255, bb+20+i));
+            let sample = getActiveLayers().length?getActiveLayers()[0].color:'#f5a623';
+            let r=parseInt(sample.slice(1,3),16)||245, g=parseInt(sample.slice(3,5),16)||166, b=parseInt(sample.slice(5,7),16)||35;
+            for (let i=0;i<128;i++) { let f=i/127; palette.push(Math.round(r*f), Math.round(g*f), Math.round(b*f)); }
+            while(palette.length<768) palette.push(255,255,255);
+            out.push(...palette);
+
+            out.push(0x21,0xFF,0x0B,0x4E,0x45,0x54,0x53,0x43,0x41,0x50,0x45,0x32,0x2E,0x30,0x03,0x01,0x00,0x00,0x00);
+
+            for (let f=0; f<frames.length; f++) {
+                out.push(0x21,0xF9,0x04,0x04, delay & 0xFF, (delay>>8)&0xFF, 0x00, 0x00);
+                out.push(0x2C,0x00,0x00,0x00,0x00, w & 0xFF,(w>>8)&0xFF, h & 0xFF,(h>>8)&0xFF,0x00);
+                
+                const imgData = frames[f].getContext('2d').getImageData(0,0,w,h).data;
+                const indexes = [];
+                for (let i=0; i<imgData.length; i+=4) {
+                    let ir=imgData[i], ig=imgData[i+1], ib=imgData[i+2];
+                    let minDst=Infinity, bestIdx=0;
+                    for (let j=0; j<256; j++) {
+                        let pr=palette[j*3], pg=palette[j*3+1], pb=palette[j*3+2];
+                        let dst=(ir-pr)*(ir-pr)+(ig-pg)*(ig-pg)+(ib-pb)*(ib-pb);
+                        if (dst<minDst) { minDst=dst; bestIdx=j; }
+                    }
+                    indexes.push(bestIdx);
+                }
+                
+                out.push(0x08);
+                let encoded = lzwEncode(indexes);
+                for (let i=0; i<encoded.length; i+=255) {
+                    let chunk = encoded.slice(i, i+255);
+                    out.push(chunk.length);
+                    out.push(...chunk);
+                }
+                out.push(0x00);
+            }
+            out.push(0x3B);
+            return new Uint8Array(out);
+        }
+
+        function lzwEncode(pixels) {
+            let out = [], bitBuffer = 0, bitCount = 0;
+            const writeCode = (code, size) => {
+                bitBuffer |= (code << bitCount);
+                bitCount += size;
+                while (bitCount >= 8) {
+                    out.push(bitBuffer & 0xFF);
+                    bitBuffer >>= 8;
+                    bitCount -= 8;
+                }
+            };
+            
+            let dict = new Map();
+            const resetDict = () => {
+                dict.clear();
+                for(let i=0;i<256;i++) dict.set(String.fromCharCode(i), i);
+            };
+            resetDict();
+            
+            let nextCode = 258, codeSize = 9;
+            writeCode(256, codeSize);
+            
+            let current = String.fromCharCode(pixels[0]);
+            for (let i=1; i<pixels.length; i++) {
+                let p = String.fromCharCode(pixels[i]);
+                let combo = current + p;
+                if (dict.has(combo)) {
+                    current = combo;
+                } else {
+                    writeCode(dict.get(current), codeSize);
+                    if (nextCode < 4096) {
+                        dict.set(combo, nextCode++);
+                        if (nextCode-1 === (1<<codeSize)) codeSize++;
+                    } else {
+                        writeCode(256, codeSize);
+                        resetDict();
+                        nextCode = 258;
+                        codeSize = 9;
+                    }
+                    current = p;
+                }
+            }
+            writeCode(dict.get(current), codeSize);
+            writeCode(257, codeSize);
+            if (bitCount > 0) out.push(bitBuffer & 0xFF);
+            return out;
+        }
+
+        function handleResize() {
+            updateCanvasSize();
+        }
+
+        // ===== EXPOSE GLOBALS =====
+        window.addNewRow = addNewRow;
+        window.removeRow = removeRow;
+        window.preview = preview;
+        window.downloadPNG = downloadPNG;
+        window.downloadGIF = downloadGIF;
+        window.updateCanvasSize = updateCanvasSize;
+        window.updateBg = updateBg;
+        window.handleImageUpload = handleImageUpload;
+        window.applyFilters = applyFilters;
+        window.resetFilters = resetFilters;
+        window.flipImage = flipImage;
+        window.rotateImage = rotateImage;
+        window.updateImageSize = updateImageSize;
+        window.updateQuality = updateQuality;
+
+        // ===== INIT =====
+        initialLayers.forEach(l => addNewRow(l.text, l.color, l.size, l.font, l.anim));
+        
+        let w = parseInt(bannerWidthInput.value) || 600;
+        let h = parseInt(bannerHeightInput.value) || 300;
+        canvasWidth = w;
+        canvasHeight = h;
+        c.width = w;
+        c.height = h;
+        
+        setTimeout(updateCanvasSize, 50);
+        window.addEventListener('resize', handleResize);
+        updateQuality();
+        
+        statusEl.textContent = '✅ Upload image · Text boxes for precise control · HD/4K ready!';
+        statusEl.style.color = '#00e676';
+    })();
+</script>
 </body>
 </html>
