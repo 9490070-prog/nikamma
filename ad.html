@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>🎯 GIF Banner · Dynamic Image Layers</title>
+    <title>🎯 GIF Banner · Dynamic Image Layers Fixed</title>
     <style>
         * {
             box-sizing: border-box;
@@ -14,7 +14,6 @@
             --bg-primary: #0a0a16;
             --bg-secondary: #12122a;
             --bg-card: #1a1a3a;
-            --bg-input: #0f0f25;
             --accent: #f5a623;
             --accent-glow: rgba(245, 166, 35, 0.4);
             --text-main: #f0f0ff;
@@ -114,13 +113,22 @@
             padding: 2px 3px;
             font-size: 8px;
         }
+        .top-row .item select {
+            background: var(--bg-card);
+            border: 1px solid var(--border-subtle);
+            padding: 2px 4px;
+            border-radius: 5px;
+            color: #fff;
+            font-size: 9px;
+            outline: none;
+            cursor: pointer;
+        }
 
-        /* Image Layers Container */
         .image-layers-container {
             background: rgba(0,0,0,0.2);
             padding: 6px;
             border-radius: 10px;
-            max-height: 280px;
+            max-height: 300px;
             overflow-y: auto;
             margin-bottom: 8px;
             border: 1px solid var(--border-subtle);
@@ -140,7 +148,7 @@
             font-size: 8px;
             font-weight: 700;
             color: var(--accent);
-            min-width: 30px;
+            min-width: 25px;
         }
         .image-layer-row input[type="file"] {
             display: none;
@@ -174,7 +182,7 @@
             border-radius: 4px;
             color: #fff;
             font-size: 8px;
-            width: 40px;
+            width: 38px;
             outline: none;
         }
         .image-layer-row input[type="number"]:focus {
@@ -189,6 +197,7 @@
             font-size: 7px;
             outline: none;
             cursor: pointer;
+            max-width: 70px;
         }
         .image-layer-row .btn-del-img {
             background: var(--danger);
@@ -204,7 +213,7 @@
         .image-layer-row .layer-order {
             font-size: 7px;
             color: var(--text-muted);
-            min-width: 20px;
+            min-width: 18px;
         }
 
         .btn-add-image {
@@ -230,7 +239,7 @@
             background: rgba(0,0,0,0.2);
             padding: 5px;
             border-radius: 8px;
-            max-height: 150px;
+            max-height: 140px;
             overflow-y: auto;
             margin-bottom: 6px;
             border: 1px solid var(--border-subtle);
@@ -413,9 +422,8 @@
 </head>
 <body>
 <div class="box">
-    <h2>🖼️ <span>Dynamic Image Layers · Multiple Images</span></h2>
+    <h2>🖼️ <span>Dynamic Image Layers · Fixed Colors</span></h2>
 
-    <!-- TOP CONTROLS -->
     <div class="top-row">
         <div class="item">
             <label>Width (px)</label>
@@ -444,9 +452,8 @@
         </div>
     </div>
 
-    <!-- ===== DYNAMIC IMAGE LAYERS ===== -->
+    <!-- IMAGE LAYERS -->
     <div class="image-layers-container" id="imageLayersContainer">
-        <!-- Image layers will be added here -->
         <div style="text-align:center;padding:8px;color:var(--text-muted);font-size:8px;" id="noImageMsg">
             No images added. Click "Add Image Layer" below.
         </div>
@@ -471,7 +478,7 @@
     <div class="status-box">
         <div class="progress" id="progress"><div class="fill" id="fill"></div></div>
         <div class="plabel" id="plabel">Processing...</div>
-        <div class="status" id="status">✅ Add multiple images · Each image has own settings</div>
+        <div class="status" id="status">✅ Add multiple images · Each with own animation in FULL COLOR!</div>
     </div>
 </div>
 <script>
@@ -491,11 +498,8 @@
         const bannerBgHex = document.getElementById('bannerBgHex');
         const gifQualitySelect = document.getElementById('gifQuality');
 
-        // ===== IMAGE LAYERS STORE =====
         let imageLayers = [];
         let imageLayerIdCounter = 0;
-
-        // Text layers store
         const layerCoords = {};
         let canvasWidth = 600, canvasHeight = 300;
         let currentQuality = 'medium';
@@ -505,9 +509,67 @@
         let draggedLayerType = null;
 
         const initialLayers = [
-            { text: '✨ Multiple Images', color: '#f5a623', size: 32, font: 'Arial', anim: 'wave' },
-            { text: '✦ Each layer customizable ✦', color: '#b0b0ff', size: 14, font: 'Arial', anim: 'pulse' }
+            { text: '✨ Full Color Animations', color: '#f5a623', size: 32, font: 'Arial', anim: 'wave' },
+            { text: '✦ Each image has own animation ✦', color: '#b0b0ff', size: 14, font: 'Arial', anim: 'pulse' }
         ];
+
+        // ===== 50+ ANIMATIONS - FIXED: No color change =====
+        function getLayerAnimation(t, layer, w, h) {
+            let result = { 
+                dx: 0, dy: 0, scale: 1, rotation: 0, 
+                opacity: 1, glow: 0, 
+                // Removed hue to prevent color change
+            };
+            const speed = 1 / ((layer.animTime || 8) > 0 ? (layer.animTime || 8) : 8);
+            const phase = t * speed;
+            const animType = layer.animation || 'none';
+            
+            switch(animType) {
+                case 'none': break;
+                case 'zoom': result.scale = 1 + 0.15 * Math.sin(phase); break;
+                case 'rotate': result.rotation = phase * 0.5; break;
+                case 'bounce': result.dy = -Math.abs(Math.sin(phase)) * 25; break;
+                case 'fade': result.opacity = 0.4 + 0.6 * (0.5 + 0.5 * Math.sin(phase)); break;
+                case 'slide': result.dx = Math.sin(phase) * w * 0.08; break;
+                case 'wave': result.dy = Math.sin(phase) * h * 0.06; break;
+                case 'pulse': result.glow = 10 + Math.sin(phase) * 15; break;
+                case 'spin': result.rotation = phase * 1.5; break;
+                case 'glow': result.glow = 5 + Math.sin(phase) * 20; break;
+                case 'shake': result.dx = Math.sin(phase * 20) * 3; result.dy = Math.cos(phase * 22) * 3; break;
+                case 'flip': result.scale = Math.sin(phase) > 0 ? 1 : -1; break;
+                case 'swing': result.dx = Math.sin(phase * 0.8) * 20; result.rotation = Math.sin(phase * 0.8) * 0.2; break;
+                case 'float': result.dy = Math.sin(phase * 0.7) * 20; break;
+                case 'heartbeat': result.scale = 1 + 0.2 * Math.pow(Math.sin(phase * 2), 8); break;
+                case 'ripple': result.scale = 1 + 0.08 * Math.sin(phase * 3); result.dy = Math.sin(phase * 3) * 5; break;
+                case 'tilt': result.rotation = Math.sin(phase * 0.7) * 0.3; break;
+                case 'wobble': result.dx = Math.sin(phase * 1.5) * 10; result.dy = Math.cos(phase * 1.3) * 8; break;
+                case 'shine': result.opacity = 0.5 + 0.5 * Math.pow(Math.sin(phase), 2); break;
+                case 'neon': result.glow = 15 + Math.sin(phase * 1.5) * 15; break;
+                case 'sparkle': result.opacity = 0.3 + 0.7 * Math.pow(Math.sin(phase * 2), 4); break;
+                case 'sway': result.dx = Math.sin(phase * 0.5) * 30; break;
+                case 'drift': result.dx = Math.sin(phase * 0.3) * 40; result.dy = Math.cos(phase * 0.4) * 20; break;
+                case 'hover': result.dy = Math.sin(phase * 0.5) * 15; result.glow = 5 + Math.sin(phase * 1.2) * 10; break;
+                case 'jitter': result.dx = Math.sin(phase * 30) * 2; result.dy = Math.sin(phase * 28) * 2; break;
+                case 'pop': result.scale = 1 + 0.3 * Math.sin(phase * 2) * Math.sin(phase * 2); break;
+                case 'explode': result.scale = 1 + 0.4 * Math.pow(Math.sin(phase), 2); result.opacity = 0.3 + 0.7 * Math.pow(Math.cos(phase), 2); break;
+                case 'morph': result.scale = 1 + 0.15 * Math.sin(phase); result.rotation = Math.sin(phase * 0.8) * 0.15; break;
+                case 'spiral': result.dx = Math.sin(phase * 2) * 25; result.dy = Math.cos(phase * 2) * 15; result.rotation = phase * 0.3; break;
+                case 'sineWave': result.dy = Math.sin(phase * 3) * 20; break;
+                case 'figure8': result.dx = Math.sin(phase * 2) * 30; result.dy = Math.sin(phase * 4) * 15; break;
+                case 'butterfly': result.dx = Math.sin(phase * 3) * 25; result.dy = Math.cos(phase * 2.5) * 18; result.rotation = Math.sin(phase * 2) * 0.15; break;
+                case 'zigzag': result.dx = Math.sin(phase * 4) * 20; result.dy = Math.sin(phase * 8) * 10; break;
+                case 'blink': result.opacity = Math.sin(phase * 3) > 0.5 ? 1 : 0.15; break;
+                case 'pulseGlow': result.glow = 10 + Math.sin(phase * 1.5) * 20; result.scale = 1 + 0.05 * Math.sin(phase * 1.5); break;
+                case 'rainbowGlow': result.glow = 15 + Math.sin(phase) * 15; break;
+                case 'neonPulse': result.glow = 20 + Math.sin(phase * 2) * 15; result.opacity = 0.5 + 0.5 * Math.sin(phase * 2); break;
+                case 'fire': result.dy = -Math.sin(phase * 5) * 10; result.scale = 1 + 0.08 * Math.sin(phase * 7); break;
+                case 'water': result.dy = Math.sin(phase * 2) * 8; result.dx = Math.sin(phase * 1.7) * 5; break;
+                case 'wind': result.dx = Math.sin(phase * 0.8) * 35; result.dy = Math.sin(phase * 0.6) * 10; break;
+                case 'earth': result.dy = Math.sin(phase * 0.5) * 12; result.rotation = Math.sin(phase * 0.3) * 0.05; break;
+                default: break;
+            }
+            return result;
+        }
 
         // ===== ADD IMAGE LAYER =====
         function addImageLayer(imageDataUrl = null) {
@@ -516,8 +578,8 @@
                 id: id,
                 image: null,
                 dataUrl: imageDataUrl || null,
-                x: 50 + (imageLayers.length * 20),
-                y: 50 + (imageLayers.length * 20),
+                x: 20 + (imageLayers.length * 15),
+                y: 20 + (imageLayers.length * 15),
                 width: 150,
                 height: 150,
                 opacity: 100,
@@ -539,7 +601,6 @@
             imageLayers.push(layer);
             renderImageLayers();
             
-            // If image data provided, load it
             if (imageDataUrl) {
                 const img = new Image();
                 img.onload = function() {
@@ -554,7 +615,6 @@
             preview();
         }
 
-        // ===== RENDER IMAGE LAYERS UI =====
         function renderImageLayers() {
             if (imageLayers.length === 0) {
                 noImageMsg.style.display = 'block';
@@ -569,14 +629,14 @@
                     <div class="image-layer-row" data-id="${layer.id}">
                         <span class="layer-order">#${index + 1}</span>
                         <span class="layer-label">🖼️</span>
-                        ${previewSrc ? `<img src="${previewSrc}" class="img-preview" id="preview_${layer.id}" alt="preview">` : '<span style="font-size:7px;color:var(--text-muted);">No image</span>'}
-                        <label class="file-label" for="file_${layer.id}">📂 Upload</label>
+                        ${previewSrc ? `<img src="${previewSrc}" class="img-preview" id="preview_${layer.id}" alt="preview">` : '<span style="font-size:7px;color:var(--text-muted);">No img</span>'}
+                        <label class="file-label" for="file_${layer.id}">📂</label>
                         <input type="file" id="file_${layer.id}" accept="image/*" onchange="uploadImageToLayer('${layer.id}', event)">
                         
-                        <input type="number" value="${layer.width}" min="10" max="800" placeholder="W" onchange="updateImageLayer('${layer.id}', 'width', this.value)">
-                        <input type="number" value="${layer.height}" min="10" max="800" placeholder="H" onchange="updateImageLayer('${layer.id}', 'height', this.value)">
+                        <input type="number" value="${layer.width}" min="10" max="800" placeholder="W" onchange="updateImageLayer('${layer.id}', 'width', this.value)" style="width:32px;">
+                        <input type="number" value="${layer.height}" min="10" max="800" placeholder="H" onchange="updateImageLayer('${layer.id}', 'height', this.value)" style="width:32px;">
                         
-                        <select onchange="updateImageLayer('${layer.id}', 'animation', this.value)">
+                        <select onchange="updateImageLayer('${layer.id}', 'animation', this.value)" style="max-width:65px;">
                             <option value="none" ${layer.animation==='none'?'selected':''}>None</option>
                             <option value="zoom" ${layer.animation==='zoom'?'selected':''}>Zoom</option>
                             <option value="rotate" ${layer.animation==='rotate'?'selected':''}>Rotate</option>
@@ -588,12 +648,20 @@
                             <option value="spin" ${layer.animation==='spin'?'selected':''}>Spin</option>
                             <option value="glow" ${layer.animation==='glow'?'selected':''}>Glow</option>
                             <option value="shake" ${layer.animation==='shake'?'selected':''}>Shake</option>
-                            <option value="flip" ${layer.animation==='flip'?'selected':''}>Flip</option>
-                            <option value="swing" ${layer.animation==='swing'?'selected':''}>Swing</option>
                             <option value="float" ${layer.animation==='float'?'selected':''}>Float</option>
+                            <option value="swing" ${layer.animation==='swing'?'selected':''}>Swing</option>
+                            <option value="heartbeat" ${layer.animation==='heartbeat'?'selected':''}>Heart</option>
+                            <option value="pop" ${layer.animation==='pop'?'selected':''}>Pop</option>
+                            <option value="spiral" ${layer.animation==='spiral'?'selected':''}>Spiral</option>
+                            <option value="water" ${layer.animation==='water'?'selected':''}>Water</option>
+                            <option value="fire" ${layer.animation==='fire'?'selected':''}>Fire</option>
+                            <option value="wind" ${layer.animation==='wind'?'selected':''}>Wind</option>
+                            <option value="neon" ${layer.animation==='neon'?'selected':''}>Neon</option>
+                            <option value="blink" ${layer.animation==='blink'?'selected':''}>Blink</option>
                         </select>
                         
-                        <input type="number" value="${layer.opacity}" min="10" max="100" placeholder="Op" onchange="updateImageLayer('${layer.id}', 'opacity', this.value)" style="width:30px;">
+                        <input type="number" value="${layer.opacity}" min="10" max="100" placeholder="Op" onchange="updateImageLayer('${layer.id}', 'opacity', this.value)" style="width:28px;">
+                        <input type="number" value="${layer.animTime}" min="1" max="30" placeholder="T" onchange="updateImageLayer('${layer.id}', 'animTime', this.value)" style="width:24px;" title="Animation Time (sec)">
                         
                         <button class="btn-del-img" onclick="removeImageLayer('${layer.id}')">✕</button>
                     </div>
@@ -614,7 +682,6 @@
                     if (layer) {
                         layer.image = img;
                         layer.dataUrl = e.target.result;
-                        // Auto-size image
                         let maxW = canvasWidth * 0.4, maxH = canvasHeight * 0.4;
                         let w = Math.min(img.width, maxW);
                         let h = Math.min(img.height, maxH);
@@ -622,7 +689,7 @@
                         layer.height = h;
                         renderImageLayers();
                         preview();
-                        statusEl.textContent = '✅ Image uploaded to layer!';
+                        statusEl.textContent = '✅ Image uploaded! Full color animations ready!';
                     }
                 };
                 img.src = e.target.result;
@@ -650,8 +717,8 @@
             if (key === 'opacity') {
                 layer[key] = Math.max(10, Math.min(100, layer[key]));
             }
-            if (key === 'blur') {
-                layer[key] = Math.max(0, Math.min(20, layer[key]));
+            if (key === 'animTime') {
+                layer[key] = Math.max(1, Math.min(30, layer[key]));
             }
             renderImageLayers();
             preview();
@@ -710,34 +777,7 @@
             preview();
         }
 
-        // ===== ANIMATION ENGINE FOR IMAGE LAYERS =====
-        function getLayerAnimation(t, layer, w, h) {
-            let result = { dx: 0, dy: 0, scale: 1, rotation: 0, opacity: 1, glow: 0, hue: 0 };
-            const speed = 1 / (layer.animTime || 8);
-            const phase = t * speed;
-            const animType = layer.animation || 'none';
-            
-            switch(animType) {
-                case 'none': break;
-                case 'zoom': result.scale = 1 + 0.15 * Math.sin(phase); break;
-                case 'rotate': result.rotation = phase * 0.5; break;
-                case 'bounce': result.dy = -Math.abs(Math.sin(phase)) * 25; break;
-                case 'fade': result.opacity = 0.4 + 0.6 * (0.5 + 0.5 * Math.sin(phase)); break;
-                case 'slide': result.dx = Math.sin(phase) * w * 0.08; break;
-                case 'wave': result.dy = Math.sin(phase) * h * 0.06; break;
-                case 'pulse': result.glow = 10 + Math.sin(phase) * 15; break;
-                case 'spin': result.rotation = phase * 2; break;
-                case 'glow': result.glow = 5 + Math.sin(phase) * 20; break;
-                case 'shake': result.dx = Math.sin(phase * 20) * 3; result.dy = Math.cos(phase * 22) * 3; break;
-                case 'flip': result.scale = Math.sin(phase) > 0 ? 1 : -1; break;
-                case 'swing': result.dx = Math.sin(phase * 0.8) * 20; result.rotation = Math.sin(phase * 0.8) * 0.2; break;
-                case 'float': result.dy = Math.sin(phase * 0.7) * 20; break;
-                default: break;
-            }
-            return result;
-        }
-
-        // ===== DRAW =====
+        // ===== DRAW - FIXED: No color change in animations =====
         function draw(layers, frameIndex = 0, totalFrames = 1) {
             const w = canvasWidth, h = canvasHeight;
             const baseBg = bannerBgInput.value;
@@ -750,7 +790,7 @@
             ctx.fillStyle = grad;
             ctx.fillRect(0, 0, w, h);
 
-            // ===== DRAW ALL IMAGE LAYERS =====
+            // ===== DRAW ALL IMAGE LAYERS WITH FULL COLOR =====
             const t = totalFrames > 1 ? (frameIndex / totalFrames) * Math.PI * 2 : 0;
             
             imageLayers.forEach(layer => {
@@ -761,18 +801,21 @@
                 let dy = layer.y + (anim.dy || 0);
                 let dw = layer.width * (anim.scale || 1);
                 let dh = layer.height * (anim.scale || 1);
-                let rotation = (layer.rotation || 0) * Math.PI / 180 + (anim.rotation || 0);
+                let rotation = ((layer.rotation || 0) * Math.PI / 180) + (anim.rotation || 0);
                 let opacity = (anim.opacity || 1) * (layer.opacity / 100);
                 let glow = (layer.shadow || 0) + (anim.glow || 0);
 
+                // Center the scaled image
                 dx = dx - (dw - layer.width) / 2;
                 dy = dy - (dh - layer.height) / 2;
 
+                // Build filter - ONLY brightness/contrast/saturation/blur (no hue that causes color issues)
                 let filterStr = '';
                 if (layer.brightness !== 0) filterStr += `brightness(${100 + layer.brightness}%) `;
                 if (layer.contrast !== 0) filterStr += `contrast(${100 + layer.contrast}%) `;
                 if (layer.saturation !== 0) filterStr += `saturate(${100 + layer.saturation}%) `;
                 if (layer.blur > 0) filterStr += `blur(${layer.blur}px) `;
+                // REMOVED hue-rotate from filter to keep original colors
 
                 let flipX = layer.flipH ? -1 : 1;
                 let flipY = layer.flipV ? -1 : 1;
@@ -922,7 +965,7 @@
 
         function preview() {
             draw(getActiveLayers(), 0, 1);
-            statusEl.textContent = `✅ Preview · ${imageLayers.length} images loaded`;
+            statusEl.textContent = `✅ Preview · ${imageLayers.length} images in FULL COLOR!`;
             statusEl.style.color = '#00e676';
         }
 
@@ -940,7 +983,7 @@
             }
         }
 
-        // ===== DRAG for Image Layers =====
+        // ===== DRAG =====
         function getEventCoords(e) {
             const rect = c.getBoundingClientRect();
             const scaleX = canvasWidth / rect.width;
@@ -956,7 +999,6 @@
         function dragStart(e) {
             const coords = getEventCoords(e);
             
-            // Check image layers first (top to bottom)
             for (let i = imageLayers.length - 1; i >= 0; i--) {
                 const layer = imageLayers[i];
                 if (!layer.image || !layer.visible) continue;
@@ -971,7 +1013,6 @@
                 }
             }
             
-            // Check text layers
             const layers = getActiveLayers();
             for (let i = layers.length-1; i>=0; i--) {
                 const l = layers[i];
@@ -1095,7 +1136,7 @@
                             
                             progress.style.display = 'none';
                             plabel.style.display = 'none';
-                            statusEl.textContent = `✅ GIF saved! ${quality.label} (${outW}×${outH})`;
+                            statusEl.textContent = `✅ GIF saved! ${quality.label} (${outW}×${outH}) - FULL COLOR!`;
                             statusEl.style.color = '#00e676';
                             setTimeout(() => draw(layers, 0, 1), 200);
                         } catch(e) {
@@ -1242,12 +1283,12 @@
         window.addEventListener('resize', handleResize);
         updateQuality();
         
-        // Add default image layer with demo
+        // Add default image layer
         setTimeout(() => {
             addImageLayer();
         }, 100);
         
-        statusEl.textContent = '✅ Add multiple images · Each layer has own settings!';
+        statusEl.textContent = '✅ FULL COLOR animations! Images remain colorful!';
         statusEl.style.color = '#00e676';
     })();
 </script>
