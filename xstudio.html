@@ -282,6 +282,7 @@
   </div>
 
   <div id="workspace">
+    <!-- LEFT RAIL -->
     <div class="rail">
       <div class="section-title">Add element</div>
       <div class="tool-grid">
@@ -316,6 +317,7 @@
       <div id="layerList"><div class="empty-hint">Koi element nahi hai abhi.<br>Upar se element add karein.</div></div>
     </div>
 
+    <!-- CENTER STAGE -->
     <div id="stageArea">
       <div id="sizeLabel">320 × 50 px</div>
       <div id="phoneWrap">
@@ -327,6 +329,7 @@
       <div id="stageHolderOuter"></div>
     </div>
 
+    <!-- RIGHT INSPECTOR -->
     <div id="inspector">
       <div id="inspectorEmpty" class="empty-hint">Ek element select karein<br>properties edit karne ke liye.</div>
       <div id="inspectorBody" style="display:none;"></div>
@@ -938,7 +941,6 @@ ${clone.outerHTML.replace('id="stage"', `id="stage" style="width:${w};height:${h
     return withCleanStage(async ()=>{
       const animEls = Array.from(stage.querySelectorAll('.element'));
       
-      // Save pristine state and temporarily remove active transforms to avoid blur matrix rendering
       const savedTransforms = [];
       animEls.forEach(el => {
         savedTransforms.push({
@@ -947,13 +949,11 @@ ${clone.outerHTML.replace('id="stage"', `id="stage" style="width:${w};height:${h
           animation: el.style.animation
         });
         el.style.animation = 'none';
-        // Force rendering architecture enhancements
         el.style.transform = 'none'; 
       });
       
       void stage.offsetWidth;
       
-      // Re-trigger clean runtime styling for smooth sequencing
       animEls.forEach(el => {
         const matching = savedTransforms.find(t => t.el === el);
         if(matching && el.dataset.anim && el.dataset.anim !== 'none') {
@@ -973,7 +973,6 @@ ${clone.outerHTML.replace('id="stage"', `id="stage" style="width:${w};height:${h
         const now = performance.now();
         if(target>now) await new Promise(r=>setTimeout(r, target-now));
         
-        // Render crisp layers using dynamically computed high-DPR surface boundaries
         const raw = await html2canvas(stage, {
           backgroundColor: null, 
           scale: scale, 
@@ -1061,7 +1060,7 @@ ${clone.outerHTML.replace('id="stage"', `id="stage" style="width:${w};height:${h
     }
   });
 
-  /* ================= Export GIF ================= */
+  /* ================= Export GIF (FIXED BLUR) ================= */
   document.getElementById('exportGifBtn').addEventListener('click', async function(){
     const btn=this; const origText=btn.textContent;
     btn.disabled=true;
@@ -1070,17 +1069,25 @@ ${clone.outerHTML.replace('id="stage"', `id="stage" style="width:${w};height:${h
       const fps = 10;
       const scale = getQualityScale();
       btn.textContent='Capturing…';
+      
+      // Capture flawless, non-antialias high density frames
       const frames = await captureFrames(dur, fps, scale);
+      
       await ensureLib('GIF', 'https://cdnjs.cloudflare.com/ajax/libs/gif.js/0.2.0/gif.js');
       const workerBlobUrl = await getGifWorkerBlobURL();
       btn.textContent='Encoding…';
-      const gifQuality = scale>=3 ? 2 : (scale>=2 ? 4 : 8); 
+      
+      // Strict Color Spatial Quantization - Set quality to 1 (Highest preservation, zero blur)
       const gif = new GIF({
-        workers:2, quality:gifQuality,
-        width:frames[0].width, height:frames[0].height,
-        workerScript:workerBlobUrl
+        workers: 4, 
+        quality: 1, 
+        width: frames[0].width, 
+        height: frames[0].height,
+        workerScript: workerBlobUrl
       });
-      frames.forEach(c=> gif.addFrame(c, {delay: 1000/fps, copy:true}));
+      
+      frames.forEach(c => gif.addFrame(c, {delay: 1000/fps, copy: true}));
+      
       gif.on('finished', function(blob){
         triggerDownload(blob, `ad-${stage.clientWidth}x${stage.clientHeight}.gif`);
         btn.disabled=false; btn.textContent=origText;
