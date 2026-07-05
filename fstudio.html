@@ -192,6 +192,7 @@
     backface-visibility:hidden;
     -webkit-font-smoothing:antialiased;
     text-rendering:optimizeLegibility;
+    transform-origin: center center;
   }
   .element.el-image img{
     image-rendering:auto;
@@ -235,15 +236,30 @@
   ::-webkit-scrollbar-thumb{background:#2b303a;border-radius:6px;}
   ::-webkit-scrollbar-track{background:transparent;}
 
+  /* Fixed animations - using transform scale properly */
   @keyframes fadeIn{from{opacity:0;}to{opacity:1;}}
-  @keyframes slideInLeft{from{opacity:0;transform:translateX(-60px);}to{opacity:1;transform:translateX(0);}}
-  @keyframes slideInRight{from{opacity:0;transform:translateX(60px);}to{opacity:1;transform:translateX(0);}}
-  @keyframes slideInUp{from{opacity:0;transform:translateY(40px);}to{opacity:1;transform:translateY(0);}}
-  @keyframes slideInDown{from{opacity:0;transform:translateY(-40px);}to{opacity:1;transform:translateY(0);}}
-  @keyframes zoomIn{from{opacity:0;transform:scale(.5);}to{opacity:1;transform:scale(1);}}
-  @keyframes bounceIn{0%{opacity:0;transform:scale(.3);}50%{opacity:1;transform:scale(1.08);}70%{transform:scale(.94);}100%{transform:scale(1);}}
-  @keyframes pulse{0%,100%{transform:scale(1);}50%{transform:scale(1.06);}}
-  @keyframes shake{0%,100%{transform:translateX(0);}20%{transform:translateX(-6px);}40%{transform:translateX(6px);}60%{transform:translateX(-4px);}80%{transform:translateX(4px);}}
+  @keyframes slideInLeft{from{opacity:0;transform:translateX(-60px) scale(1);}to{opacity:1;transform:translateX(0) scale(1);}}
+  @keyframes slideInRight{from{opacity:0;transform:translateX(60px) scale(1);}to{opacity:1;transform:translateX(0) scale(1);}}
+  @keyframes slideInUp{from{opacity:0;transform:translateY(40px) scale(1);}to{opacity:1;transform:translateY(0) scale(1);}}
+  @keyframes slideInDown{from{opacity:0;transform:translateY(-40px) scale(1);}to{opacity:1;transform:translateY(0) scale(1);}}
+  @keyframes zoomIn{from{opacity:0;transform:scale(0.5);}to{opacity:1;transform:scale(1);}}
+  @keyframes bounceIn{
+    0%{opacity:0;transform:scale(0.3);}
+    50%{opacity:1;transform:scale(1.05);}
+    70%{transform:scale(0.95);}
+    100%{transform:scale(1);}
+  }
+  @keyframes pulse{
+    0%,100%{transform:scale(1);}
+    50%{transform:scale(1.05);}
+  }
+  @keyframes shake{
+    0%,100%{transform:translateX(0) scale(1);}
+    20%{transform:translateX(-6px) scale(1);}
+    40%{transform:translateX(6px) scale(1);}
+    60%{transform:translateX(-4px) scale(1);}
+    80%{transform:translateX(4px) scale(1);}
+  }
 </style>
 </head>
 <body>
@@ -418,8 +434,9 @@
     el.style.top=((stage.clientHeight-h)/2)+'px';
     el.style.width=w+'px';
     el.style.height=h+'px';
-    el.style.transform='rotate(0deg)';
+    el.style.transform='rotate(0deg) scale(1)';
     el.style.opacity='1';
+    el.style.transformOrigin = 'center center';
     const handle=document.createElement('span');
     handle.className='resize-handle';
     el.appendChild(handle);
@@ -479,6 +496,8 @@
       const img=document.createElement('img');
       img.src=ev.target.result;
       img.style.objectFit='cover';
+      img.style.width='100%';
+      img.style.height='100%';
       el.insertBefore(img, el.firstChild);
     };
     reader.readAsDataURL(file);
@@ -764,6 +783,7 @@
     setVal('propY', parseFloat(selected.style.top)||0);
     setVal('propW', parseFloat(selected.style.width)||0);
     setVal('propH', parseFloat(selected.style.height)||0);
+    // Extract rotation from transform
     const rotMatch = /rotate\((-?\d+(\.\d+)?)deg\)/.exec(selected.style.transform||'');
     setVal('propRot', rotMatch?rotMatch[1]:0);
     setVal('propOpacity', selected.style.opacity===''?1:selected.style.opacity);
@@ -808,7 +828,13 @@
     on('propY','input',e=>{ selected.style.top=e.target.value+'px'; });
     on('propW','input',e=>{ selected.style.width=e.target.value+'px'; });
     on('propH','input',e=>{ selected.style.height=e.target.value+'px'; });
-    on('propRot','input',e=>{ selected.style.transform='rotate('+e.target.value+'deg)'; });
+    on('propRot','input',e=>{ 
+      // Preserve scale if exists
+      const currentTransform = selected.style.transform || '';
+      const scaleMatch = /scale\(([\d.]+)\)/.exec(currentTransform);
+      const scale = scaleMatch ? scaleMatch[1] : '1';
+      selected.style.transform = `rotate(${e.target.value}deg) scale(${scale})`;
+    });
     on('propOpacity','input',e=>{ selected.style.opacity=e.target.value; });
 
     if(isText){
@@ -841,8 +867,22 @@
   }
 
   function applyAnim(el){
-    if(el.dataset.anim==='none'){ el.style.animation='none'; return; }
+    if(el.dataset.anim==='none'){ 
+      el.style.animation='none'; 
+      return; 
+    }
+    // Reset any existing transform to avoid scale stacking
+    const currentTransform = el.style.transform || '';
+    // Only keep rotation if present
+    const rotMatch = /rotate\((-?\d+(\.\d+)?)deg\)/.exec(currentTransform);
+    const rotation = rotMatch ? `rotate(${rotMatch[1]}deg)` : '';
+    // Apply animation - it will handle transform internally
     el.style.animation = `${el.dataset.anim} ${el.dataset.animDur}s ${el.dataset.animDelay}s ${el.dataset.animIter} both ease`;
+    // If rotation was set, preserve it alongside animation
+    if(rotation) {
+      // Animation will override transform, but we store rotation separately
+      el.dataset._rotation = rotation;
+    }
   }
 
   /* ================= Play preview ================= */
@@ -870,14 +910,14 @@
     const w = stage.style.width, h = stage.style.height;
     const kf = `
 @keyframes fadeIn{from{opacity:0;}to{opacity:1;}}
-@keyframes slideInLeft{from{opacity:0;transform:translateX(-60px);}to{opacity:1;transform:translateX(0);}}
-@keyframes slideInRight{from{opacity:0;transform:translateX(60px);}to{opacity:1;transform:translateX(0);}}
-@keyframes slideInUp{from{opacity:0;transform:translateY(40px);}to{opacity:1;transform:translateY(0);}}
-@keyframes slideInDown{from{opacity:0;transform:translateY(-40px);}to{opacity:1;transform:translateY(0);}}
-@keyframes zoomIn{from{opacity:0;transform:scale(.5);}to{opacity:1;transform:scale(1);}}
-@keyframes bounceIn{0%{opacity:0;transform:scale(.3);}50%{opacity:1;transform:scale(1.08);}70%{transform:scale(.94);}100%{transform:scale(1);}}
-@keyframes pulse{0%,100%{transform:scale(1);}50%{transform:scale(1.06);}}
-@keyframes shake{0%,100%{transform:translateX(0);}20%{transform:translateX(-6px);}40%{transform:translateX(6px);}60%{transform:translateX(-4px);}80%{transform:translateX(4px);}}
+@keyframes slideInLeft{from{opacity:0;transform:translateX(-60px) scale(1);}to{opacity:1;transform:translateX(0) scale(1);}}
+@keyframes slideInRight{from{opacity:0;transform:translateX(60px) scale(1);}to{opacity:1;transform:translateX(0) scale(1);}}
+@keyframes slideInUp{from{opacity:0;transform:translateY(40px) scale(1);}to{opacity:1;transform:translateY(0) scale(1);}}
+@keyframes slideInDown{from{opacity:0;transform:translateY(-40px) scale(1);}to{opacity:1;transform:translateY(0) scale(1);}}
+@keyframes zoomIn{from{opacity:0;transform:scale(0.5);}to{opacity:1;transform:scale(1);}}
+@keyframes bounceIn{0%{opacity:0;transform:scale(0.3);}50%{opacity:1;transform:scale(1.05);}70%{transform:scale(0.95);}100%{transform:scale(1);}}
+@keyframes pulse{0%,100%{transform:scale(1);}50%{transform:scale(1.05);}}
+@keyframes shake{0%,100%{transform:translateX(0) scale(1);}20%{transform:translateX(-6px) scale(1);}40%{transform:translateX(6px) scale(1);}60%{transform:translateX(-4px) scale(1);}80%{transform:translateX(4px) scale(1);}}
     `;
     const out = `<!DOCTYPE html>
 <html><head><meta charset="UTF-8">
@@ -885,7 +925,7 @@
 <style>
   html,body{margin:0;padding:0;background:#e9e9e9;display:flex;align-items:center;justify-content:center;height:100vh;}
   #stage{position:relative;overflow:hidden;box-shadow:0 10px 30px rgba(0,0,0,.25);}
-  .element{position:absolute;}
+  .element{position:absolute;transform-origin:center center;}
   ${kf}
 </style></head>
 <body>
@@ -921,12 +961,9 @@ ${clone.outerHTML.replace('id="stage"', `id="stage" style="width:${w};height:${h
       return gifWorkerBlobUrl;
     } catch(e) {
       console.warn('Using inline worker fallback');
-      // Fallback: use inline worker
-      const fallbackText = `// gif.worker.js fallback
-self.onmessage = function(e) {
+      const fallbackText = `self.onmessage = function(e) {
   var data = e.data;
   if (data.type === 'render') {
-    // Simple fallback - just pass through
     self.postMessage({ type: 'finished', result: data.frames });
   }
 };`;
@@ -971,7 +1008,6 @@ self.onmessage = function(e) {
         width: stage.clientWidth,
         height: stage.clientHeight,
         onclone: (clonedDoc) => {
-          // Ensure animations are applied in clone
           const clonedStage = clonedDoc.getElementById('stage');
           if(clonedStage) {
             clonedStage.querySelectorAll('.element').forEach(el => {
@@ -1016,12 +1052,10 @@ self.onmessage = function(e) {
       applyAnim(el);
     });
     
-    // Wait a tiny bit for animations to start
     await new Promise(r => setTimeout(r, 50));
     
     try {
       for(let i=0;i<totalFrames;i++){
-        // For each frame, capture with current animation state
         const frameCanvas = await html2canvas(stage, {
           backgroundColor: stage.style.backgroundColor || '#ffffff',
           scale: Math.max(1, scale * 2.5),
@@ -1042,13 +1076,11 @@ self.onmessage = function(e) {
         octx.drawImage(frameCanvas, 0, 0);
         frames.push(optimized);
         
-        // Wait for next frame
         if(i < totalFrames - 1) {
           await new Promise(r => setTimeout(r, frameDelay));
         }
       }
     } finally {
-      // Restore original states
       animStates.forEach(({el, anim})=>{
         el.style.animation = anim;
       });
@@ -1147,7 +1179,6 @@ self.onmessage = function(e) {
       
       gif.render();
       
-      // Add a safety timeout
       const timeoutPromise = new Promise((_, reject) => {
         setTimeout(() => {
           if(!finished) reject(new Error('GIF encoding timeout (60s)'));
