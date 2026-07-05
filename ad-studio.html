@@ -282,7 +282,6 @@
   </div>
 
   <div id="workspace">
-    <!-- LEFT RAIL -->
     <div class="rail">
       <div class="section-title">Add element</div>
       <div class="tool-grid">
@@ -317,7 +316,6 @@
       <div id="layerList"><div class="empty-hint">Koi element nahi hai abhi.<br>Upar se element add karein.</div></div>
     </div>
 
-    <!-- CENTER STAGE -->
     <div id="stageArea">
       <div id="sizeLabel">320 × 50 px</div>
       <div id="phoneWrap">
@@ -329,7 +327,6 @@
       <div id="stageHolderOuter"></div>
     </div>
 
-    <!-- RIGHT INSPECTOR -->
     <div id="inspector">
       <div id="inspectorEmpty" class="empty-hint">Ek element select karein<br>properties edit karne ke liye.</div>
       <div id="inspectorBody" style="display:none;"></div>
@@ -492,7 +489,6 @@
       el.setAttribute('contenteditable','true');
       el.classList.add('editing');
       el.focus();
-      // select all existing text for quick replace
       const range=document.createRange();
       range.selectNodeContents(el);
       const sel=window.getSelection();
@@ -518,12 +514,12 @@
   });
 
   /* ================= Drag & resize (pointer-events based, robust) ================= */
-  let dragState = null; // {el, mode:'move'|'resize', startX, startY, origLeft, origTop, origW, origH, pointerId, target}
+  let dragState = null;
 
   function attachDrag(el, handle){
     el.addEventListener('pointerdown', function(e){
       if(e.target===handle) return;
-      if(el.getAttribute('contenteditable')==='true') return; // currently being edited, let caret placement work
+      if(el.getAttribute('contenteditable')==='true') return;
       e.preventDefault();
       selectElement(el);
       dragState = {
@@ -645,7 +641,6 @@
 
   document.addEventListener('keydown', function(e){
     if(!selected) return;
-    const tag=document.activeElement.tagName;
     if(document.activeElement.isContentEditable) return;
     const step = e.shiftKey ? 10 : 1;
     if(e.key==='Delete' || e.key==='Backspace'){ e.preventDefault(); deleteEl(selected); }
@@ -870,7 +865,6 @@
       if(h) h.remove();
     });
     const w = stage.style.width, h = stage.style.height;
-    const keyframesCSS = document.querySelector('style').textContent.split('@keyframes')[0]==='' ? '' : '';
     const kf = `
 @keyframes fadeIn{from{opacity:0;}to{opacity:1;}}
 @keyframes slideInLeft{from{opacity:0;transform:translateX(-60px);}to{opacity:1;transform:translateX(0);}}
@@ -936,36 +930,70 @@ ${clone.outerHTML.replace('id="stage"', `id="stage" style="width:${w};height:${h
   }
 
   function getQualityScale(){
-    return parseFloat(document.getElementById('qualitySelect').value) || 2;
+    return (parseFloat(document.getElementById('qualitySelect').value) || 2) * (window.devicePixelRatio || 1);
   }
 
   async function captureFrames(durationSec, fps, scale){
     await ensureLib('html2canvas', 'https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js');
     return withCleanStage(async ()=>{
-      const animEls = Array.from(stage.querySelectorAll('.element')).filter(el=>el.dataset.anim && el.dataset.anim!=='none');
-      animEls.forEach(el=>{ el.style.animation='none'; });
+      const animEls = Array.from(stage.querySelectorAll('.element'));
+      
+      // Save pristine state and temporarily remove active transforms to avoid blur matrix rendering
+      const savedTransforms = [];
+      animEls.forEach(el => {
+        savedTransforms.push({
+          el: el,
+          transform: el.style.transform,
+          animation: el.style.animation
+        });
+        el.style.animation = 'none';
+        // Force rendering architecture enhancements
+        el.style.transform = 'none'; 
+      });
+      
       void stage.offsetWidth;
-      animEls.forEach(el=>applyAnim(el));
+      
+      // Re-trigger clean runtime styling for smooth sequencing
+      animEls.forEach(el => {
+        const matching = savedTransforms.find(t => t.el === el);
+        if(matching && el.dataset.anim && el.dataset.anim !== 'none') {
+          applyAnim(el);
+        } else if (matching) {
+          el.style.transform = matching.transform;
+        }
+      });
 
       const totalFrames = Math.max(1, Math.round(durationSec*fps));
       const frames=[];
       const frameDelay = 1000/fps;
       const start = performance.now();
-      for(let i=0;i<totalFrames;i++){
+      
+      for(let i=0; i<totalFrames; i++){
         const target = start + i*frameDelay;
         const now = performance.now();
         if(target>now) await new Promise(r=>setTimeout(r, target-now));
-        const raw = await html2canvas(stage, {backgroundColor:null, scale, logging:false});
+        
+        // Render crisp layers using dynamically computed high-DPR surface boundaries
+        const raw = await html2canvas(stage, {
+          backgroundColor: null, 
+          scale: scale, 
+          logging: false,
+          useCORS: true,
+          allowTaint: true,
+          imageTimeout: 0
+        });
+        
         const optimized = document.createElement('canvas');
         optimized.width = raw.width; optimized.height = raw.height;
         const octx = optimized.getContext('2d', {willReadFrequently:true});
+        octx.imageSmoothingEnabled = true;
+        octx.imageSmoothingQuality = 'high';
         octx.drawImage(raw, 0, 0);
         frames.push(optimized);
       }
       return frames;
     });
   }
-
 
   function downloadBlob(content, filename, type){
     const blob = new Blob([content], {type});
@@ -981,8 +1009,6 @@ ${clone.outerHTML.replace('id="stage"', `id="stage" style="width:${w};height:${h
     a.style.display = 'none';
     document.body.appendChild(a);
     a.click();
-    // Some mobile browsers (Android Chrome/WebView) drop the download if the
-    // object URL is revoked too soon, or need a moment before cleanup.
     setTimeout(()=>{
       a.remove();
       URL.revokeObjectURL(url);
@@ -995,10 +1021,35 @@ ${clone.outerHTML.replace('id="stage"', `id="stage" style="width:${w};height:${h
     btn.disabled=true; btn.textContent='Rendering…';
     try{
       await ensureLib('html2canvas', 'https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js');
-      const raw = await withCleanStage(()=>html2canvas(stage, {backgroundColor:null, scale:getQualityScale()*2, logging:false}));
+      const scale = getQualityScale();
+      const raw = await withCleanStage(async () => {
+        const animEls = Array.from(stage.querySelectorAll('.element'));
+        const saved = animEls.map(el => ({ el, transform: el.style.transform, animation: el.style.animation }));
+        
+        animEls.forEach(el => { el.style.animation = 'none'; el.style.transform = 'none'; });
+        void stage.offsetWidth;
+        
+        animEls.forEach(el => {
+          const match = saved.find(t => t.el === el);
+          if(match) { el.style.transform = match.transform; if(el.dataset.anim!=='none') applyAnim(el); }
+        });
+
+        return html2canvas(stage, {
+          backgroundColor: null, 
+          scale: scale, 
+          logging: false,
+          useCORS: true,
+          allowTaint: true
+        });
+      });
+      
       const canvas = document.createElement('canvas');
       canvas.width = raw.width; canvas.height = raw.height;
-      canvas.getContext('2d', {willReadFrequently:true}).drawImage(raw, 0, 0);
+      const ctx = canvas.getContext('2d', {willReadFrequently:true});
+      ctx.imageSmoothingEnabled = true;
+      ctx.imageSmoothingQuality = 'high';
+      ctx.drawImage(raw, 0, 0);
+      
       canvas.toBlob(blob=>{
         triggerDownload(blob, `ad-${stage.clientWidth}x${stage.clientHeight}.png`);
       }, 'image/png');
@@ -1023,7 +1074,7 @@ ${clone.outerHTML.replace('id="stage"', `id="stage" style="width:${w};height:${h
       await ensureLib('GIF', 'https://cdnjs.cloudflare.com/ajax/libs/gif.js/0.2.0/gif.js');
       const workerBlobUrl = await getGifWorkerBlobURL();
       btn.textContent='Encoding…';
-      const gifQuality = scale>=3 ? 3 : (scale>=2 ? 6 : 12); // lower number = better quality in gif.js
+      const gifQuality = scale>=3 ? 2 : (scale>=2 ? 4 : 8); 
       const gif = new GIF({
         workers:2, quality:gifQuality,
         width:frames[0].width, height:frames[0].height,
@@ -1059,19 +1110,22 @@ ${clone.outerHTML.replace('id="stage"', `id="stage" style="width:${w};height:${h
       const dur = parseFloat(document.getElementById('recDuration').value)||3;
       const fps = 15;
       btn.textContent='Capturing…';
-      const frames = await captureFrames(dur, fps, getQualityScale());
+      const scale = getQualityScale();
+      const frames = await captureFrames(dur, fps, scale);
       btn.textContent='Encoding…';
 
       const w=frames[0].width, h=frames[0].height;
       const rec=document.createElement('canvas'); rec.width=w; rec.height=h;
       const ctx=rec.getContext('2d', {willReadFrequently:true});
+      ctx.imageSmoothingEnabled = true;
+      ctx.imageSmoothingQuality = 'high';
       const stream = rec.captureStream(fps);
 
       let mimeType='video/webm;codecs=vp9', ext='webm';
       if(MediaRecorder.isTypeSupported('video/mp4')){ mimeType='video/mp4'; ext='mp4'; }
       else if(!MediaRecorder.isTypeSupported(mimeType)){ mimeType='video/webm'; ext='webm'; }
 
-      const recorder=new MediaRecorder(stream, {mimeType, videoBitsPerSecond: 8000000});
+      const recorder=new MediaRecorder(stream, {mimeType, videoBitsPerSecond: 12000000});
       const chunks=[];
       recorder.ondataavailable=e=>{ if(e.data && e.data.size) chunks.push(e.data); };
       const stopped = new Promise(resolve=>{ recorder.onstop=resolve; });
