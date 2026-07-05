@@ -189,6 +189,12 @@
     display:flex;
     outline:none;
     user-select:none;
+    backface-visibility:hidden;
+    -webkit-font-smoothing:antialiased;
+    text-rendering:optimizeLegibility;
+  }
+  .element.el-image img{
+    image-rendering:auto;
   }
   .element.selected{box-shadow:0 0 0 2px var(--accent), 0 0 0 5px rgba(91,140,255,.18);}
   .element.el-text, .element.el-button{
@@ -259,6 +265,14 @@
       <button class="btn small" id="playBtn">▶ Play animations</button>
       <label style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--muted);">
         Duration <input type="number" id="recDuration" value="3" min="0.5" max="10" step="0.5">s
+      </label>
+      <label style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--muted);">
+        Quality
+        <select id="qualitySelect">
+          <option value="1">Standard (1x)</option>
+          <option value="2" selected>High (2x)</option>
+          <option value="3">Ultra (3x)</option>
+        </select>
       </label>
       <button class="btn primary small" id="exportHtmlBtn">⬇ HTML</button>
       <button class="btn accent small" id="exportPngBtn">🖼 PNG</button>
@@ -921,7 +935,11 @@ ${clone.outerHTML.replace('id="stage"', `id="stage" style="width:${w};height:${h
     });
   }
 
-  async function captureFrames(durationSec, fps){
+  function getQualityScale(){
+    return parseFloat(document.getElementById('qualitySelect').value) || 2;
+  }
+
+  async function captureFrames(durationSec, fps, scale){
     await ensureLib('html2canvas', 'https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js');
     return withCleanStage(async ()=>{
       const animEls = Array.from(stage.querySelectorAll('.element')).filter(el=>el.dataset.anim && el.dataset.anim!=='none');
@@ -937,7 +955,7 @@ ${clone.outerHTML.replace('id="stage"', `id="stage" style="width:${w};height:${h
         const target = start + i*frameDelay;
         const now = performance.now();
         if(target>now) await new Promise(r=>setTimeout(r, target-now));
-        const raw = await html2canvas(stage, {backgroundColor:null, scale:1, logging:false});
+        const raw = await html2canvas(stage, {backgroundColor:null, scale, logging:false});
         const optimized = document.createElement('canvas');
         optimized.width = raw.width; optimized.height = raw.height;
         const octx = optimized.getContext('2d', {willReadFrequently:true});
@@ -947,6 +965,7 @@ ${clone.outerHTML.replace('id="stage"', `id="stage" style="width:${w};height:${h
       return frames;
     });
   }
+
 
   function downloadBlob(content, filename, type){
     const blob = new Blob([content], {type});
@@ -976,7 +995,7 @@ ${clone.outerHTML.replace('id="stage"', `id="stage" style="width:${w};height:${h
     btn.disabled=true; btn.textContent='Rendering…';
     try{
       await ensureLib('html2canvas', 'https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js');
-      const raw = await withCleanStage(()=>html2canvas(stage, {backgroundColor:null, scale:2, logging:false}));
+      const raw = await withCleanStage(()=>html2canvas(stage, {backgroundColor:null, scale:getQualityScale()*2, logging:false}));
       const canvas = document.createElement('canvas');
       canvas.width = raw.width; canvas.height = raw.height;
       canvas.getContext('2d', {willReadFrequently:true}).drawImage(raw, 0, 0);
@@ -998,13 +1017,15 @@ ${clone.outerHTML.replace('id="stage"', `id="stage" style="width:${w};height:${h
     try{
       const dur = parseFloat(document.getElementById('recDuration').value)||3;
       const fps = 10;
+      const scale = getQualityScale();
       btn.textContent='Capturing…';
-      const frames = await captureFrames(dur, fps);
+      const frames = await captureFrames(dur, fps, scale);
       await ensureLib('GIF', 'https://cdnjs.cloudflare.com/ajax/libs/gif.js/0.2.0/gif.js');
       const workerBlobUrl = await getGifWorkerBlobURL();
       btn.textContent='Encoding…';
+      const gifQuality = scale>=3 ? 3 : (scale>=2 ? 6 : 12); // lower number = better quality in gif.js
       const gif = new GIF({
-        workers:2, quality:10,
+        workers:2, quality:gifQuality,
         width:frames[0].width, height:frames[0].height,
         workerScript:workerBlobUrl
       });
@@ -1038,7 +1059,7 @@ ${clone.outerHTML.replace('id="stage"', `id="stage" style="width:${w};height:${h
       const dur = parseFloat(document.getElementById('recDuration').value)||3;
       const fps = 15;
       btn.textContent='Capturing…';
-      const frames = await captureFrames(dur, fps);
+      const frames = await captureFrames(dur, fps, getQualityScale());
       btn.textContent='Encoding…';
 
       const w=frames[0].width, h=frames[0].height;
@@ -1050,7 +1071,7 @@ ${clone.outerHTML.replace('id="stage"', `id="stage" style="width:${w};height:${h
       if(MediaRecorder.isTypeSupported('video/mp4')){ mimeType='video/mp4'; ext='mp4'; }
       else if(!MediaRecorder.isTypeSupported(mimeType)){ mimeType='video/webm'; ext='webm'; }
 
-      const recorder=new MediaRecorder(stream, {mimeType});
+      const recorder=new MediaRecorder(stream, {mimeType, videoBitsPerSecond: 8000000});
       const chunks=[];
       recorder.ondataavailable=e=>{ if(e.data && e.data.size) chunks.push(e.data); };
       const stopped = new Promise(resolve=>{ recorder.onstop=resolve; });
