@@ -1,4 +1,4 @@
-<!DOCTYPE html> 
+<!DOCTYPE html>
 <html lang="hi">
 <head>
 <meta charset="UTF-8">
@@ -31,7 +31,6 @@
   }
   h1,h2,h3,.brand,.tool-label{font-family:'Space Grotesk',sans-serif;}
 
-  /* ---------- Layout shell ---------- */
   #app{
     display:grid;
     grid-template-rows:56px 1fr;
@@ -80,7 +79,6 @@
   .btn:disabled{opacity:.4;cursor:not-allowed;}
   #topbar .right-group{margin-left:auto;display:flex;gap:8px;align-items:center;}
 
-  /* ---------- Workspace ---------- */
   #workspace{
     display:grid;
     grid-template-columns:220px 1fr 280px;
@@ -133,7 +131,6 @@
   .layer-row button{background:none;border:none;color:var(--muted);cursor:pointer;padding:2px;}
   .layer-row button:hover{color:var(--text);}
 
-  /* ---------- Canvas stage area ---------- */
   #stageArea{
     display:flex;flex-direction:column;align-items:center;justify-content:center;
     background:
@@ -216,7 +213,6 @@
   .element.el-image img{pointer-events:none;display:block;}
   .element.el-shape{pointer-events:auto;}
 
-  /* ---------- Inspector controls ---------- */
   .field{margin-bottom:10px;}
   .field label{display:block;font-size:11px;color:var(--muted);margin-bottom:4px;}
   .row2{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
@@ -297,7 +293,6 @@
   </div>
 
   <div id="workspace">
-    <!-- LEFT RAIL -->
     <div class="rail">
       <div class="section-title">Add element</div>
       <div class="tool-grid">
@@ -332,7 +327,6 @@
       <div id="layerList"><div class="empty-hint">Koi element nahi hai abhi.<br>Upar se element add karein.</div></div>
     </div>
 
-    <!-- CENTER STAGE -->
     <div id="stageArea">
       <div id="sizeLabel">320 × 50 px</div>
       <div id="phoneWrap">
@@ -344,7 +338,6 @@
       <div id="stageHolderOuter"></div>
     </div>
 
-    <!-- RIGHT INSPECTOR -->
     <div id="inspector">
       <div id="inspectorEmpty" class="empty-hint">Ek element select karein<br>properties edit karne ke liye.</div>
       <div id="inspectorBody" style="display:none;"></div>
@@ -356,7 +349,6 @@
 (function(){
   "use strict";
 
-  /* ================= Sizes ================= */
   const SIZES = [
     {label:"Banner — 320×50", w:320, h:50},
     {label:"Large Banner — 320×100", w:320, h:100},
@@ -416,7 +408,6 @@
     reader.readAsDataURL(f);
   });
 
-  /* ================= Element factory ================= */
   let elCounter=0;
   let selected=null;
 
@@ -534,7 +525,6 @@
     e.target.value='';
   });
 
-  /* ================= Drag & resize ================= */
   let dragState = null;
 
   function attachDrag(el, handle){
@@ -596,7 +586,6 @@
     if(e.target===stage) selectElement(null);
   });
 
-  /* ================= Selection & Layers ================= */
   function selectElement(el){
     if(selected) selected.classList.remove('selected');
     selected=el;
@@ -671,7 +660,6 @@
     if(e.key==='ArrowDown'){ selected.style.top=(parseFloat(selected.style.top)+step)+'px'; syncInspectorPosition(); }
   });
 
-  /* ================= Inspector ================= */
   const inspectorEmpty=document.getElementById('inspectorEmpty');
   const inspectorBody=document.getElementById('inspectorBody');
 
@@ -868,16 +856,9 @@
       el.style.animation='none'; 
       return; 
     }
-    const currentTransform = el.style.transform || '';
-    const rotMatch = /rotate\((-?\d+(\.\d+)?)deg\)/.exec(currentTransform);
-    const rotation = rotMatch ? `rotate(${rotMatch[1]}deg)` : '';
     el.style.animation = `${el.dataset.anim} ${el.dataset.animDur}s ${el.dataset.animDelay}s ${el.dataset.animIter} both ease`;
-    if(rotation) {
-      el.dataset._rotation = rotation;
-    }
   }
 
-  /* ================= Play preview ================= */
   document.getElementById('playBtn').addEventListener('click', function(){
     Array.from(stage.children).filter(c=>c.classList.contains('element')).forEach(el=>{
       if(el.dataset.anim && el.dataset.anim!=='none'){
@@ -888,7 +869,6 @@
     });
   });
 
-  /* ================= Export HTML ================= */
   document.getElementById('exportHtmlBtn').addEventListener('click', function(){
     const clone = stage.cloneNode(true);
     clone.classList.remove('selected');
@@ -926,21 +906,6 @@ ${clone.outerHTML.replace('id="stage"', `id="stage" style="width:${w};height:${h
     downloadBlob(out, `ad-${parseInt(w)}x${parseInt(h)}.html`, 'text/html');
   });
 
-  async function withCleanStage(fn){
-    const prevSelected = selected;
-    const activeEl = document.activeElement;
-    if(activeEl && activeEl.blur) activeEl.blur();
-    selectElement(null);
-    stage.classList.add('exporting');
-    try{
-      await document.fonts?.ready;
-      return await fn();
-    } finally {
-      stage.classList.remove('exporting');
-      if(prevSelected) selectElement(prevSelected);
-    }
-  }
-
   let gifWorkerBlobUrl = null;
   async function getGifWorkerBlobURL(){
     if(gifWorkerBlobUrl) return gifWorkerBlobUrl;
@@ -952,7 +917,6 @@ ${clone.outerHTML.replace('id="stage"', `id="stage" style="width:${w};height:${h
       gifWorkerBlobUrl = URL.createObjectURL(blob);
       return gifWorkerBlobUrl;
     } catch(e) {
-      console.warn('Using inline worker fallback');
       const fallbackText = `self.onmessage = function(e) {
   var data = e.data;
   if (data.type === 'render') {
@@ -986,68 +950,159 @@ ${clone.outerHTML.replace('id="stage"', `id="stage" style="width:${w};height:${h
     return parseFloat(document.getElementById('qualitySelect').value) || 2;
   }
 
-  // ============= IMPROVED: Render element to canvas directly =============
-  function renderElementToCanvas(ctx, el, scale, time) {
-    const rect = el.getBoundingClientRect();
-    const stageRect = stage.getBoundingClientRect();
+  // ============= ANIMATION EVALUATION =============
+  function evaluateAnimation(el, progress) {
+    const anim = el.dataset.anim;
+    if(!anim || anim === 'none') {
+      return { opacity: parseFloat(el.style.opacity) || 1, transform: 'translate(0,0) scale(1)', x: 0, y: 0, scale: 1 };
+    }
     
-    // Get element position relative to stage
+    const duration = parseFloat(el.dataset.animDur) || 0.8;
+    const delay = parseFloat(el.dataset.animDelay) || 0;
+    const iter = el.dataset.animIter || '1';
+    
+    // Calculate effective progress (0 to 1), with delay
+    let p = Math.max(0, (progress - delay) / duration);
+    if(iter === 'infinite') {
+      p = p % 1;
+    } else {
+      p = Math.min(1, p);
+    }
+    
+    // Easing function (ease)
+    const ease = (t) => t < 0.5 ? 2*t*t : -1+(4-2*t)*t;
+    const ep = ease(p);
+    
+    let opacity = 1;
+    let tx = 0, ty = 0, scale = 1;
+    
+    switch(anim) {
+      case 'fadeIn':
+        opacity = ep;
+        break;
+      case 'slideInLeft':
+        opacity = ep;
+        tx = -60 * (1 - ep);
+        break;
+      case 'slideInRight':
+        opacity = ep;
+        tx = 60 * (1 - ep);
+        break;
+      case 'slideInUp':
+        opacity = ep;
+        ty = 40 * (1 - ep);
+        break;
+      case 'slideInDown':
+        opacity = ep;
+        ty = -40 * (1 - ep);
+        break;
+      case 'zoomIn':
+        opacity = ep;
+        scale = 0.5 + 0.5 * ep;
+        break;
+      case 'bounceIn':
+        if(p < 0.5) {
+          const bp = p / 0.5;
+          scale = 0.3 + 0.75 * bp;
+          opacity = bp;
+        } else if(p < 0.7) {
+          const bp = (p - 0.5) / 0.2;
+          scale = 1.05 - 0.1 * bp;
+          opacity = 1;
+        } else if(p < 0.9) {
+          const bp = (p - 0.7) / 0.2;
+          scale = 0.95 + 0.05 * bp;
+          opacity = 1;
+        } else {
+          scale = 1;
+          opacity = 1;
+        }
+        break;
+      case 'pulse':
+        scale = 1 + 0.05 * Math.sin(p * Math.PI * 2);
+        opacity = 1;
+        break;
+      case 'shake':
+        const shakeAmt = 6 * (1 - p);
+        tx = Math.sin(p * 50) * shakeAmt;
+        opacity = 1;
+        break;
+      default:
+        opacity = 1;
+    }
+    
+    return { opacity, transform: `translate(${tx}px, ${ty}px) scale(${scale})`, x: tx, y: ty, scale };
+  }
+
+  // ============= RENDER ELEMENT TO CANVAS WITH ANIMATION =============
+  function renderElementToCanvas(ctx, el, scale, time) {
     let x = parseFloat(el.style.left) || 0;
     let y = parseFloat(el.style.top) || 0;
     let w = parseFloat(el.style.width) || 50;
     let h = parseFloat(el.style.height) || 50;
     
-    // Apply scaling
-    x *= scale;
-    y *= scale;
-    w *= scale;
-    h *= scale;
+    // Get animation state at this time
+    const totalDuration = parseFloat(document.getElementById('recDuration').value) || 3;
+    const progress = time / totalDuration;
+    const animState = evaluateAnimation(el, progress);
+    
+    // Apply animation transforms
+    const opacity = animState.opacity * (parseFloat(el.style.opacity) || 1);
+    const tx = animState.x || 0;
+    const ty = animState.y || 0;
+    const scaleVal = animState.scale || 1;
+    
+    // Get rotation
+    const rotMatch = /rotate\((-?\d+(\.\d+)?)deg\)/.exec(el.style.transform || '');
+    const rotation = rotMatch ? parseFloat(rotMatch[1]) : 0;
+    
+    // Apply scale to position and size
+    const scaledX = (x + tx) * scale;
+    const scaledY = (y + ty) * scale;
+    const scaledW = w * scale * scaleVal;
+    const scaledH = h * scale * scaleVal;
     
     ctx.save();
-    ctx.translate(x + w/2, y + h/2);
-    
-    // Apply rotation
-    const rotMatch = /rotate\((-?\d+(\.\d+)?)deg\)/.exec(el.style.transform || '');
-    if(rotMatch) {
-      ctx.rotate(parseFloat(rotMatch[1]) * Math.PI / 180);
-    }
-    
-    ctx.globalAlpha = parseFloat(el.style.opacity) || 1;
+    ctx.translate(scaledX + scaledW/2, scaledY + scaledH/2);
+    ctx.rotate(rotation * Math.PI / 180);
+    ctx.globalAlpha = Math.max(0, Math.min(1, opacity));
     
     const type = el.dataset.type;
     
-    // Draw based on type
     if(type === 'text' || type === 'button') {
       // Background for button
       if(type === 'button') {
         ctx.fillStyle = el.style.background || '#5B8CFF';
         const radius = parseFloat(el.style.borderRadius) || 8;
-        const rx = radius * scale;
+        const rx = radius * scale * scaleVal;
+        const hw = scaledW/2, hh = scaledH/2;
         ctx.beginPath();
-        ctx.moveTo(-w/2 + rx, -h/2);
-        ctx.lineTo(w/2 - rx, -h/2);
-        ctx.quadraticCurveTo(w/2, -h/2, w/2, -h/2 + rx);
-        ctx.lineTo(w/2, h/2 - rx);
-        ctx.quadraticCurveTo(w/2, h/2, w/2 - rx, h/2);
-        ctx.lineTo(-w/2 + rx, h/2);
-        ctx.quadraticCurveTo(-w/2, h/2, -w/2, h/2 - rx);
-        ctx.lineTo(-w/2, -h/2 + rx);
-        ctx.quadraticCurveTo(-w/2, -h/2, -w/2 + rx, -h/2);
+        ctx.moveTo(-hw + rx, -hh);
+        ctx.lineTo(hw - rx, -hh);
+        ctx.quadraticCurveTo(hw, -hh, hw, -hh + rx);
+        ctx.lineTo(hw, hh - rx);
+        ctx.quadraticCurveTo(hw, hh, hw - rx, hh);
+        ctx.lineTo(-hw + rx, hh);
+        ctx.quadraticCurveTo(-hw, hh, -hw, hh - rx);
+        ctx.lineTo(-hw, -hh + rx);
+        ctx.quadraticCurveTo(-hw, -hh, -hw + rx, -hh);
         ctx.closePath();
         ctx.fill();
       }
       
       // Text
       const fontSize = parseFloat(el.style.fontSize) || 16;
-      ctx.font = `${el.style.fontWeight || '400'} ${fontSize * scale}px ${el.style.fontFamily || 'Inter, sans-serif'}`;
+      const fontWeight = el.style.fontWeight || '400';
+      const fontFamily = el.style.fontFamily || 'Inter, sans-serif';
+      ctx.font = `${fontWeight} ${fontSize * scale * scaleVal}px ${fontFamily}`;
       ctx.fillStyle = el.style.color || '#1a1a1a';
       ctx.textAlign = el.style.textAlign || 'center';
       ctx.textBaseline = 'middle';
       
       let text = el.innerText || '';
-      // Wrap text if needed
-      const maxWidth = w - (8 * scale);
-      if(ctx.measureText(text).width > maxWidth) {
+      const maxWidth = scaledW - (8 * scale * scaleVal);
+      
+      if(ctx.measureText(text).width > maxWidth && maxWidth > 0) {
         let words = text.split(' ');
         let lines = [];
         let currentLine = '';
@@ -1062,7 +1117,7 @@ ${clone.outerHTML.replace('id="stage"', `id="stage" style="width:${w};height:${h
         }
         if(currentLine) lines.push(currentLine);
         
-        const lineHeight = fontSize * 1.2 * scale;
+        const lineHeight = fontSize * 1.2 * scale * scaleVal;
         const totalHeight = lines.length * lineHeight;
         let startY = -totalHeight/2 + lineHeight/2;
         
@@ -1078,52 +1133,45 @@ ${clone.outerHTML.replace('id="stage"', `id="stage" style="width:${w};height:${h
       const img = el.querySelector('img');
       if(img && img.complete && img.naturalWidth > 0) {
         const radius = parseFloat(el.style.borderRadius) || 0;
+        const hw = scaledW/2, hh = scaledH/2;
         if(radius > 0) {
-          const rx = radius * scale;
+          const rx = radius * scale * scaleVal;
           ctx.beginPath();
-          ctx.moveTo(-w/2 + rx, -h/2);
-          ctx.lineTo(w/2 - rx, -h/2);
-          ctx.quadraticCurveTo(w/2, -h/2, w/2, -h/2 + rx);
-          ctx.lineTo(w/2, h/2 - rx);
-          ctx.quadraticCurveTo(w/2, h/2, w/2 - rx, h/2);
-          ctx.lineTo(-w/2 + rx, h/2);
-          ctx.quadraticCurveTo(-w/2, h/2, -w/2, h/2 - rx);
-          ctx.lineTo(-w/2, -h/2 + rx);
-          ctx.quadraticCurveTo(-w/2, -h/2, -w/2 + rx, -h/2);
+          ctx.moveTo(-hw + rx, -hh);
+          ctx.lineTo(hw - rx, -hh);
+          ctx.quadraticCurveTo(hw, -hh, hw, -hh + rx);
+          ctx.lineTo(hw, hh - rx);
+          ctx.quadraticCurveTo(hw, hh, hw - rx, hh);
+          ctx.lineTo(-hw + rx, hh);
+          ctx.quadraticCurveTo(-hw, hh, -hw, hh - rx);
+          ctx.lineTo(-hw, -hh + rx);
+          ctx.quadraticCurveTo(-hw, -hh, -hw + rx, -hh);
           ctx.closePath();
           ctx.clip();
         }
-        ctx.drawImage(img, -w/2, -h/2, w, h);
-        if(radius > 0) {
-          ctx.restore();
-          ctx.save();
-          ctx.translate(x + w/2, y + h/2);
-          if(rotMatch) {
-            ctx.rotate(parseFloat(rotMatch[1]) * Math.PI / 180);
-          }
-          ctx.globalAlpha = parseFloat(el.style.opacity) || 1;
-        }
+        ctx.drawImage(img, -hw, -hh, scaledW, scaledH);
       }
     }
     else if(type === 'shape') {
       ctx.fillStyle = el.style.background || '#5B8CFF';
       const radius = el.style.borderRadius || '6px';
+      const hw = scaledW/2, hh = scaledH/2;
       if(radius === '50%') {
         ctx.beginPath();
-        ctx.arc(0, 0, Math.min(w, h)/2, 0, Math.PI * 2);
+        ctx.arc(0, 0, Math.min(hw, hh), 0, Math.PI * 2);
         ctx.fill();
       } else {
-        const r = parseFloat(radius) * scale || 6 * scale;
+        const r = parseFloat(radius) * scale * scaleVal || 6 * scale * scaleVal;
         ctx.beginPath();
-        ctx.moveTo(-w/2 + r, -h/2);
-        ctx.lineTo(w/2 - r, -h/2);
-        ctx.quadraticCurveTo(w/2, -h/2, w/2, -h/2 + r);
-        ctx.lineTo(w/2, h/2 - r);
-        ctx.quadraticCurveTo(w/2, h/2, w/2 - r, h/2);
-        ctx.lineTo(-w/2 + r, h/2);
-        ctx.quadraticCurveTo(-w/2, h/2, -w/2, h/2 - r);
-        ctx.lineTo(-w/2, -h/2 + r);
-        ctx.quadraticCurveTo(-w/2, -h/2, -w/2 + r, -h/2);
+        ctx.moveTo(-hw + r, -hh);
+        ctx.lineTo(hw - r, -hh);
+        ctx.quadraticCurveTo(hw, -hh, hw, -hh + r);
+        ctx.lineTo(hw, hh - r);
+        ctx.quadraticCurveTo(hw, hh, hw - r, hh);
+        ctx.lineTo(-hw + r, hh);
+        ctx.quadraticCurveTo(-hw, hh, -hw, hh - r);
+        ctx.lineTo(-hw, -hh + r);
+        ctx.quadraticCurveTo(-hw, -hh, -hw + r, -hh);
         ctx.closePath();
         ctx.fill();
       }
@@ -1132,91 +1180,66 @@ ${clone.outerHTML.replace('id="stage"', `id="stage" style="width:${w};height:${h
     ctx.restore();
   }
 
-  // ============= IMPROVED: Capture frames using direct canvas rendering =============
-  async function captureFramesDirect(durationSec, fps, scale) {
+  // ============= CAPTURE FRAMES WITH ANIMATION =============
+  async function captureFramesWithAnimation(durationSec, fps, scale) {
     await document.fonts?.ready;
     
     const totalFrames = Math.max(1, Math.round(durationSec * fps));
     const frames = [];
     const frameDelay = 1000 / fps;
     
-    // Get stage dimensions
     const stageW = stage.clientWidth;
     const stageH = stage.clientHeight;
     const canvasW = stageW * scale;
     const canvasH = stageH * scale;
-    
-    // Get background color
     const bgColor = stage.style.backgroundColor || '#ffffff';
     
-    // Store original animation states
-    const animEls = Array.from(stage.querySelectorAll('.element')).filter(el => 
-      el.dataset.anim && el.dataset.anim !== 'none'
-    );
-    const animStates = animEls.map(el => {
-      const state = { el, anim: el.style.animation };
-      return state;
-    });
+    const elements = Array.from(stage.querySelectorAll('.element'));
     
-    // Reset and re-apply animations
-    animEls.forEach(el => { el.style.animation = 'none'; });
-    void stage.offsetWidth;
-    animEls.forEach(el => { applyAnim(el); });
-    await new Promise(r => setTimeout(r, 50));
+    // Get background image if any
+    let bgImage = null;
+    const bgImageStyle = stage.style.backgroundImage;
+    if(bgImageStyle && bgImageStyle !== 'none') {
+      try {
+        const img = new Image();
+        img.crossOrigin = 'anonymous';
+        img.src = bgImageStyle.replace(/url\(['"]?([^'"]*)['"]?\)/, '$1');
+        await new Promise((resolve) => {
+          if(img.complete && img.naturalWidth > 0) { resolve(); }
+          else { img.onload = resolve; img.onerror = resolve; }
+        });
+        if(img.complete && img.naturalWidth > 0) bgImage = img;
+      } catch(e) {}
+    }
     
-    try {
-      // Get all elements for rendering
-      const elements = Array.from(stage.querySelectorAll('.element'));
+    for(let i = 0; i < totalFrames; i++) {
+      const canvas = document.createElement('canvas');
+      canvas.width = canvasW;
+      canvas.height = canvasH;
+      const ctx = canvas.getContext('2d', { willReadFrequently: true });
       
-      for(let i = 0; i < totalFrames; i++) {
-        // Create canvas for this frame
-        const canvas = document.createElement('canvas');
-        canvas.width = canvasW;
-        canvas.height = canvasH;
-        const ctx = canvas.getContext('2d', { willReadFrequently: true });
-        
-        // Fill background
-        ctx.fillStyle = bgColor;
-        ctx.fillRect(0, 0, canvasW, canvasH);
-        
-        // Draw canvas background image if any
-        const bgImage = stage.style.backgroundImage;
-        if(bgImage && bgImage !== 'none') {
-          try {
-            const img = new Image();
-            img.crossOrigin = 'anonymous';
-            img.src = bgImage.replace(/url\(['"]?([^'"]*)['"]?\)/, '$1');
-            if(img.complete && img.naturalWidth > 0) {
-              ctx.drawImage(img, 0, 0, canvasW, canvasH);
-            }
-          } catch(e) {}
-        }
-        
-        // Render each element
-        for(const el of elements) {
-          // Check if element should be visible (check opacity)
-          if(parseFloat(el.style.opacity) === 0) continue;
-          
-          // Handle animation - get current transform state
-          const computedStyle = window.getComputedStyle(el);
-          const transform = computedStyle.transform;
-          
-          // Render element
-          renderElementToCanvas(ctx, el, scale, i / fps);
-        }
-        
-        frames.push(canvas);
-        
-        // Wait for next frame
-        if(i < totalFrames - 1) {
-          await new Promise(r => setTimeout(r, frameDelay));
-        }
+      // Fill background
+      ctx.fillStyle = bgColor;
+      ctx.fillRect(0, 0, canvasW, canvasH);
+      
+      // Draw background image
+      if(bgImage) {
+        ctx.drawImage(bgImage, 0, 0, canvasW, canvasH);
       }
-    } finally {
-      // Restore animation states
-      animStates.forEach(({ el, anim }) => {
-        el.style.animation = anim;
-      });
+      
+      const time = (i / totalFrames) * durationSec;
+      
+      // Render each element
+      for(const el of elements) {
+        if(parseFloat(el.style.opacity) === 0) continue;
+        renderElementToCanvas(ctx, el, scale, time);
+      }
+      
+      frames.push(canvas);
+      
+      if(i < totalFrames - 1) {
+        await new Promise(r => setTimeout(r, frameDelay));
+      }
     }
     
     return frames;
@@ -1242,7 +1265,7 @@ ${clone.outerHTML.replace('id="stage"', `id="stage" style="width:${w};height:${h
     }, 4000);
   }
 
-  /* ================= Export PNG ================= */
+  // ================= Export PNG =================
   document.getElementById('exportPngBtn').addEventListener('click', async function(){
     const btn=this; const origText=btn.textContent;
     btn.disabled=true; btn.textContent='Rendering…';
@@ -1255,12 +1278,10 @@ ${clone.outerHTML.replace('id="stage"', `id="stage" style="width:${w};height:${h
       canvas.height = stageH * scale;
       const ctx = canvas.getContext('2d');
       
-      // Fill background
       const bgColor = stage.style.backgroundColor || '#ffffff';
       ctx.fillStyle = bgColor;
       ctx.fillRect(0, 0, canvas.width, canvas.height);
       
-      // Draw elements
       const elements = Array.from(stage.querySelectorAll('.element'));
       for(const el of elements) {
         if(parseFloat(el.style.opacity) === 0) continue;
@@ -1278,7 +1299,7 @@ ${clone.outerHTML.replace('id="stage"', `id="stage" style="width:${w};height:${h
     }
   });
 
-  /* ================= Export GIF ================= */
+  // ================= Export GIF =================
   document.getElementById('exportGifBtn').addEventListener('click', async function(){
     const btn=this; const origText=btn.textContent;
     btn.disabled=true;
@@ -1288,7 +1309,7 @@ ${clone.outerHTML.replace('id="stage"', `id="stage" style="width:${w};height:${h
       const scale = getQualityScale() * 2;
       
       btn.textContent='Rendering frames...';
-      const frames = await captureFramesDirect(dur, fps, scale);
+      const frames = await captureFramesWithAnimation(dur, fps, scale);
       
       if(!frames || frames.length === 0) {
         throw new Error('Koi frame capture nahi hua');
@@ -1348,7 +1369,7 @@ ${clone.outerHTML.replace('id="stage"', `id="stage" style="width:${w};height:${h
     }
   });
 
-  /* ================= Export Video ================= */
+  // ================= Export Video =================
   document.getElementById('exportVideoBtn').addEventListener('click', async function(){
     const btn=this; const origText=btn.textContent;
     btn.disabled=true;
@@ -1364,7 +1385,7 @@ ${clone.outerHTML.replace('id="stage"', `id="stage" style="width:${w};height:${h
       const scale = getQualityScale() * 2;
       
       btn.textContent='Rendering frames...';
-      const frames = await captureFramesDirect(dur, fps, scale);
+      const frames = await captureFramesWithAnimation(dur, fps, scale);
       
       if(!frames || frames.length === 0) {
         throw new Error('Koi frame capture nahi hua');
@@ -1414,7 +1435,6 @@ ${clone.outerHTML.replace('id="stage"', `id="stage" style="width:${w};height:${h
     }
   });
 
-  /* init empty selection state */
   renderInspector();
 })();
 </script>
