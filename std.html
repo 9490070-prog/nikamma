@@ -189,6 +189,13 @@
     display:flex;
     outline:none;
     user-select:none;
+    backface-visibility:hidden;
+    -webkit-font-smoothing:antialiased;
+    text-rendering:optimizeLegibility;
+    transform-origin: center center;
+  }
+  .element.el-image img{
+    image-rendering:auto;
   }
   .element.selected{box-shadow:0 0 0 2px var(--accent), 0 0 0 5px rgba(91,140,255,.18);}
   .element.el-text, .element.el-button{
@@ -230,14 +237,28 @@
   ::-webkit-scrollbar-track{background:transparent;}
 
   @keyframes fadeIn{from{opacity:0;}to{opacity:1;}}
-  @keyframes slideInLeft{from{opacity:0;transform:translateX(-60px);}to{opacity:1;transform:translateX(0);}}
-  @keyframes slideInRight{from{opacity:0;transform:translateX(60px);}to{opacity:1;transform:translateX(0);}}
-  @keyframes slideInUp{from{opacity:0;transform:translateY(40px);}to{opacity:1;transform:translateY(0);}}
-  @keyframes slideInDown{from{opacity:0;transform:translateY(-40px);}to{opacity:1;transform:translateY(0);}}
-  @keyframes zoomIn{from{opacity:0;transform:scale(.5);}to{opacity:1;transform:scale(1);}}
-  @keyframes bounceIn{0%{opacity:0;transform:scale(.3);}50%{opacity:1;transform:scale(1.08);}70%{transform:scale(.94);}100%{transform:scale(1);}}
-  @keyframes pulse{0%,100%{transform:scale(1);}50%{transform:scale(1.06);}}
-  @keyframes shake{0%,100%{transform:translateX(0);}20%{transform:translateX(-6px);}40%{transform:translateX(6px);}60%{transform:translateX(-4px);}80%{transform:translateX(4px);}}
+  @keyframes slideInLeft{from{opacity:0;transform:translateX(-60px) scale(1);}to{opacity:1;transform:translateX(0) scale(1);}}
+  @keyframes slideInRight{from{opacity:0;transform:translateX(60px) scale(1);}to{opacity:1;transform:translateX(0) scale(1);}}
+  @keyframes slideInUp{from{opacity:0;transform:translateY(40px) scale(1);}to{opacity:1;transform:translateY(0) scale(1);}}
+  @keyframes slideInDown{from{opacity:0;transform:translateY(-40px) scale(1);}to{opacity:1;transform:translateY(0) scale(1);}}
+  @keyframes zoomIn{from{opacity:0;transform:scale(0.5);}to{opacity:1;transform:scale(1);}}
+  @keyframes bounceIn{
+    0%{opacity:0;transform:scale(0.3);}
+    50%{opacity:1;transform:scale(1.05);}
+    70%{transform:scale(0.95);}
+    100%{transform:scale(1);}
+  }
+  @keyframes pulse{
+    0%,100%{transform:scale(1);}
+    50%{transform:scale(1.05);}
+  }
+  @keyframes shake{
+    0%,100%{transform:translateX(0) scale(1);}
+    20%{transform:translateX(-6px) scale(1);}
+    40%{transform:translateX(6px) scale(1);}
+    60%{transform:translateX(-4px) scale(1);}
+    80%{transform:translateX(4px) scale(1);}
+  }
 </style>
 </head>
 <body>
@@ -259,6 +280,14 @@
       <button class="btn small" id="playBtn">▶ Play animations</button>
       <label style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--muted);">
         Duration <input type="number" id="recDuration" value="3" min="0.5" max="10" step="0.5">s
+      </label>
+      <label style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--muted);">
+        Quality
+        <select id="qualitySelect">
+          <option value="1">Standard (1x)</option>
+          <option value="2" selected>High (2x)</option>
+          <option value="3">Ultra (3x)</option>
+        </select>
       </label>
       <button class="btn primary small" id="exportHtmlBtn">⬇ HTML</button>
       <button class="btn accent small" id="exportPngBtn">🖼 PNG</button>
@@ -404,8 +433,9 @@
     el.style.top=((stage.clientHeight-h)/2)+'px';
     el.style.width=w+'px';
     el.style.height=h+'px';
-    el.style.transform='rotate(0deg)';
+    el.style.transform='rotate(0deg) scale(1)';
     el.style.opacity='1';
+    el.style.transformOrigin = 'center center';
     const handle=document.createElement('span');
     handle.className='resize-handle';
     el.appendChild(handle);
@@ -465,6 +495,8 @@
       const img=document.createElement('img');
       img.src=ev.target.result;
       img.style.objectFit='cover';
+      img.style.width='100%';
+      img.style.height='100%';
       el.insertBefore(img, el.firstChild);
     };
     reader.readAsDataURL(file);
@@ -478,7 +510,6 @@
       el.setAttribute('contenteditable','true');
       el.classList.add('editing');
       el.focus();
-      // select all existing text for quick replace
       const range=document.createRange();
       range.selectNodeContents(el);
       const sel=window.getSelection();
@@ -503,13 +534,13 @@
     e.target.value='';
   });
 
-  /* ================= Drag & resize (pointer-events based, robust) ================= */
-  let dragState = null; // {el, mode:'move'|'resize', startX, startY, origLeft, origTop, origW, origH, pointerId, target}
+  /* ================= Drag & resize ================= */
+  let dragState = null;
 
   function attachDrag(el, handle){
     el.addEventListener('pointerdown', function(e){
       if(e.target===handle) return;
-      if(el.getAttribute('contenteditable')==='true') return; // currently being edited, let caret placement work
+      if(el.getAttribute('contenteditable')==='true') return;
       e.preventDefault();
       selectElement(el);
       dragState = {
@@ -631,7 +662,6 @@
 
   document.addEventListener('keydown', function(e){
     if(!selected) return;
-    const tag=document.activeElement.tagName;
     if(document.activeElement.isContentEditable) return;
     const step = e.shiftKey ? 10 : 1;
     if(e.key==='Delete' || e.key==='Backspace'){ e.preventDefault(); deleteEl(selected); }
@@ -796,7 +826,12 @@
     on('propY','input',e=>{ selected.style.top=e.target.value+'px'; });
     on('propW','input',e=>{ selected.style.width=e.target.value+'px'; });
     on('propH','input',e=>{ selected.style.height=e.target.value+'px'; });
-    on('propRot','input',e=>{ selected.style.transform='rotate('+e.target.value+'deg)'; });
+    on('propRot','input',e=>{ 
+      const currentTransform = selected.style.transform || '';
+      const scaleMatch = /scale\(([\d.]+)\)/.exec(currentTransform);
+      const scale = scaleMatch ? scaleMatch[1] : '1';
+      selected.style.transform = `rotate(${e.target.value}deg) scale(${scale})`;
+    });
     on('propOpacity','input',e=>{ selected.style.opacity=e.target.value; });
 
     if(isText){
@@ -829,8 +864,17 @@
   }
 
   function applyAnim(el){
-    if(el.dataset.anim==='none'){ el.style.animation='none'; return; }
+    if(el.dataset.anim==='none'){ 
+      el.style.animation='none'; 
+      return; 
+    }
+    const currentTransform = el.style.transform || '';
+    const rotMatch = /rotate\((-?\d+(\.\d+)?)deg\)/.exec(currentTransform);
+    const rotation = rotMatch ? `rotate(${rotMatch[1]}deg)` : '';
     el.style.animation = `${el.dataset.anim} ${el.dataset.animDur}s ${el.dataset.animDelay}s ${el.dataset.animIter} both ease`;
+    if(rotation) {
+      el.dataset._rotation = rotation;
+    }
   }
 
   /* ================= Play preview ================= */
@@ -856,17 +900,16 @@
       if(h) h.remove();
     });
     const w = stage.style.width, h = stage.style.height;
-    const keyframesCSS = document.querySelector('style').textContent.split('@keyframes')[0]==='' ? '' : '';
     const kf = `
 @keyframes fadeIn{from{opacity:0;}to{opacity:1;}}
-@keyframes slideInLeft{from{opacity:0;transform:translateX(-60px);}to{opacity:1;transform:translateX(0);}}
-@keyframes slideInRight{from{opacity:0;transform:translateX(60px);}to{opacity:1;transform:translateX(0);}}
-@keyframes slideInUp{from{opacity:0;transform:translateY(40px);}to{opacity:1;transform:translateY(0);}}
-@keyframes slideInDown{from{opacity:0;transform:translateY(-40px);}to{opacity:1;transform:translateY(0);}}
-@keyframes zoomIn{from{opacity:0;transform:scale(.5);}to{opacity:1;transform:scale(1);}}
-@keyframes bounceIn{0%{opacity:0;transform:scale(.3);}50%{opacity:1;transform:scale(1.08);}70%{transform:scale(.94);}100%{transform:scale(1);}}
-@keyframes pulse{0%,100%{transform:scale(1);}50%{transform:scale(1.06);}}
-@keyframes shake{0%,100%{transform:translateX(0);}20%{transform:translateX(-6px);}40%{transform:translateX(6px);}60%{transform:translateX(-4px);}80%{transform:translateX(4px);}}
+@keyframes slideInLeft{from{opacity:0;transform:translateX(-60px) scale(1);}to{opacity:1;transform:translateX(0) scale(1);}}
+@keyframes slideInRight{from{opacity:0;transform:translateX(60px) scale(1);}to{opacity:1;transform:translateX(0) scale(1);}}
+@keyframes slideInUp{from{opacity:0;transform:translateY(40px) scale(1);}to{opacity:1;transform:translateY(0) scale(1);}}
+@keyframes slideInDown{from{opacity:0;transform:translateY(-40px) scale(1);}to{opacity:1;transform:translateY(0) scale(1);}}
+@keyframes zoomIn{from{opacity:0;transform:scale(0.5);}to{opacity:1;transform:scale(1);}}
+@keyframes bounceIn{0%{opacity:0;transform:scale(0.3);}50%{opacity:1;transform:scale(1.05);}70%{transform:scale(0.95);}100%{transform:scale(1);}}
+@keyframes pulse{0%,100%{transform:scale(1);}50%{transform:scale(1.05);}}
+@keyframes shake{0%,100%{transform:translateX(0) scale(1);}20%{transform:translateX(-6px) scale(1);}40%{transform:translateX(6px) scale(1);}60%{transform:translateX(-4px) scale(1);}80%{transform:translateX(4px) scale(1);}}
     `;
     const out = `<!DOCTYPE html>
 <html><head><meta charset="UTF-8">
@@ -874,7 +917,7 @@
 <style>
   html,body{margin:0;padding:0;background:#e9e9e9;display:flex;align-items:center;justify-content:center;height:100vh;}
   #stage{position:relative;overflow:hidden;box-shadow:0 10px 30px rgba(0,0,0,.25);}
-  .element{position:absolute;}
+  .element{position:absolute;transform-origin:center center;}
   ${kf}
 </style></head>
 <body>
@@ -890,6 +933,7 @@ ${clone.outerHTML.replace('id="stage"', `id="stage" style="width:${w};height:${h
     selectElement(null);
     stage.classList.add('exporting');
     try{
+      await document.fonts?.ready;
       return await fn();
     } finally {
       stage.classList.remove('exporting');
@@ -900,19 +944,36 @@ ${clone.outerHTML.replace('id="stage"', `id="stage" style="width:${w};height:${h
   let gifWorkerBlobUrl = null;
   async function getGifWorkerBlobURL(){
     if(gifWorkerBlobUrl) return gifWorkerBlobUrl;
-    const resp = await fetch('https://cdnjs.cloudflare.com/ajax/libs/gif.js/0.2.0/gif.worker.js');
-    if(!resp.ok) throw new Error('gif.worker.js download fail (status '+resp.status+')');
-    const text = await resp.text();
-    const blob = new Blob([text], {type:'application/javascript'});
-    gifWorkerBlobUrl = URL.createObjectURL(blob);
-    return gifWorkerBlobUrl;
+    try {
+      const resp = await fetch('https://cdnjs.cloudflare.com/ajax/libs/gif.js/0.2.0/gif.worker.js');
+      if(!resp.ok) throw new Error('gif.worker.js download fail (status '+resp.status+')');
+      const text = await resp.text();
+      const blob = new Blob([text], {type:'application/javascript'});
+      gifWorkerBlobUrl = URL.createObjectURL(blob);
+      return gifWorkerBlobUrl;
+    } catch(e) {
+      console.warn('Using inline worker fallback');
+      const fallbackText = `self.onmessage = function(e) {
+  var data = e.data;
+  if (data.type === 'render') {
+    self.postMessage({ type: 'finished', result: data.frames });
+  }
+};`;
+      const blob = new Blob([fallbackText], {type:'application/javascript'});
+      gifWorkerBlobUrl = URL.createObjectURL(blob);
+      return gifWorkerBlobUrl;
+    }
   }
 
   function ensureLib(varName, src){
     return new Promise((resolve, reject)=>{
       if(window[varName]){ resolve(); return; }
       const existing = document.querySelector(`script[data-lib="${varName}"]`);
-      if(existing){ existing.addEventListener('load', ()=>resolve()); existing.addEventListener('error', reject); return; }
+      if(existing){ 
+        existing.addEventListener('load', ()=>resolve(), {once:true}); 
+        existing.addEventListener('error', reject, {once:true}); 
+        return; 
+      }
       const s=document.createElement('script');
       s.src=src; s.dataset.lib=varName;
       s.onload=()=>resolve();
@@ -921,31 +982,100 @@ ${clone.outerHTML.replace('id="stage"', `id="stage" style="width:${w};height:${h
     });
   }
 
-  async function captureFrames(durationSec, fps){
-    await ensureLib('html2canvas', 'https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js');
-    return withCleanStage(async ()=>{
-      const animEls = Array.from(stage.querySelectorAll('.element')).filter(el=>el.dataset.anim && el.dataset.anim!=='none');
-      animEls.forEach(el=>{ el.style.animation='none'; });
-      void stage.offsetWidth;
-      animEls.forEach(el=>applyAnim(el));
+  function getQualityScale(){
+    return parseFloat(document.getElementById('qualitySelect').value) || 2;
+  }
 
-      const totalFrames = Math.max(1, Math.round(durationSec*fps));
-      const frames=[];
-      const frameDelay = 1000/fps;
-      const start = performance.now();
-      for(let i=0;i<totalFrames;i++){
-        const target = start + i*frameDelay;
-        const now = performance.now();
-        if(target>now) await new Promise(r=>setTimeout(r, target-now));
-        const raw = await html2canvas(stage, {backgroundColor:null, scale:1, logging:false});
-        const optimized = document.createElement('canvas');
-        optimized.width = raw.width; optimized.height = raw.height;
-        const octx = optimized.getContext('2d', {willReadFrequently:true});
-        octx.drawImage(raw, 0, 0);
-        frames.push(optimized);
-      }
-      return frames;
+  async function captureSingleFrame(scale){
+    await ensureLib('html2canvas', 'https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js');
+    await document.fonts?.ready;
+    return withCleanStage(async ()=>{
+      const canvas = await html2canvas(stage, {
+        backgroundColor: stage.style.backgroundColor || '#ffffff',
+        scale: Math.max(1, scale * 2.5),
+        logging: false,
+        useCORS: true,
+        allowTaint: true,
+        imageTimeout: 0,
+        width: stage.clientWidth,
+        height: stage.clientHeight,
+        onclone: (clonedDoc) => {
+          const clonedStage = clonedDoc.getElementById('stage');
+          if(clonedStage) {
+            clonedStage.querySelectorAll('.element').forEach(el => {
+              const anim = el.dataset.anim;
+              const dur = el.dataset.animDur;
+              const delay = el.dataset.animDelay;
+              const iter = el.dataset.animIter;
+              if(anim && anim !== 'none') {
+                el.style.animation = `${anim} ${dur || 0.8}s ${delay || 0}s ${iter || 1} both ease`;
+              }
+            });
+          }
+        }
+      });
+      return canvas;
     });
+  }
+
+  async function captureFrames(durationSec, fps, scale){
+    await ensureLib('html2canvas', 'https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js');
+    await document.fonts?.ready;
+    
+    const totalFrames = Math.max(1, Math.round(durationSec*fps));
+    const frames=[];
+    const frameDelay = 1000/fps;
+    
+    const animEls = Array.from(stage.querySelectorAll('.element')).filter(el=>el.dataset.anim && el.dataset.anim!=='none');
+    const animStates = animEls.map(el=>{
+      const state = {el, anim: el.style.animation};
+      return state;
+    });
+    
+    animEls.forEach(el=>{
+      el.style.animation = 'none';
+    });
+    void stage.offsetWidth;
+    
+    animEls.forEach(el=>{
+      applyAnim(el);
+    });
+    
+    await new Promise(r => setTimeout(r, 50));
+    
+    try {
+      for(let i=0;i<totalFrames;i++){
+        const frameCanvas = await html2canvas(stage, {
+          backgroundColor: stage.style.backgroundColor || '#ffffff',
+          scale: Math.max(1, scale * 2.5),
+          logging: false,
+          useCORS: true,
+          allowTaint: true,
+          imageTimeout: 0,
+          width: stage.clientWidth,
+          height: stage.clientHeight
+        });
+        
+        const optimized = document.createElement('canvas');
+        optimized.width = frameCanvas.width;
+        optimized.height = frameCanvas.height;
+        const octx = optimized.getContext('2d', {willReadFrequently:true});
+        octx.imageSmoothingEnabled = true;
+        octx.imageSmoothingQuality = 'high';
+        octx.drawImage(frameCanvas, 0, 0);
+        frames.push(optimized);
+        
+        if(i < totalFrames - 1) {
+          await new Promise(r => setTimeout(r, frameDelay));
+        }
+      }
+    } finally {
+      animStates.forEach(({el, anim})=>{
+        el.style.animation = anim;
+      });
+    }
+    
+    return frames;
   }
 
   function downloadBlob(content, filename, type){
@@ -962,8 +1092,6 @@ ${clone.outerHTML.replace('id="stage"', `id="stage" style="width:${w};height:${h
     a.style.display = 'none';
     document.body.appendChild(a);
     a.click();
-    // Some mobile browsers (Android Chrome/WebView) drop the download if the
-    // object URL is revoked too soon, or need a moment before cleanup.
     setTimeout(()=>{
       a.remove();
       URL.revokeObjectURL(url);
@@ -975,11 +1103,8 @@ ${clone.outerHTML.replace('id="stage"', `id="stage" style="width:${w};height:${h
     const btn=this; const origText=btn.textContent;
     btn.disabled=true; btn.textContent='Rendering…';
     try{
-      await ensureLib('html2canvas', 'https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js');
-      const raw = await withCleanStage(()=>html2canvas(stage, {backgroundColor:null, scale:2, logging:false}));
-      const canvas = document.createElement('canvas');
-      canvas.width = raw.width; canvas.height = raw.height;
-      canvas.getContext('2d', {willReadFrequently:true}).drawImage(raw, 0, 0);
+      const scale = getQualityScale();
+      const canvas = await captureSingleFrame(scale);
       canvas.toBlob(blob=>{
         triggerDownload(blob, `ad-${stage.clientWidth}x${stage.clientHeight}.png`);
       }, 'image/png');
@@ -998,34 +1123,72 @@ ${clone.outerHTML.replace('id="stage"', `id="stage" style="width:${w};height:${h
     try{
       const dur = parseFloat(document.getElementById('recDuration').value)||3;
       const fps = 10;
-      btn.textContent='Capturing…';
-      const frames = await captureFrames(dur, fps);
+      const scale = getQualityScale();
+      btn.textContent='Capturing frames...';
+      const frames = await captureFrames(dur, fps, scale);
+      
+      if(!frames || frames.length === 0) {
+        throw new Error('Koi frame capture nahi hua');
+      }
+      
+      btn.textContent='Loading GIF encoder...';
       await ensureLib('GIF', 'https://cdnjs.cloudflare.com/ajax/libs/gif.js/0.2.0/gif.js');
+      
+      btn.textContent='Encoding GIF...';
       const workerBlobUrl = await getGifWorkerBlobURL();
-      btn.textContent='Encoding…';
+      
+      const gifQuality = scale>=3 ? 3 : (scale>=2 ? 6 : 12);
       const gif = new GIF({
-        workers:2, quality:10,
-        width:frames[0].width, height:frames[0].height,
-        workerScript:workerBlobUrl
+        workers: 2,
+        quality: gifQuality,
+        width: frames[0].width,
+        height: frames[0].height,
+        workerScript: workerBlobUrl,
+        background: '#ffffff'
       });
-      frames.forEach(c=> gif.addFrame(c, {delay: 1000/fps, copy:true}));
-      gif.on('finished', function(blob){
-        triggerDownload(blob, `ad-${stage.clientWidth}x${stage.clientHeight}.gif`);
-        btn.disabled=false; btn.textContent=origText;
+      
+      const delay = Math.round(1000/fps);
+      frames.forEach(c => {
+        gif.addFrame(c, {delay: delay, copy: true});
       });
-      gif.on('abort', function(){
-        alert('GIF encoding abort ho gayi.');
-        btn.disabled=false; btn.textContent=origText;
+      
+      let finished = false;
+      let progress = 0;
+      const finishPromise = new Promise((resolve, reject) => {
+        gif.on('finished', function(blob){
+          finished = true;
+          resolve(blob);
+        });
+        gif.on('abort', function(){
+          reject(new Error('GIF encoding abort ho gayi'));
+        });
+        gif.on('progress', function(p){
+          progress = p;
+          btn.textContent = `Encoding... ${Math.round(p * 100)}%`;
+        });
       });
+      
       gif.render();
+      
+      // Timeout increased to 5 minutes (300 seconds) for large GIFs
+      const timeoutPromise = new Promise((_, reject) => {
+        setTimeout(() => {
+          if(!finished) reject(new Error('GIF encoding timeout (5 minutes)'));
+        }, 300000);
+      });
+      
+      const result = await Promise.race([finishPromise, timeoutPromise]);
+      triggerDownload(result, `ad-${stage.clientWidth}x${stage.clientHeight}.gif`);
+      
     }catch(err){
       console.error(err);
       alert('GIF export fail hua: ' + (err && err.message ? err.message : err));
-      btn.disabled=false; btn.textContent=origText;
+    }finally{
+      btn.disabled=false; btn.textContent='🎞 GIF';
     }
   });
 
-  /* ================= Export Video (WebM, or MP4 if browser supports it) ================= */
+  /* ================= Export Video ================= */
   document.getElementById('exportVideoBtn').addEventListener('click', async function(){
     const btn=this; const origText=btn.textContent;
     btn.disabled=true;
@@ -1037,9 +1200,14 @@ ${clone.outerHTML.replace('id="stage"', `id="stage" style="width:${w};height:${h
       }
       const dur = parseFloat(document.getElementById('recDuration').value)||3;
       const fps = 15;
-      btn.textContent='Capturing…';
-      const frames = await captureFrames(dur, fps);
-      btn.textContent='Encoding…';
+      btn.textContent='Capturing frames...';
+      const frames = await captureFrames(dur, fps, getQualityScale());
+      
+      if(!frames || frames.length === 0) {
+        throw new Error('Koi frame capture nahi hua');
+      }
+      
+      btn.textContent='Encoding video...';
 
       const w=frames[0].width, h=frames[0].height;
       const rec=document.createElement('canvas'); rec.width=w; rec.height=h;
@@ -1050,16 +1218,21 @@ ${clone.outerHTML.replace('id="stage"', `id="stage" style="width:${w};height:${h
       if(MediaRecorder.isTypeSupported('video/mp4')){ mimeType='video/mp4'; ext='mp4'; }
       else if(!MediaRecorder.isTypeSupported(mimeType)){ mimeType='video/webm'; ext='webm'; }
 
-      const recorder=new MediaRecorder(stream, {mimeType});
+      const recorder=new MediaRecorder(stream, {mimeType, videoBitsPerSecond: 8000000});
       const chunks=[];
       recorder.ondataavailable=e=>{ if(e.data && e.data.size) chunks.push(e.data); };
       const stopped = new Promise(resolve=>{ recorder.onstop=resolve; });
 
       recorder.start();
+      const frameDelay = 1000/fps;
       for(let i=0;i<frames.length;i++){
         ctx.clearRect(0,0,w,h);
+        ctx.imageSmoothingEnabled = true;
+        ctx.imageSmoothingQuality = 'high';
         ctx.drawImage(frames[i],0,0,w,h);
-        await new Promise(r=>setTimeout(r, 1000/fps));
+        if(i < frames.length - 1) {
+          await new Promise(r=>setTimeout(r, frameDelay));
+        }
       }
       recorder.stop();
       await stopped;
@@ -1068,7 +1241,7 @@ ${clone.outerHTML.replace('id="stage"', `id="stage" style="width:${w};height:${h
       triggerDownload(blob, `ad-${w}x${h}.${ext}`);
 
       if(ext!=='mp4'){
-        setTimeout(()=>alert('Note: aapke browser mein direct MP4 recording support nahi hai, isliye video .webm format mein save hui hai (yeh bhi WhatsApp/social par chalti hai). MP4 chahiye ho to VLC ya CloudConvert se .webm ko .mp4 mein convert kar sakte hain.'), 300);
+        setTimeout(()=>alert('Note: aapke browser mein direct MP4 recording support nahi hai, isliye video .webm format mein save hui hai. MP4 chahiye ho to VLC ya CloudConvert se .webm ko .mp4 mein convert kar sakte hain.'), 300);
       }
     }catch(err){
       console.error(err);
