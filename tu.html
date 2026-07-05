@@ -236,7 +236,6 @@
   ::-webkit-scrollbar-thumb{background:#2b303a;border-radius:6px;}
   ::-webkit-scrollbar-track{background:transparent;}
 
-  /* Fixed animations - using transform scale properly */
   @keyframes fadeIn{from{opacity:0;}to{opacity:1;}}
   @keyframes slideInLeft{from{opacity:0;transform:translateX(-60px) scale(1);}to{opacity:1;transform:translateX(0) scale(1);}}
   @keyframes slideInRight{from{opacity:0;transform:translateX(60px) scale(1);}to{opacity:1;transform:translateX(0) scale(1);}}
@@ -783,7 +782,6 @@
     setVal('propY', parseFloat(selected.style.top)||0);
     setVal('propW', parseFloat(selected.style.width)||0);
     setVal('propH', parseFloat(selected.style.height)||0);
-    // Extract rotation from transform
     const rotMatch = /rotate\((-?\d+(\.\d+)?)deg\)/.exec(selected.style.transform||'');
     setVal('propRot', rotMatch?rotMatch[1]:0);
     setVal('propOpacity', selected.style.opacity===''?1:selected.style.opacity);
@@ -829,7 +827,6 @@
     on('propW','input',e=>{ selected.style.width=e.target.value+'px'; });
     on('propH','input',e=>{ selected.style.height=e.target.value+'px'; });
     on('propRot','input',e=>{ 
-      // Preserve scale if exists
       const currentTransform = selected.style.transform || '';
       const scaleMatch = /scale\(([\d.]+)\)/.exec(currentTransform);
       const scale = scaleMatch ? scaleMatch[1] : '1';
@@ -871,16 +868,11 @@
       el.style.animation='none'; 
       return; 
     }
-    // Reset any existing transform to avoid scale stacking
     const currentTransform = el.style.transform || '';
-    // Only keep rotation if present
     const rotMatch = /rotate\((-?\d+(\.\d+)?)deg\)/.exec(currentTransform);
     const rotation = rotMatch ? `rotate(${rotMatch[1]}deg)` : '';
-    // Apply animation - it will handle transform internally
     el.style.animation = `${el.dataset.anim} ${el.dataset.animDur}s ${el.dataset.animDelay}s ${el.dataset.animIter} both ease`;
-    // If rotation was set, preserve it alongside animation
     if(rotation) {
-      // Animation will override transform, but we store rotation separately
       el.dataset._rotation = rotation;
     }
   }
@@ -1000,27 +992,13 @@ ${clone.outerHTML.replace('id="stage"', `id="stage" style="width:${w};height:${h
     return withCleanStage(async ()=>{
       const canvas = await html2canvas(stage, {
         backgroundColor: stage.style.backgroundColor || '#ffffff',
-        scale: Math.max(1, scale * 2.5),
+        scale: Math.max(1, scale * 3),
         logging: false,
         useCORS: true,
         allowTaint: true,
         imageTimeout: 0,
         width: stage.clientWidth,
-        height: stage.clientHeight,
-        onclone: (clonedDoc) => {
-          const clonedStage = clonedDoc.getElementById('stage');
-          if(clonedStage) {
-            clonedStage.querySelectorAll('.element').forEach(el => {
-              const anim = el.dataset.anim;
-              const dur = el.dataset.animDur;
-              const delay = el.dataset.animDelay;
-              const iter = el.dataset.animIter;
-              if(anim && anim !== 'none') {
-                el.style.animation = `${anim} ${dur || 0.8}s ${delay || 0}s ${iter || 1} both ease`;
-              }
-            });
-          }
-        }
+        height: stage.clientHeight
       });
       return canvas;
     });
@@ -1034,20 +1012,17 @@ ${clone.outerHTML.replace('id="stage"', `id="stage" style="width:${w};height:${h
     const frames=[];
     const frameDelay = 1000/fps;
     
-    // Store original animation states
     const animEls = Array.from(stage.querySelectorAll('.element')).filter(el=>el.dataset.anim && el.dataset.anim!=='none');
     const animStates = animEls.map(el=>{
       const state = {el, anim: el.style.animation};
       return state;
     });
     
-    // Reset animations to starting state
     animEls.forEach(el=>{
       el.style.animation = 'none';
     });
     void stage.offsetWidth;
     
-    // Re-apply animations
     animEls.forEach(el=>{
       applyAnim(el);
     });
@@ -1058,7 +1033,7 @@ ${clone.outerHTML.replace('id="stage"', `id="stage" style="width:${w};height:${h
       for(let i=0;i<totalFrames;i++){
         const frameCanvas = await html2canvas(stage, {
           backgroundColor: stage.style.backgroundColor || '#ffffff',
-          scale: Math.max(1, scale * 2.5),
+          scale: Math.max(1, scale * 3),
           logging: false,
           useCORS: true,
           allowTaint: true,
@@ -1133,7 +1108,7 @@ ${clone.outerHTML.replace('id="stage"', `id="stage" style="width:${w};height:${h
     btn.disabled=true;
     try{
       const dur = parseFloat(document.getElementById('recDuration').value)||3;
-      const fps = 10;
+      const fps = 8;
       const scale = getQualityScale();
       btn.textContent='Capturing frames...';
       const frames = await captureFrames(dur, fps, scale);
@@ -1148,20 +1123,23 @@ ${clone.outerHTML.replace('id="stage"', `id="stage" style="width:${w};height:${h
       btn.textContent='Encoding GIF...';
       const workerBlobUrl = await getGifWorkerBlobURL();
       
-      const gifQuality = scale>=3 ? 3 : (scale>=2 ? 6 : 12);
+      // Better quality settings for GIF
+      const gifQuality = 10; // Use consistent quality
       const gif = new GIF({
         workers: 2,
         quality: gifQuality,
         width: frames[0].width,
         height: frames[0].height,
         workerScript: workerBlobUrl,
-        background: '#ffffff'
+        background: '#ffffff',
+        repeat: 0
       });
       
       const delay = Math.round(1000/fps);
-      frames.forEach(c => {
-        gif.addFrame(c, {delay: delay, copy: true});
-      });
+      // Add frames with high quality
+      for(let i = 0; i < frames.length; i++) {
+        gif.addFrame(frames[i], {delay: delay, copy: true});
+      }
       
       let finished = false;
       const finishPromise = new Promise((resolve, reject) => {
@@ -1181,8 +1159,8 @@ ${clone.outerHTML.replace('id="stage"', `id="stage" style="width:${w};height:${h
       
       const timeoutPromise = new Promise((_, reject) => {
         setTimeout(() => {
-          if(!finished) reject(new Error('GIF encoding timeout (60s)'));
-        }, 60000);
+          if(!finished) reject(new Error('GIF encoding timeout (5 minutes)'));
+        }, 300000);
       });
       
       const result = await Promise.race([finishPromise, timeoutPromise]);
