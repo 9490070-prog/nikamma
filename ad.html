@@ -897,6 +897,17 @@ ${clone.outerHTML.replace('id="stage"', `id="stage" style="width:${w};height:${h
     }
   }
 
+  let gifWorkerBlobUrl = null;
+  async function getGifWorkerBlobURL(){
+    if(gifWorkerBlobUrl) return gifWorkerBlobUrl;
+    const resp = await fetch('https://cdnjs.cloudflare.com/ajax/libs/gif.js/0.2.0/gif.worker.js');
+    if(!resp.ok) throw new Error('gif.worker.js download fail (status '+resp.status+')');
+    const text = await resp.text();
+    const blob = new Blob([text], {type:'application/javascript'});
+    gifWorkerBlobUrl = URL.createObjectURL(blob);
+    return gifWorkerBlobUrl;
+  }
+
   function ensureLib(varName, src){
     return new Promise((resolve, reject)=>{
       if(window[varName]){ resolve(); return; }
@@ -939,11 +950,24 @@ ${clone.outerHTML.replace('id="stage"', `id="stage" style="width:${w};height:${h
 
   function downloadBlob(content, filename, type){
     const blob = new Blob([content], {type});
+    triggerDownload(blob, filename);
+  }
+
+  function triggerDownload(blob, filename){
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
-    a.href=url; a.download=filename;
-    document.body.appendChild(a); a.click(); a.remove();
-    URL.revokeObjectURL(url);
+    a.href = url;
+    a.download = filename;
+    a.rel = 'noopener';
+    a.style.display = 'none';
+    document.body.appendChild(a);
+    a.click();
+    // Some mobile browsers (Android Chrome/WebView) drop the download if the
+    // object URL is revoked too soon, or need a moment before cleanup.
+    setTimeout(()=>{
+      a.remove();
+      URL.revokeObjectURL(url);
+    }, 4000);
   }
 
   /* ================= Export PNG ================= */
@@ -956,13 +980,12 @@ ${clone.outerHTML.replace('id="stage"', `id="stage" style="width:${w};height:${h
       const canvas = document.createElement('canvas');
       canvas.width = raw.width; canvas.height = raw.height;
       canvas.getContext('2d', {willReadFrequently:true}).drawImage(raw, 0, 0);
-      const url=canvas.toDataURL('image/png');
-      const a=document.createElement('a');
-      a.href=url; a.download=`ad-${stage.clientWidth}x${stage.clientHeight}.png`;
-      a.click();
+      canvas.toBlob(blob=>{
+        triggerDownload(blob, `ad-${stage.clientWidth}x${stage.clientHeight}.png`);
+      }, 'image/png');
     }catch(err){
       console.error(err);
-      alert('PNG export fail hua. Internet connection check karein (library load nahi ho payi).');
+      alert('PNG export fail hua: ' + (err && err.message ? err.message : err));
     }finally{
       btn.disabled=false; btn.textContent=origText;
     }
@@ -978,25 +1001,26 @@ ${clone.outerHTML.replace('id="stage"', `id="stage" style="width:${w};height:${h
       btn.textContent='Capturing…';
       const frames = await captureFrames(dur, fps);
       await ensureLib('GIF', 'https://cdnjs.cloudflare.com/ajax/libs/gif.js/0.2.0/gif.js');
+      const workerBlobUrl = await getGifWorkerBlobURL();
       btn.textContent='Encoding…';
       const gif = new GIF({
         workers:2, quality:10,
         width:frames[0].width, height:frames[0].height,
-        workerScript:'https://cdnjs.cloudflare.com/ajax/libs/gif.js/0.2.0/gif.worker.js'
+        workerScript:workerBlobUrl
       });
       frames.forEach(c=> gif.addFrame(c, {delay: 1000/fps, copy:true}));
       gif.on('finished', function(blob){
-        const url=URL.createObjectURL(blob);
-        const a=document.createElement('a');
-        a.href=url; a.download=`ad-${stage.clientWidth}x${stage.clientHeight}.gif`;
-        a.click();
-        URL.revokeObjectURL(url);
+        triggerDownload(blob, `ad-${stage.clientWidth}x${stage.clientHeight}.gif`);
+        btn.disabled=false; btn.textContent=origText;
+      });
+      gif.on('abort', function(){
+        alert('GIF encoding abort ho gayi.');
         btn.disabled=false; btn.textContent=origText;
       });
       gif.render();
     }catch(err){
       console.error(err);
-      alert('GIF export fail hua. Internet connection check karein.');
+      alert('GIF export fail hua: ' + (err && err.message ? err.message : err));
       btn.disabled=false; btn.textContent=origText;
     }
   });
@@ -1041,18 +1065,14 @@ ${clone.outerHTML.replace('id="stage"', `id="stage" style="width:${w};height:${h
       await stopped;
 
       const blob=new Blob(chunks, {type:mimeType});
-      const url=URL.createObjectURL(blob);
-      const a=document.createElement('a');
-      a.href=url; a.download=`ad-${w}x${h}.${ext}`;
-      a.click();
-      URL.revokeObjectURL(url);
+      triggerDownload(blob, `ad-${w}x${h}.${ext}`);
 
       if(ext!=='mp4'){
         setTimeout(()=>alert('Note: aapke browser mein direct MP4 recording support nahi hai, isliye video .webm format mein save hui hai (yeh bhi WhatsApp/social par chalti hai). MP4 chahiye ho to VLC ya CloudConvert se .webm ko .mp4 mein convert kar sakte hain.'), 300);
       }
     }catch(err){
       console.error(err);
-      alert('Video export fail hua. Internet connection / browser support check karein.');
+      alert('Video export fail hua: ' + (err && err.message ? err.message : err));
     }finally{
       btn.disabled=false; btn.textContent=origText;
     }
