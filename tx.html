@@ -986,19 +986,34 @@ ${clone.outerHTML.replace('id="stage"', `id="stage" style="width:${w};height:${h
     return parseFloat(document.getElementById('qualitySelect').value) || 2;
   }
 
+  /* ================= Capture functions with maximum quality ================= */
   async function captureSingleFrame(scale){
     await ensureLib('html2canvas', 'https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js');
     await document.fonts?.ready;
     return withCleanStage(async ()=>{
       const canvas = await html2canvas(stage, {
         backgroundColor: stage.style.backgroundColor || '#ffffff',
-        scale: Math.max(1, scale * 3),
+        scale: Math.max(1, scale * 4),
         logging: false,
         useCORS: true,
         allowTaint: true,
         imageTimeout: 0,
         width: stage.clientWidth,
-        height: stage.clientHeight
+        height: stage.clientHeight,
+        onclone: (clonedDoc) => {
+          const clonedStage = clonedDoc.getElementById('stage');
+          if(clonedStage) {
+            clonedStage.querySelectorAll('.element').forEach(el => {
+              const anim = el.dataset.anim;
+              const dur = el.dataset.animDur;
+              const delay = el.dataset.animDelay;
+              const iter = el.dataset.animIter;
+              if(anim && anim !== 'none') {
+                el.style.animation = `${anim} ${dur || 0.8}s ${delay || 0}s ${iter || 1} both ease`;
+              }
+            });
+          }
+        }
       });
       return canvas;
     });
@@ -1033,7 +1048,7 @@ ${clone.outerHTML.replace('id="stage"', `id="stage" style="width:${w};height:${h
       for(let i=0;i<totalFrames;i++){
         const frameCanvas = await html2canvas(stage, {
           backgroundColor: stage.style.backgroundColor || '#ffffff',
-          scale: Math.max(1, scale * 3),
+          scale: Math.max(1, scale * 4),
           logging: false,
           useCORS: true,
           allowTaint: true,
@@ -1123,11 +1138,9 @@ ${clone.outerHTML.replace('id="stage"', `id="stage" style="width:${w};height:${h
       btn.textContent='Encoding GIF...';
       const workerBlobUrl = await getGifWorkerBlobURL();
       
-      // Better quality settings for GIF
-      const gifQuality = 10; // Use consistent quality
       const gif = new GIF({
         workers: 2,
-        quality: gifQuality,
+        quality: 8,
         width: frames[0].width,
         height: frames[0].height,
         workerScript: workerBlobUrl,
@@ -1136,7 +1149,6 @@ ${clone.outerHTML.replace('id="stage"', `id="stage" style="width:${w};height:${h
       });
       
       const delay = Math.round(1000/fps);
-      // Add frames with high quality
       for(let i = 0; i < frames.length; i++) {
         gif.addFrame(frames[i], {delay: delay, copy: true});
       }
