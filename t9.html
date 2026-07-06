@@ -758,7 +758,7 @@
     ["zoomIn","Zoom In"],["bounceIn","Bounce In"],["pulse","Pulse (loop)"],["shake","Shake"]
   ];
 
-  // ---- SLIDE SHOW ENGINE - FIXED: Proper duration handling ----
+  // ---- SLIDE SHOW ENGINE ----
   function refreshSlideGroup(){
     const groups = {};
     const elements = Array.from(stage.querySelectorAll('.element'));
@@ -802,7 +802,6 @@
   }
 
   function updateSlideShow(){
-    // Clear all existing timers
     for(const key in slideTimers){
       clearTimeout(slideTimers[key]);
       clearInterval(slideTimers[key]);
@@ -854,15 +853,11 @@
         showSlide(currentIndex);
       }
 
-      // Show first slide
       showSlide(0);
-      
-      // Get duration from current slide (first slide)
       const dur = getAnimDuration(els[0]);
-      // Small gap for smooth transition
+      // 0.05s gap for smooth transition, no white screen
       const totalTime = dur + 0.05;
       
-      // Start interval with proper duration
       slideTimers[group] = setInterval(() => {
         nextSlide();
       }, totalTime * 1000);
@@ -960,21 +955,19 @@
               ${ANIMS.map(a=>`<option value="${a[0]}">${a[1]}</option>`).join('')}
             </select>
           </div>
-          <div class="field"><label style="color:var(--accent-2);">⚡ Zero gap</label></div>
+          <div class="field"><label style="color:var(--accent-2);">⚡ No white gap</label></div>
         </div>
         <div class="slide-controls">
           <button class="btn small" id="slideAddNext">➕ Add next slide</button>
           <button class="btn small" id="slideRemove">❌ Remove from group</button>
           <button class="btn small" id="slideReset">🔄 Reset slides</button>
         </div>
-        <div class="field" style="margin-top:6px;">
-          <label style="font-size:10px;color:var(--muted);">💡 Har image ka apna duration set karein. Duration change karte hi effect dikhega.</label>
-        </div>
       `;
     }
 
+    // Single Animation section - only one, for all elements
     html += `
-      <div class="section-title">Animation (for single element)</div>
+      <div class="section-title">Animation</div>
       <div class="field"><label>Effect</label>
         <select id="propAnimSingle">
           ${ANIMS.map(a=>`<option value="${a[0]}">${a[1]}</option>`).join('')}
@@ -1198,7 +1191,7 @@
     });
   });
 
-  // ================ EXPORT FUNCTIONS - FIXED ================
+  // ================ EXPORT FUNCTIONS ================
   
   function getSlideShowState(time, totalDuration) {
     const result = {};
@@ -1225,7 +1218,6 @@
         continue;
       }
       
-      // Get duration from each slide
       const animDur = getAnimDuration(els[0]);
       const totalTime = animDur + 0.05;
       const totalGroupTime = totalTime * els.length;
