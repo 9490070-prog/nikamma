@@ -236,9 +236,7 @@
   ::-webkit-scrollbar-thumb{background:#2b303a;border-radius:6px;}
   ::-webkit-scrollbar-track{background:transparent;}
 
-  /* Animation keyframes */
   @keyframes fadeIn{from{opacity:0;}to{opacity:1;}}
-  @keyframes fadeOut{from{opacity:1;}to{opacity:0;}}
   @keyframes slideInLeft{from{opacity:0;transform:translateX(-60px) scale(1);}to{opacity:1;transform:translateX(0) scale(1);}}
   @keyframes slideInRight{from{opacity:0;transform:translateX(60px) scale(1);}to{opacity:1;transform:translateX(0) scale(1);}}
   @keyframes slideInUp{from{opacity:0;transform:translateY(40px) scale(1);}to{opacity:1;transform:translateY(0) scale(1);}}
@@ -468,7 +466,6 @@
     el.dataset.animDur='0.8';
     el.dataset.animDelay='0';
     el.dataset.animIter='1';
-    // slide show properties
     el.dataset.slideGroup = '';
     el.dataset.slideDuration = '2';
     el.dataset.slideIndex = '0';
@@ -543,7 +540,6 @@
       el.insertBefore(img, el.firstChild);
       if(slideGroup){
         el.dataset.slideGroup = slideGroup;
-        // find max index in group
         const groupEls = getGroupElements(slideGroup);
         el.dataset.slideIndex = groupEls.length;
         refreshSlideGroup();
@@ -780,12 +776,10 @@
         const idxB = parseInt(b.dataset.slideIndex) || 0;
         return idxA - idxB;
       });
-      // Reset slide indices
       els.forEach((el, idx) => {
         el.dataset.slideIndex = idx;
       });
     }
-    // Show only first slide of each group initially, hide others
     elements.forEach(el => {
       const g = el.dataset.slideGroup;
       if(g) {
@@ -805,7 +799,6 @@
   }
 
   function updateSlideShow(){
-    // Clear existing timers
     for(const key in slideTimers){
       clearTimeout(slideTimers[key]);
       clearInterval(slideTimers[key]);
@@ -831,26 +824,21 @@
       
       if(els.length <= 1) continue;
 
-      // Get slide duration from first element
       const slideDur = parseFloat(els[0].dataset.slideDuration) || 2;
       const animDur = parseFloat(els[0].dataset.animDur) || 0.8;
       const totalTime = slideDur + animDur;
 
       let currentIndex = 0;
-      let isPlaying = true;
 
       function showSlide(index){
-        // Hide all slides in group
         els.forEach(el => {
           el.style.display = 'none';
           el.style.opacity = '0';
           el.style.animation = 'none';
         });
-        // Show current slide
         if(els[index]){
           els[index].style.display = 'flex';
           els[index].style.opacity = '1';
-          // Apply animation
           const anim = els[index].dataset.anim;
           if(anim && anim !== 'none'){
             els[index].style.animation = 'none';
@@ -865,10 +853,7 @@
         showSlide(currentIndex);
       }
 
-      // Show first slide
       showSlide(0);
-
-      // Start timer for next slides
       slideTimers[group] = setInterval(() => {
         nextSlide();
       }, totalTime * 1000);
@@ -976,7 +961,7 @@
           <button class="btn small" id="slideReset">🔄 Reset slides</button>
         </div>
         <div class="field" style="margin-top:6px;">
-          <label style="font-size:10px;color:var(--muted);">💡 Tips: Ek group mein multiple images daalein. Har image apne time pe animate hogi.</label>
+          <label style="font-size:10px;color:var(--muted);">💡 Ek group mein multiple images daalein. Har image apne time pe animate hogi.</label>
         </div>
       `;
     }
@@ -1004,7 +989,6 @@
     bindInspector(type, isText);
     syncInspectorPosition();
 
-    // slide group bindings for image
     if(type==='image'){
       const groupInput = document.getElementById('propSlideGroup');
       if(groupInput){
@@ -1012,7 +996,6 @@
           const oldGroup = selected.dataset.slideGroup || '';
           selected.dataset.slideGroup = this.value.trim() || '';
           if(oldGroup !== selected.dataset.slideGroup){
-            // Reindex
             if(selected.dataset.slideGroup){
               const groupEls = getGroupElements(selected.dataset.slideGroup);
               selected.dataset.slideIndex = groupEls.length;
@@ -1171,7 +1154,6 @@
         reader.readAsDataURL(f);
         e.target.value='';
       });
-      // slide anim duration for slideshow
       on('propAnimDur','change',e=>{
         selected.dataset.animDur = e.target.value;
         updateSlideShow();
@@ -1184,7 +1166,6 @@
         updateSlideShow();
       });
     }
-    // Single element animation (non-slide)
     on('propAnimSingle','change',e=>{ 
       selected.dataset.anim = e.target.value; 
       applyAnim(selected); 
@@ -1213,9 +1194,7 @@
   }
 
   document.getElementById('playBtn').addEventListener('click', function(){
-    // Reset slide shows
     updateSlideShow();
-    // Apply single animations
     Array.from(stage.children).filter(c=>c.classList.contains('element')).forEach(el=>{
       if(el.dataset.anim && el.dataset.anim!=='none' && !el.dataset.slideGroup){
         el.style.animation='none';
@@ -1225,89 +1204,61 @@
     });
   });
 
-  // ---- EXPORT FUNCTIONS ----
-  document.getElementById('exportHtmlBtn').addEventListener('click', function(){
-    const clone = stage.cloneNode(true);
-    clone.classList.remove('selected');
-    clone.querySelectorAll('.element').forEach(el=>{
-      el.classList.remove('selected','editing');
-      el.removeAttribute('contenteditable');
-      delete el.dataset.editing;
-      const h=el.querySelector('.resize-handle');
-      if(h) h.remove();
-    });
-    const w = stage.style.width, h = stage.style.height;
-    const kf = `
-@keyframes fadeIn{from{opacity:0;}to{opacity:1;}}
-@keyframes slideInLeft{from{opacity:0;transform:translateX(-60px) scale(1);}to{opacity:1;transform:translateX(0) scale(1);}}
-@keyframes slideInRight{from{opacity:0;transform:translateX(60px) scale(1);}to{opacity:1;transform:translateX(0) scale(1);}}
-@keyframes slideInUp{from{opacity:0;transform:translateY(40px) scale(1);}to{opacity:1;transform:translateY(0) scale(1);}}
-@keyframes slideInDown{from{opacity:0;transform:translateY(-40px) scale(1);}to{opacity:1;transform:translateY(0) scale(1);}}
-@keyframes zoomIn{from{opacity:0;transform:scale(0.5);}to{opacity:1;transform:scale(1);}}
-@keyframes bounceIn{0%{opacity:0;transform:scale(0.3);}50%{opacity:1;transform:scale(1.05);}70%{transform:scale(0.95);}100%{transform:scale(1);}}
-@keyframes pulse{0%,100%{transform:scale(1);}50%{transform:scale(1.05);}}
-@keyframes shake{0%,100%{transform:translateX(0) scale(1);}20%{transform:translateX(-6px) scale(1);}40%{transform:translateX(6px) scale(1);}60%{transform:translateX(-4px) scale(1);}80%{transform:translateX(4px) scale(1);}}
-    `;
-    const out = `<!DOCTYPE html>
-<html><head><meta charset="UTF-8">
-<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-<style>
-  html,body{margin:0;padding:0;background:#e9e9e9;display:flex;align-items:center;justify-content:center;height:100vh;}
-  #stage{position:relative;overflow:hidden;box-shadow:0 10px 30px rgba(0,0,0,.25);}
-  .element{position:absolute;transform-origin:center center;}
-  ${kf}
-</style></head>
-<body>
-${clone.outerHTML.replace('id="stage"', `id="stage" style="width:${w};height:${h};${clone.getAttribute('style')||''}"`)}
-</body></html>`;
-    downloadBlob(out, `ad-${parseInt(w)}x${parseInt(h)}.html`, 'text/html');
-  });
-
-  let gifWorkerBlobUrl = null;
-  async function getGifWorkerBlobURL(){
-    if(gifWorkerBlobUrl) return gifWorkerBlobUrl;
-    try {
-      const resp = await fetch('https://cdnjs.cloudflare.com/ajax/libs/gif.js/0.2.0/gif.worker.js');
-      if(!resp.ok) throw new Error('gif.worker.js download fail (status '+resp.status+')');
-      const text = await resp.text();
-      const blob = new Blob([text], {type:'application/javascript'});
-      gifWorkerBlobUrl = URL.createObjectURL(blob);
-      return gifWorkerBlobUrl;
-    } catch(e) {
-      const fallbackText = `self.onmessage = function(e) {
-  var data = e.data;
-  if (data.type === 'render') {
-    self.postMessage({ type: 'finished', result: data.frames });
-  }
-};`;
-      const blob = new Blob([fallbackText], {type:'application/javascript'});
-      gifWorkerBlobUrl = URL.createObjectURL(blob);
-      return gifWorkerBlobUrl;
-    }
-  }
-
-  function ensureLib(varName, src){
-    return new Promise((resolve, reject)=>{
-      if(window[varName]){ resolve(); return; }
-      const existing = document.querySelector(`script[data-lib="${varName}"]`);
-      if(existing){ 
-        existing.addEventListener('load', ()=>resolve(), {once:true}); 
-        existing.addEventListener('error', reject, {once:true}); 
-        return; 
+  // ================ EXPORT FUNCTIONS ================
+  
+  function getSlideShowState(time, totalDuration) {
+    // Returns which element in each group should be visible at given time
+    const result = {};
+    const elements = Array.from(stage.querySelectorAll('.element'));
+    const groups = {};
+    
+    elements.forEach(el => {
+      const g = el.dataset.slideGroup;
+      if(g) {
+        if(!groups[g]) groups[g] = [];
+        groups[g].push(el);
       }
-      const s=document.createElement('script');
-      s.src=src; s.dataset.lib=varName;
-      s.onload=()=>resolve();
-      s.onerror=()=>reject(new Error('load failed: '+src));
-      document.head.appendChild(s);
     });
+    
+    for(const [group, els] of Object.entries(groups)){
+      els.sort((a,b) => {
+        const idxA = parseInt(a.dataset.slideIndex) || 0;
+        const idxB = parseInt(b.dataset.slideIndex) || 0;
+        return idxA - idxB;
+      });
+      
+      if(els.length <= 1) {
+        result[group] = { element: els[0] || null, progress: 0 };
+        continue;
+      }
+      
+      const slideDur = parseFloat(els[0].dataset.slideDuration) || 2;
+      const animDur = parseFloat(els[0].dataset.animDur) || 0.8;
+      const totalTime = slideDur + animDur;
+      const totalGroupTime = totalTime * els.length;
+      
+      // Loop time within group
+      const loopedTime = time % totalGroupTime;
+      const slideIndex = Math.floor(loopedTime / totalTime);
+      const slideTime = loopedTime % totalTime;
+      const actualIndex = slideIndex % els.length;
+      
+      // Calculate progress within current slide's animation
+      let progress = slideTime / animDur;
+      if(progress > 1) progress = 1;
+      
+      result[group] = {
+        element: els[actualIndex],
+        progress: progress,
+        slideTime: slideTime,
+        animDur: animDur
+      };
+    }
+    
+    return result;
   }
 
-  function getQualityScale(){
-    return parseFloat(document.getElementById('qualitySelect').value) || 2;
-  }
-
-  function evaluateAnimation(el, progress) {
+  function evaluateExportAnimation(el, progress) {
     const anim = el.dataset.anim;
     if(!anim || anim === 'none') {
       return { opacity: parseFloat(el.style.opacity) || 1, tx: 0, ty: 0, scale: 1 };
@@ -1392,17 +1343,37 @@ ${clone.outerHTML.replace('id="stage"', `id="stage" style="width:${w};height:${h
     return { opacity, tx, ty, scale };
   }
 
-  function renderElementToCanvas(ctx, el, scale, time) {
+  function renderElementToCanvas(ctx, el, scale, time, slideState) {
     let x = parseFloat(el.style.left) || 0;
     let y = parseFloat(el.style.top) || 0;
     let w = parseFloat(el.style.width) || 50;
     let h = parseFloat(el.style.height) || 50;
     
-    const totalDuration = parseFloat(document.getElementById('recDuration').value) || 5;
-    const clampedTime = Math.max(0, Math.min(time, totalDuration));
-    const progress = totalDuration > 0 ? clampedTime / totalDuration : 0;
-    const animState = evaluateAnimation(el, progress);
+    // Check if this element is in a slide group
+    const group = el.dataset.slideGroup;
+    let progress = time / (parseFloat(document.getElementById('recDuration').value) || 5);
+    let shouldRender = true;
     
+    if(group && slideState && slideState[group]) {
+      const state = slideState[group];
+      // Only render if this is the current slide
+      if(state.element !== el) {
+        shouldRender = false;
+      } else {
+        // Use the slide-specific progress
+        progress = state.progress || 0;
+      }
+    } else if(group) {
+      // Fallback: if no slide state, only show first slide
+      const groupEls = getGroupElements(group);
+      if(groupEls.length > 0 && groupEls[0] !== el) {
+        shouldRender = false;
+      }
+    }
+    
+    if(!shouldRender) return;
+    
+    const animState = evaluateExportAnimation(el, progress);
     const opacity = animState.opacity * (parseFloat(el.style.opacity) || 1);
     const tx = animState.tx || 0;
     const ty = animState.ty || 0;
@@ -1565,25 +1536,6 @@ ${clone.outerHTML.replace('id="stage"', `id="stage" style="width:${w};height:${h
       } catch(e) {}
     }
     
-    // Pre-calculate slide show states for each frame
-    const groups = {};
-    elements.forEach(el => {
-      const g = el.dataset.slideGroup;
-      if(g) {
-        if(!groups[g]) groups[g] = [];
-        groups[g].push(el);
-      }
-    });
-    
-    // Sort each group
-    for(const g in groups){
-      groups[g].sort((a,b) => {
-        const idxA = parseInt(a.dataset.slideIndex) || 0;
-        const idxB = parseInt(b.dataset.slideIndex) || 0;
-        return idxA - idxB;
-      });
-    }
-    
     for(let i = 0; i < totalFrames; i++) {
       const canvas = document.createElement('canvas');
       canvas.width = canvasW;
@@ -1599,35 +1551,13 @@ ${clone.outerHTML.replace('id="stage"', `id="stage" style="width:${w};height:${h
       
       const time = (i / (totalFrames - 1)) * durationSec;
       
-      // Determine which slide in each group should be visible
-      const visibleSlides = {};
-      for(const [group, els] of Object.entries(groups)){
-        if(els.length <= 1) {
-          visibleSlides[group] = els[0] || null;
-          continue;
-        }
-        const slideDur = parseFloat(els[0].dataset.slideDuration) || 2;
-        const animDur = parseFloat(els[0].dataset.animDur) || 0.8;
-        const totalTime = slideDur + animDur;
-        const totalGroupTime = totalTime * els.length;
-        const loopedTime = time % totalGroupTime;
-        const slideIndex = Math.floor(loopedTime / totalTime);
-        const slideTime = loopedTime % totalTime;
-        const actualIndex = slideIndex % els.length;
-        visibleSlides[group] = els[actualIndex];
-      }
+      // Get slide show state for this time
+      const slideState = getSlideShowState(time, durationSec);
       
       for(const el of elements) {
         const elOpacity = parseFloat(el.style.opacity);
         if(elOpacity === 0) continue;
-        
-        // Check if this element should be visible (for slide groups)
-        const group = el.dataset.slideGroup;
-        if(group && visibleSlides[group] !== el) {
-          continue; // Skip this element, it's not the current slide
-        }
-        
-        renderElementToCanvas(ctx, el, scale, time);
+        renderElementToCanvas(ctx, el, scale, time, slideState);
       }
       
       frames.push(canvas);
@@ -1677,9 +1607,10 @@ ${clone.outerHTML.replace('id="stage"', `id="stage" style="width:${w};height:${h
       ctx.fillRect(0, 0, canvas.width, canvas.height);
       
       const elements = Array.from(stage.querySelectorAll('.element'));
+      const slideState = getSlideShowState(0, 1);
       for(const el of elements) {
         if(parseFloat(el.style.opacity) === 0) continue;
-        renderElementToCanvas(ctx, el, scale, 0);
+        renderElementToCanvas(ctx, el, scale, 0, slideState);
       }
       
       canvas.toBlob(blob=>{
@@ -1827,10 +1758,54 @@ ${clone.outerHTML.replace('id="stage"', `id="stage" style="width:${w};height:${h
     }
   });
 
+  function getQualityScale(){
+    return parseFloat(document.getElementById('qualitySelect').value) || 2;
+  }
+
+  let gifWorkerBlobUrl = null;
+  async function getGifWorkerBlobURL(){
+    if(gifWorkerBlobUrl) return gifWorkerBlobUrl;
+    try {
+      const resp = await fetch('https://cdnjs.cloudflare.com/ajax/libs/gif.js/0.2.0/gif.worker.js');
+      if(!resp.ok) throw new Error('gif.worker.js download fail (status '+resp.status+')');
+      const text = await resp.text();
+      const blob = new Blob([text], {type:'application/javascript'});
+      gifWorkerBlobUrl = URL.createObjectURL(blob);
+      return gifWorkerBlobUrl;
+    } catch(e) {
+      const fallbackText = `self.onmessage = function(e) {
+  var data = e.data;
+  if (data.type === 'render') {
+    self.postMessage({ type: 'finished', result: data.frames });
+  }
+};`;
+      const blob = new Blob([fallbackText], {type:'application/javascript'});
+      gifWorkerBlobUrl = URL.createObjectURL(blob);
+      return gifWorkerBlobUrl;
+    }
+  }
+
+  function ensureLib(varName, src){
+    return new Promise((resolve, reject)=>{
+      if(window[varName]){ resolve(); return; }
+      const existing = document.querySelector(`script[data-lib="${varName}"]`);
+      if(existing){ 
+        existing.addEventListener('load', ()=>resolve(), {once:true}); 
+        existing.addEventListener('error', reject, {once:true}); 
+        return; 
+      }
+      const s=document.createElement('script');
+      s.src=src; s.dataset.lib=varName;
+      s.onload=()=>resolve();
+      s.onerror=()=>reject(new Error('load failed: '+src));
+      document.head.appendChild(s);
+    });
+  }
+
   // ---- INIT ----
   renderInspector();
   refreshSlideGroup();
-  setTimeout(updateSlideShow, 100);
+  setTimeout(updateSlideShow, 200);
 
 })();
 </script>
