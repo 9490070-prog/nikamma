@@ -43,8 +43,9 @@
     padding:0 18px;
     background:linear-gradient(180deg,#1B1F26,#171A20);
     border-bottom:1px solid var(--border);
+    flex-wrap:wrap;
   }
-  .brand{font-weight:700;font-size:16px;letter-spacing:0.2px;display:flex;align-items:center;gap:8px;}
+  .brand{font-weight:700;font-size:16px;letter-spacing:0.2px;display:flex;align-items:center;gap:8px;white-space:nowrap;}
   .brand .dot{width:9px;height:9px;border-radius:50%;background:var(--accent-2);box-shadow:0 0 10px var(--accent-2);}
   #topbar .sep{width:1px;height:26px;background:var(--border);}
   select, input[type=text], input[type=number]{
@@ -55,6 +56,7 @@
     padding:6px 8px;
     font-family:inherit;
     font-size:13px;
+    width:auto;
   }
   select:focus, input:focus{outline:1px solid var(--accent);}
   .btn{
@@ -77,7 +79,7 @@
   .btn.ghost{background:transparent;}
   .btn.small{padding:5px 9px;font-size:12px;}
   .btn:disabled{opacity:.4;cursor:not-allowed;}
-  #topbar .right-group{margin-left:auto;display:flex;gap:8px;align-items:center;}
+  #topbar .right-group{margin-left:auto;display:flex;gap:8px;align-items:center;flex-wrap:wrap;}
 
   #workspace{
     display:grid;
@@ -145,6 +147,11 @@
     background:var(--panel);border:1px solid var(--border);
     padding:4px 10px;border-radius:20px;
   }
+  .custom-size-row{
+    display:flex;gap:8px;align-items:center;margin-bottom:8px;
+  }
+  .custom-size-row input{width:60px;}
+
   #phoneWrap{display:none;}
   #phoneWrap.on{
     display:block;
@@ -193,6 +200,9 @@
   }
   .element.el-image img{
     image-rendering:auto;
+    width:100%;
+    height:100%;
+    object-fit:cover;
   }
   .element.selected{box-shadow:0 0 0 2px var(--accent), 0 0 0 5px rgba(91,140,255,.18);}
   .element.el-text, .element.el-button{
@@ -264,6 +274,14 @@
     <div class="sep"></div>
     <select id="sizePreset"></select>
     <div class="sep"></div>
+    <div class="custom-size-row">
+      <span style="font-size:12px;color:var(--muted);">Custom</span>
+      <input type="number" id="customW" value="400" min="50" max="2000" style="width:55px;">
+      <span style="font-size:12px;color:var(--muted);">×</span>
+      <input type="number" id="customH" value="400" min="50" max="2000" style="width:55px;">
+      <button class="btn small" id="applyCustomSize">Apply</button>
+    </div>
+    <div class="sep"></div>
     <label class="btn ghost small" style="cursor:pointer;">
       🖼️ Canvas BG
       <input type="file" id="bgUpload" accept="image/*" style="display:none;">
@@ -273,16 +291,16 @@
       <input type="checkbox" id="phoneToggle" style="margin:0;"> Phone preview
     </label>
     <div class="right-group">
-      <button class="btn small" id="playBtn">▶ Play animations</button>
+      <button class="btn small" id="playBtn">▶ Play</button>
       <label style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--muted);">
         Duration <input type="number" id="recDuration" value="3" min="0.5" max="10" step="0.5">s
       </label>
       <label style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--muted);">
         Quality
         <select id="qualitySelect">
-          <option value="1">Standard (1x)</option>
-          <option value="2" selected>High (2x)</option>
-          <option value="3">Ultra (3x)</option>
+          <option value="1">1x</option>
+          <option value="2" selected>2x</option>
+          <option value="3">3x</option>
         </select>
       </label>
       <button class="btn primary small" id="exportHtmlBtn">⬇ HTML</button>
@@ -302,7 +320,7 @@
         </div>
         <div class="tool-btn" id="addButton">
           <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><rect x="3" y="8" width="18" height="8" rx="4"/></svg>
-          Button/CTA
+          Button
         </div>
         <div class="tool-btn" id="addImageTool">
           <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="8.5" cy="9.5" r="1.5"/><path d="M21 16l-5-5-4 4-3-3-5 5"/></svg>
@@ -328,7 +346,7 @@
     </div>
 
     <div id="stageArea">
-      <div id="sizeLabel">320 × 50 px</div>
+      <div id="sizeLabel">400 × 400 px</div>
       <div id="phoneWrap">
         <div class="fake-status"><span>9:41</span><span>●●●●  📶  🔋</span></div>
         <div class="fake-app-content">app content</div>
@@ -366,6 +384,7 @@
     o.value=i; o.textContent=s.label;
     sizePreset.appendChild(o);
   });
+  sizePreset.value = SIZES.length - 1;
 
   const stageHolderOuter = document.getElementById('stageHolderOuter');
   const stageHolder = document.getElementById('stageHolder');
@@ -376,14 +395,57 @@
   stage.id = 'stage';
   stageHolderOuter.appendChild(stage);
 
-  function applySize(idx){
-    const s = SIZES[idx];
-    stage.style.width = s.w+'px';
-    stage.style.height = s.h+'px';
-    sizeLabel.textContent = s.w+' × '+s.h+' px';
+  function applySize(w, h){
+    stage.style.width = w+'px';
+    stage.style.height = h+'px';
+    sizeLabel.textContent = w+' × '+h+' px';
+    
+    // Reposition elements to fit new size
+    Array.from(stage.children).filter(c=>c.classList.contains('element')).forEach(el=>{
+      let left = parseFloat(el.style.left) || 0;
+      let top = parseFloat(el.style.top) || 0;
+      let elW = parseFloat(el.style.width) || 50;
+      let elH = parseFloat(el.style.height) || 50;
+      // Clamp to new stage
+      left = Math.max(0, Math.min(left, w - elW));
+      top = Math.max(0, Math.min(top, h - elH));
+      el.style.left = left + 'px';
+      el.style.top = top + 'px';
+    });
   }
-  sizePreset.addEventListener('change', ()=>applySize(sizePreset.value));
-  applySize(0);
+
+  sizePreset.addEventListener('change', function(){
+    const idx = parseInt(this.value);
+    const s = SIZES[idx];
+    document.getElementById('customW').value = s.w;
+    document.getElementById('customH').value = s.h;
+    applySize(s.w, s.h);
+  });
+
+  document.getElementById('applyCustomSize').addEventListener('click', function(){
+    const w = parseInt(document.getElementById('customW').value) || 400;
+    const h = parseInt(document.getElementById('customH').value) || 400;
+    if(w > 0 && h > 0){
+      applySize(w, h);
+      // Try to find matching preset
+      let found = false;
+      for(let i=0; i<SIZES.length; i++){
+        if(SIZES[i].w === w && SIZES[i].h === h){
+          sizePreset.value = i;
+          found = true;
+          break;
+        }
+      }
+      if(!found){
+        sizePreset.value = -1;
+      }
+    }
+  });
+
+  // Set initial custom size
+  document.getElementById('customW').value = 400;
+  document.getElementById('customH').value = 400;
+  applySize(400, 400);
 
   document.getElementById('phoneToggle').addEventListener('change', function(){
     if(this.checked){
@@ -420,6 +482,8 @@
     el.dataset.animDur='0.8';
     el.dataset.animDelay='0';
     el.dataset.animIter='1';
+    el.dataset.seqIndex='0';
+    el.dataset.seqTotal='1';
     el.style.left=((stage.clientWidth-w)/2)+'px';
     el.style.top=((stage.clientHeight-h)/2)+'px';
     el.style.width=w+'px';
@@ -489,6 +553,37 @@
       img.style.width='100%';
       img.style.height='100%';
       el.insertBefore(img, el.firstChild);
+      refreshLayers();
+    };
+    reader.readAsDataURL(file);
+  }
+
+  // === SEQUENCE IMAGE ADD - Multiple images with sequence ===
+  let seqCounter = 0;
+  function addSequenceImage(file, totalImages){
+    const reader=new FileReader();
+    reader.onload=function(ev){
+      const idx = seqCounter++;
+      const el=makeBaseEl('image', 100, 100);
+      const img=document.createElement('img');
+      img.src=ev.target.result;
+      img.style.objectFit='cover';
+      img.style.width='100%';
+      img.style.height='100%';
+      el.insertBefore(img, el.firstChild);
+      el.dataset.seqIndex = idx;
+      el.dataset.seqTotal = totalImages;
+      // Set animation for sequence
+      if(idx > 0){
+        el.dataset.anim = 'fadeIn';
+        el.dataset.animDur = '0.8';
+        el.dataset.animDelay = (idx * 0.8) + '';
+        el.dataset.animIter = '1';
+        el.style.opacity = '0';
+        applyAnim(el);
+      }
+      refreshLayers();
+      selectElement(el);
     };
     reader.readAsDataURL(file);
   }
@@ -521,7 +616,24 @@
   document.getElementById('addBadge').onclick=addBadge;
   document.getElementById('addImageTool').onclick=()=>document.getElementById('imageUpload').click();
   document.getElementById('imageUpload').addEventListener('change', function(e){
-    const f=e.target.files[0]; if(f) addImageFromFile(f);
+    const files = e.target.files;
+    if(files && files.length > 0){
+      // If multiple images selected, add as sequence
+      if(files.length > 1){
+        seqCounter = 0;
+        for(let i=0; i<files.length; i++){
+          addSequenceImage(files[i], files.length);
+        }
+        // Show notification
+        const toast = document.createElement('div');
+        toast.style.cssText = 'position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#1a1a2e;color:#fff;padding:12px 24px;border-radius:10px;z-index:9999;font-size:14px;border:1px solid #5B8CFF;box-shadow:0 10px 40px rgba(0,0,0,0.5);';
+        toast.textContent = `✅ ${files.length} images added as sequence! Each will show one by one.`;
+        document.body.appendChild(toast);
+        setTimeout(()=>toast.remove(), 4000);
+      } else {
+        addImageFromFile(files[0]);
+      }
+    }
     e.target.value='';
   });
 
@@ -606,7 +718,8 @@
       const row=document.createElement('div');
       row.className='layer-row'+(el===selected?' active':'');
       const label = el.dataset.type.charAt(0).toUpperCase()+el.dataset.type.slice(1);
-      row.innerHTML = `<span class="lname">${label} — ${el.dataset.id}</span>
+      const seqInfo = el.dataset.seqTotal > 1 ? ` [${parseInt(el.dataset.seqIndex)+1}/${el.dataset.seqTotal}]` : '';
+      row.innerHTML = `<span class="lname">${label}${seqInfo} — ${el.dataset.id}</span>
         <button data-act="up" title="Forward">⬆</button>
         <button data-act="down" title="Backward">⬇</button>
         <button data-act="dup" title="Duplicate">⧉</button>
@@ -950,7 +1063,7 @@ ${clone.outerHTML.replace('id="stage"', `id="stage" style="width:${w};height:${h
     return parseFloat(document.getElementById('qualitySelect').value) || 2;
   }
 
-  // ============= FIXED: ANIMATION EVALUATION WITH SMOOTH LOOPING =============
+  // ============= ANIMATION EVALUATION =============
   function evaluateAnimation(el, progress) {
     const anim = el.dataset.anim;
     if(!anim || anim === 'none') {
@@ -961,21 +1074,17 @@ ${clone.outerHTML.replace('id="stage"', `id="stage" style="width:${w};height:${h
     const delay = parseFloat(el.dataset.animDelay) || 0;
     const iter = el.dataset.animIter || '1';
     
-    // Calculate effective progress (0 to 1), with delay
     let rawP = Math.max(0, (progress - delay) / duration);
     
     let p;
     if(iter === 'infinite') {
-      // For infinite loop, use fractional part smoothly
       p = rawP % 1;
-      // If p is very close to 0, set to 0.001 to avoid blink
       if(p < 0.001) p = 0.001;
       if(p > 0.999) p = 0.999;
     } else {
       p = Math.min(1, rawP);
     }
     
-    // Easing function (smooth ease)
     const ease = (t) => t < 0.5 ? 2*t*t : 1 - Math.pow(-2*t + 2, 2) / 2;
     const ep = ease(p);
     
@@ -1025,7 +1134,6 @@ ${clone.outerHTML.replace('id="stage"', `id="stage" style="width:${w};height:${h
         }
         break;
       case 'pulse':
-        // Smooth pulse using sine wave
         scale = 1 + 0.05 * Math.sin(p * Math.PI * 2);
         opacity = 1;
         break;
@@ -1041,31 +1149,26 @@ ${clone.outerHTML.replace('id="stage"', `id="stage" style="width:${w};height:${h
     return { opacity, tx, ty, scale };
   }
 
-  // ============= RENDER ELEMENT TO CANVAS WITH ANIMATION =============
+  // ============= RENDER ELEMENT TO CANVAS =============
   function renderElementToCanvas(ctx, el, scale, time) {
     let x = parseFloat(el.style.left) || 0;
     let y = parseFloat(el.style.top) || 0;
     let w = parseFloat(el.style.width) || 50;
     let h = parseFloat(el.style.height) || 50;
     
-    // Get animation state at this time
     const totalDuration = parseFloat(document.getElementById('recDuration').value) || 3;
-    // Clamp time to avoid issues
     const clampedTime = Math.max(0, Math.min(time, totalDuration));
     const progress = totalDuration > 0 ? clampedTime / totalDuration : 0;
     const animState = evaluateAnimation(el, progress);
     
-    // Apply animation transforms
     const opacity = animState.opacity * (parseFloat(el.style.opacity) || 1);
     const tx = animState.tx || 0;
     const ty = animState.ty || 0;
     const scaleVal = animState.scale || 1;
     
-    // Get rotation
     const rotMatch = /rotate\((-?\d+(\.\d+)?)deg\)/.exec(el.style.transform || '');
     const rotation = rotMatch ? parseFloat(rotMatch[1]) : 0;
     
-    // Apply scale to position and size
     const scaledX = (x + tx) * scale;
     const scaledY = (y + ty) * scale;
     const scaledW = w * scale * scaleVal;
@@ -1080,7 +1183,6 @@ ${clone.outerHTML.replace('id="stage"', `id="stage" style="width:${w};height:${h
     const hw = scaledW/2, hh = scaledH/2;
     
     if(type === 'text' || type === 'button') {
-      // Background for button
       if(type === 'button') {
         ctx.fillStyle = el.style.background || '#5B8CFF';
         const radius = parseFloat(el.style.borderRadius) || 8;
@@ -1099,7 +1201,6 @@ ${clone.outerHTML.replace('id="stage"', `id="stage" style="width:${w};height:${h
         ctx.fill();
       }
       
-      // Text
       const fontSize = parseFloat(el.style.fontSize) || 16;
       const fontWeight = el.style.fontWeight || '400';
       const fontFamily = el.style.fontFamily || 'Inter, sans-serif';
@@ -1189,7 +1290,7 @@ ${clone.outerHTML.replace('id="stage"', `id="stage" style="width:${w};height:${h
     ctx.restore();
   }
 
-  // ============= CAPTURE FRAMES WITH SMOOTH ANIMATION =============
+  // ============= CAPTURE FRAMES =============
   async function captureFramesWithAnimation(durationSec, fps, scale) {
     await document.fonts?.ready;
     
@@ -1205,7 +1306,6 @@ ${clone.outerHTML.replace('id="stage"', `id="stage" style="width:${w};height:${h
     
     const elements = Array.from(stage.querySelectorAll('.element'));
     
-    // Get background image if any
     let bgImage = null;
     const bgImageStyle = stage.style.backgroundImage;
     if(bgImageStyle && bgImageStyle !== 'none' && bgImageStyle !== '') {
@@ -1230,18 +1330,15 @@ ${clone.outerHTML.replace('id="stage"', `id="stage" style="width:${w};height:${h
       canvas.height = canvasH;
       const ctx = canvas.getContext('2d', { willReadFrequently: true });
       
-      // Fill background
       ctx.fillStyle = bgColor;
       ctx.fillRect(0, 0, canvasW, canvasH);
       
-      // Draw background image
       if(bgImage) {
         ctx.drawImage(bgImage, 0, 0, canvasW, canvasH);
       }
       
       const time = (i / (totalFrames - 1)) * durationSec;
       
-      // Render each element
       for(const el of elements) {
         const elOpacity = parseFloat(el.style.opacity);
         if(elOpacity === 0) continue;
