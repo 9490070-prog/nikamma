@@ -442,7 +442,6 @@
 
   // ---- custom size for new element ----
   function getCustomSizeFromInspector(){
-    // if inspector has width/height inputs, use them; otherwise default
     const wInput = document.getElementById('newElWidth');
     const hInput = document.getElementById('newElHeight');
     if(wInput && hInput){
@@ -455,7 +454,6 @@
 
   // ---- make element with custom size ----
   function makeBaseEl(type, w, h){
-    // if w/h not provided, try from custom inputs
     if(!w || !h){
       const c = getCustomSizeFromInspector();
       w = c.w;
@@ -527,7 +525,8 @@
     el.style.textAlign='center';
     setupTextEditing(el);
   }
-  function addImageFromFile(file){
+  
+  function addImageFromFile(file, slideGroup){
     const reader=new FileReader();
     reader.onload=function(ev){
       const el=makeBaseEl('image', 100, 100);
@@ -537,7 +536,12 @@
       img.style.width='100%';
       img.style.height='100%';
       el.insertBefore(img, el.firstChild);
-      // image hide after animation? we'll handle via slide option later
+      if(slideGroup){
+        el.dataset.slideGroup = slideGroup;
+        refreshSlideGroup();
+      }
+      selectElement(el);
+      renderInspector();
     };
     reader.readAsDataURL(file);
   }
@@ -569,8 +573,14 @@
   document.getElementById('addShapeCircle').onclick=()=>addShape('circle');
   document.getElementById('addBadge').onclick=addBadge;
   document.getElementById('addImageTool').onclick=()=>document.getElementById('imageUpload').click();
+  
   document.getElementById('imageUpload').addEventListener('change', function(e){
-    const f=e.target.files[0]; if(f) addImageFromFile(f);
+    const f=e.target.files[0]; if(!f) return;
+    let slideGroup = '';
+    if(selected && selected.dataset.type === 'image'){
+      slideGroup = selected.dataset.slideGroup || '';
+    }
+    addImageFromFile(f, slideGroup);
     e.target.value='';
   });
 
@@ -679,7 +689,9 @@
       stage.insertBefore(el, el.previousElementSibling);
     }
     refreshLayers();
+    refreshSlideGroup();
   }
+  
   function duplicateEl(el){
     const clone=el.cloneNode(true);
     clone.dataset.id='el'+(++elCounter);
@@ -688,14 +700,20 @@
     const handle=clone.querySelector('.resize-handle');
     attachDrag(clone, handle);
     if(clone.dataset.type==='text' || clone.dataset.type==='button') setupTextEditing(clone);
+    if(el.dataset.slideGroup){
+      clone.dataset.slideGroup = el.dataset.slideGroup;
+    }
     stage.appendChild(clone);
     refreshLayers();
+    refreshSlideGroup();
     selectElement(clone);
   }
+  
   function deleteEl(el){
     if(selected===el) selectElement(null);
     el.remove();
     refreshLayers();
+    refreshSlideGroup();
   }
 
   document.addEventListener('keydown', function(e){
@@ -718,10 +736,35 @@
     ["zoomIn","Zoom In"],["bounceIn","Bounce In"],["pulse","Pulse (loop)"],["shake","Shake"]
   ];
 
-  // ---- slide / multi-image logic ----
-  // Each element can have a "slide group" (data-slide-group)
-  // If multiple elements have same group, they will show one by one with fade
-  // We'll add a small UI in inspector for image elements
+  // ---- refresh slide group visibility ----
+  function refreshSlideGroup(){
+    const groups = {};
+    const elements = Array.from(stage.querySelectorAll('.element'));
+    elements.forEach(el => {
+      const g = el.dataset.slideGroup;
+      if(g) {
+        if(!groups[g]) groups[g] = [];
+        groups[g].push(el);
+      }
+    });
+    for(const [group, els] of Object.entries(groups)){
+      els.sort((a,b) => {
+        return Array.from(stage.children).indexOf(a) - Array.from(stage.children).indexOf(b);
+      });
+      els.forEach((el, idx) => {
+        if(idx === 0){
+          el.style.display = 'flex';
+        } else {
+          el.style.display = 'none';
+        }
+      });
+    }
+    elements.forEach(el => {
+      if(!el.dataset.slideGroup){
+        el.style.display = 'flex';
+      }
+    });
+  }
 
   function renderInspector(){
     if(!selected){
@@ -750,8 +793,8 @@
     html += `
       <div class="section-title">New element default size</div>
       <div class="row2">
-        <div class="field"><label>Width</label><input type="number" id="newElWidth" value="80" step="1"></div>
-        <div class="field"><label>Height</label><input type="number" id="newElHeight" value="80" step="1"></div>
+        <div class="field"><label>Width</label><input type="number" id="newElWidth" value="100" step="1"></div>
+        <div class="field"><label>Height</label><input type="number" id="newElHeight" value="100" step="1"></div>
       </div>
     `;
 
@@ -849,11 +892,9 @@
       const addBtn = document.getElementById('slideAddNext');
       if(addBtn){
         addBtn.addEventListener('click', function(){
-          // trigger file input to add new image with same group
           const fileInput = document.getElementById('imageUpload');
           if(fileInput){
             fileInput.click();
-            // we'll handle in imageUpload change to set slide group
           }
         });
       }
@@ -862,113 +903,12 @@
         removeBtn.addEventListener('click', function(){
           delete selected.dataset.slideGroup;
           refreshSlideGroup();
-          // also update input
           const inp = document.getElementById('propSlideGroup');
           if(inp) inp.value = '';
         });
       }
     }
   }
-
-  // ---- refresh slide group visibility ----
-  function refreshSlideGroup(){
-    // collect all elements with slideGroup
-    const groups = {};
-    const elements = Array.from(stage.querySelectorAll('.element'));
-    elements.forEach(el => {
-      const g = el.dataset.slideGroup;
-      if(g) {
-        if(!groups[g]) groups[g] = [];
-        groups[g].push(el);
-      }
-    });
-    // For each group, only show one at a time (the first one by default)
-    // We'll show the first, hide others
-    for(const [group, els] of Object.entries(groups)){
-      // sort by order in DOM
-      els.sort((a,b) => {
-        return Array.from(stage.children).indexOf(a) - Array.from(stage.children).indexOf(b);
-      });
-      // show first, hide rest
-      els.forEach((el, idx) => {
-        if(idx === 0){
-          el.style.display = 'flex';
-        } else {
-          el.style.display = 'none';
-        }
-      });
-    }
-    // Also handle elements that were removed from group
-    elements.forEach(el => {
-      if(!el.dataset.slideGroup){
-        el.style.display = 'flex';
-      }
-    });
-  }
-
-  // override addImageFromFile to support slide group
-  const originalAddImageFromFile = addImageFromFile;
-  addImageFromFile = function(file, slideGroup){
-    const reader=new FileReader();
-    reader.onload=function(ev){
-      const el=makeBaseEl('image', 100, 100);
-      const img=document.createElement('img');
-      img.src=ev.target.result;
-      img.style.objectFit='cover';
-      img.style.width='100%';
-      img.style.height='100%';
-      el.insertBefore(img, el.firstChild);
-      if(slideGroup){
-        el.dataset.slideGroup = slideGroup;
-        // if adding to existing group, hide this new one (will be shown in order)
-        refreshSlideGroup();
-      }
-      // select the new element
-      selectElement(el);
-      renderInspector();
-    };
-    reader.readAsDataURL(file);
-  };
-
-  // override image upload to pass slide group if selected element has one
-  document.getElementById('imageUpload').addEventListener('change', function(e){
-    const f=e.target.files[0]; if(!f) return;
-    let slideGroup = '';
-    if(selected && selected.dataset.type === 'image'){
-      slideGroup = selected.dataset.slideGroup || '';
-    }
-    addImageFromFile(f, slideGroup);
-    e.target.value='';
-  });
-
-  // also hook into duplicate to copy slide group
-  const originalDuplicate = duplicateEl;
-  duplicateEl = function(el){
-    const clone=el.cloneNode(true);
-    clone.dataset.id='el'+(++elCounter);
-    clone.style.left=(parseFloat(el.style.left)+14)+'px';
-    clone.style.top=(parseFloat(el.style.top)+14)+'px';
-    const handle=clone.querySelector('.resize-handle');
-    attachDrag(clone, handle);
-    if(clone.dataset.type==='text' || clone.dataset.type==='button') setupTextEditing(clone);
-    // preserve slide group
-    if(el.dataset.slideGroup){
-      clone.dataset.slideGroup = el.dataset.slideGroup;
-    }
-    stage.appendChild(clone);
-    refreshLayers();
-    refreshSlideGroup();
-    selectElement(clone);
-  };
-
-  // override delete to refresh slide group
-  const originalDelete = deleteEl;
-  deleteEl = function(el){
-    if(selected===el) selectElement(null);
-    el.remove();
-    refreshLayers();
-    refreshSlideGroup();
-  };
 
   function syncInspectorPosition(){
     if(!selected) return;
@@ -999,7 +939,6 @@
     setVal('propAnimDelay', selected.dataset.animDelay||0);
     highlightSeg('[data-iter]', selected.dataset.animIter||'1', 'iter');
 
-    // slide group
     const sg = document.getElementById('propSlideGroup');
     if(sg) sg.value = selected.dataset.slideGroup || '';
   }
@@ -1048,11 +987,13 @@
       on('propReplaceImg','change',e=>{
         const f=e.target.files[0]; if(!f) return;
         const reader=new FileReader();
-        reader.onload=ev=>{ selected.querySelector('img').src=ev.target.result; };
+        reader.onload=ev=>{ 
+          const img = selected.querySelector('img');
+          if(img) img.src = ev.target.result;
+        };
         reader.readAsDataURL(f);
         e.target.value='';
       });
-      // slide group already handled above
     }
     on('propAnim','change',e=>{ selected.dataset.anim=e.target.value; applyAnim(selected); });
     on('propAnimDur','input',e=>{ selected.dataset.animDur=e.target.value; applyAnim(selected); });
