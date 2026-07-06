@@ -219,6 +219,7 @@
   .field{margin-bottom:10px;}
   .field label{display:block;font-size:11px;color:var(--muted);margin-bottom:4px;}
   .row2{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+  .row3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;}
   .row4{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:6px;}
   input[type=range]{width:100%;accent-color:var(--accent);}
   input[type=color]{width:100%;height:30px;border:1px solid var(--border);border-radius:8px;background:var(--panel-2);padding:2px;cursor:pointer;}
@@ -235,7 +236,9 @@
   ::-webkit-scrollbar-thumb{background:#2b303a;border-radius:6px;}
   ::-webkit-scrollbar-track{background:transparent;}
 
+  /* Animation keyframes */
   @keyframes fadeIn{from{opacity:0;}to{opacity:1;}}
+  @keyframes fadeOut{from{opacity:1;}to{opacity:0;}}
   @keyframes slideInLeft{from{opacity:0;transform:translateX(-60px) scale(1);}to{opacity:1;transform:translateX(0) scale(1);}}
   @keyframes slideInRight{from{opacity:0;transform:translateX(60px) scale(1);}to{opacity:1;transform:translateX(0) scale(1);}}
   @keyframes slideInUp{from{opacity:0;transform:translateY(40px) scale(1);}to{opacity:1;transform:translateY(0) scale(1);}}
@@ -259,7 +262,6 @@
     80%{transform:translateX(4px) scale(1);}
   }
 
-  /* Slide show / multi-image fade control */
   .slide-controls {
     display:flex;
     gap:6px;
@@ -304,7 +306,7 @@
     <div class="right-group">
       <button class="btn small" id="playBtn">▶ Play animations</button>
       <label style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--muted);">
-        Duration <input type="number" id="recDuration" value="3" min="0.5" max="10" step="0.5">s
+        Duration <input type="number" id="recDuration" value="5" min="0.5" max="20" step="0.5">s
       </label>
       <label style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--muted);">
         Quality
@@ -439,8 +441,8 @@
 
   let elCounter=0;
   let selected=null;
+  let slideTimers = {};
 
-  // ---- custom size for new element ----
   function getCustomSizeFromInspector(){
     const wInput = document.getElementById('newElWidth');
     const hInput = document.getElementById('newElHeight');
@@ -452,7 +454,6 @@
     return {w:80, h:80};
   }
 
-  // ---- make element with custom size ----
   function makeBaseEl(type, w, h){
     if(!w || !h){
       const c = getCustomSizeFromInspector();
@@ -467,6 +468,10 @@
     el.dataset.animDur='0.8';
     el.dataset.animDelay='0';
     el.dataset.animIter='1';
+    // slide show properties
+    el.dataset.slideGroup = '';
+    el.dataset.slideDuration = '2';
+    el.dataset.slideIndex = '0';
     el.style.left=((stage.clientWidth-w)/2)+'px';
     el.style.top=((stage.clientHeight-h)/2)+'px';
     el.style.width=w+'px';
@@ -538,12 +543,27 @@
       el.insertBefore(img, el.firstChild);
       if(slideGroup){
         el.dataset.slideGroup = slideGroup;
+        // find max index in group
+        const groupEls = getGroupElements(slideGroup);
+        el.dataset.slideIndex = groupEls.length;
         refreshSlideGroup();
+        updateSlideShow();
       }
       selectElement(el);
       renderInspector();
     };
     reader.readAsDataURL(file);
+  }
+
+  function getGroupElements(groupName){
+    if(!groupName) return [];
+    return Array.from(stage.querySelectorAll('.element'))
+      .filter(el => el.dataset.slideGroup === groupName)
+      .sort((a,b) => {
+        const idxA = parseInt(a.dataset.slideIndex) || 0;
+        const idxB = parseInt(b.dataset.slideIndex) || 0;
+        return idxA - idxB;
+      });
   }
 
   function setupTextEditing(el){
@@ -665,7 +685,8 @@
       const row=document.createElement('div');
       row.className='layer-row'+(el===selected?' active':'');
       const label = el.dataset.type.charAt(0).toUpperCase()+el.dataset.type.slice(1);
-      row.innerHTML = `<span class="lname">${label} — ${el.dataset.id}</span>
+      const groupInfo = el.dataset.slideGroup ? ` [${el.dataset.slideGroup}]` : '';
+      row.innerHTML = `<span class="lname">${label} — ${el.dataset.id}${groupInfo}</span>
         <button data-act="up" title="Forward">⬆</button>
         <button data-act="down" title="Backward">⬇</button>
         <button data-act="dup" title="Duplicate">⧉</button>
@@ -690,6 +711,7 @@
     }
     refreshLayers();
     refreshSlideGroup();
+    updateSlideShow();
   }
   
   function duplicateEl(el){
@@ -702,18 +724,23 @@
     if(clone.dataset.type==='text' || clone.dataset.type==='button') setupTextEditing(clone);
     if(el.dataset.slideGroup){
       clone.dataset.slideGroup = el.dataset.slideGroup;
+      const groupEls = getGroupElements(el.dataset.slideGroup);
+      clone.dataset.slideIndex = groupEls.length;
     }
     stage.appendChild(clone);
     refreshLayers();
     refreshSlideGroup();
+    updateSlideShow();
     selectElement(clone);
   }
   
   function deleteEl(el){
     if(selected===el) selectElement(null);
+    const group = el.dataset.slideGroup;
     el.remove();
     refreshLayers();
     refreshSlideGroup();
+    if(group) updateSlideShow();
   }
 
   document.addEventListener('keydown', function(e){
@@ -736,7 +763,7 @@
     ["zoomIn","Zoom In"],["bounceIn","Bounce In"],["pulse","Pulse (loop)"],["shake","Shake"]
   ];
 
-  // ---- refresh slide group visibility ----
+  // ---- SLIDE SHOW ENGINE ----
   function refreshSlideGroup(){
     const groups = {};
     const elements = Array.from(stage.querySelectorAll('.element'));
@@ -749,23 +776,106 @@
     });
     for(const [group, els] of Object.entries(groups)){
       els.sort((a,b) => {
-        return Array.from(stage.children).indexOf(a) - Array.from(stage.children).indexOf(b);
+        const idxA = parseInt(a.dataset.slideIndex) || 0;
+        const idxB = parseInt(b.dataset.slideIndex) || 0;
+        return idxA - idxB;
       });
+      // Reset slide indices
       els.forEach((el, idx) => {
-        if(idx === 0){
-          el.style.display = 'flex';
-        } else {
-          el.style.display = 'none';
-        }
+        el.dataset.slideIndex = idx;
       });
     }
+    // Show only first slide of each group initially, hide others
     elements.forEach(el => {
-      if(!el.dataset.slideGroup){
+      const g = el.dataset.slideGroup;
+      if(g) {
+        const groupEls = getGroupElements(g);
+        if(groupEls.length > 0 && groupEls[0] === el) {
+          el.style.display = 'flex';
+          el.style.opacity = '1';
+        } else {
+          el.style.display = 'none';
+          el.style.opacity = '0';
+        }
+      } else {
         el.style.display = 'flex';
+        el.style.opacity = '1';
       }
     });
   }
 
+  function updateSlideShow(){
+    // Clear existing timers
+    for(const key in slideTimers){
+      clearTimeout(slideTimers[key]);
+      clearInterval(slideTimers[key]);
+      delete slideTimers[key];
+    }
+
+    const groups = {};
+    const elements = Array.from(stage.querySelectorAll('.element'));
+    elements.forEach(el => {
+      const g = el.dataset.slideGroup;
+      if(g) {
+        if(!groups[g]) groups[g] = [];
+        groups[g].push(el);
+      }
+    });
+
+    for(const [group, els] of Object.entries(groups)){
+      els.sort((a,b) => {
+        const idxA = parseInt(a.dataset.slideIndex) || 0;
+        const idxB = parseInt(b.dataset.slideIndex) || 0;
+        return idxA - idxB;
+      });
+      
+      if(els.length <= 1) continue;
+
+      // Get slide duration from first element
+      const slideDur = parseFloat(els[0].dataset.slideDuration) || 2;
+      const animDur = parseFloat(els[0].dataset.animDur) || 0.8;
+      const totalTime = slideDur + animDur;
+
+      let currentIndex = 0;
+      let isPlaying = true;
+
+      function showSlide(index){
+        // Hide all slides in group
+        els.forEach(el => {
+          el.style.display = 'none';
+          el.style.opacity = '0';
+          el.style.animation = 'none';
+        });
+        // Show current slide
+        if(els[index]){
+          els[index].style.display = 'flex';
+          els[index].style.opacity = '1';
+          // Apply animation
+          const anim = els[index].dataset.anim;
+          if(anim && anim !== 'none'){
+            els[index].style.animation = 'none';
+            void els[index].offsetWidth;
+            els[index].style.animation = `${anim} ${animDur}s ease both`;
+          }
+        }
+      }
+
+      function nextSlide(){
+        currentIndex = (currentIndex + 1) % els.length;
+        showSlide(currentIndex);
+      }
+
+      // Show first slide
+      showSlide(0);
+
+      // Start timer for next slides
+      slideTimers[group] = setInterval(() => {
+        nextSlide();
+      }, totalTime * 1000);
+    }
+  }
+
+  // ---- RENDER INSPECTOR ----
   function renderInspector(){
     if(!selected){
       inspectorEmpty.style.display='block';
@@ -789,7 +899,6 @@
       <div class="field"><label>Opacity</label><input type="range" id="propOpacity" min="0" max="1" step="0.05"></div>
     `;
 
-    // ---- custom size for new elements ----
     html += `
       <div class="section-title">New element default size</div>
       <div class="row2">
@@ -843,25 +952,44 @@
           <input type="file" id="propReplaceImg" accept="image/*" style="display:none;">
         </label>
         <div class="field" style="margin-top:8px;"><label>Corner radius</label><input type="range" id="propImgRadius" min="0" max="100" step="1"></div>
-        <div class="field"><label>Slide group (same group = slide show)</label>
-          <input type="text" id="propSlideGroup" placeholder="e.g. group1" value="${selected.dataset.slideGroup || ''}">
+        
+        <div class="section-title">Slide Show</div>
+        <div class="field"><label>Slide group (same group = auto slide show)</label>
+          <input type="text" id="propSlideGroup" placeholder="e.g. slides" value="${selected.dataset.slideGroup || ''}">
+        </div>
+        <div class="row3">
+          <div class="field"><label>Slide duration (s)</label>
+            <input type="number" id="propSlideDuration" step="0.5" min="0.5" value="${selected.dataset.slideDuration || 2}">
+          </div>
+          <div class="field"><label>Anim duration (s)</label>
+            <input type="number" id="propAnimDur" step="0.1" min="0.1" value="${selected.dataset.animDur || 0.8}">
+          </div>
+          <div class="field"><label>Effect</label>
+            <select id="propAnim">
+              ${ANIMS.map(a=>`<option value="${a[0]}">${a[1]}</option>`).join('')}
+            </select>
+          </div>
         </div>
         <div class="slide-controls">
-          <button class="btn small" id="slideAddNext">➕ Add next slide (image)</button>
+          <button class="btn small" id="slideAddNext">➕ Add next slide</button>
           <button class="btn small" id="slideRemove">❌ Remove from group</button>
+          <button class="btn small" id="slideReset">🔄 Reset slides</button>
+        </div>
+        <div class="field" style="margin-top:6px;">
+          <label style="font-size:10px;color:var(--muted);">💡 Tips: Ek group mein multiple images daalein. Har image apne time pe animate hogi.</label>
         </div>
       `;
     }
 
     html += `
-      <div class="section-title">Animation</div>
+      <div class="section-title">Animation (for single element)</div>
       <div class="field"><label>Effect</label>
-        <select id="propAnim">
+        <select id="propAnimSingle">
           ${ANIMS.map(a=>`<option value="${a[0]}">${a[1]}</option>`).join('')}
         </select>
       </div>
       <div class="row2">
-        <div class="field"><label>Duration (s)</label><input type="number" step="0.1" id="propAnimDur"></div>
+        <div class="field"><label>Duration (s)</label><input type="number" step="0.1" id="propAnimDurSingle"></div>
         <div class="field"><label>Delay (s)</label><input type="number" step="0.1" id="propAnimDelay"></div>
       </div>
       <div class="field"><label>Repeat</label>
@@ -876,19 +1004,48 @@
     bindInspector(type, isText);
     syncInspectorPosition();
 
-    // slide group bindings
+    // slide group bindings for image
     if(type==='image'){
       const groupInput = document.getElementById('propSlideGroup');
       if(groupInput){
         groupInput.addEventListener('change', function(){
+          const oldGroup = selected.dataset.slideGroup || '';
           selected.dataset.slideGroup = this.value.trim() || '';
-          refreshSlideGroup();
+          if(oldGroup !== selected.dataset.slideGroup){
+            // Reindex
+            if(selected.dataset.slideGroup){
+              const groupEls = getGroupElements(selected.dataset.slideGroup);
+              selected.dataset.slideIndex = groupEls.length;
+            }
+            refreshSlideGroup();
+            updateSlideShow();
+          }
         });
         groupInput.addEventListener('input', function(){
+          const oldGroup = selected.dataset.slideGroup || '';
           selected.dataset.slideGroup = this.value.trim() || '';
-          refreshSlideGroup();
+          if(oldGroup !== selected.dataset.slideGroup){
+            if(selected.dataset.slideGroup){
+              const groupEls = getGroupElements(selected.dataset.slideGroup);
+              selected.dataset.slideIndex = groupEls.length;
+            }
+            refreshSlideGroup();
+            updateSlideShow();
+          }
         });
       }
+      
+      const durInput = document.getElementById('propSlideDuration');
+      if(durInput){
+        durInput.addEventListener('change', function(){
+          selected.dataset.slideDuration = this.value;
+          updateSlideShow();
+        });
+        durInput.addEventListener('input', function(){
+          selected.dataset.slideDuration = this.value;
+        });
+      }
+
       const addBtn = document.getElementById('slideAddNext');
       if(addBtn){
         addBtn.addEventListener('click', function(){
@@ -898,13 +1055,31 @@
           }
         });
       }
+      
       const removeBtn = document.getElementById('slideRemove');
       if(removeBtn){
         removeBtn.addEventListener('click', function(){
           delete selected.dataset.slideGroup;
+          delete selected.dataset.slideIndex;
           refreshSlideGroup();
+          updateSlideShow();
           const inp = document.getElementById('propSlideGroup');
           if(inp) inp.value = '';
+        });
+      }
+
+      const resetBtn = document.getElementById('slideReset');
+      if(resetBtn){
+        resetBtn.addEventListener('click', function(){
+          const group = selected.dataset.slideGroup;
+          if(group){
+            const els = getGroupElements(group);
+            els.forEach((el, idx) => {
+              el.dataset.slideIndex = idx;
+            });
+            refreshSlideGroup();
+            updateSlideShow();
+          }
         });
       }
     }
@@ -935,12 +1110,14 @@
       setVal('propImgRadius', parseFloat(selected.style.borderRadius)||0);
     }
     setVal('propAnim', selected.dataset.anim||'none');
-    setVal('propAnimDur', selected.dataset.animDur||0.8);
+    setVal('propAnimDurSingle', selected.dataset.animDur||0.8);
     setVal('propAnimDelay', selected.dataset.animDelay||0);
     highlightSeg('[data-iter]', selected.dataset.animIter||'1', 'iter');
 
     const sg = document.getElementById('propSlideGroup');
     if(sg) sg.value = selected.dataset.slideGroup || '';
+    const sd = document.getElementById('propSlideDuration');
+    if(sd) sd.value = selected.dataset.slideDuration || 2;
   }
 
   function setVal(id,val){ const e=document.getElementById(id); if(e) e.value=val; }
@@ -994,12 +1171,36 @@
         reader.readAsDataURL(f);
         e.target.value='';
       });
+      // slide anim duration for slideshow
+      on('propAnimDur','change',e=>{
+        selected.dataset.animDur = e.target.value;
+        updateSlideShow();
+      });
+      on('propAnimDur','input',e=>{
+        selected.dataset.animDur = e.target.value;
+      });
+      on('propAnim','change',e=>{
+        selected.dataset.anim = e.target.value;
+        updateSlideShow();
+      });
     }
-    on('propAnim','change',e=>{ selected.dataset.anim=e.target.value; applyAnim(selected); });
-    on('propAnimDur','input',e=>{ selected.dataset.animDur=e.target.value; applyAnim(selected); });
-    on('propAnimDelay','input',e=>{ selected.dataset.animDelay=e.target.value; applyAnim(selected); });
+    // Single element animation (non-slide)
+    on('propAnimSingle','change',e=>{ 
+      selected.dataset.anim = e.target.value; 
+      applyAnim(selected); 
+    });
+    on('propAnimDurSingle','input',e=>{ 
+      selected.dataset.animDur = e.target.value; 
+      applyAnim(selected); 
+    });
+    on('propAnimDelay','input',e=>{ 
+      selected.dataset.animDelay = e.target.value; 
+      applyAnim(selected); 
+    });
     document.querySelectorAll('[data-iter]').forEach(b=>b.onclick=()=>{
-      selected.dataset.animIter=b.dataset.iter; highlightSeg('[data-iter]', b.dataset.iter,'iter'); applyAnim(selected);
+      selected.dataset.animIter=b.dataset.iter; 
+      highlightSeg('[data-iter]', b.dataset.iter,'iter'); 
+      applyAnim(selected);
     });
   }
 
@@ -1012,8 +1213,11 @@
   }
 
   document.getElementById('playBtn').addEventListener('click', function(){
+    // Reset slide shows
+    updateSlideShow();
+    // Apply single animations
     Array.from(stage.children).filter(c=>c.classList.contains('element')).forEach(el=>{
-      if(el.dataset.anim && el.dataset.anim!=='none'){
+      if(el.dataset.anim && el.dataset.anim!=='none' && !el.dataset.slideGroup){
         el.style.animation='none';
         void el.offsetWidth;
         applyAnim(el);
@@ -1021,6 +1225,7 @@
     });
   });
 
+  // ---- EXPORT FUNCTIONS ----
   document.getElementById('exportHtmlBtn').addEventListener('click', function(){
     const clone = stage.cloneNode(true);
     clone.classList.remove('selected');
@@ -1193,7 +1398,7 @@ ${clone.outerHTML.replace('id="stage"', `id="stage" style="width:${w};height:${h
     let w = parseFloat(el.style.width) || 50;
     let h = parseFloat(el.style.height) || 50;
     
-    const totalDuration = parseFloat(document.getElementById('recDuration').value) || 3;
+    const totalDuration = parseFloat(document.getElementById('recDuration').value) || 5;
     const clampedTime = Math.max(0, Math.min(time, totalDuration));
     const progress = totalDuration > 0 ? clampedTime / totalDuration : 0;
     const animState = evaluateAnimation(el, progress);
@@ -1208,8 +1413,6 @@ ${clone.outerHTML.replace('id="stage"', `id="stage" style="width:${w};height:${h
     
     const scaledX = (x + tx) * scale;
     const scaledY = (y + ty) * scale;
-    const scaledW = w * scale * scaleVal;
-    const scaledH = h * scale * scaleVal;
     
     ctx.save();
     
@@ -1362,6 +1565,25 @@ ${clone.outerHTML.replace('id="stage"', `id="stage" style="width:${w};height:${h
       } catch(e) {}
     }
     
+    // Pre-calculate slide show states for each frame
+    const groups = {};
+    elements.forEach(el => {
+      const g = el.dataset.slideGroup;
+      if(g) {
+        if(!groups[g]) groups[g] = [];
+        groups[g].push(el);
+      }
+    });
+    
+    // Sort each group
+    for(const g in groups){
+      groups[g].sort((a,b) => {
+        const idxA = parseInt(a.dataset.slideIndex) || 0;
+        const idxB = parseInt(b.dataset.slideIndex) || 0;
+        return idxA - idxB;
+      });
+    }
+    
     for(let i = 0; i < totalFrames; i++) {
       const canvas = document.createElement('canvas');
       canvas.width = canvasW;
@@ -1377,9 +1599,34 @@ ${clone.outerHTML.replace('id="stage"', `id="stage" style="width:${w};height:${h
       
       const time = (i / (totalFrames - 1)) * durationSec;
       
+      // Determine which slide in each group should be visible
+      const visibleSlides = {};
+      for(const [group, els] of Object.entries(groups)){
+        if(els.length <= 1) {
+          visibleSlides[group] = els[0] || null;
+          continue;
+        }
+        const slideDur = parseFloat(els[0].dataset.slideDuration) || 2;
+        const animDur = parseFloat(els[0].dataset.animDur) || 0.8;
+        const totalTime = slideDur + animDur;
+        const totalGroupTime = totalTime * els.length;
+        const loopedTime = time % totalGroupTime;
+        const slideIndex = Math.floor(loopedTime / totalTime);
+        const slideTime = loopedTime % totalTime;
+        const actualIndex = slideIndex % els.length;
+        visibleSlides[group] = els[actualIndex];
+      }
+      
       for(const el of elements) {
         const elOpacity = parseFloat(el.style.opacity);
         if(elOpacity === 0) continue;
+        
+        // Check if this element should be visible (for slide groups)
+        const group = el.dataset.slideGroup;
+        if(group && visibleSlides[group] !== el) {
+          continue; // Skip this element, it's not the current slide
+        }
+        
         renderElementToCanvas(ctx, el, scale, time);
       }
       
@@ -1450,7 +1697,7 @@ ${clone.outerHTML.replace('id="stage"', `id="stage" style="width:${w};height:${h
     const btn=this; const origText=btn.textContent;
     btn.disabled=true;
     try{
-      const dur = parseFloat(document.getElementById('recDuration').value) || 3;
+      const dur = parseFloat(document.getElementById('recDuration').value) || 5;
       const fps = 8;
       const scale = getQualityScale() * 2;
       
@@ -1525,7 +1772,7 @@ ${clone.outerHTML.replace('id="stage"', `id="stage" style="width:${w};height:${h
         return;
       }
       
-      const dur = parseFloat(document.getElementById('recDuration').value) || 3;
+      const dur = parseFloat(document.getElementById('recDuration').value) || 5;
       const fps = 15;
       const scale = getQualityScale() * 2;
       
@@ -1580,9 +1827,10 @@ ${clone.outerHTML.replace('id="stage"', `id="stage" style="width:${w};height:${h
     }
   });
 
-  // ---- initial render ----
+  // ---- INIT ----
   renderInspector();
   refreshSlideGroup();
+  setTimeout(updateSlideShow, 100);
 
 })();
 </script>
