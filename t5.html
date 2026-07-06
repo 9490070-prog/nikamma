@@ -1204,10 +1204,9 @@
     });
   });
 
-  // ================ EXPORT FUNCTIONS ================
+  // ================ EXPORT FUNCTIONS - FIXED ================
   
   function getSlideShowState(time, totalDuration) {
-    // Returns which element in each group should be visible at given time
     const result = {};
     const elements = Array.from(stage.querySelectorAll('.element'));
     const groups = {};
@@ -1237,13 +1236,11 @@
       const totalTime = slideDur + animDur;
       const totalGroupTime = totalTime * els.length;
       
-      // Loop time within group
       const loopedTime = time % totalGroupTime;
       const slideIndex = Math.floor(loopedTime / totalTime);
       const slideTime = loopedTime % totalTime;
       const actualIndex = slideIndex % els.length;
       
-      // Calculate progress within current slide's animation
       let progress = slideTime / animDur;
       if(progress > 1) progress = 1;
       
@@ -1349,22 +1346,18 @@
     let w = parseFloat(el.style.width) || 50;
     let h = parseFloat(el.style.height) || 50;
     
-    // Check if this element is in a slide group
     const group = el.dataset.slideGroup;
     let progress = time / (parseFloat(document.getElementById('recDuration').value) || 5);
     let shouldRender = true;
     
     if(group && slideState && slideState[group]) {
       const state = slideState[group];
-      // Only render if this is the current slide
       if(state.element !== el) {
         shouldRender = false;
       } else {
-        // Use the slide-specific progress
         progress = state.progress || 0;
       }
     } else if(group) {
-      // Fallback: if no slide state, only show first slide
       const groupEls = getGroupElements(group);
       if(groupEls.length > 0 && groupEls[0] !== el) {
         shouldRender = false;
@@ -1382,17 +1375,21 @@
     const rotMatch = /rotate\((-?\d+(\.\d+)?)deg\)/.exec(el.style.transform || '');
     const rotation = rotMatch ? parseFloat(rotMatch[1]) : 0;
     
+    // Apply scale correctly
     const scaledX = (x + tx) * scale;
     const scaledY = (y + ty) * scale;
+    const scaledW = w * scale * scaleVal;
+    const scaledH = h * scale * scaleVal;
     
     ctx.save();
     
-    ctx.translate(scaledX + (w * scale) / 2, scaledY + (h * scale) / 2);
+    // Translate to center of element after scaling
+    ctx.translate(scaledX + scaledW / 2, scaledY + scaledH / 2);
     ctx.rotate(rotation * Math.PI / 180);
     ctx.globalAlpha = Math.max(0, Math.min(1, opacity));
     
-    const hw = (w * scale * scaleVal) / 2;
-    const hh = (h * scale * scaleVal) / 2;
+    const hw = scaledW / 2;
+    const hh = scaledH / 2;
     
     const type = el.dataset.type;
     
@@ -1425,7 +1422,7 @@
       ctx.textBaseline = 'middle';
       
       let text = el.innerText || '';
-      const maxWidth = Math.max(10, (w * scale * scaleVal) - (8 * scale * scaleVal));
+      const maxWidth = Math.max(10, scaledW - (8 * scale * scaleVal));
       
       if(ctx.measureText(text).width > maxWidth && maxWidth > 10) {
         let words = text.split(' ');
@@ -1473,7 +1470,7 @@
           ctx.closePath();
           ctx.clip();
         }
-        ctx.drawImage(img, -hw, -hh, hw * 2, hh * 2);
+        ctx.drawImage(img, -hw, -hh, scaledW, scaledH);
       }
     }
     else if(type === 'shape') {
@@ -1551,7 +1548,6 @@
       
       const time = (i / (totalFrames - 1)) * durationSec;
       
-      // Get slide show state for this time
       const slideState = getSlideShowState(time, durationSec);
       
       for(const el of elements) {
@@ -1594,7 +1590,7 @@
     const btn=this; const origText=btn.textContent;
     btn.disabled=true; btn.textContent='Rendering…';
     try{
-      const scale = getQualityScale() * 2;
+      const scale = getQualityScale();
       const stageW = stage.clientWidth || 320;
       const stageH = stage.clientHeight || 50;
       const canvas = document.createElement('canvas');
@@ -1629,8 +1625,8 @@
     btn.disabled=true;
     try{
       const dur = parseFloat(document.getElementById('recDuration').value) || 5;
-      const fps = 8;
-      const scale = getQualityScale() * 2;
+      const fps = 10;
+      const scale = getQualityScale();
       
       btn.textContent='Rendering frames...';
       const frames = await captureFramesWithAnimation(dur, fps, scale);
@@ -1705,7 +1701,7 @@
       
       const dur = parseFloat(document.getElementById('recDuration').value) || 5;
       const fps = 15;
-      const scale = getQualityScale() * 2;
+      const scale = getQualityScale();
       
       btn.textContent='Rendering frames...';
       const frames = await captureFramesWithAnimation(dur, fps, scale);
@@ -1759,7 +1755,9 @@
   });
 
   function getQualityScale(){
-    return parseFloat(document.getElementById('qualitySelect').value) || 2;
+    const val = parseFloat(document.getElementById('qualitySelect').value) || 1;
+    // Return appropriate scale - 1x, 2x, 3x
+    return val;
   }
 
   let gifWorkerBlobUrl = null;
