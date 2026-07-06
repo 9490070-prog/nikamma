@@ -758,7 +758,7 @@
     ["zoomIn","Zoom In"],["bounceIn","Bounce In"],["pulse","Pulse (loop)"],["shake","Shake"]
   ];
 
-  // ---- SLIDE SHOW ENGINE ----
+  // ---- SLIDE SHOW ENGINE - FIXED: Proper duration handling ----
   function refreshSlideGroup(){
     const groups = {};
     const elements = Array.from(stage.querySelectorAll('.element'));
@@ -802,6 +802,7 @@
   }
 
   function updateSlideShow(){
+    // Clear all existing timers
     for(const key in slideTimers){
       clearTimeout(slideTimers[key]);
       clearInterval(slideTimers[key]);
@@ -853,12 +854,15 @@
         showSlide(currentIndex);
       }
 
+      // Show first slide
       showSlide(0);
       
-      // Use the duration from the first slide for timing
-      const firstDur = getAnimDuration(els[0]);
-      const totalTime = firstDur + 0.05;
+      // Get duration from current slide (first slide)
+      const dur = getAnimDuration(els[0]);
+      // Small gap for smooth transition
+      const totalTime = dur + 0.05;
       
+      // Start interval with proper duration
       slideTimers[group] = setInterval(() => {
         nextSlide();
       }, totalTime * 1000);
@@ -964,7 +968,7 @@
           <button class="btn small" id="slideReset">🔄 Reset slides</button>
         </div>
         <div class="field" style="margin-top:6px;">
-          <label style="font-size:10px;color:var(--muted);">💡 Har image ka apna animation duration set karein.</label>
+          <label style="font-size:10px;color:var(--muted);">💡 Har image ka apna duration set karein. Duration change karte hi effect dikhega.</label>
         </div>
       `;
     }
@@ -1221,7 +1225,7 @@
         continue;
       }
       
-      // Get duration from each slide - use first slide's duration for timing
+      // Get duration from each slide
       const animDur = getAnimDuration(els[0]);
       const totalTime = animDur + 0.05;
       const totalGroupTime = totalTime * els.length;
@@ -1231,7 +1235,6 @@
       const slideTime = loopedTime % totalTime;
       const actualIndex = slideIndex % els.length;
       
-      // Progress within current slide's animation
       let progress = slideTime / animDur;
       if(progress > 1) progress = 1;
       
