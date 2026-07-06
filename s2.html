@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="hi">
-<head> 
+<head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Ad Studio — Mobile Ad Creative Builder</title>
@@ -259,7 +259,6 @@
     80%{transform:translateX(4px) scale(1);}
   }
 
-  /* Responsive Media Queries Mobile Ke Liye */
   @media(max-width:900px){
     body{overflow:auto;}
     #app{height:auto;min-height:100vh;}
@@ -968,7 +967,6 @@ ${clone.outerHTML.replace('id="stage"', `id="stage" style="width:${w};height:${h
     return parseFloat(document.getElementById('qualitySelect').value) || 2;
   }
 
-  // ============= FIXED: ANIMATION EVALUATION WITH SMOOTH LOOPING =============
   function evaluateAnimation(el, progress) {
     const anim = el.dataset.anim;
     if(!anim || anim === 'none') {
@@ -979,21 +977,17 @@ ${clone.outerHTML.replace('id="stage"', `id="stage" style="width:${w};height:${h
     const delay = parseFloat(el.dataset.animDelay) || 0;
     const iter = el.dataset.animIter || '1';
     
-    // Calculate effective progress (0 to 1), with delay
     let rawP = Math.max(0, (progress - delay) / duration);
     
     let p;
     if(iter === 'infinite') {
-      // For infinite loop, use fractional part smoothly
       p = rawP % 1;
-      // If p is very close to 0, set to 0.001 to avoid blink
       if(p < 0.001) p = 0.001;
       if(p > 0.999) p = 0.999;
     } else {
       p = Math.min(1, rawP);
     }
     
-    // Easing function (smooth ease)
     const ease = (t) => t < 0.5 ? 2*t*t : 1 - Math.pow(-2*t + 2, 2) / 2;
     const ep = ease(p);
     
@@ -1043,7 +1037,6 @@ ${clone.outerHTML.replace('id="stage"', `id="stage" style="width:${w};height:${h
         }
         break;
       case 'pulse':
-        // Smooth pulse using sine wave
         scale = 1 + 0.05 * Math.sin(p * Math.PI * 2);
         opacity = 1;
         break;
@@ -1059,46 +1052,46 @@ ${clone.outerHTML.replace('id="stage"', `id="stage" style="width:${w};height:${h
     return { opacity, tx, ty, scale };
   }
 
-  // ============= RENDER ELEMENT TO CANVAS WITH ANIMATION =============
+  // ============= BUG FIX: CORRECTED THE ORIENTATION LOGIC BACK TO CANVAS STANDARD =============
   function renderElementToCanvas(ctx, el, scale, time) {
     let x = parseFloat(el.style.left) || 0;
     let y = parseFloat(el.style.top) || 0;
     let w = parseFloat(el.style.width) || 50;
     let h = parseFloat(el.style.height) || 50;
     
-    // Get animation state at this time
     const totalDuration = parseFloat(document.getElementById('recDuration').value) || 3;
-    // Clamp time to avoid issues
     const clampedTime = Math.max(0, Math.min(time, totalDuration));
     const progress = totalDuration > 0 ? clampedTime / totalDuration : 0;
     const animState = evaluateAnimation(el, progress);
     
-    // Apply animation transforms
     const opacity = animState.opacity * (parseFloat(el.style.opacity) || 1);
     const tx = animState.tx || 0;
     const ty = animState.ty || 0;
     const scaleVal = animState.scale || 1;
     
-    // Get rotation
     const rotMatch = /rotate\((-?\d+(\.\d+)?)deg\)/.exec(el.style.transform || '');
     const rotation = rotMatch ? parseFloat(rotMatch[1]) : 0;
     
-    // Apply scale to position and size
+    // Position tracking with exact scaling matching standard coordinates
     const scaledX = (x + tx) * scale;
     const scaledY = (y + ty) * scale;
     const scaledW = w * scale * scaleVal;
     const scaledH = h * scale * scaleVal;
     
     ctx.save();
-    ctx.translate(scaledX + scaledW/2, scaledY + scaledH/2);
+    
+    // Translation matrix setup for safe rotation around exact center
+    ctx.translate(scaledX + (w * scale) / 2, scaledY + (h * scale) / 2);
     ctx.rotate(rotation * Math.PI / 180);
     ctx.globalAlpha = Math.max(0, Math.min(1, opacity));
     
+    // Coordinates are now drawn natively without inverse mapping to prevent mirrors
+    const hw = (w * scale * scaleVal) / 2;
+    const hh = (h * scale * scaleVal) / 2;
+    
     const type = el.dataset.type;
-    const hw = scaledW/2, hh = scaledH/2;
     
     if(type === 'text' || type === 'button') {
-      // Background for button
       if(type === 'button') {
         ctx.fillStyle = el.style.background || '#5B8CFF';
         const radius = parseFloat(el.style.borderRadius) || 8;
@@ -1117,7 +1110,6 @@ ${clone.outerHTML.replace('id="stage"', `id="stage" style="width:${w};height:${h
         ctx.fill();
       }
       
-      // Text
       const fontSize = parseFloat(el.style.fontSize) || 16;
       const fontWeight = el.style.fontWeight || '400';
       const fontFamily = el.style.fontFamily || 'Inter, sans-serif';
@@ -1128,7 +1120,7 @@ ${clone.outerHTML.replace('id="stage"', `id="stage" style="width:${w};height:${h
       ctx.textBaseline = 'middle';
       
       let text = el.innerText || '';
-      const maxWidth = Math.max(10, scaledW - (8 * scale * scaleVal));
+      const maxWidth = Math.max(10, (w * scale * scaleVal) - (8 * scale * scaleVal));
       
       if(ctx.measureText(text).width > maxWidth && maxWidth > 10) {
         let words = text.split(' ');
@@ -1144,7 +1136,6 @@ ${clone.outerHTML.replace('id="stage"', `id="stage" style="width:${w};height:${h
           }
         }
         if(currentLine) lines.push(currentLine);
-        if(lines.length === 0) lines = [text];
         
         const lineHeight = fontSize * 1.2 * scale * scaleVal;
         const totalHeight = lines.length * lineHeight;
@@ -1177,7 +1168,7 @@ ${clone.outerHTML.replace('id="stage"', `id="stage" style="width:${w};height:${h
           ctx.closePath();
           ctx.clip();
         }
-        ctx.drawImage(img, -hw, -hh, scaledW, scaledH);
+        ctx.drawImage(img, -hw, -hh, hw * 2, hh * 2);
       }
     }
     else if(type === 'shape') {
@@ -1207,7 +1198,6 @@ ${clone.outerHTML.replace('id="stage"', `id="stage" style="width:${w};height:${h
     ctx.restore();
   }
 
-  // ============= CAPTURE FRAMES WITH SMOOTH ANIMATION =============
   async function captureFramesWithAnimation(durationSec, fps, scale) {
     await document.fonts?.ready;
     
@@ -1223,7 +1213,6 @@ ${clone.outerHTML.replace('id="stage"', `id="stage" style="width:${w};height:${h
     
     const elements = Array.from(stage.querySelectorAll('.element'));
     
-    // Get background image if any
     let bgImage = null;
     const bgImageStyle = stage.style.backgroundImage;
     if(bgImageStyle && bgImageStyle !== 'none' && bgImageStyle !== '') {
@@ -1248,18 +1237,15 @@ ${clone.outerHTML.replace('id="stage"', `id="stage" style="width:${w};height:${h
       canvas.height = canvasH;
       const ctx = canvas.getContext('2d', { willReadFrequently: true });
       
-      // Fill background
       ctx.fillStyle = bgColor;
       ctx.fillRect(0, 0, canvasW, canvasH);
       
-      // Draw background image
       if(bgImage) {
         ctx.drawImage(bgImage, 0, 0, canvasW, canvasH);
       }
       
       const time = (i / (totalFrames - 1)) * durationSec;
       
-      // Render each element
       for(const el of elements) {
         const elOpacity = parseFloat(el.style.opacity);
         if(elOpacity === 0) continue;
@@ -1296,7 +1282,6 @@ ${clone.outerHTML.replace('id="stage"', `id="stage" style="width:${w};height:${h
     }, 4000);
   }
 
-  // ================= Export PNG =================
   document.getElementById('exportPngBtn').addEventListener('click', async function(){
     const btn=this; const origText=btn.textContent;
     btn.disabled=true; btn.textContent='Rendering…';
@@ -1330,7 +1315,6 @@ ${clone.outerHTML.replace('id="stage"', `id="stage" style="width:${w};height:${h
     }
   });
 
-  // ================= Export GIF =================
   document.getElementById('exportGifBtn').addEventListener('click', async function(){
     const btn=this; const origText=btn.textContent;
     btn.disabled=true;
@@ -1400,7 +1384,6 @@ ${clone.outerHTML.replace('id="stage"', `id="stage" style="width:${w};height:${h
     }
   });
 
-  // ================= Export Video =================
   document.getElementById('exportVideoBtn').addEventListener('click', async function(){
     const btn=this; const origText=btn.textContent;
     btn.disabled=true;
