@@ -237,7 +237,6 @@
   ::-webkit-scrollbar-track{background:transparent;}
 
   @keyframes fadeIn{from{opacity:0;}to{opacity:1;}}
-  @keyframes fadeOut{from{opacity:1;}to{opacity:0;}}
   @keyframes slideInLeft{from{opacity:0;transform:translateX(-60px) scale(1);}to{opacity:1;transform:translateX(0) scale(1);}}
   @keyframes slideInRight{from{opacity:0;transform:translateX(60px) scale(1);}to{opacity:1;transform:translateX(0) scale(1);}}
   @keyframes slideInUp{from{opacity:0;transform:translateY(40px) scale(1);}to{opacity:1;transform:translateY(0) scale(1);}}
@@ -468,7 +467,6 @@
     el.dataset.animDelay='0';
     el.dataset.animIter='1';
     el.dataset.slideGroup = '';
-    el.dataset.slideDuration = '2';
     el.dataset.slideIndex = '0';
     el.style.left=((stage.clientWidth-w)/2)+'px';
     el.style.top=((stage.clientHeight-h)/2)+'px';
@@ -760,7 +758,7 @@
     ["zoomIn","Zoom In"],["bounceIn","Bounce In"],["pulse","Pulse (loop)"],["shake","Shake"]
   ];
 
-  // ---- SLIDE SHOW ENGINE - FIXED: No white gap ----
+  // ---- SLIDE SHOW ENGINE ----
   function refreshSlideGroup(){
     const groups = {};
     const elements = Array.from(stage.querySelectorAll('.element'));
@@ -799,6 +797,10 @@
     });
   }
 
+  function getAnimDuration(el){
+    return parseFloat(el.dataset.animDur) || 0.8;
+  }
+
   function updateSlideShow(){
     for(const key in slideTimers){
       clearTimeout(slideTimers[key]);
@@ -825,11 +827,6 @@
       
       if(els.length <= 1) continue;
 
-      // Get duration from first element
-      const animDur = parseFloat(els[0].dataset.animDur) || 0.8;
-      // Total time = animation duration only (no extra gap)
-      const totalTime = animDur + 0.1; // tiny gap for smooth transition
-
       let currentIndex = 0;
 
       function showSlide(index){
@@ -842,10 +839,11 @@
           els[index].style.display = 'flex';
           els[index].style.opacity = '1';
           const anim = els[index].dataset.anim;
+          const dur = getAnimDuration(els[index]);
           if(anim && anim !== 'none'){
             els[index].style.animation = 'none';
             void els[index].offsetWidth;
-            els[index].style.animation = `${anim} ${animDur}s ease both`;
+            els[index].style.animation = `${anim} ${dur}s ease both`;
           }
         }
       }
@@ -855,10 +853,12 @@
         showSlide(currentIndex);
       }
 
-      // Show first slide immediately
       showSlide(0);
       
-      // Start timer for next slides - no gap between slides
+      // Use the duration from the first slide for timing
+      const firstDur = getAnimDuration(els[0]);
+      const totalTime = firstDur + 0.05;
+      
       slideTimers[group] = setInterval(() => {
         nextSlide();
       }, totalTime * 1000);
@@ -956,7 +956,7 @@
               ${ANIMS.map(a=>`<option value="${a[0]}">${a[1]}</option>`).join('')}
             </select>
           </div>
-          <div class="field"><label style="color:var(--accent-2);">⚡ Zero gap transition</label></div>
+          <div class="field"><label style="color:var(--accent-2);">⚡ Zero gap</label></div>
         </div>
         <div class="slide-controls">
           <button class="btn small" id="slideAddNext">➕ Add next slide</button>
@@ -964,7 +964,7 @@
           <button class="btn small" id="slideReset">🔄 Reset slides</button>
         </div>
         <div class="field" style="margin-top:6px;">
-          <label style="font-size:10px;color:var(--muted);">💡 Ek animation complete hote hi next slide show ho jaati hai — no white gap!</label>
+          <label style="font-size:10px;color:var(--muted);">💡 Har image ka apna animation duration set karein.</label>
         </div>
       `;
     }
@@ -1194,7 +1194,7 @@
     });
   });
 
-  // ================ EXPORT FUNCTIONS - FIXED: No gap in export ================
+  // ================ EXPORT FUNCTIONS - FIXED ================
   
   function getSlideShowState(time, totalDuration) {
     const result = {};
@@ -1221,8 +1221,9 @@
         continue;
       }
       
-      const animDur = parseFloat(els[0].dataset.animDur) || 0.8;
-      const totalTime = animDur + 0.1; // match updateSlideShow timing
+      // Get duration from each slide - use first slide's duration for timing
+      const animDur = getAnimDuration(els[0]);
+      const totalTime = animDur + 0.05;
       const totalGroupTime = totalTime * els.length;
       
       const loopedTime = time % totalGroupTime;
@@ -1230,6 +1231,7 @@
       const slideTime = loopedTime % totalTime;
       const actualIndex = slideIndex % els.length;
       
+      // Progress within current slide's animation
       let progress = slideTime / animDur;
       if(progress > 1) progress = 1;
       
