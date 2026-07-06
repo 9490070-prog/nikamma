@@ -237,6 +237,7 @@
   ::-webkit-scrollbar-track{background:transparent;}
 
   @keyframes fadeIn{from{opacity:0;}to{opacity:1;}}
+  @keyframes fadeOut{from{opacity:1;}to{opacity:0;}}
   @keyframes slideInLeft{from{opacity:0;transform:translateX(-60px) scale(1);}to{opacity:1;transform:translateX(0) scale(1);}}
   @keyframes slideInRight{from{opacity:0;transform:translateX(60px) scale(1);}to{opacity:1;transform:translateX(0) scale(1);}}
   @keyframes slideInUp{from{opacity:0;transform:translateY(40px) scale(1);}to{opacity:1;transform:translateY(0) scale(1);}}
@@ -759,7 +760,7 @@
     ["zoomIn","Zoom In"],["bounceIn","Bounce In"],["pulse","Pulse (loop)"],["shake","Shake"]
   ];
 
-  // ---- SLIDE SHOW ENGINE ----
+  // ---- SLIDE SHOW ENGINE - FIXED: No white gap ----
   function refreshSlideGroup(){
     const groups = {};
     const elements = Array.from(stage.querySelectorAll('.element'));
@@ -824,9 +825,10 @@
       
       if(els.length <= 1) continue;
 
-      const slideDur = parseFloat(els[0].dataset.slideDuration) || 2;
+      // Get duration from first element
       const animDur = parseFloat(els[0].dataset.animDur) || 0.8;
-      const totalTime = slideDur + animDur;
+      // Total time = animation duration only (no extra gap)
+      const totalTime = animDur + 0.1; // tiny gap for smooth transition
 
       let currentIndex = 0;
 
@@ -853,7 +855,10 @@
         showSlide(currentIndex);
       }
 
+      // Show first slide immediately
       showSlide(0);
+      
+      // Start timer for next slides - no gap between slides
       slideTimers[group] = setInterval(() => {
         nextSlide();
       }, totalTime * 1000);
@@ -943,9 +948,6 @@
           <input type="text" id="propSlideGroup" placeholder="e.g. slides" value="${selected.dataset.slideGroup || ''}">
         </div>
         <div class="row3">
-          <div class="field"><label>Slide duration (s)</label>
-            <input type="number" id="propSlideDuration" step="0.5" min="0.5" value="${selected.dataset.slideDuration || 2}">
-          </div>
           <div class="field"><label>Anim duration (s)</label>
             <input type="number" id="propAnimDur" step="0.1" min="0.1" value="${selected.dataset.animDur || 0.8}">
           </div>
@@ -954,6 +956,7 @@
               ${ANIMS.map(a=>`<option value="${a[0]}">${a[1]}</option>`).join('')}
             </select>
           </div>
+          <div class="field"><label style="color:var(--accent-2);">⚡ Zero gap transition</label></div>
         </div>
         <div class="slide-controls">
           <button class="btn small" id="slideAddNext">➕ Add next slide</button>
@@ -961,7 +964,7 @@
           <button class="btn small" id="slideReset">🔄 Reset slides</button>
         </div>
         <div class="field" style="margin-top:6px;">
-          <label style="font-size:10px;color:var(--muted);">💡 Ek group mein multiple images daalein. Har image apne time pe animate hogi.</label>
+          <label style="font-size:10px;color:var(--muted);">💡 Ek animation complete hote hi next slide show ho jaati hai — no white gap!</label>
         </div>
       `;
     }
@@ -1018,17 +1021,6 @@
         });
       }
       
-      const durInput = document.getElementById('propSlideDuration');
-      if(durInput){
-        durInput.addEventListener('change', function(){
-          selected.dataset.slideDuration = this.value;
-          updateSlideShow();
-        });
-        durInput.addEventListener('input', function(){
-          selected.dataset.slideDuration = this.value;
-        });
-      }
-
       const addBtn = document.getElementById('slideAddNext');
       if(addBtn){
         addBtn.addEventListener('click', function(){
@@ -1099,8 +1091,6 @@
 
     const sg = document.getElementById('propSlideGroup');
     if(sg) sg.value = selected.dataset.slideGroup || '';
-    const sd = document.getElementById('propSlideDuration');
-    if(sd) sd.value = selected.dataset.slideDuration || 2;
   }
 
   function setVal(id,val){ const e=document.getElementById(id); if(e) e.value=val; }
@@ -1204,7 +1194,7 @@
     });
   });
 
-  // ================ EXPORT FUNCTIONS - FIXED ================
+  // ================ EXPORT FUNCTIONS - FIXED: No gap in export ================
   
   function getSlideShowState(time, totalDuration) {
     const result = {};
@@ -1231,9 +1221,8 @@
         continue;
       }
       
-      const slideDur = parseFloat(els[0].dataset.slideDuration) || 2;
       const animDur = parseFloat(els[0].dataset.animDur) || 0.8;
-      const totalTime = slideDur + animDur;
+      const totalTime = animDur + 0.1; // match updateSlideShow timing
       const totalGroupTime = totalTime * els.length;
       
       const loopedTime = time % totalGroupTime;
@@ -1375,7 +1364,6 @@
     const rotMatch = /rotate\((-?\d+(\.\d+)?)deg\)/.exec(el.style.transform || '');
     const rotation = rotMatch ? parseFloat(rotMatch[1]) : 0;
     
-    // Apply scale correctly
     const scaledX = (x + tx) * scale;
     const scaledY = (y + ty) * scale;
     const scaledW = w * scale * scaleVal;
@@ -1383,7 +1371,6 @@
     
     ctx.save();
     
-    // Translate to center of element after scaling
     ctx.translate(scaledX + scaledW / 2, scaledY + scaledH / 2);
     ctx.rotate(rotation * Math.PI / 180);
     ctx.globalAlpha = Math.max(0, Math.min(1, opacity));
@@ -1756,7 +1743,6 @@
 
   function getQualityScale(){
     const val = parseFloat(document.getElementById('qualitySelect').value) || 1;
-    // Return appropriate scale - 1x, 2x, 3x
     return val;
   }
 
