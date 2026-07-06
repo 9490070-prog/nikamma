@@ -27,23 +27,23 @@
     background:var(--ink);
     color:var(--text);
     font-family:'Inter',sans-serif;
-    overflow:hidden;
+    overflow-x:hidden;
   }
   h1,h2,h3,.brand,.tool-label{font-family:'Space Grotesk',sans-serif;}
 
-  /* ---------- Layout shell ---------- */
   #app{
-    display:grid;
-    grid-template-rows:56px 1fr;
+    display:flex;
+    flex-direction:column;
     height:100vh;
   }
   #topbar{
     display:flex;
     align-items:center;
     gap:16px;
-    padding:0 18px;
+    padding:10px 18px;
     background:linear-gradient(180deg,#1B1F26,#171A20);
     border-bottom:1px solid var(--border);
+    flex-wrap:wrap;
   }
   .brand{font-weight:700;font-size:16px;letter-spacing:0.2px;display:flex;align-items:center;gap:8px;}
   .brand .dot{width:9px;height:9px;border-radius:50%;background:var(--accent-2);box-shadow:0 0 10px var(--accent-2);}
@@ -78,13 +78,12 @@
   .btn.ghost{background:transparent;}
   .btn.small{padding:5px 9px;font-size:12px;}
   .btn:disabled{opacity:.4;cursor:not-allowed;}
-  #topbar .right-group{margin-left:auto;display:flex;gap:8px;align-items:center;}
+  #topbar .right-group{margin-left:auto;display:flex;gap:8px;align-items:center;flex-wrap:wrap;}
 
-  /* ---------- Workspace ---------- */
   #workspace{
     display:grid;
     grid-template-columns:220px 1fr 280px;
-    height:100%;
+    flex:1;
     overflow:hidden;
   }
   .rail{
@@ -133,7 +132,6 @@
   .layer-row button{background:none;border:none;color:var(--muted);cursor:pointer;padding:2px;}
   .layer-row button:hover{color:var(--text);}
 
-  /* ---------- Canvas stage area ---------- */
   #stageArea{
     display:flex;flex-direction:column;align-items:center;justify-content:center;
     background:
@@ -142,6 +140,7 @@
     position:relative;
     overflow:auto;
     padding:30px;
+    min-height:350px;
   }
   #sizeLabel{
     color:var(--muted);font-size:12px;margin-bottom:12px;
@@ -193,6 +192,7 @@
     -webkit-font-smoothing:antialiased;
     text-rendering:optimizeLegibility;
     transform-origin: center center;
+    touch-action:none;
   }
   .element.el-image img{
     image-rendering:auto;
@@ -216,7 +216,6 @@
   .element.el-image img{pointer-events:none;display:block;}
   .element.el-shape{pointer-events:auto;}
 
-  /* ---------- Inspector controls ---------- */
   .field{margin-bottom:10px;}
   .field label{display:block;font-size:11px;color:var(--muted);margin-bottom:4px;}
   .row2{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
@@ -259,6 +258,21 @@
     60%{transform:translateX(-4px) scale(1);}
     80%{transform:translateX(4px) scale(1);}
   }
+
+  /* Responsive Media Queries Mobile Ke Liye */
+  @media(max-width:900px){
+    body{overflow:auto;}
+    #app{height:auto;min-height:100vh;}
+    #topbar{gap:10px;justify-content:center;}
+    #topbar .right-group{margin-left:0;justify-content:center;width:100%;margin-top:5px;}
+    #workspace{
+      grid-template-columns:1fr;
+      height:auto;
+      overflow:visible;
+    }
+    .rail{border-right:none;border-bottom:1px solid var(--border);}
+    #inspector{border-left:none;border-top:1px solid var(--border);}
+  }
 </style>
 </head>
 <body>
@@ -297,7 +311,6 @@
   </div>
 
   <div id="workspace">
-    <!-- LEFT RAIL -->
     <div class="rail">
       <div class="section-title">Add element</div>
       <div class="tool-grid">
@@ -332,7 +345,6 @@
       <div id="layerList"><div class="empty-hint">Koi element nahi hai abhi.<br>Upar se element add karein.</div></div>
     </div>
 
-    <!-- CENTER STAGE -->
     <div id="stageArea">
       <div id="sizeLabel">320 × 50 px</div>
       <div id="phoneWrap">
@@ -344,7 +356,6 @@
       <div id="stageHolderOuter"></div>
     </div>
 
-    <!-- RIGHT INSPECTOR -->
     <div id="inspector">
       <div id="inspectorEmpty" class="empty-hint">Ek element select karein<br>properties edit karne ke liye.</div>
       <div id="inspectorBody" style="display:none;"></div>
@@ -356,7 +367,6 @@
 (function(){
   "use strict";
 
-  /* ================= Sizes ================= */
   const SIZES = [
     {label:"Banner — 320×50", w:320, h:50},
     {label:"Large Banner — 320×100", w:320, h:100},
@@ -416,7 +426,6 @@
     reader.readAsDataURL(f);
   });
 
-  /* ================= Element factory ================= */
   let elCounter=0;
   let selected=null;
 
@@ -534,7 +543,6 @@
     e.target.value='';
   });
 
-  /* ================= Drag & resize ================= */
   let dragState = null;
 
   function attachDrag(el, handle){
@@ -596,7 +604,6 @@
     if(e.target===stage) selectElement(null);
   });
 
-  /* ================= Selection & Layers ================= */
   function selectElement(el){
     if(selected) selected.classList.remove('selected');
     selected=el;
@@ -671,7 +678,6 @@
     if(e.key==='ArrowDown'){ selected.style.top=(parseFloat(selected.style.top)+step)+'px'; syncInspectorPosition(); }
   });
 
-  /* ================= Inspector ================= */
   const inspectorEmpty=document.getElementById('inspectorEmpty');
   const inspectorBody=document.getElementById('inspectorBody');
 
@@ -868,16 +874,9 @@
       el.style.animation='none'; 
       return; 
     }
-    const currentTransform = el.style.transform || '';
-    const rotMatch = /rotate\((-?\d+(\.\d+)?)deg\)/.exec(currentTransform);
-    const rotation = rotMatch ? `rotate(${rotMatch[1]}deg)` : '';
     el.style.animation = `${el.dataset.anim} ${el.dataset.animDur}s ${el.dataset.animDelay}s ${el.dataset.animIter} both ease`;
-    if(rotation) {
-      el.dataset._rotation = rotation;
-    }
   }
 
-  /* ================= Play preview ================= */
   document.getElementById('playBtn').addEventListener('click', function(){
     Array.from(stage.children).filter(c=>c.classList.contains('element')).forEach(el=>{
       if(el.dataset.anim && el.dataset.anim!=='none'){
@@ -888,7 +887,6 @@
     });
   });
 
-  /* ================= Export HTML ================= */
   document.getElementById('exportHtmlBtn').addEventListener('click', function(){
     const clone = stage.cloneNode(true);
     clone.classList.remove('selected');
@@ -926,21 +924,6 @@ ${clone.outerHTML.replace('id="stage"', `id="stage" style="width:${w};height:${h
     downloadBlob(out, `ad-${parseInt(w)}x${parseInt(h)}.html`, 'text/html');
   });
 
-  async function withCleanStage(fn){
-    const prevSelected = selected;
-    const activeEl = document.activeElement;
-    if(activeEl && activeEl.blur) activeEl.blur();
-    selectElement(null);
-    stage.classList.add('exporting');
-    try{
-      await document.fonts?.ready;
-      return await fn();
-    } finally {
-      stage.classList.remove('exporting');
-      if(prevSelected) selectElement(prevSelected);
-    }
-  }
-
   let gifWorkerBlobUrl = null;
   async function getGifWorkerBlobURL(){
     if(gifWorkerBlobUrl) return gifWorkerBlobUrl;
@@ -952,7 +935,6 @@ ${clone.outerHTML.replace('id="stage"', `id="stage" style="width:${w};height:${h
       gifWorkerBlobUrl = URL.createObjectURL(blob);
       return gifWorkerBlobUrl;
     } catch(e) {
-      console.warn('Using inline worker fallback');
       const fallbackText = `self.onmessage = function(e) {
   var data = e.data;
   if (data.type === 'render') {
@@ -986,93 +968,309 @@ ${clone.outerHTML.replace('id="stage"', `id="stage" style="width:${w};height:${h
     return parseFloat(document.getElementById('qualitySelect').value) || 2;
   }
 
-  async function captureSingleFrame(scale){
-    await ensureLib('html2canvas', 'https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js');
-    await document.fonts?.ready;
-    return withCleanStage(async ()=>{
-      const canvas = await html2canvas(stage, {
-        backgroundColor: stage.style.backgroundColor || '#ffffff',
-        scale: Math.max(1, scale * 2.5),
-        logging: false,
-        useCORS: true,
-        allowTaint: true,
-        imageTimeout: 0,
-        width: stage.clientWidth,
-        height: stage.clientHeight,
-        onclone: (clonedDoc) => {
-          const clonedStage = clonedDoc.getElementById('stage');
-          if(clonedStage) {
-            clonedStage.querySelectorAll('.element').forEach(el => {
-              const anim = el.dataset.anim;
-              const dur = el.dataset.animDur;
-              const delay = el.dataset.animDelay;
-              const iter = el.dataset.animIter;
-              if(anim && anim !== 'none') {
-                el.style.animation = `${anim} ${dur || 0.8}s ${delay || 0}s ${iter || 1} both ease`;
-              }
-            });
-          }
+  // ============= FIXED: ANIMATION EVALUATION WITH SMOOTH LOOPING =============
+  function evaluateAnimation(el, progress) {
+    const anim = el.dataset.anim;
+    if(!anim || anim === 'none') {
+      return { opacity: parseFloat(el.style.opacity) || 1, tx: 0, ty: 0, scale: 1 };
+    }
+    
+    const duration = parseFloat(el.dataset.animDur) || 0.8;
+    const delay = parseFloat(el.dataset.animDelay) || 0;
+    const iter = el.dataset.animIter || '1';
+    
+    // Calculate effective progress (0 to 1), with delay
+    let rawP = Math.max(0, (progress - delay) / duration);
+    
+    let p;
+    if(iter === 'infinite') {
+      // For infinite loop, use fractional part smoothly
+      p = rawP % 1;
+      // If p is very close to 0, set to 0.001 to avoid blink
+      if(p < 0.001) p = 0.001;
+      if(p > 0.999) p = 0.999;
+    } else {
+      p = Math.min(1, rawP);
+    }
+    
+    // Easing function (smooth ease)
+    const ease = (t) => t < 0.5 ? 2*t*t : 1 - Math.pow(-2*t + 2, 2) / 2;
+    const ep = ease(p);
+    
+    let opacity = 1;
+    let tx = 0, ty = 0, scale = 1;
+    
+    switch(anim) {
+      case 'fadeIn':
+        opacity = ep;
+        break;
+      case 'slideInLeft':
+        opacity = ep;
+        tx = -60 * (1 - ep);
+        break;
+      case 'slideInRight':
+        opacity = ep;
+        tx = 60 * (1 - ep);
+        break;
+      case 'slideInUp':
+        opacity = ep;
+        ty = 40 * (1 - ep);
+        break;
+      case 'slideInDown':
+        opacity = ep;
+        ty = -40 * (1 - ep);
+        break;
+      case 'zoomIn':
+        opacity = ep;
+        scale = 0.5 + 0.5 * ep;
+        break;
+      case 'bounceIn':
+        if(p < 0.5) {
+          const bp = p / 0.5;
+          scale = 0.3 + 0.75 * bp;
+          opacity = 0.3 + 0.7 * bp;
+        } else if(p < 0.7) {
+          const bp = (p - 0.5) / 0.2;
+          scale = 1.05 - 0.1 * bp;
+          opacity = 1;
+        } else if(p < 0.9) {
+          const bp = (p - 0.7) / 0.2;
+          scale = 0.95 + 0.05 * bp;
+          opacity = 1;
+        } else {
+          scale = 1;
+          opacity = 1;
         }
-      });
-      return canvas;
-    });
+        break;
+      case 'pulse':
+        // Smooth pulse using sine wave
+        scale = 1 + 0.05 * Math.sin(p * Math.PI * 2);
+        opacity = 1;
+        break;
+      case 'shake':
+        const shakeAmt = 6 * (1 - ep);
+        tx = Math.sin(p * 50) * shakeAmt;
+        opacity = 1;
+        break;
+      default:
+        opacity = 1;
+    }
+    
+    return { opacity, tx, ty, scale };
   }
 
-  async function captureFrames(durationSec, fps, scale){
-    await ensureLib('html2canvas', 'https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js');
+  // ============= RENDER ELEMENT TO CANVAS WITH ANIMATION =============
+  function renderElementToCanvas(ctx, el, scale, time) {
+    let x = parseFloat(el.style.left) || 0;
+    let y = parseFloat(el.style.top) || 0;
+    let w = parseFloat(el.style.width) || 50;
+    let h = parseFloat(el.style.height) || 50;
+    
+    // Get animation state at this time
+    const totalDuration = parseFloat(document.getElementById('recDuration').value) || 3;
+    // Clamp time to avoid issues
+    const clampedTime = Math.max(0, Math.min(time, totalDuration));
+    const progress = totalDuration > 0 ? clampedTime / totalDuration : 0;
+    const animState = evaluateAnimation(el, progress);
+    
+    // Apply animation transforms
+    const opacity = animState.opacity * (parseFloat(el.style.opacity) || 1);
+    const tx = animState.tx || 0;
+    const ty = animState.ty || 0;
+    const scaleVal = animState.scale || 1;
+    
+    // Get rotation
+    const rotMatch = /rotate\((-?\d+(\.\d+)?)deg\)/.exec(el.style.transform || '');
+    const rotation = rotMatch ? parseFloat(rotMatch[1]) : 0;
+    
+    // Apply scale to position and size
+    const scaledX = (x + tx) * scale;
+    const scaledY = (y + ty) * scale;
+    const scaledW = w * scale * scaleVal;
+    const scaledH = h * scale * scaleVal;
+    
+    ctx.save();
+    ctx.translate(scaledX + scaledW/2, scaledY + scaledH/2);
+    ctx.rotate(rotation * Math.PI / 180);
+    ctx.globalAlpha = Math.max(0, Math.min(1, opacity));
+    
+    const type = el.dataset.type;
+    const hw = scaledW/2, hh = scaledH/2;
+    
+    if(type === 'text' || type === 'button') {
+      // Background for button
+      if(type === 'button') {
+        ctx.fillStyle = el.style.background || '#5B8CFF';
+        const radius = parseFloat(el.style.borderRadius) || 8;
+        const rx = Math.min(radius * scale * scaleVal, Math.min(hw, hh) * 0.8);
+        ctx.beginPath();
+        ctx.moveTo(-hw + rx, -hh);
+        ctx.lineTo(hw - rx, -hh);
+        ctx.quadraticCurveTo(hw, -hh, hw, -hh + rx);
+        ctx.lineTo(hw, hh - rx);
+        ctx.quadraticCurveTo(hw, hh, hw - rx, hh);
+        ctx.lineTo(-hw + rx, hh);
+        ctx.quadraticCurveTo(-hw, hh, -hw, hh - rx);
+        ctx.lineTo(-hw, -hh + rx);
+        ctx.quadraticCurveTo(-hw, -hh, -hw + rx, -hh);
+        ctx.closePath();
+        ctx.fill();
+      }
+      
+      // Text
+      const fontSize = parseFloat(el.style.fontSize) || 16;
+      const fontWeight = el.style.fontWeight || '400';
+      const fontFamily = el.style.fontFamily || 'Inter, sans-serif';
+      const textSize = fontSize * scale * scaleVal;
+      ctx.font = `${fontWeight} ${Math.max(8, textSize)}px ${fontFamily}`;
+      ctx.fillStyle = el.style.color || '#1a1a1a';
+      ctx.textAlign = el.style.textAlign || 'center';
+      ctx.textBaseline = 'middle';
+      
+      let text = el.innerText || '';
+      const maxWidth = Math.max(10, scaledW - (8 * scale * scaleVal));
+      
+      if(ctx.measureText(text).width > maxWidth && maxWidth > 10) {
+        let words = text.split(' ');
+        let lines = [];
+        let currentLine = '';
+        for(let word of words) {
+          let testLine = currentLine + (currentLine ? ' ' : '') + word;
+          if(ctx.measureText(testLine).width > maxWidth && currentLine) {
+            lines.push(currentLine);
+            currentLine = word;
+          } else {
+            currentLine = testLine;
+          }
+        }
+        if(currentLine) lines.push(currentLine);
+        if(lines.length === 0) lines = [text];
+        
+        const lineHeight = fontSize * 1.2 * scale * scaleVal;
+        const totalHeight = lines.length * lineHeight;
+        let startY = -totalHeight/2 + lineHeight/2;
+        
+        for(let line of lines) {
+          if(line) ctx.fillText(line, 0, startY);
+          startY += lineHeight;
+        }
+      } else {
+        ctx.fillText(text, 0, 0);
+      }
+    }
+    else if(type === 'image') {
+      const img = el.querySelector('img');
+      if(img && img.complete && img.naturalWidth > 0) {
+        const radius = parseFloat(el.style.borderRadius) || 0;
+        if(radius > 0) {
+          const rx = Math.min(radius * scale * scaleVal, Math.min(hw, hh) * 0.8);
+          ctx.beginPath();
+          ctx.moveTo(-hw + rx, -hh);
+          ctx.lineTo(hw - rx, -hh);
+          ctx.quadraticCurveTo(hw, -hh, hw, -hh + rx);
+          ctx.lineTo(hw, hh - rx);
+          ctx.quadraticCurveTo(hw, hh, hw - rx, hh);
+          ctx.lineTo(-hw + rx, hh);
+          ctx.quadraticCurveTo(-hw, hh, -hw, hh - rx);
+          ctx.lineTo(-hw, -hh + rx);
+          ctx.quadraticCurveTo(-hw, -hh, -hw + rx, -hh);
+          ctx.closePath();
+          ctx.clip();
+        }
+        ctx.drawImage(img, -hw, -hh, scaledW, scaledH);
+      }
+    }
+    else if(type === 'shape') {
+      ctx.fillStyle = el.style.background || '#5B8CFF';
+      const radius = el.style.borderRadius || '6px';
+      if(radius === '50%') {
+        ctx.beginPath();
+        ctx.arc(0, 0, Math.min(hw, hh), 0, Math.PI * 2);
+        ctx.fill();
+      } else {
+        const r = Math.min(parseFloat(radius) * scale * scaleVal || 6 * scale * scaleVal, Math.min(hw, hh) * 0.8);
+        ctx.beginPath();
+        ctx.moveTo(-hw + r, -hh);
+        ctx.lineTo(hw - r, -hh);
+        ctx.quadraticCurveTo(hw, -hh, hw, -hh + r);
+        ctx.lineTo(hw, hh - r);
+        ctx.quadraticCurveTo(hw, hh, hw - r, hh);
+        ctx.lineTo(-hw + r, hh);
+        ctx.quadraticCurveTo(-hw, hh, -hw, hh - r);
+        ctx.lineTo(-hw, -hh + r);
+        ctx.quadraticCurveTo(-hw, -hh, -hw + r, -hh);
+        ctx.closePath();
+        ctx.fill();
+      }
+    }
+    
+    ctx.restore();
+  }
+
+  // ============= CAPTURE FRAMES WITH SMOOTH ANIMATION =============
+  async function captureFramesWithAnimation(durationSec, fps, scale) {
     await document.fonts?.ready;
     
-    const totalFrames = Math.max(1, Math.round(durationSec*fps));
-    const frames=[];
-    const frameDelay = 1000/fps;
+    const totalFrames = Math.max(2, Math.round(durationSec * fps));
+    const frames = [];
+    const frameDelay = 1000 / fps;
     
-    const animEls = Array.from(stage.querySelectorAll('.element')).filter(el=>el.dataset.anim && el.dataset.anim!=='none');
-    const animStates = animEls.map(el=>{
-      const state = {el, anim: el.style.animation};
-      return state;
-    });
+    const stageW = stage.clientWidth || 320;
+    const stageH = stage.clientHeight || 50;
+    const canvasW = Math.round(stageW * scale);
+    const canvasH = Math.round(stageH * scale);
+    const bgColor = stage.style.backgroundColor || '#ffffff';
     
-    animEls.forEach(el=>{
-      el.style.animation = 'none';
-    });
-    void stage.offsetWidth;
+    const elements = Array.from(stage.querySelectorAll('.element'));
     
-    animEls.forEach(el=>{
-      applyAnim(el);
-    });
-    
-    await new Promise(r => setTimeout(r, 50));
-    
-    try {
-      for(let i=0;i<totalFrames;i++){
-        const frameCanvas = await html2canvas(stage, {
-          backgroundColor: stage.style.backgroundColor || '#ffffff',
-          scale: Math.max(1, scale * 2.5),
-          logging: false,
-          useCORS: true,
-          allowTaint: true,
-          imageTimeout: 0,
-          width: stage.clientWidth,
-          height: stage.clientHeight
-        });
-        
-        const optimized = document.createElement('canvas');
-        optimized.width = frameCanvas.width;
-        optimized.height = frameCanvas.height;
-        const octx = optimized.getContext('2d', {willReadFrequently:true});
-        octx.imageSmoothingEnabled = true;
-        octx.imageSmoothingQuality = 'high';
-        octx.drawImage(frameCanvas, 0, 0);
-        frames.push(optimized);
-        
-        if(i < totalFrames - 1) {
-          await new Promise(r => setTimeout(r, frameDelay));
+    // Get background image if any
+    let bgImage = null;
+    const bgImageStyle = stage.style.backgroundImage;
+    if(bgImageStyle && bgImageStyle !== 'none' && bgImageStyle !== '') {
+      try {
+        const img = new Image();
+        img.crossOrigin = 'anonymous';
+        const urlMatch = bgImageStyle.match(/url\(['"]?([^'"]*)['"]?\)/);
+        if(urlMatch && urlMatch[1]) {
+          img.src = urlMatch[1];
+          await new Promise((resolve) => {
+            if(img.complete && img.naturalWidth > 0) { resolve(); }
+            else { img.onload = resolve; img.onerror = resolve; setTimeout(resolve, 1000); }
+          });
+          if(img.complete && img.naturalWidth > 0) bgImage = img;
         }
+      } catch(e) {}
+    }
+    
+    for(let i = 0; i < totalFrames; i++) {
+      const canvas = document.createElement('canvas');
+      canvas.width = canvasW;
+      canvas.height = canvasH;
+      const ctx = canvas.getContext('2d', { willReadFrequently: true });
+      
+      // Fill background
+      ctx.fillStyle = bgColor;
+      ctx.fillRect(0, 0, canvasW, canvasH);
+      
+      // Draw background image
+      if(bgImage) {
+        ctx.drawImage(bgImage, 0, 0, canvasW, canvasH);
       }
-    } finally {
-      animStates.forEach(({el, anim})=>{
-        el.style.animation = anim;
-      });
+      
+      const time = (i / (totalFrames - 1)) * durationSec;
+      
+      // Render each element
+      for(const el of elements) {
+        const elOpacity = parseFloat(el.style.opacity);
+        if(elOpacity === 0) continue;
+        renderElementToCanvas(ctx, el, scale, time);
+      }
+      
+      frames.push(canvas);
+      
+      if(i < totalFrames - 1) {
+        await new Promise(r => setTimeout(r, frameDelay));
+      }
     }
     
     return frames;
@@ -1098,15 +1296,31 @@ ${clone.outerHTML.replace('id="stage"', `id="stage" style="width:${w};height:${h
     }, 4000);
   }
 
-  /* ================= Export PNG ================= */
+  // ================= Export PNG =================
   document.getElementById('exportPngBtn').addEventListener('click', async function(){
     const btn=this; const origText=btn.textContent;
     btn.disabled=true; btn.textContent='Rendering…';
     try{
-      const scale = getQualityScale();
-      const canvas = await captureSingleFrame(scale);
+      const scale = getQualityScale() * 2;
+      const stageW = stage.clientWidth || 320;
+      const stageH = stage.clientHeight || 50;
+      const canvas = document.createElement('canvas');
+      canvas.width = Math.round(stageW * scale);
+      canvas.height = Math.round(stageH * scale);
+      const ctx = canvas.getContext('2d');
+      
+      const bgColor = stage.style.backgroundColor || '#ffffff';
+      ctx.fillStyle = bgColor;
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      
+      const elements = Array.from(stage.querySelectorAll('.element'));
+      for(const el of elements) {
+        if(parseFloat(el.style.opacity) === 0) continue;
+        renderElementToCanvas(ctx, el, scale, 0);
+      }
+      
       canvas.toBlob(blob=>{
-        triggerDownload(blob, `ad-${stage.clientWidth}x${stage.clientHeight}.png`);
+        triggerDownload(blob, `ad-${stageW}x${stageH}.png`);
       }, 'image/png');
     }catch(err){
       console.error(err);
@@ -1116,18 +1330,19 @@ ${clone.outerHTML.replace('id="stage"', `id="stage" style="width:${w};height:${h
     }
   });
 
-  /* ================= Export GIF ================= */
+  // ================= Export GIF =================
   document.getElementById('exportGifBtn').addEventListener('click', async function(){
     const btn=this; const origText=btn.textContent;
     btn.disabled=true;
     try{
-      const dur = parseFloat(document.getElementById('recDuration').value)||3;
-      const fps = 10;
-      const scale = getQualityScale();
-      btn.textContent='Capturing frames...';
-      const frames = await captureFrames(dur, fps, scale);
+      const dur = parseFloat(document.getElementById('recDuration').value) || 3;
+      const fps = 8;
+      const scale = getQualityScale() * 2;
       
-      if(!frames || frames.length === 0) {
+      btn.textContent='Rendering frames...';
+      const frames = await captureFramesWithAnimation(dur, fps, scale);
+      
+      if(!frames || frames.length < 2) {
         throw new Error('Koi frame capture nahi hua');
       }
       
@@ -1137,23 +1352,22 @@ ${clone.outerHTML.replace('id="stage"', `id="stage" style="width:${w};height:${h
       btn.textContent='Encoding GIF...';
       const workerBlobUrl = await getGifWorkerBlobURL();
       
-      const gifQuality = scale>=3 ? 3 : (scale>=2 ? 6 : 12);
       const gif = new GIF({
         workers: 2,
-        quality: gifQuality,
+        quality: 8,
         width: frames[0].width,
         height: frames[0].height,
         workerScript: workerBlobUrl,
-        background: '#ffffff'
+        background: '#ffffff',
+        repeat: 0
       });
       
       const delay = Math.round(1000/fps);
-      frames.forEach(c => {
-        gif.addFrame(c, {delay: delay, copy: true});
-      });
+      for(let i = 0; i < frames.length; i++) {
+        gif.addFrame(frames[i], {delay: delay, copy: true});
+      }
       
       let finished = false;
-      let progress = 0;
       const finishPromise = new Promise((resolve, reject) => {
         gif.on('finished', function(blob){
           finished = true;
@@ -1163,14 +1377,12 @@ ${clone.outerHTML.replace('id="stage"', `id="stage" style="width:${w};height:${h
           reject(new Error('GIF encoding abort ho gayi'));
         });
         gif.on('progress', function(p){
-          progress = p;
           btn.textContent = `Encoding... ${Math.round(p * 100)}%`;
         });
       });
       
       gif.render();
       
-      // Timeout increased to 5 minutes (300 seconds) for large GIFs
       const timeoutPromise = new Promise((_, reject) => {
         setTimeout(() => {
           if(!finished) reject(new Error('GIF encoding timeout (5 minutes)'));
@@ -1188,7 +1400,7 @@ ${clone.outerHTML.replace('id="stage"', `id="stage" style="width:${w};height:${h
     }
   });
 
-  /* ================= Export Video ================= */
+  // ================= Export Video =================
   document.getElementById('exportVideoBtn').addEventListener('click', async function(){
     const btn=this; const origText=btn.textContent;
     btn.disabled=true;
@@ -1198,12 +1410,15 @@ ${clone.outerHTML.replace('id="stage"', `id="stage" style="width:${w};height:${h
         btn.disabled=false; btn.textContent=origText;
         return;
       }
-      const dur = parseFloat(document.getElementById('recDuration').value)||3;
-      const fps = 15;
-      btn.textContent='Capturing frames...';
-      const frames = await captureFrames(dur, fps, getQualityScale());
       
-      if(!frames || frames.length === 0) {
+      const dur = parseFloat(document.getElementById('recDuration').value) || 3;
+      const fps = 15;
+      const scale = getQualityScale() * 2;
+      
+      btn.textContent='Rendering frames...';
+      const frames = await captureFramesWithAnimation(dur, fps, scale);
+      
+      if(!frames || frames.length < 2) {
         throw new Error('Koi frame capture nahi hua');
       }
       
@@ -1251,7 +1466,6 @@ ${clone.outerHTML.replace('id="stage"', `id="stage" style="width:${w};height:${h
     }
   });
 
-  /* init empty selection state */
   renderInspector();
 })();
 </script>
