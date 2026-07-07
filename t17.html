@@ -1229,23 +1229,36 @@
         continue;
       }
       
-      const animDur = getAnimDuration(els[0]);
-      const stayTime = parseFloat(els[0].dataset.stayTime) || getSlideStayTime(els[0]);
-      const totalTime = animDur + stayTime;
-      const totalGroupTime = totalTime * els.length;
+      // Use each element's own duration for correct timing
+      const totalTime = els.reduce((sum, el) => {
+        const animDur = getAnimDuration(el);
+        const stayTime = parseFloat(el.dataset.stayTime) || getSlideStayTime(el);
+        return sum + animDur + stayTime;
+      }, 0);
       
-      const loopedTime = time % totalGroupTime;
-      const slideIndex = Math.floor(loopedTime / totalTime);
-      const slideTime = loopedTime % totalTime;
-      const actualIndex = slideIndex % els.length;
+      let accumulatedTime = 0;
+      let found = false;
       
-      let progress = slideTime / animDur;
-      if(progress > 1) progress = 1;
+      for(let i = 0; i < els.length; i++) {
+        const el = els[i];
+        const animDur = getAnimDuration(el);
+        const stayTime = parseFloat(el.dataset.stayTime) || getSlideStayTime(el);
+        const segmentTime = animDur + stayTime;
+        
+        if(time < accumulatedTime + segmentTime || i === els.length - 1) {
+          const localTime = time - accumulatedTime;
+          let progress = localTime / animDur;
+          if(progress > 1) progress = 1;
+          result[group] = { element: el, progress: Math.max(0, progress) };
+          found = true;
+          break;
+        }
+        accumulatedTime += segmentTime;
+      }
       
-      result[group] = {
-        element: els[actualIndex],
-        progress: progress
-      };
+      if(!found && els.length > 0) {
+        result[group] = { element: els[els.length - 1], progress: 1 };
+      }
     }
     return result;
   }
