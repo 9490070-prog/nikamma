@@ -274,6 +274,18 @@
     padding:4px 10px;
   }
 
+  /* Custom Style for Custom Canvas Input Box */
+  .custom-size-group {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    color: var(--muted);
+  }
+  .custom-size-group input {
+    width: 60px !important;
+  }
+
   @media(max-width:900px){
     body{overflow:auto;}
     #app{height:auto;min-height:100vh;}
@@ -295,6 +307,14 @@
     <div class="brand"><span class="dot"></span>Ad Studio</div>
     <div class="sep"></div>
     <select id="sizePreset"></select>
+    
+    <div class="custom-size-group">
+      <span>W:</span>
+      <input type="number" id="canvasCustomWidth" value="320" min="10" max="3000">
+      <span>H:</span>
+      <input type="number" id="canvasCustomHeight" value="50" min="10" max="3000">
+    </div>
+
     <div class="sep"></div>
     <label class="btn ghost small" style="cursor:pointer;">
       🖼️ Canvas BG
@@ -403,19 +423,40 @@
   const stageHolder = document.getElementById('stageHolder');
   const phoneWrap = document.getElementById('phoneWrap');
   const sizeLabel = document.getElementById('sizeLabel');
+  const canvasCustomWidth = document.getElementById('canvasCustomWidth');
+  const canvasCustomHeight = document.getElementById('canvasCustomHeight');
 
   let stage = document.createElement('div');
   stage.id = 'stage';
   stageHolderOuter.appendChild(stage);
 
-  function applySize(idx){
-    const s = SIZES[idx];
-    stage.style.width = s.w+'px';
-    stage.style.height = s.h+'px';
-    sizeLabel.textContent = s.w+' × '+s.h+' px';
+  function applySize(w, h){
+    stage.style.width = w+'px';
+    stage.style.height = h+'px';
+    sizeLabel.textContent = w+' × '+h+' px';
+    canvasCustomWidth.value = w;
+    canvasCustomHeight.value = h;
   }
-  sizePreset.addEventListener('change', ()=>applySize(sizePreset.value));
-  applySize(0);
+
+  sizePreset.addEventListener('change', ()=>{
+    const s = SIZES[sizePreset.value];
+    applySize(s.w, s.h);
+  });
+
+  // Manual input events for custom size textboxes
+  function handleCustomSizeInput() {
+    let w = parseInt(canvasCustomWidth.value) || 320;
+    let h = parseInt(canvasCustomHeight.value) || 50;
+    stage.style.width = w+'px';
+    stage.style.height = h+'px';
+    sizeLabel.textContent = w+' × '+h+' px';
+    sizePreset.value = 8; // Switch preset selection dropdown automatically to "Custom"
+  }
+
+  canvasCustomWidth.addEventListener('input', handleCustomSizeInput);
+  canvasCustomHeight.addEventListener('input', handleCustomSizeInput);
+
+  applySize(320, 50);
 
   document.getElementById('phoneToggle').addEventListener('change', function(){
     if(this.checked){
@@ -443,7 +484,6 @@
   let elCounter=0;
   let selected=null;
   let slideTimers = {};
-  // Store stay time per group
   let groupStayTime = {};
 
   function getCustomSizeFromInspector(){
@@ -810,7 +850,6 @@
     return parseFloat(el.dataset.animDur) || (baseDuration / 4) || 0.8;
   }
 
-  // Get stay time for a group (first element's stay time or default)
   function getGroupStayTime(groupName){
     if(groupStayTime[groupName] !== undefined) {
       return groupStayTime[groupName];
@@ -819,7 +858,7 @@
     if(els.length > 0 && els[0].dataset.stayTime) {
       return parseFloat(els[0].dataset.stayTime);
     }
-    return 0.8; // default
+    return 0.8;
   }
 
   function updateSlideShow(){
@@ -843,9 +882,7 @@
       els.sort((a,b) => (parseInt(a.dataset.slideIndex) || 0) - (parseInt(b.dataset.slideIndex) || 0));
       if(els.length <= 1) continue;
 
-      // Use group stay time
       const stayTime = getGroupStayTime(group);
-      // Update stayTime on all elements in group for consistency
       els.forEach(el => {
         el.dataset.stayTime = stayTime;
       });
@@ -1051,7 +1088,6 @@
             const group = selected.dataset.slideGroup;
             if(group){
               groupStayTime[group] = val;
-              // Update all elements in group
               const groupEls = getGroupElements(group);
               groupEls.forEach(el => {
                 el.dataset.stayTime = val;
@@ -1263,7 +1299,6 @@
       }
       
       const stayTime = getGroupStayTime(group);
-      // Use uniform timing for all elements in group
       const totalTimePerSlide = els.reduce((sum, el) => {
         const animDur = getAnimDuration(el);
         return sum + animDur + stayTime;
