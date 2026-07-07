@@ -172,7 +172,7 @@
     border-bottom:2px dashed #333;
   }
 
-  #stage{
+  #stage {
     position:relative;
     background:#ffffff;
     background-size:cover;
@@ -182,7 +182,7 @@
     border-radius:4px;
   }
 
-  .element{
+  .element {
     position:absolute;
     cursor:grab;
     display:flex;
@@ -194,7 +194,7 @@
     transform-origin: center center;
     touch-action:none;
   }
-  .element.el-image img{
+  .element.el-image img {
     image-rendering:auto;
   }
   .element.selected{box-shadow:0 0 0 2px var(--accent), 0 0 0 5px rgba(91,140,255,.18);}
@@ -236,28 +236,29 @@
   ::-webkit-scrollbar-thumb{background:#2b303a;border-radius:6px;}
   ::-webkit-scrollbar-track{background:transparent;}
 
-  @keyframes fadeIn{from{opacity:0;}to{opacity:1;}}
-  @keyframes slideInLeft{from{opacity:0;transform:translateX(-60px) scale(1);}to{opacity:1;transform:translateX(0) scale(1);}}
-  @keyframes slideInRight{from{opacity:0;transform:translateX(60px) scale(1);}to{opacity:1;transform:translateX(0) scale(1);}}
-  @keyframes slideInUp{from{opacity:0;transform:translateY(40px) scale(1);}to{opacity:1;transform:translateY(0) scale(1);}}
-  @keyframes slideInDown{from{opacity:0;transform:translateY(-40px) scale(1);}to{opacity:1;transform:translateY(0) scale(1);}}
-  @keyframes zoomIn{from{opacity:0;transform:scale(0.5);}to{opacity:1;transform:scale(1);}}
-  @keyframes bounceIn{
+  /* ANIMATION KEYFRAMES MATCHED PERFECTLY FOR PREVIEW AND EXPORT */
+  @keyframes fadeIn { from{opacity:0;} to{opacity:1;} }
+  @keyframes slideInLeft { from{opacity:0;transform:translateX(-60px);} to{opacity:1;transform:translateX(0);} }
+  @keyframes slideInRight { from{opacity:0;transform:translateX(60px);} to{opacity:1;transform:translateX(0);} }
+  @keyframes slideInUp { from{opacity:0;transform:translateY(40px);} to{opacity:1;transform:translateY(0);} }
+  @keyframes slideInDown { from{opacity:0;transform:translateY(-40px);} to{opacity:1;transform:translateY(0);} }
+  @keyframes zoomIn { from{opacity:0;transform:scale(0.5);} to{opacity:1;transform:scale(1);} }
+  @keyframes bounceIn {
     0%{opacity:0;transform:scale(0.3);}
     50%{opacity:1;transform:scale(1.05);}
     70%{transform:scale(0.95);}
-    100%{transform:scale(1);}
+    100%{opacity:1;transform:scale(1);}
   }
-  @keyframes pulse{
+  @keyframes pulse {
     0%,100%{transform:scale(1);}
     50%{transform:scale(1.05);}
   }
-  @keyframes shake{
-    0%,100%{transform:translateX(0) scale(1);}
-    20%{transform:translateX(-6px) scale(1);}
-    40%{transform:translateX(6px) scale(1);}
-    60%{transform:translateX(-4px) scale(1);}
-    80%{transform:translateX(4px) scale(1);}
+  @keyframes shake {
+    0%,100%{transform:translateX(0);}
+    20%{transform:translateX(-6px);}
+    40%{transform:translateX(6px);}
+    60%{transform:translateX(-4px);}
+    80%{transform:translateX(4px);}
   }
 
   .slide-controls {
@@ -769,29 +770,20 @@
       }
     });
     for(const [group, els] of Object.entries(groups)){
-      els.sort((a,b) => {
-        const idxA = parseInt(a.dataset.slideIndex) || 0;
-        const idxB = parseInt(b.dataset.slideIndex) || 0;
-        return idxA - idxB;
-      });
-      els.forEach((el, idx) => {
-        el.dataset.slideIndex = idx;
-      });
+      els.sort((a,b) => (parseInt(a.dataset.slideIndex) || 0) - (parseInt(b.dataset.slideIndex) || 0));
+      els.forEach((el, idx) => { el.dataset.slideIndex = idx; });
     }
     elements.forEach(el => {
       const g = el.dataset.slideGroup;
       if(g) {
         const groupEls = getGroupElements(g);
         if(groupEls.length > 0 && groupEls[0] === el) {
-          el.style.display = 'flex';
-          el.style.opacity = '1';
+          el.style.display = 'flex'; el.style.opacity = '1';
         } else {
-          el.style.display = 'none';
-          el.style.opacity = '0';
+          el.style.display = 'none'; el.style.opacity = '0';
         }
       } else {
-        el.style.display = 'flex';
-        el.style.opacity = '1';
+        el.style.display = 'flex'; el.style.opacity = '1';
       }
     });
   }
@@ -818,25 +810,16 @@
     });
 
     for(const [group, els] of Object.entries(groups)){
-      els.sort((a,b) => {
-        const idxA = parseInt(a.dataset.slideIndex) || 0;
-        const idxB = parseInt(b.dataset.slideIndex) || 0;
-        return idxA - idxB;
-      });
-      
+      els.sort((a,b) => (parseInt(a.dataset.slideIndex) || 0) - (parseInt(b.dataset.slideIndex) || 0));
       if(els.length <= 1) continue;
 
       let currentIndex = 0;
-
       function showSlide(index){
         els.forEach(el => {
-          el.style.display = 'none';
-          el.style.opacity = '0';
-          el.style.animation = 'none';
+          el.style.display = 'none'; el.style.opacity = '0'; el.style.animation = 'none';
         });
         if(els[index]){
-          els[index].style.display = 'flex';
-          els[index].style.opacity = '1';
+          els[index].style.display = 'flex'; el.style.opacity = '1';
           const anim = els[index].dataset.anim;
           const dur = getAnimDuration(els[index]);
           if(anim && anim !== 'none'){
@@ -847,17 +830,13 @@
         }
       }
 
-      function nextSlide(){
-        currentIndex = (currentIndex + 1) % els.length;
-        showSlide(currentIndex);
-      }
-
       showSlide(0);
       const dur = getAnimDuration(els[0]);
       const totalTime = dur + 0.05;
       
       slideTimers[group] = setInterval(() => {
-        nextSlide();
+        currentIndex = (currentIndex + 1) % els.length;
+        showSlide(currentIndex);
       }, totalTime * 1000);
     }
   }
@@ -997,9 +976,7 @@
       if(addBtn){
         addBtn.addEventListener('click', function(){
           const fileInput = document.getElementById('imageUpload');
-          if(fileInput){
-            fileInput.click();
-          }
+          if(fileInput) fileInput.click();
         });
       }
       
@@ -1021,9 +998,7 @@
           const group = selected.dataset.slideGroup;
           if(group){
             const els = getGroupElements(group);
-            els.forEach((el, idx) => {
-              el.dataset.slideIndex = idx;
-            });
+            els.forEach((el, idx) => { el.dataset.slideIndex = idx; });
             refreshSlideGroup();
             updateSlideShow();
           }
@@ -1086,8 +1061,7 @@
     on('propW','input',e=>{ selected.style.width=e.target.value+'px'; });
     on('propH','input',e=>{ selected.style.height=e.target.value+'px'; });
     on('propRot','input',e=>{ 
-      const currentTransform = selected.style.transform || '';
-      const scaleMatch = /scale\(([\d.]+)\)/.exec(currentTransform);
+      const scaleMatch = /scale\(([\d.]+)\)/.exec(selected.style.transform||'');
       const scale = scaleMatch ? scaleMatch[1] : '1';
       selected.style.transform = `rotate(${e.target.value}deg) scale(${scale})`;
     });
@@ -1140,8 +1114,7 @@
 
   function applyAnim(el){
     if(el.dataset.anim==='none'){ 
-      el.style.animation='none'; 
-      return; 
+      el.style.animation='none'; return; 
     }
     el.style.animation = `${el.dataset.anim} ${el.dataset.animDur}s ${el.dataset.animDelay}s ${el.dataset.animIter} both ease`;
   }
@@ -1157,8 +1130,7 @@
     });
   });
 
-  // ================ EXPORT CANVAS MATHEMATICS FIX ================
-  
+  // ================ EXPORT CANVAS TIMELINE & STEP ALIGNMENT FIX ================
   function getSlideShowState(time, totalDuration) {
     const result = {};
     const elements = Array.from(stage.querySelectorAll('.element'));
@@ -1173,11 +1145,7 @@
     });
     
     for(const [group, els] of Object.entries(groups)){
-      els.sort((a,b) => {
-        const idxA = parseInt(a.dataset.slideIndex) || 0;
-        const idxB = parseInt(b.dataset.slideIndex) || 0;
-        return idxA - idxB;
-      });
+      els.sort((a,b) => (parseInt(a.dataset.slideIndex) || 0) - (parseInt(b.dataset.slideIndex) || 0));
       
       if(els.length <= 1) {
         result[group] = { element: els[0] || null, progress: 0 };
@@ -1198,12 +1166,9 @@
       
       result[group] = {
         element: els[actualIndex],
-        progress: progress,
-        slideTime: slideTime,
-        animDur: animDur
+        progress: progress
       };
     }
-    
     return result;
   }
 
@@ -1217,15 +1182,14 @@
     const delay = parseFloat(el.dataset.animDelay) || 0;
     const iter = el.dataset.animIter || '1';
     
-    let rawP = Math.max(0, (progress - delay) / duration);
+    let rawP = (progress - delay) / duration;
     
     let p;
     if(iter === 'infinite') {
-      p = rawP % 1;
-      if(p < 0.001) p = 0.001;
-      if(p > 0.999) p = 0.999;
+      if(rawP < 0) p = 0;
+      else p = rawP % 1;
     } else {
-      p = Math.min(1, rawP);
+      p = Math.max(0, Math.min(1, rawP));
     }
     
     const ease = (t) => t < 0.5 ? 2*t*t : 1 - Math.pow(-2*t + 2, 2) / 2;
@@ -1234,61 +1198,53 @@
     let opacity = 1;
     let tx = 0, ty = 0, scale = 1;
     
-    switch(anim) {
-      case 'fadeIn':
-        opacity = ep;
-        break;
-      case 'slideInLeft':
-        opacity = ep;
-        tx = -60 * (1 - ep);
-        break;
-      case 'slideInRight':
-        opacity = ep;
-        tx = 60 * (1 - ep);
-        break;
-      case 'slideInUp':
-        opacity = ep;
-        ty = 40 * (1 - ep);
-        break;
-      case 'slideInDown':
-        opacity = ep;
-        ty = -40 * (1 - ep);
-        break;
-      case 'zoomIn':
-        opacity = ep;
-        scale = 0.5 + 0.5 * ep;
-        break;
-      case 'bounceIn':
-        if(p < 0.5) {
-          const bp = p / 0.5;
-          scale = 0.3 + 0.75 * bp;
-          opacity = 0.3 + 0.7 * bp;
-        } else if(p < 0.7) {
-          const bp = (p - 0.5) / 0.2;
-          scale = 1.05 - 0.1 * bp;
+    // Exact structural mirror of CSS keyframes
+    if(rawP < 0) {
+      if(anim.startsWith('slide') || anim==='fadeIn' || anim==='zoomIn' || anim==='bounceIn') opacity = 0;
+    } else {
+      switch(anim) {
+        case 'fadeIn':
+          opacity = ep;
+          break;
+        case 'slideInLeft':
+          opacity = ep; tx = -60 * (1 - ep);
+          break;
+        case 'slideInRight':
+          opacity = ep; tx = 60 * (1 - ep);
+          break;
+        case 'slideInUp':
+          opacity = ep; ty = 40 * (1 - ep);
+          break;
+        case 'slideInDown':
+          opacity = ep; ty = -40 * (1 - ep);
+          break;
+        case 'zoomIn':
+          opacity = ep; scale = 0.5 + 0.5 * ep;
+          break;
+        case 'bounceIn':
+          if(p < 0.5) {
+            const bp = p / 0.5; scale = 0.3 + 0.75 * bp; opacity = 0.3 + 0.7 * bp;
+          } else if(p < 0.7) {
+            const bp = (p - 0.5) / 0.2; scale = 1.05 - 0.1 * bp; opacity = 1;
+          } else if(p < 0.9) {
+            const bp = (p - 0.7) / 0.2; scale = 0.95 + 0.05 * bp; opacity = 1;
+          } else {
+            scale = 1; opacity = 1;
+          }
+          break;
+        case 'pulse':
+          scale = 1 + 0.05 * Math.sin(p * Math.PI * 2);
           opacity = 1;
-        } else if(p < 0.9) {
-          const bp = (p - 0.7) / 0.2;
-          scale = 0.95 + 0.05 * bp;
+          break;
+        case 'shake':
+          const shakeAmt = 6 * (1 - ep);
+          tx = Math.sin(p * 50) * shakeAmt;
           opacity = 1;
-        } else {
-          scale = 1;
+          break;
+        default:
           opacity = 1;
-        }
-        break;
-      case 'pulse':
-        scale = 1 + 0.05 * Math.sin(p * Math.PI * 2);
-        opacity = 1;
-        break;
-      case 'shake':
-        const shakeAmt = 6 * (1 - ep);
-        tx = Math.sin(p * 50) * shakeAmt;
-        opacity = 1;
-        break;
-      default:
-        opacity = 1;
+      }
     }
-    
     return { opacity, tx, ty, scale };
   }
 
@@ -1299,7 +1255,7 @@
     let h = parseFloat(el.style.height) || 50;
     
     const group = el.dataset.slideGroup;
-    let progress = time / (parseFloat(document.getElementById('recDuration').value) || 5);
+    let progress = time; // Use raw absolute timeline context
     let shouldRender = true;
     
     if(group && slideState && slideState[group]) {
@@ -1307,13 +1263,11 @@
       if(state.element !== el) {
         shouldRender = false;
       } else {
-        progress = state.progress || 0;
+        progress = state.progress * (parseFloat(el.dataset.animDur) || 0.8);
       }
     } else if(group) {
       const groupEls = getGroupElements(group);
-      if(groupEls.length > 0 && groupEls[0] !== el) {
-        shouldRender = false;
-      }
+      if(groupEls.length > 0 && groupEls[0] !== el) shouldRender = false;
     }
     
     if(!shouldRender) return;
@@ -1333,12 +1287,12 @@
     const scaledH = h * scale * scaleVal;
     
     ctx.save();
-    ctx.translate(scaledX + scaledW / 2, scaledY + scaledH / 2);
+    ctx.translate(scaledX + (w * scale) / 2, scaledY + (h * scale) / 2);
     ctx.rotate(rotation * Math.PI / 180);
     ctx.globalAlpha = Math.max(0, Math.min(1, opacity));
     
-    const hw = scaledW / 2;
-    const hh = scaledH / 2;
+    const hw = (w * scale * scaleVal) / 2;
+    const hh = (h * scale * scaleVal) / 2;
     const type = el.dataset.type;
     
     if(type === 'text' || type === 'button') {
@@ -1347,50 +1301,36 @@
         const radius = parseFloat(el.style.borderRadius) || 8;
         const rx = Math.min(radius * scale * scaleVal, Math.min(hw, hh) * 0.8);
         ctx.beginPath();
-        ctx.moveTo(-hw + rx, -hh);
-        ctx.lineTo(hw - rx, -hh);
-        ctx.quadraticCurveTo(hw, -hh, hw, -hh + rx);
-        ctx.lineTo(hw, hh - rx);
-        ctx.quadraticCurveTo(hw, hh, hw - rx, hh);
-        ctx.lineTo(-hw + rx, hh);
-        ctx.quadraticCurveTo(-hw, hh, -hw, hh - rx);
-        ctx.lineTo(-hw, -hh + rx);
-        ctx.quadraticCurveTo(-hw, -hh, -hw + rx, -hh);
-        ctx.closePath();
-        ctx.fill();
+        ctx.moveTo(-hw + rx, -hh); ctx.lineTo(hw - rx, -hh);
+        ctx.quadraticCurveTo(hw, -hh, hw, -hh + rx); ctx.lineTo(hw, hh - rx);
+        ctx.quadraticCurveTo(hw, hh, hw - rx, hh); ctx.lineTo(-hw + rx, hh);
+        ctx.quadraticCurveTo(-hw, hh, -hw, hh - rx); ctx.lineTo(-hw, -hh + rx);
+        ctx.quadraticCurveTo(-hw, -hh, -hw + rx, -hh); ctx.closePath(); ctx.fill();
       }
       
       const fontSize = parseFloat(el.style.fontSize) || 16;
       const fontWeight = el.style.fontWeight || '400';
       const fontFamily = el.style.fontFamily || 'Inter, sans-serif';
-      const textSize = fontSize * scale * scaleVal;
-      ctx.font = `${fontWeight} ${Math.max(8, textSize)}px ${fontFamily}`;
+      ctx.font = `${fontWeight} ${fontSize * scale * scaleVal}px ${fontFamily}`;
       ctx.fillStyle = el.style.color || '#1a1a1a';
       ctx.textAlign = el.style.textAlign || 'center';
       ctx.textBaseline = 'middle';
       
       let text = el.innerText || '';
-      const maxWidth = Math.max(10, scaledW - (8 * scale * scaleVal));
+      const maxWidth = Math.max(10, (w * scale * scaleVal) - (8 * scale * scaleVal));
       
       if(ctx.measureText(text).width > maxWidth && maxWidth > 10) {
-        let words = text.split(' ');
-        let lines = [];
-        let currentLine = '';
+        let words = text.split(' '), lines = [], currentLine = '';
         for(let word of words) {
           let testLine = currentLine + (currentLine ? ' ' : '') + word;
           if(ctx.measureText(testLine).width > maxWidth && currentLine) {
-            lines.push(currentLine);
-            currentLine = word;
-          } else {
-            currentLine = testLine;
-          }
+            lines.push(currentLine); currentLine = word;
+          } else { currentLine = testLine; }
         }
         if(currentLine) lines.push(currentLine);
         
         const lineHeight = fontSize * 1.2 * scale * scaleVal;
-        const totalHeight = lines.length * lineHeight;
-        let startY = -totalHeight/2 + lineHeight/2;
-        
+        let startY = -((lines.length * lineHeight) / 2) + lineHeight / 2;
         for(let line of lines) {
           if(line) ctx.fillText(line, 0, startY);
           startY += lineHeight;
@@ -1406,42 +1346,28 @@
         if(radius > 0) {
           const rx = Math.min(radius * scale * scaleVal, Math.min(hw, hh) * 0.8);
           ctx.beginPath();
-          ctx.moveTo(-hw + rx, -hh);
-          ctx.lineTo(hw - rx, -hh);
-          ctx.quadraticCurveTo(hw, -hh, hw, -hh + rx);
-          ctx.lineTo(hw, hh - rx);
-          ctx.quadraticCurveTo(hw, hh, hw - rx, hh);
-          ctx.lineTo(-hw + rx, hh);
-          ctx.quadraticCurveTo(-hw, hh, -hw, hh - rx);
-          ctx.lineTo(-hw, -hh + rx);
-          ctx.quadraticCurveTo(-hw, -hh, -hw + rx, -hh);
-          ctx.closePath();
-          ctx.clip();
+          ctx.moveTo(-hw + rx, -hh); ctx.lineTo(hw - rx, -hh);
+          ctx.quadraticCurveTo(hw, -hh, hw, -hh + rx); ctx.lineTo(hw, hh - rx);
+          ctx.quadraticCurveTo(hw, hh, hw - rx, hh); ctx.lineTo(-hw + rx, hh);
+          ctx.quadraticCurveTo(-hw, hh, -hw, hh - rx); ctx.lineTo(-hw, -hh + rx);
+          ctx.quadraticCurveTo(-hw, -hh, -hw + rx, -hh); ctx.closePath(); ctx.clip();
         }
-        ctx.drawImage(img, -hw, -hh, scaledW, scaledH);
+        ctx.drawImage(img, -hw, -hh, w * scale * scaleVal, h * scale * scaleVal);
       }
     }
     else if(type === 'shape') {
       ctx.fillStyle = el.style.background || '#5B8CFF';
       const radius = el.style.borderRadius || '6px';
       if(radius === '50%') {
-        ctx.beginPath();
-        ctx.arc(0, 0, Math.min(hw, hh), 0, Math.PI * 2);
-        ctx.fill();
+        ctx.beginPath(); ctx.arc(0, 0, Math.min(hw, hh), 0, Math.PI * 2); ctx.fill();
       } else {
         const r = Math.min(parseFloat(radius) * scale * scaleVal || 6 * scale * scaleVal, Math.min(hw, hh) * 0.8);
         ctx.beginPath();
-        ctx.moveTo(-hw + r, -hh);
-        ctx.lineTo(hw - r, -hh);
-        ctx.quadraticCurveTo(hw, -hh, hw, -hh + r);
-        ctx.lineTo(hw, hh - r);
-        ctx.quadraticCurveTo(hw, hh, hw - r, hh);
-        ctx.lineTo(-hw + r, hh);
-        ctx.quadraticCurveTo(-hw, hh, -hw, hh - r);
-        ctx.lineTo(-hw, -hh + r);
-        ctx.quadraticCurveTo(-hw, -hh, -hw + r, -hh);
-        ctx.closePath();
-        ctx.fill();
+        ctx.moveTo(-hw + r, -hh); ctx.lineTo(hw - r, -hh);
+        ctx.quadraticCurveTo(hw, -hh, hw, -hh + r); ctx.lineTo(hw, hh - r);
+        ctx.quadraticCurveTo(hw, hh, hw - r, hh); ctx.lineTo(-hw + r, hh);
+        ctx.quadraticCurveTo(-hw, hh, -hw, hh - r); ctx.lineTo(-hw, -hh + r);
+        ctx.quadraticCurveTo(-hw, -hh, -hw + r, -hh); ctx.closePath(); ctx.fill();
       }
     }
     ctx.restore();
@@ -1470,7 +1396,7 @@
         if(urlMatch && urlMatch[1]) {
           img.src = urlMatch[1];
           await new Promise((resolve) => {
-            if(img.complete && img.naturalWidth > 0) { resolve(); }
+            if(img.complete && img.naturalWidth > 0) resolve();
             else { img.onload = resolve; img.onerror = resolve; setTimeout(resolve, 1000); }
           });
           if(img.complete && img.naturalWidth > 0) bgImage = img;
@@ -1480,16 +1406,11 @@
     
     for(let i = 0; i < totalFrames; i++) {
       const canvas = document.createElement('canvas');
-      canvas.width = canvasW;
-      canvas.height = canvasH;
+      canvas.width = canvasW; canvas.height = canvasH;
       const ctx = canvas.getContext('2d', { willReadFrequently: true });
       
-      ctx.fillStyle = bgColor;
-      ctx.fillRect(0, 0, canvasW, canvasH);
-      
-      if(bgImage) {
-        ctx.drawImage(bgImage, 0, 0, canvasW, canvasH);
-      }
+      ctx.fillStyle = bgColor; ctx.fillRect(0, 0, canvasW, canvasH);
+      if(bgImage) ctx.drawImage(bgImage, 0, 0, canvasW, canvasH);
       
       const time = (i / (totalFrames - 1)) * durationSec;
       const slideState = getSlideShowState(time, durationSec);
@@ -1509,16 +1430,9 @@
   function triggerDownload(blob, filename){
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
-    a.href = url;
-    a.download = filename;
-    a.rel = 'noopener';
-    a.style.display = 'none';
-    document.body.appendChild(a);
-    a.click();
-    setTimeout(()=>{
-      a.remove();
-      URL.revokeObjectURL(url);
-    }, 4000);
+    a.href = url; a.download = filename; a.rel = 'noopener'; a.style.display = 'none';
+    document.body.appendChild(a); a.click();
+    setTimeout(()=>{ a.remove(); URL.revokeObjectURL(url); }, 4000);
   }
 
   document.getElementById('exportPngBtn').addEventListener('click', async function(){
@@ -1529,12 +1443,10 @@
       const stageW = stage.clientWidth || 320;
       const stageH = stage.clientHeight || 50;
       const canvas = document.createElement('canvas');
-      canvas.width = Math.round(stageW * scale);
-      canvas.height = Math.round(stageH * scale);
+      canvas.width = Math.round(stageW * scale); canvas.height = Math.round(stageH * scale);
       const ctx = canvas.getContext('2d');
       
-      const bgColor = stage.style.backgroundColor || '#ffffff';
-      ctx.fillStyle = bgColor;
+      ctx.fillStyle = stage.style.backgroundColor || '#ffffff';
       ctx.fillRect(0, 0, canvas.width, canvas.height);
       
       const elements = Array.from(stage.querySelectorAll('.element'));
@@ -1543,32 +1455,21 @@
         if(parseFloat(el.style.opacity) === 0) continue;
         renderElementToCanvas(ctx, el, scale, 0, slideState);
       }
-      
-      canvas.toBlob(blob=>{
-        triggerDownload(blob, `ad-${stageW}x${stageH}.png`);
-      }, 'image/png');
+      canvas.toBlob(blob=>{ triggerDownload(blob, `ad-${stageW}x${stageH}.png`); }, 'image/png');
     }catch(err){
       console.error(err);
-      alert('PNG export error: ' + (err && err.message ? err.message : err));
-    }finally{
-      btn.disabled=false; btn.textContent=origText;
-    }
+    }finally{ btn.disabled=false; btn.textContent=origText; }
   });
 
   document.getElementById('exportGifBtn').addEventListener('click', async function(){
-    const btn=this; const origText=btn.textContent;
-    btn.disabled=true;
+    const btn=this; btn.disabled=true;
     try{
       const dur = parseFloat(document.getElementById('recDuration').value) || 5;
-      const fps = 10;
+      const fps = 12;
       const scale = getQualityScale();
       
       btn.textContent='Rendering frames...';
       const frames = await captureFramesWithAnimation(dur, fps, scale);
-      
-      if(!frames || frames.length < 2) {
-        throw new Error('Frames process crash edge alert');
-      }
       
       btn.textContent='Loading GIF encoder...';
       await ensureLib('GIF', 'https://cdnjs.cloudflare.com/ajax/libs/gif.js/0.2.0/gif.js');
@@ -1577,13 +1478,9 @@
       const workerBlobUrl = await getGifWorkerBlobURL();
       
       const gif = new GIF({
-        workers: 2,
-        quality: 8,
-        width: frames[0].width,
-        height: frames[0].height,
-        workerScript: workerBlobUrl,
-        background: '#ffffff',
-        repeat: 0
+        workers: 2, quality: 8,
+        width: frames[0].width, height: frames[0].height,
+        workerScript: workerBlobUrl, repeat: 0
       });
       
       const delay = Math.round(1000/fps);
@@ -1591,35 +1488,16 @@
         gif.addFrame(frames[i], {delay: delay, copy: true});
       }
       
-      let finished = false;
-      const finishPromise = new Promise((resolve, reject) => {
-        gif.on('finished', function(blob){
-          finished = true;
-          resolve(blob);
-        });
-        gif.on('abort', function(){
-          reject(new Error('GIF compilation dropped'));
-        });
-        gif.on('progress', function(p){
-          btn.textContent = `Encoding... ${Math.round(p * 100)}%`;
-        });
+      gif.on('finished', function(blob){
+        triggerDownload(blob, `ad-${stage.clientWidth}x${stage.clientHeight}.gif`);
+        btn.disabled=false; btn.textContent='🎞 GIF';
       });
-      
+      gif.on('progress', function(p){
+        btn.textContent = `Encoding... ${Math.round(p * 100)}%`;
+      });
       gif.render();
-      const timeoutPromise = new Promise((_, reject) => {
-        setTimeout(() => {
-          if(!finished) reject(new Error('GIF build timeout structural error'));
-        }, 300000);
-      });
-      
-      const result = await Promise.race([finishPromise, timeoutPromise]);
-      triggerDownload(result, `ad-${stage.clientWidth}x${stage.clientHeight}.gif`);
-      
     }catch(err){
-      console.error(err);
-      alert('GIF Export Error: ' + (err && err.message ? err.message : err));
-    }finally{
-      btn.disabled=false; btn.textContent='🎞 GIF';
+      console.error(err); btn.disabled=false; btn.textContent='🎞 GIF';
     }
   });
 
@@ -1627,22 +1505,13 @@
     const btn=this; const origText=btn.textContent;
     btn.disabled=true;
     try{
-      if(!window.MediaRecorder){
-        alert('MediaRecorder implementation missing.');
-        btn.disabled=false; btn.textContent=origText;
-        return;
-      }
-      
+      if(!window.MediaRecorder){ alert('MediaRecorder missing.'); return; }
       const dur = parseFloat(document.getElementById('recDuration').value) || 5;
       const fps = 15;
       const scale = getQualityScale();
       
       btn.textContent='Rendering frames...';
       const frames = await captureFramesWithAnimation(dur, fps, scale);
-      
-      if(!frames || frames.length < 2) {
-        throw new Error('Frames recording error');
-      }
       
       btn.textContent='Encoding video...';
       const w=frames[0].width, h=frames[0].height;
@@ -1652,8 +1521,6 @@
 
       let mimeType='video/webm;codecs=vp9', ext='webm';
       if(MediaRecorder.isTypeSupported('video/mp4')){ mimeType='video/mp4'; ext='mp4'; }
-      else if(!MediaRecorder.isTypeSupported(mimeType)){ mimeType='video/webm'; ext='webm'; }
-
       const recorder=new MediaRecorder(stream, {mimeType, videoBitsPerSecond: 8000000});
       const chunks=[];
       recorder.ondataavailable=e=>{ if(e.data && e.data.size) chunks.push(e.data); };
@@ -1663,123 +1530,36 @@
       const frameDelay = 1000/fps;
       for(let i=0;i<frames.length;i++){
         ctx.clearRect(0,0,w,h);
-        ctx.imageSmoothingEnabled = true;
-        ctx.imageSmoothingQuality = 'high';
         ctx.drawImage(frames[i],0,0,w,h);
-        if(i < frames.length - 1) {
-          await new Promise(r=>setTimeout(r, frameDelay));
-        }
+        if(i < frames.length - 1) await new Promise(r=>setTimeout(r, frameDelay));
       }
-      recorder.stop();
-      await stopped;
-
-      const blob=new Blob(chunks, {type:mimeType});
-      triggerDownload(blob, `ad-${w}x${h}.${ext}`);
-    }catch(err){
-      console.error(err);
-      alert('Video Export Error: ' + (err && err.message ? err.message : err));
-    }finally{
-      btn.disabled=false; btn.textContent=origText;
-    }
+      recorder.stop(); await stopped;
+      triggerDownload(new Blob(chunks, {type:mimeType}), `ad-${w}x${h}.${ext}`);
+    }catch(err){ console.error(err); }finally{ btn.disabled=false; btn.textContent=origText; }
   });
 
-  // ---- HTML EXPORT IMPLEMENTATION ----
   document.getElementById('exportHtmlBtn').addEventListener('click', function() {
     const clonedStage = stage.cloneNode(true);
     clonedStage.querySelectorAll('.resize-handle').forEach(h => h.remove());
     clonedStage.querySelectorAll('.element').forEach(el => {
-      el.classList.remove('selected', 'editing');
-      el.style.boxShadow = 'none';
+      el.classList.remove('selected', 'editing'); el.style.boxShadow = 'none';
     });
-
-    const exportStyles = Array.from(document.styleSheets[0].cssRules)
-      .map(rule => rule.cssText)
-      .join('\n');
-
-    const htmlOutput = `<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8">
-<style>
-${exportStyles}
-body { background: transparent; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
-#stage { box-shadow: none; }
-</style>
-</head>
-<body>
-${clonedStage.outerHTML}
-<script>
-(function() {
-  const stage = document.getElementById('stage');
-  const slideTimers = {};
-  
-  function getAnimDuration(el){
-    return parseFloat(el.dataset.animDur) || 0.8;
-  }
-
-  function updateSlideShow(){
-    const groups = {};
-    const elements = Array.from(stage.querySelectorAll('.element'));
-    elements.forEach(el => {
-      const g = el.dataset.slideGroup;
-      if(g) {
-        if(!groups[g]) groups[g] = [];
-        groups[g].push(el);
-      }
-    });
-
-    for(const [group, els] of Object.entries(groups)){
-      els.sort((a,b) => (parseInt(a.dataset.slideIndex)||0) - (parseInt(b.dataset.slideIndex)||0));
-      if(els.length <= 1) continue;
-      let currentIndex = 0;
-
-      function showSlide(index){
-        els.forEach(el => { el.style.display = 'none'; el.style.opacity = '0'; el.style.animation = 'none'; });
-        if(els[index]){
-          els[index].style.display = 'flex'; els[index].style.opacity = '1';
-          const anim = els[index].dataset.anim;
-          const dur = getAnimDuration(els[index]);
-          if(anim && anim !== 'none'){
-            void els[index].offsetWidth;
-            els[index].style.animation = \`\${anim} \${dur}s ease both\`;
-          }
-        }
-      }
-      showSlide(0);
-      slideTimers[group] = setInterval(() => {
-        currentIndex = (currentIndex + 1) % els.length;
-        showSlide(currentIndex);
-      }, (getAnimDuration(els[0]) + 0.05) * 1000);
-    }
-  }
-  updateSlideShow();
-})();
-<\/script>
-</body>
-</html>`;
-
-    const blob = new Blob([htmlOutput], { type: 'text/html' });
-    triggerDownload(blob, `ad-creative-${stage.clientWidth}x${stage.clientHeight}.html`);
+    const exportStyles = Array.from(document.styleSheets[0].cssRules).map(rule => rule.cssText).join('\n');
+    const htmlOutput = `<!DOCTYPE html><html><head><meta charset="UTF-8"><style>${exportStyles}body{background:transparent;display:flex;justify-content:center;align-items:center;height:100vh;margin:0;}#stage{box-shadow:none;}</style></head><body>${clonedStage.outerHTML}<script>(function(){const stage=document.getElementById('stage');const slideTimers={};function getAnimDuration(el){return parseFloat(el.dataset.animDur)||0.8;}function updateSlideShow(){const groups={};const elements=Array.from(stage.querySelectorAll('.element'));elements.forEach(el=>{const g=el.dataset.slideGroup;if(g){if(!groups[g])groups[g]=[];groups[g].push(el);}});for(const[group,els]of Object.entries(groups)){els.sort((a,b)=>(parseInt(a.dataset.slideIndex)||0)-(parseInt(b.dataset.slideIndex)||0));if(els.length<=1)continue;let currentIndex=0;function showSlide(index){els.forEach(el=>{el.style.display='none';el.style.opacity='0';el.style.animation='none';});if(els[index]){els[index].style.display='flex';els[index].style.opacity='1';const anim=els[index].dataset.anim;const dur=getAnimDuration(els[index]);if(anim&&anim!=='none'){void els[index].offsetWidth;els[index].style.animation=\`\${anim} \${dur}s ease both\`;}}}showSlide(0);slideTimers[group]=setInterval(()=>{currentIndex=(currentIndex+1)%els.length;showSlide(currentIndex);},(getAnimDuration(els[0])+0.05)*1000);}}updateSlideShow();})();<\/script></body></html>`;
+    triggerDownload(new Blob([htmlOutput], { type: 'text/html' }), `ad-creative-${stage.clientWidth}x${stage.clientHeight}.html`);
   });
 
-  function getQualityScale(){
-    return parseFloat(document.getElementById('qualitySelect').value) || 1;
-  }
-
+  function getQualityScale(){ return parseFloat(document.getElementById('qualitySelect').value) || 1; }
   let gifWorkerBlobUrl = null;
   async function getGifWorkerBlobURL(){
     if(gifWorkerBlobUrl) return gifWorkerBlobUrl;
     try {
       const resp = await fetch('https://cdnjs.cloudflare.com/ajax/libs/gif.js/0.2.0/gif.worker.js');
-      if(!resp.ok) throw new Error('Worker fallback error');
       const text = await resp.text();
-      const blob = new Blob([text], {type:'application/javascript'});
-      gifWorkerBlobUrl = URL.createObjectURL(blob);
+      gifWorkerBlobUrl = URL.createObjectURL(new Blob([text], {type:'application/javascript'}));
       return gifWorkerBlobUrl;
     } catch(e) {
-      const fallbackText = `self.onmessage = function(e) { if (e.data.type === 'render') { self.postMessage({ type: 'finished', result: e.data.frames }); } };`;
-      const blob = new Blob([fallbackText], {type:'application/javascript'});
-      gifWorkerBlobUrl = URL.createObjectURL(blob);
+      gifWorkerBlobUrl = URL.createObjectURL(new Blob([`self.onmessage=function(e){if(e.data.type==='render'){self.postMessage({type:'finished',result:e.data.frames});}};`], {type:'application/javascript'}));
       return gifWorkerBlobUrl;
     }
   }
@@ -1787,24 +1567,12 @@ ${clonedStage.outerHTML}
   function ensureLib(varName, src){
     return new Promise((resolve, reject)=>{
       if(window[varName]){ resolve(); return; }
-      const existing = document.querySelector(`script[data-lib="${varName}"]`);
-      if(existing){ 
-        existing.addEventListener('load', ()=>resolve(), {once:true}); 
-        existing.addEventListener('error', reject, {once:true}); 
-        return; 
-      }
-      const s=document.createElement('script');
-      s.src=src; s.dataset.lib=varName;
-      s.onload=()=>resolve();
-      s.onerror=()=>reject(new Error('Lib dependency script error: '+src));
-      document.head.appendChild(s);
+      const s=document.createElement('script'); s.src=src;
+      s.onload=()=>resolve(); s.onerror=()=>reject(); document.head.appendChild(s);
     });
   }
 
-  renderInspector();
-  refreshSlideGroup();
-  setTimeout(updateSlideShow, 200);
-
+  renderInspector(); refreshSlideGroup(); setTimeout(updateSlideShow, 200);
 })();
 </script>
 </body>
