@@ -1,6 +1,6 @@
 <!DOCTYPE html>
-<html lang="hi">
-<head> 
+<html lang="en">
+<head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Ad Studio — Mobile Ad Creative Builder</title>
@@ -758,7 +758,6 @@
     ["zoomIn","Zoom In"],["bounceIn","Bounce In"],["pulse","Pulse (loop)"],["shake","Shake"]
   ];
 
-  // ---- SLIDE SHOW ENGINE ----
   function refreshSlideGroup(){
     const groups = {};
     const elements = Array.from(stage.querySelectorAll('.element'));
@@ -855,7 +854,6 @@
 
       showSlide(0);
       const dur = getAnimDuration(els[0]);
-      // 0.05s gap for smooth transition, no white screen
       const totalTime = dur + 0.05;
       
       slideTimers[group] = setInterval(() => {
@@ -864,7 +862,6 @@
     }
   }
 
-  // ---- RENDER INSPECTOR ----
   function renderInspector(){
     if(!selected){
       inspectorEmpty.style.display='block';
@@ -942,33 +939,21 @@
         </label>
         <div class="field" style="margin-top:8px;"><label>Corner radius</label><input type="range" id="propImgRadius" min="0" max="100" step="1"></div>
         
-        <div class="section-title">Slide Show</div>
-        <div class="field"><label>Slide group (same group = auto slide show)</label>
-          <input type="text" id="propSlideGroup" placeholder="e.g. slides" value="${selected.dataset.slideGroup || ''}">
-        </div>
-        <div class="row3">
-          <div class="field"><label>Anim duration (s)</label>
-            <input type="number" id="propAnimDur" step="0.1" min="0.1" value="${selected.dataset.animDur || 0.8}">
-          </div>
-          <div class="field"><label>Effect</label>
-            <select id="propAnim">
-              ${ANIMS.map(a=>`<option value="${a[0]}">${a[1]}</option>`).join('')}
-            </select>
-          </div>
-          <div class="field"><label style="color:var(--accent-2);">⚡ No white gap</label></div>
+        <div class="section-title">Slide Show / Slider</div>
+        <div class="field"><label>Slide group (same name = auto loop show)</label>
+          <input type="text" id="propSlideGroup" placeholder="e.g. main-slider" value="${selected.dataset.slideGroup || ''}">
         </div>
         <div class="slide-controls">
-          <button class="btn small" id="slideAddNext">➕ Add next slide</button>
+          <button class="btn small" id="slideAddNext">➕ Add next slide image</button>
           <button class="btn small" id="slideRemove">❌ Remove from group</button>
-          <button class="btn small" id="slideReset">🔄 Reset slides</button>
+          <button class="btn small" id="slideReset">🔄 Reset index order</button>
         </div>
       `;
     }
 
-    // Single Animation section - only one, for all elements
     html += `
-      <div class="section-title">Animation</div>
-      <div class="field"><label>Effect</label>
+      <div class="section-title">Animation Settings</div>
+      <div class="field"><label>Effect / Transition</label>
         <select id="propAnimSingle">
           ${ANIMS.map(a=>`<option value="${a[0]}">${a[1]}</option>`).join('')}
         </select>
@@ -977,10 +962,10 @@
         <div class="field"><label>Duration (s)</label><input type="number" step="0.1" id="propAnimDurSingle"></div>
         <div class="field"><label>Delay (s)</label><input type="number" step="0.1" id="propAnimDelay"></div>
       </div>
-      <div class="field"><label>Repeat</label>
+      <div class="field"><label>Repeat Configuration</label>
         <div class="seg">
           <button data-iter="1">Once</button>
-          <button data-iter="infinite">Loop</button>
+          <button data-iter="infinite">Loop Frame</button>
         </div>
       </div>
     `;
@@ -992,7 +977,7 @@
     if(type==='image'){
       const groupInput = document.getElementById('propSlideGroup');
       if(groupInput){
-        groupInput.addEventListener('change', function(){
+        const handleGroupUpdate = function(){
           const oldGroup = selected.dataset.slideGroup || '';
           selected.dataset.slideGroup = this.value.trim() || '';
           if(oldGroup !== selected.dataset.slideGroup){
@@ -1003,19 +988,9 @@
             refreshSlideGroup();
             updateSlideShow();
           }
-        });
-        groupInput.addEventListener('input', function(){
-          const oldGroup = selected.dataset.slideGroup || '';
-          selected.dataset.slideGroup = this.value.trim() || '';
-          if(oldGroup !== selected.dataset.slideGroup){
-            if(selected.dataset.slideGroup){
-              const groupEls = getGroupElements(selected.dataset.slideGroup);
-              selected.dataset.slideIndex = groupEls.length;
-            }
-            refreshSlideGroup();
-            updateSlideShow();
-          }
-        });
+        };
+        groupInput.addEventListener('change', handleGroupUpdate);
+        groupInput.addEventListener('input', handleGroupUpdate);
       }
       
       const addBtn = document.getElementById('slideAddNext');
@@ -1081,7 +1056,7 @@
     if(document.getElementById('propImgRadius')){
       setVal('propImgRadius', parseFloat(selected.style.borderRadius)||0);
     }
-    setVal('propAnim', selected.dataset.anim||'none');
+    setVal('propAnimSingle', selected.dataset.anim||'none');
     setVal('propAnimDurSingle', selected.dataset.animDur||0.8);
     setVal('propAnimDelay', selected.dataset.animDelay||0);
     highlightSeg('[data-iter]', selected.dataset.animIter||'1', 'iter');
@@ -1141,25 +1116,16 @@
         reader.readAsDataURL(f);
         e.target.value='';
       });
-      on('propAnimDur','change',e=>{
-        selected.dataset.animDur = e.target.value;
-        updateSlideShow();
-      });
-      on('propAnimDur','input',e=>{
-        selected.dataset.animDur = e.target.value;
-      });
-      on('propAnim','change',e=>{
-        selected.dataset.anim = e.target.value;
-        updateSlideShow();
-      });
     }
     on('propAnimSingle','change',e=>{ 
       selected.dataset.anim = e.target.value; 
       applyAnim(selected); 
+      if(selected.dataset.slideGroup) updateSlideShow();
     });
     on('propAnimDurSingle','input',e=>{ 
       selected.dataset.animDur = e.target.value; 
       applyAnim(selected); 
+      if(selected.dataset.slideGroup) updateSlideShow();
     });
     on('propAnimDelay','input',e=>{ 
       selected.dataset.animDelay = e.target.value; 
@@ -1191,7 +1157,7 @@
     });
   });
 
-  // ================ EXPORT FUNCTIONS ================
+  // ================ EXPORT CANVAS MATHEMATICS FIX ================
   
   function getSlideShowState(time, totalDuration) {
     const result = {};
@@ -1367,14 +1333,12 @@
     const scaledH = h * scale * scaleVal;
     
     ctx.save();
-    
     ctx.translate(scaledX + scaledW / 2, scaledY + scaledH / 2);
     ctx.rotate(rotation * Math.PI / 180);
     ctx.globalAlpha = Math.max(0, Math.min(1, opacity));
     
     const hw = scaledW / 2;
     const hh = scaledH / 2;
-    
     const type = el.dataset.type;
     
     if(type === 'text' || type === 'button') {
@@ -1480,13 +1444,11 @@
         ctx.fill();
       }
     }
-    
     ctx.restore();
   }
 
   async function captureFramesWithAnimation(durationSec, fps, scale) {
     await document.fonts?.ready;
-    
     const totalFrames = Math.max(2, Math.round(durationSec * fps));
     const frames = [];
     const frameDelay = 1000 / fps;
@@ -1496,7 +1458,6 @@
     const canvasW = Math.round(stageW * scale);
     const canvasH = Math.round(stageH * scale);
     const bgColor = stage.style.backgroundColor || '#ffffff';
-    
     const elements = Array.from(stage.querySelectorAll('.element'));
     
     let bgImage = null;
@@ -1531,28 +1492,18 @@
       }
       
       const time = (i / (totalFrames - 1)) * durationSec;
-      
       const slideState = getSlideShowState(time, durationSec);
       
       for(const el of elements) {
-        const elOpacity = parseFloat(el.style.opacity);
-        if(elOpacity === 0) continue;
+        if(parseFloat(el.style.opacity) === 0) continue;
         renderElementToCanvas(ctx, el, scale, time, slideState);
       }
-      
       frames.push(canvas);
-      
       if(i < totalFrames - 1) {
         await new Promise(r => setTimeout(r, frameDelay));
       }
     }
-    
     return frames;
-  }
-
-  function downloadBlob(content, filename, type){
-    const blob = new Blob([content], {type});
-    triggerDownload(blob, filename);
   }
 
   function triggerDownload(blob, filename){
@@ -1598,7 +1549,7 @@
       }, 'image/png');
     }catch(err){
       console.error(err);
-      alert('PNG export fail hua: ' + (err && err.message ? err.message : err));
+      alert('PNG export error: ' + (err && err.message ? err.message : err));
     }finally{
       btn.disabled=false; btn.textContent=origText;
     }
@@ -1616,7 +1567,7 @@
       const frames = await captureFramesWithAnimation(dur, fps, scale);
       
       if(!frames || frames.length < 2) {
-        throw new Error('Koi frame capture nahi hua');
+        throw new Error('Frames process crash edge alert');
       }
       
       btn.textContent='Loading GIF encoder...';
@@ -1647,7 +1598,7 @@
           resolve(blob);
         });
         gif.on('abort', function(){
-          reject(new Error('GIF encoding abort ho gayi'));
+          reject(new Error('GIF compilation dropped'));
         });
         gif.on('progress', function(p){
           btn.textContent = `Encoding... ${Math.round(p * 100)}%`;
@@ -1655,10 +1606,9 @@
       });
       
       gif.render();
-      
       const timeoutPromise = new Promise((_, reject) => {
         setTimeout(() => {
-          if(!finished) reject(new Error('GIF encoding timeout (5 minutes)'));
+          if(!finished) reject(new Error('GIF build timeout structural error'));
         }, 300000);
       });
       
@@ -1667,7 +1617,7 @@
       
     }catch(err){
       console.error(err);
-      alert('GIF export fail hua: ' + (err && err.message ? err.message : err));
+      alert('GIF Export Error: ' + (err && err.message ? err.message : err));
     }finally{
       btn.disabled=false; btn.textContent='🎞 GIF';
     }
@@ -1678,7 +1628,7 @@
     btn.disabled=true;
     try{
       if(!window.MediaRecorder){
-        alert('Yeh browser video recording support nahi karta. Chrome ya Edge try karein.');
+        alert('MediaRecorder implementation missing.');
         btn.disabled=false; btn.textContent=origText;
         return;
       }
@@ -1691,11 +1641,10 @@
       const frames = await captureFramesWithAnimation(dur, fps, scale);
       
       if(!frames || frames.length < 2) {
-        throw new Error('Koi frame capture nahi hua');
+        throw new Error('Frames recording error');
       }
       
       btn.textContent='Encoding video...';
-
       const w=frames[0].width, h=frames[0].height;
       const rec=document.createElement('canvas'); rec.width=w; rec.height=h;
       const ctx=rec.getContext('2d', {willReadFrequently:true});
@@ -1726,21 +1675,95 @@
 
       const blob=new Blob(chunks, {type:mimeType});
       triggerDownload(blob, `ad-${w}x${h}.${ext}`);
-
-      if(ext!=='mp4'){
-        setTimeout(()=>alert('Note: aapke browser mein direct MP4 recording support nahi hai, isliye video .webm format mein save hui hai. MP4 chahiye ho to VLC ya CloudConvert se .webm ko .mp4 mein convert kar sakte hain.'), 300);
-      }
     }catch(err){
       console.error(err);
-      alert('Video export fail hua: ' + (err && err.message ? err.message : err));
+      alert('Video Export Error: ' + (err && err.message ? err.message : err));
     }finally{
       btn.disabled=false; btn.textContent=origText;
     }
   });
 
+  // ---- HTML EXPORT IMPLEMENTATION ----
+  document.getElementById('exportHtmlBtn').addEventListener('click', function() {
+    const clonedStage = stage.cloneNode(true);
+    clonedStage.querySelectorAll('.resize-handle').forEach(h => h.remove());
+    clonedStage.querySelectorAll('.element').forEach(el => {
+      el.classList.remove('selected', 'editing');
+      el.style.boxShadow = 'none';
+    });
+
+    const exportStyles = Array.from(document.styleSheets[0].cssRules)
+      .map(rule => rule.cssText)
+      .join('\n');
+
+    const htmlOutput = `<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<style>
+${exportStyles}
+body { background: transparent; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
+#stage { box-shadow: none; }
+</style>
+</head>
+<body>
+${clonedStage.outerHTML}
+<script>
+(function() {
+  const stage = document.getElementById('stage');
+  const slideTimers = {};
+  
+  function getAnimDuration(el){
+    return parseFloat(el.dataset.animDur) || 0.8;
+  }
+
+  function updateSlideShow(){
+    const groups = {};
+    const elements = Array.from(stage.querySelectorAll('.element'));
+    elements.forEach(el => {
+      const g = el.dataset.slideGroup;
+      if(g) {
+        if(!groups[g]) groups[g] = [];
+        groups[g].push(el);
+      }
+    });
+
+    for(const [group, els] of Object.entries(groups)){
+      els.sort((a,b) => (parseInt(a.dataset.slideIndex)||0) - (parseInt(b.dataset.slideIndex)||0));
+      if(els.length <= 1) continue;
+      let currentIndex = 0;
+
+      function showSlide(index){
+        els.forEach(el => { el.style.display = 'none'; el.style.opacity = '0'; el.style.animation = 'none'; });
+        if(els[index]){
+          els[index].style.display = 'flex'; els[index].style.opacity = '1';
+          const anim = els[index].dataset.anim;
+          const dur = getAnimDuration(els[index]);
+          if(anim && anim !== 'none'){
+            void els[index].offsetWidth;
+            els[index].style.animation = \`\${anim} \${dur}s ease both\`;
+          }
+        }
+      }
+      showSlide(0);
+      slideTimers[group] = setInterval(() => {
+        currentIndex = (currentIndex + 1) % els.length;
+        showSlide(currentIndex);
+      }, (getAnimDuration(els[0]) + 0.05) * 1000);
+    }
+  }
+  updateSlideShow();
+})();
+<\/script>
+</body>
+</html>`;
+
+    const blob = new Blob([htmlOutput], { type: 'text/html' });
+    triggerDownload(blob, `ad-creative-${stage.clientWidth}x${stage.clientHeight}.html`);
+  });
+
   function getQualityScale(){
-    const val = parseFloat(document.getElementById('qualitySelect').value) || 1;
-    return val;
+    return parseFloat(document.getElementById('qualitySelect').value) || 1;
   }
 
   let gifWorkerBlobUrl = null;
@@ -1748,18 +1771,13 @@
     if(gifWorkerBlobUrl) return gifWorkerBlobUrl;
     try {
       const resp = await fetch('https://cdnjs.cloudflare.com/ajax/libs/gif.js/0.2.0/gif.worker.js');
-      if(!resp.ok) throw new Error('gif.worker.js download fail (status '+resp.status+')');
+      if(!resp.ok) throw new Error('Worker fallback error');
       const text = await resp.text();
       const blob = new Blob([text], {type:'application/javascript'});
       gifWorkerBlobUrl = URL.createObjectURL(blob);
       return gifWorkerBlobUrl;
     } catch(e) {
-      const fallbackText = `self.onmessage = function(e) {
-  var data = e.data;
-  if (data.type === 'render') {
-    self.postMessage({ type: 'finished', result: data.frames });
-  }
-};`;
+      const fallbackText = `self.onmessage = function(e) { if (e.data.type === 'render') { self.postMessage({ type: 'finished', result: e.data.frames }); } };`;
       const blob = new Blob([fallbackText], {type:'application/javascript'});
       gifWorkerBlobUrl = URL.createObjectURL(blob);
       return gifWorkerBlobUrl;
@@ -1778,12 +1796,11 @@
       const s=document.createElement('script');
       s.src=src; s.dataset.lib=varName;
       s.onload=()=>resolve();
-      s.onerror=()=>reject(new Error('load failed: '+src));
+      s.onerror=()=>reject(new Error('Lib dependency script error: '+src));
       document.head.appendChild(s);
     });
   }
 
-  // ---- INIT ----
   renderInspector();
   refreshSlideGroup();
   setTimeout(updateSlideShow, 200);
