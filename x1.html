@@ -1,290 +1,293 @@
 <!DOCTYPE html>
-<html lang="hi">
+<html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Ad Studio — Mobile Ad Creative Builder</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-<style>
-  :root{
-    --ink:#0F1115;
-    --panel:#181B21;
-    --panel-2:#1F232B;
-    --border:#262B33;
-    --text:#E7E9ED;
-    --muted:#8B929E;
-    --accent:#5B8CFF;
-    --accent-2:#FFB020;
-    --danger:#FF5C6C;
-    --radius:10px;
-    font-size:14px;
-  }
-  *{box-sizing:border-box;}
-  html,body{height:100%;}
-  body{
-    margin:0;
-    background:var(--ink);
-    color:var(--text);
-    font-family:'Inter',sans-serif;
-    overflow-x:hidden;
-  }
-  h1,h2,h3,.brand,.tool-label{font-family:'Space Grotesk',sans-serif;}
-
-  #app{
-    display:flex;
-    flex-direction:column;
-    height:100vh;
-  }
-  #topbar{
-    display:flex;
-    align-items:center;
-    gap:16px;
-    padding:10px 18px;
-    background:linear-gradient(180deg,#1B1F26,#171A20);
-    border-bottom:1px solid var(--border);
-    flex-wrap:wrap;
-  }
-  .brand{font-weight:700;font-size:16px;letter-spacing:0.2px;display:flex;align-items:center;gap:8px;}
-  .brand .dot{width:9px;height:9px;border-radius:50%;background:var(--accent-2);box-shadow:0 0 10px var(--accent-2);}
-  #topbar .sep{width:1px;height:26px;background:var(--border);}
-  select, input[type=text], input[type=number]{
-    background:var(--panel-2);
-    border:1px solid var(--border);
-    color:var(--text);
-    border-radius:8px;
-    padding:6px 8px;
-    font-family:inherit;
-    font-size:13px;
-  }
-  select:focus, input:focus{outline:1px solid var(--accent);}
-  .btn{
-    background:var(--panel-2);
-    border:1px solid var(--border);
-    color:var(--text);
-    padding:7px 12px;
-    border-radius:8px;
-    font-size:13px;
-    font-weight:500;
-    cursor:pointer;
-    display:flex;align-items:center;gap:6px;
-    transition:.15s ease;
-  }
-  .btn:hover{background:#262B33;border-color:#333a45;}
-  .btn.primary{background:var(--accent);border-color:var(--accent);color:#fff;}
-  .btn.primary:hover{filter:brightness(1.08);}
-  .btn.accent{background:var(--accent-2);border-color:var(--accent-2);color:#221600;}
-  .btn.accent:hover{filter:brightness(1.06);}
-  .btn.ghost{background:transparent;}
-  .btn.small{padding:5px 9px;font-size:12px;}
-  .btn:disabled{opacity:.4;cursor:not-allowed;}
-  #topbar .right-group{margin-left:auto;display:flex;gap:8px;align-items:center;flex-wrap:wrap;}
-
-  #workspace{
-    display:grid;
-    grid-template-columns:220px 1fr 280px;
-    flex:1;
-    overflow:hidden;
-  }
-  .rail{
-    background:var(--panel);
-    border-right:1px solid var(--border);
-    overflow-y:auto;
-    padding:14px;
-  }
-  #inspector{
-    background:var(--panel);
-    border-left:1px solid var(--border);
-    border-right:none;
-    overflow-y:auto;
-    padding:14px;
-  }
-  .section-title{
-    font-size:11px;
-    text-transform:uppercase;
-    letter-spacing:.08em;
-    color:var(--muted);
-    margin:18px 0 8px;
-    font-weight:600;
-  }
-  .section-title:first-child{margin-top:0;}
-  .tool-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
-  .tool-btn{
-    background:var(--panel-2);
-    border:1px solid var(--border);
-    border-radius:10px;
-    padding:12px 6px;
-    display:flex;flex-direction:column;align-items:center;gap:6px;
-    cursor:pointer;color:var(--text);font-size:11px;
-    transition:.15s ease;
-  }
-  .tool-btn:hover{border-color:var(--accent);background:#20242c;transform:translateY(-1px);}
-  .tool-btn svg{width:20px;height:20px;stroke:var(--accent);}
-
-  #layerList{display:flex;flex-direction:column;gap:6px;}
-  .layer-row{
-    display:flex;align-items:center;gap:8px;
-    background:var(--panel-2);border:1px solid var(--border);
-    border-radius:8px;padding:6px 8px;font-size:12px;cursor:pointer;
-  }
-  .layer-row.active{border-color:var(--accent);background:#1c2433;}
-  .layer-row .lname{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
-  .layer-row button{background:none;border:none;color:var(--muted);cursor:pointer;padding:2px;}
-  .layer-row button:hover{color:var(--text);}
-
-  #stageArea{
-    display:flex;flex-direction:column;align-items:center;justify-content:center;
-    background:
-      radial-gradient(circle at 1px 1px, #23272f 1px, transparent 0) 0 0/22px 22px,
-      var(--ink);
-    position:relative;
-    overflow:auto;
-    padding:30px;
-    min-height:350px;
-  }
-  #sizeLabel{
-    color:var(--muted);font-size:12px;margin-bottom:12px;
-    background:var(--panel);border:1px solid var(--border);
-    padding:4px 10px;border-radius:20px;
-  }
-  #phoneWrap{display:none;}
-  #phoneWrap.on{
-    display:block;
-    padding:26px 12px;
-    background:#0b0c10;
-    border:2px solid #2b2f38;
-    border-radius:40px;
-    box-shadow:0 30px 60px -20px rgba(0,0,0,.7);
-    position:relative;
-  }
-  #phoneWrap.on::before{
-    content:'';position:absolute;top:10px;left:50%;transform:translateX(-50%);
-    width:70px;height:6px;background:#2b2f38;border-radius:4px;
-  }
-  .fake-status{
-    height:20px;background:#12141a;border-radius:6px 6px 0 0;
-    display:flex;align-items:center;justify-content:space-between;
-    padding:0 10px;font-size:9px;color:#666;margin-bottom:2px;
-  }
-  .fake-app-content{
-    height:60px;background:repeating-linear-gradient(90deg,#181b21,#181b21 40px,#1c2029 40px,#1c2029 80px);
-    display:flex;align-items:center;justify-content:center;color:#444;font-size:10px;
-    border-bottom:2px dashed #333;
-  }
-
-  #stage{
-    position:relative;
-    background:#ffffff;
-    background-size:cover;
-    background-position:center;
-    overflow:hidden;
-    box-shadow:0 20px 45px -15px rgba(0,0,0,.6);
-    border-radius:4px;
-  }
-
-  .element{
-    position:absolute;
-    cursor:grab;
-    display:flex;
-    outline:none;
-    user-select:none;
-    backface-visibility:hidden;
-    -webkit-font-smoothing:antialiased;
-    text-rendering:optimizeLegibility;
-    transform-origin: center center;
-    touch-action:none;
-  }
-  .element.el-image img{
-    image-rendering:auto;
-  }
-  .element.selected{box-shadow:0 0 0 2px var(--accent), 0 0 0 5px rgba(91,140,255,.18);}
-  .element.el-text, .element.el-button{
-    align-items:center;justify-content:center;
-    padding:2px;
-    word-break:break-word;
-    cursor:grab;
-  }
-  .element.editing{cursor:text;}
-  .element .resize-handle{
-    position:absolute;right:-6px;bottom:-6px;
-    width:12px;height:12px;border-radius:50%;
-    background:var(--accent);border:2px solid #fff;
-    cursor:nwse-resize;display:none;
-  }
-  .element.selected .resize-handle{display:block;}
-  .element.el-image img, .element.el-image{width:100%;height:100%;}
-  .element.el-image img{pointer-events:none;display:block;}
-  .element.el-shape{pointer-events:auto;}
-
-  .field{margin-bottom:10px;}
-  .field label{display:block;font-size:11px;color:var(--muted);margin-bottom:4px;}
-  .row2{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
-  .row3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;}
-  .row4{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:6px;}
-  input[type=range]{width:100%;accent-color:var(--accent);}
-  input[type=color]{width:100%;height:30px;border:1px solid var(--border);border-radius:8px;background:var(--panel-2);padding:2px;cursor:pointer;}
-  .seg{display:flex;border:1px solid var(--border);border-radius:8px;overflow:hidden;}
-  .seg button{flex:1;background:var(--panel-2);border:none;color:var(--muted);padding:6px 0;cursor:pointer;font-size:12px;}
-  .seg button.active{background:var(--accent);color:#fff;}
-  .empty-hint{color:var(--muted);font-size:12px;line-height:1.6;padding:20px 4px;text-align:center;}
-  #stage:empty::after{content:'';}
-  #stage.exporting .element{box-shadow:none !important;}
-  #stage.exporting .resize-handle{display:none !important;}
-  #recDuration{width:56px;}
-
-  ::-webkit-scrollbar{width:9px;height:9px;}
-  ::-webkit-scrollbar-thumb{background:#2b303a;border-radius:6px;}
-  ::-webkit-scrollbar-track{background:transparent;}
-
-  @keyframes fadeIn{from{opacity:0;}to{opacity:1;}}
-  @keyframes slideInLeft{from{opacity:0;transform:translateX(-60px) scale(1);}to{opacity:1;transform:translateX(0) scale(1);}}
-  @keyframes slideInRight{from{opacity:0;transform:translateX(60px) scale(1);}to{opacity:1;transform:translateX(0) scale(1);}}
-  @keyframes slideInUp{from{opacity:0;transform:translateY(40px) scale(1);}to{opacity:1;transform:translateY(0) scale(1);}}
-  @keyframes slideInDown{from{opacity:0;transform:translateY(-40px) scale(1);}to{opacity:1;transform:translateY(0) scale(1);}}
-  @keyframes zoomIn{from{opacity:0;transform:scale(0.5);}to{opacity:1;transform:scale(1);}}
-  @keyframes bounceIn{
-    0%{opacity:0;transform:scale(0.3);}
-    50%{opacity:1;transform:scale(1.05);}
-    70%{transform:scale(0.95);}
-    100%{transform:scale(1);}
-  }
-  @keyframes pulse{
-    0%,100%{transform:scale(1);}
-    50%{transform:scale(1.05);}
-  }
-  @keyframes shake{
-    0%,100%{transform:translateX(0) scale(1);}
-    20%{transform:translateX(-6px) scale(1);}
-    40%{transform:translateX(6px) scale(1);}
-    60%{transform:translateX(-4px) scale(1);}
-    80%{transform:translateX(4px) scale(1);}
-  }
-
-  .slide-controls {
-    display:flex;
-    gap:6px;
-    flex-wrap:wrap;
-    margin-top:6px;
-  }
-  .slide-controls .btn {
-    font-size:11px;
-    padding:4px 10px;
-  }
-
-  @media(max-width:900px){
-    body{overflow:auto;}
-    #app{height:auto;min-height:100vh;}
-    #topbar{gap:10px;justify-content:center;}
-    #topbar .right-group{margin-left:0;justify-content:center;width:100%;margin-top:5px;}
-    #workspace{
-      grid-template-columns:1fr;
-      height:auto;
-      overflow:visible;
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ad Studio — Mobile Ad Creative Builder</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root{
+      --ink:#0F1115;
+      --panel:#181B21;
+      --panel-2:#1F232B;
+      --border:#262B33;
+      --text:#E7E9ED;
+      --muted:#8B929E;
+      --accent:#5B8CFF;
+      --accent-2:#FFB020;
+      --danger:#FF5C6C;
+      --radius:10px;
+      font-size:14px;
     }
-    .rail{border-right:none;border-bottom:1px solid var(--border);}
-    #inspector{border-left:none;border-top:1px solid var(--border);}
-  }
-</style>
+    *{box-sizing:border-box;}
+    html,body{height:100%;}
+    body{
+      margin:0;
+      background:var(--ink);
+      color:var(--text);
+      font-family:'Inter',sans-serif;
+      overflow-x:hidden;
+    }
+    h1,h2,h3,.brand,.tool-label{font-family:'Space Grotesk',sans-serif;}
+
+    #app{
+      display:flex;
+      flex-direction:column;
+      height:100vh;
+    }
+    #topbar{
+      display:flex;
+      align-items:center;
+      gap:16px;
+      padding:10px 18px;
+      background:linear-gradient(180deg,#1B1F26,#171A20);
+      border-bottom:1px solid var(--border);
+      flex-wrap:wrap;
+    }
+    .brand{font-weight:700;font-size:16px;letter-spacing:0.2px;display:flex;align-items:center;gap:8px;}
+    .brand .dot{width:9px;height:9px;border-radius:50%;background:var(--accent-2);box-shadow:0 0 10px var(--accent-2);}
+    #topbar .sep{width:1px;height:26px;background:var(--border);}
+    select, input[type=text], input[type=number]{
+      background:var(--panel-2);
+      border:1px solid var(--border);
+      color:var(--text);
+      border-radius:8px;
+      padding:6px 8px;
+      font-family:inherit;
+      font-size:13px;
+      width:100%;
+    }
+    select:focus, input:focus{outline:1px solid var(--accent);}
+    .btn{
+      background:var(--panel-2);
+      border:1px solid var(--border);
+      color:var(--text);
+      padding:7px 12px;
+      border-radius:8px;
+      font-size:13px;
+      font-weight:500;
+      cursor:pointer;
+      display:flex;align-items:center;gap:6px;
+      transition:.15s ease;
+    }
+    .btn:hover{background:#262B33;border-color:#333a45;}
+    .btn.primary{background:var(--accent);border-color:var(--accent);color:#fff;}
+    .btn.primary:hover{filter:brightness(1.08);}
+    .btn.accent{background:var(--accent-2);border-color:var(--accent-2);color:#221600;}
+    .btn.accent:hover{filter:brightness(1.06);}
+    .btn.ghost{background:transparent;}
+    .btn.small{padding:5px 9px;font-size:12px;}
+    .btn:disabled{opacity:.4;cursor:not-allowed;}
+    #topbar .right-group{margin-left:auto;display:flex;gap:8px;align-items:center;flex-wrap:wrap;}
+
+    #workspace{
+      display:grid;
+      grid-template-columns:220px 1fr 280px;
+      flex:1;
+      overflow:hidden;
+    }
+    .rail{
+      background:var(--panel);
+      border-right:1px solid var(--border);
+      overflow-y:auto;
+      padding:14px;
+    }
+    #inspector{
+      background:var(--panel);
+      border-left:1px solid var(--border);
+      border-right:none;
+      overflow-y:auto;
+      padding:14px;
+    }
+    .section-title{
+      font-size:11px;
+      text-transform:uppercase;
+      letter-spacing:.08em;
+      color:var(--muted);
+      margin:18px 0 8px;
+      font-weight:600;
+    }
+    .section-title:first-child{margin-top:0;}
+    .tool-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+    .tool-btn{
+      background:var(--panel-2);
+      border:1px solid var(--border);
+      border-radius:10px;
+      padding:12px 6px;
+      display:flex;flex-direction:column;align-items:center;gap:6px;
+      cursor:pointer;color:var(--text);font-size:11px;
+      transition:.15s ease;
+    }
+    .tool-btn:hover{border-color:var(--accent);background:#20242c;transform:translateY(-1px);}
+    .tool-btn svg{width:20px;height:20px;stroke:var(--accent);}
+
+    #layerList{display:flex;flex-direction:column;gap:6px;}
+    .layer-row{
+      display:flex;align-items:center;gap:8px;
+      background:var(--panel-2);border:1px solid var(--border);
+      border-radius:8px;padding:6px 8px;font-size:12px;cursor:pointer;
+    }
+    .layer-row.active{border-color:var(--accent);background:#1c2433;}
+    .layer-row .lname{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+    .layer-row button{background:none;border:none;color:var(--muted);cursor:pointer;padding:2px;}
+    .layer-row button:hover{color:var(--text);}
+
+    #stageArea{
+      display:flex;flex-direction:column;align-items:center;justify-content:center;
+      background:
+        radial-gradient(circle at 1px 1px, #23272f 1px, transparent 0) 0 0/22px 22px,
+        var(--ink);
+      position:relative;
+      overflow:auto;
+      padding:30px;
+      min-height:350px;
+    }
+    #sizeLabel{
+      color:var(--muted);font-size:12px;margin-bottom:12px;
+      background:var(--panel);border:1px solid var(--border);
+      padding:4px 10px;border-radius:20px;
+    }
+    #phoneWrap{display:none;}
+    #phoneWrap.on{
+      display:block;
+      padding:26px 12px;
+      background:#0b0c10;
+      border:2px solid #2b2f38;
+      border-radius:40px;
+      box-shadow:0 30px 60px -20px rgba(0,0,0,.7);
+      position:relative;
+    }
+    #phoneWrap.on::before{
+      content:'';position:absolute;top:10px;left:50%;transform:translateX(-50%);
+      width:70px;height:6px;background:#2b2f38;border-radius:4px;
+    }
+    .fake-status{
+      height:20px;background:#12141a;border-radius:6px 6px 0 0;
+      display:flex;align-items:center;justify-content:space-between;
+      padding:0 10px;font-size:9px;color:#666;margin-bottom:2px;
+    }
+    .fake-app-content{
+      height:60px;background:repeating-linear-gradient(90deg,#181b21,#181b21 40px,#1c2029 40px,#1c2029 80px);
+      display:flex;align-items:center;justify-content:center;color:#444;font-size:10px;
+      border-bottom:2px dashed #333;
+    }
+
+    #stage {
+      position:relative;
+      background:#ffffff;
+      background-size:cover;
+      background-position:center;
+      overflow:hidden;
+      box-shadow:0 20px 45px -15px rgba(0,0,0,.6);
+      border-radius:4px;
+    }
+
+    .element {
+      position:absolute;
+      cursor:grab;
+      display:flex;
+      outline:none;
+      user-select:none;
+      backface-visibility:hidden;
+      -webkit-font-smoothing:antialiased;
+      text-rendering:optimizeLegibility;
+      transform-origin: center center;
+      touch-action:none;
+    }
+    .element.el-image img {
+      image-rendering:auto;
+    }
+    .element.selected{box-shadow:0 0 0 2px var(--accent), 0 0 0 5px rgba(91,140,255,.18);}
+    .element.el-text, .element.el-button{
+      align-items:center;justify-content:center;
+      padding:2px;
+      word-break:break-word;
+      cursor:grab;
+    }
+    .element.editing{cursor:text;}
+    .element .resize-handle{
+      position:absolute;right:-6px;bottom:-6px;
+      width:12px;height:12px;border-radius:50%;
+      background:var(--accent);border:2px solid #fff;
+      cursor:nwse-resize;display:none;
+    }
+    .element.selected .resize-handle{display:block;}
+    .element.el-image img, .element.el-image{width:100%;height:100%;}
+    .element.el-image img{pointer-events:none;display:block;}
+    .element.el-shape{pointer-events:auto;}
+
+    .field{margin-bottom:10px;}
+    .field label{display:block;font-size:11px;color:var(--muted);margin-bottom:4px;}
+    .row2{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+    .row3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;}
+    .row4{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:6px;}
+    input[type=range]{width:100%;accent-color:var(--accent);}
+    input[type=color]{width:100%;height:30px;border:1px solid var(--border);border-radius:8px;background:var(--panel-2);padding:2px;cursor:pointer;}
+    #topbar select, #topbar input[type=number] { width: auto; }
+    .seg{display:flex;border:1px solid var(--border);border-radius:8px;overflow:hidden;}
+    .seg button{flex:1;background:var(--panel-2);border:none;color:var(--muted);padding:6px 0;cursor:pointer;font-size:12px;}
+    .seg button.active{background:var(--accent);color:#fff;}
+    .empty-hint{color:var(--muted);font-size:12px;line-height:1.6;padding:20px 4px;text-align:center;}
+    #stage:empty::after{content:'';}
+    #stage.exporting .element{box-shadow:none !important;}
+    #stage.exporting .resize-handle{display:none !important;}
+    #recDuration{width:56px;}
+
+    ::-webkit-scrollbar{width:9px;height:9px;}
+    ::-webkit-scrollbar-thumb{background:#2b303a;border-radius:6px;}
+    ::-webkit-scrollbar-track{background:transparent;}
+
+    /* ANIMATION KEYFRAMES MATCHED PERFECTLY FOR PREVIEW AND EXPORT */
+    @keyframes fadeIn { from{opacity:0;} to{opacity:1;} }
+    @keyframes slideInLeft { from{opacity:0;transform:translateX(-60px);} to{opacity:1;transform:translateX(0);} }
+    @keyframes slideInRight { from{opacity:0;transform:translateX(60px);} to{opacity:1;transform:translateX(0);} }
+    @keyframes slideInUp { from{opacity:0;transform:translateY(40px);} to{opacity:1;transform:translateY(0);} }
+    @keyframes slideInDown { from{opacity:0;transform:translateY(-40px);} to{opacity:1;transform:translateY(0);} }
+    @keyframes zoomIn { from{opacity:0;transform:scale(0.5);} to{opacity:1;transform:scale(1);} }
+    @keyframes bounceIn {
+      0%{opacity:0;transform:scale(0.3);}
+      50%{opacity:1;transform:scale(1.05);}
+      70%{transform:scale(0.95);}
+      100%{opacity:1;transform:scale(1);}
+    }
+    @keyframes pulse {
+      0%,100%{transform:scale(1);}
+      50%{transform:scale(1.05);}
+    }
+    @keyframes shake {
+      0%,100%{transform:translateX(0);}
+      20%{transform:translateX(-6px);}
+      40%{transform:translateX(6px);}
+      60%{transform:translateX(-4px);}
+      80%{transform:translateX(4px);}
+    }
+
+    .slide-controls {
+      display:flex;
+      gap:6px;
+      flex-wrap:wrap;
+      margin-top:6px;
+    }
+    .slide-controls .btn {
+      font-size:11px;
+      padding:4px 10px;
+    }
+
+    @media(max-width:900px){
+      body{overflow:auto;}
+      #app{height:auto;min-height:100vh;}
+      #topbar{gap:10px;justify-content:center;}
+      #topbar .right-group{margin-left:0;justify-content:center;width:100%;margin-top:5px;}
+      #workspace{
+        grid-template-columns:1fr;
+        height:auto;
+        overflow:visible;
+      }
+      .rail{border-right:none;border-bottom:1px solid var(--border);}
+      #inspector{border-left:none;border-top:1px solid var(--border);}
+    }
+  </style>
 </head>
 <body>
 <div id="app">
@@ -440,7 +443,10 @@
   let elCounter=0;
   let selected=null;
   let slideTimers = {};
+  // Store stay time per group
+  let groupStayTime = {};
 
+  // ---- NEW: custom default size from inspector ----
   function getCustomSizeFromInspector(){
     const wInput = document.getElementById('newElWidth');
     const hInput = document.getElementById('newElHeight');
@@ -453,6 +459,7 @@
   }
 
   function makeBaseEl(type, w, h){
+    // if w/h not provided, use custom from inspector
     if(!w || !h){
       const c = getCustomSizeFromInspector();
       w = c.w;
@@ -486,7 +493,7 @@
   }
 
   function addText(){
-    const el=makeBaseEl('text', 140, 30);
+    const el=makeBaseEl('text');
     el.innerText='Your headline';
     el.style.fontFamily="'Space Grotesk',sans-serif";
     el.style.fontSize='16px';
@@ -497,7 +504,7 @@
     setupTextEditing(el);
   }
   function addButton(){
-    const el=makeBaseEl('button', 110, 34);
+    const el=makeBaseEl('button');
     el.innerText='Install Now';
     el.style.fontFamily="'Inter',sans-serif";
     el.style.fontSize='13px';
@@ -509,13 +516,13 @@
     setupTextEditing(el);
   }
   function addShape(kind){
-    const el=makeBaseEl('shape', 80, 80);
+    const el=makeBaseEl('shape');
     el.style.background='#5B8CFF';
     el.style.borderRadius = kind==='circle' ? '50%' : '6px';
     el.dataset.shape = kind;
   }
   function addBadge(){
-    const el=makeBaseEl('button', 90, 26);
+    const el=makeBaseEl('button');
     el.innerText='AD';
     el.style.fontFamily="'Inter',sans-serif";
     el.style.fontSize='11px';
@@ -530,7 +537,10 @@
   function addImageFromFile(file, slideGroup){
     const reader=new FileReader();
     reader.onload=function(ev){
-      const el=makeBaseEl('image', 100, 100);
+      // use custom size from inspector
+      const c = getCustomSizeFromInspector();
+      const el=makeBaseEl('image', c.w, c.h);
+      el.style.opacity = '1';
       const img=document.createElement('img');
       img.src=ev.target.result;
       img.style.objectFit='cover';
@@ -579,6 +589,11 @@
       el.dataset.editing='0';
       el.setAttribute('contenteditable','false');
       el.classList.remove('editing');
+    });
+    el.addEventListener('keydown', function(e) {
+      if (e.key === 'Backspace' || e.key === 'Delete') {
+        e.stopPropagation();
+      }
     });
   }
 
@@ -740,9 +755,14 @@
 
   document.addEventListener('keydown', function(e){
     if(!selected) return;
-    if(document.activeElement.isContentEditable) return;
+    if (document.activeElement && document.activeElement.isContentEditable) {
+      return;
+    }
     const step = e.shiftKey ? 10 : 1;
-    if(e.key==='Delete' || e.key==='Backspace'){ e.preventDefault(); deleteEl(selected); }
+    if(e.key==='Delete' || e.key==='Backspace'){ 
+      e.preventDefault(); 
+      deleteEl(selected); 
+    }
     if(e.key==='ArrowLeft'){ selected.style.left=(parseFloat(selected.style.left)-step)+'px'; syncInspectorPosition(); }
     if(e.key==='ArrowRight'){ selected.style.left=(parseFloat(selected.style.left)+step)+'px'; syncInspectorPosition(); }
     if(e.key==='ArrowUp'){ selected.style.top=(parseFloat(selected.style.top)-step)+'px'; syncInspectorPosition(); }
@@ -758,7 +778,6 @@
     ["zoomIn","Zoom In"],["bounceIn","Bounce In"],["pulse","Pulse (loop)"],["shake","Shake"]
   ];
 
-  // ---- SLIDE SHOW ENGINE ----
   function refreshSlideGroup(){
     const groups = {};
     const elements = Array.from(stage.querySelectorAll('.element'));
@@ -770,35 +789,41 @@
       }
     });
     for(const [group, els] of Object.entries(groups)){
-      els.sort((a,b) => {
-        const idxA = parseInt(a.dataset.slideIndex) || 0;
-        const idxB = parseInt(b.dataset.slideIndex) || 0;
-        return idxA - idxB;
-      });
-      els.forEach((el, idx) => {
-        el.dataset.slideIndex = idx;
-      });
+      els.sort((a,b) => (parseInt(a.dataset.slideIndex) || 0) - (parseInt(b.dataset.slideIndex) || 0));
+      els.forEach((el, idx) => { el.dataset.slideIndex = idx; });
     }
     elements.forEach(el => {
       const g = el.dataset.slideGroup;
       if(g) {
         const groupEls = getGroupElements(g);
         if(groupEls.length > 0 && groupEls[0] === el) {
-          el.style.display = 'flex';
-          el.style.opacity = '1';
+          el.style.display = 'flex'; 
+          if(!el.style.opacity || el.style.opacity === '0') el.style.opacity = '1';
         } else {
           el.style.display = 'none';
-          el.style.opacity = '0';
         }
       } else {
         el.style.display = 'flex';
-        el.style.opacity = '1';
       }
     });
   }
 
   function getAnimDuration(el){
-    return parseFloat(el.dataset.animDur) || 0.8;
+    const globalDurationInput = document.getElementById('recDuration');
+    const baseDuration = globalDurationInput ? parseFloat(globalDurationInput.value) : 5;
+    return parseFloat(el.dataset.animDur) || (baseDuration / 4) || 0.8;
+  }
+
+  // Get stay time for a group (first element's stay time or default)
+  function getGroupStayTime(groupName){
+    if(groupStayTime[groupName] !== undefined) {
+      return groupStayTime[groupName];
+    }
+    const els = getGroupElements(groupName);
+    if(els.length > 0 && els[0].dataset.stayTime) {
+      return parseFloat(els[0].dataset.stayTime);
+    }
+    return 0.8; // default
   }
 
   function updateSlideShow(){
@@ -819,28 +844,30 @@
     });
 
     for(const [group, els] of Object.entries(groups)){
-      els.sort((a,b) => {
-        const idxA = parseInt(a.dataset.slideIndex) || 0;
-        const idxB = parseInt(b.dataset.slideIndex) || 0;
-        return idxA - idxB;
-      });
-      
+      els.sort((a,b) => (parseInt(a.dataset.slideIndex) || 0) - (parseInt(b.dataset.slideIndex) || 0));
       if(els.length <= 1) continue;
 
-      let currentIndex = 0;
+      // Use group stay time
+      const stayTime = getGroupStayTime(group);
+      // Update stayTime on all elements in group for consistency
+      els.forEach(el => {
+        el.dataset.stayTime = stayTime;
+      });
 
-      function showSlide(index){
+      let timeoutId = null;
+      
+      function showSlide(index, animate = true){
         els.forEach(el => {
           el.style.display = 'none';
-          el.style.opacity = '0';
           el.style.animation = 'none';
         });
         if(els[index]){
           els[index].style.display = 'flex';
-          els[index].style.opacity = '1';
+          const targetOpacity = els[index].dataset.savedOpacity || els[index].style.opacity || '1';
+          els[index].style.opacity = targetOpacity;
           const anim = els[index].dataset.anim;
           const dur = getAnimDuration(els[index]);
-          if(anim && anim !== 'none'){
+          if(anim && anim !== 'none' && animate){
             els[index].style.animation = 'none';
             void els[index].offsetWidth;
             els[index].style.animation = `${anim} ${dur}s ease both`;
@@ -848,23 +875,37 @@
         }
       }
 
-      function nextSlide(){
-        currentIndex = (currentIndex + 1) % els.length;
-        showSlide(currentIndex);
+      showSlide(0, true);
+
+      function scheduleNextSlide(index) {
+        const el = els[index];
+        const animDur = getAnimDuration(el);
+        const totalTime = (animDur + stayTime) * 1000;
+        
+        if (timeoutId) clearTimeout(timeoutId);
+        timeoutId = setTimeout(() => {
+          const nextIndex = (index + 1) % els.length;
+          showSlide(nextIndex, true);
+          scheduleNextSlide(nextIndex);
+        }, totalTime);
       }
 
-      showSlide(0);
-      const dur = getAnimDuration(els[0]);
-      // 0.05s gap for smooth transition, no white screen
-      const totalTime = dur + 0.05;
-      
-      slideTimers[group] = setInterval(() => {
-        nextSlide();
-      }, totalTime * 1000);
+      setTimeout(() => {
+        scheduleNextSlide(0);
+      }, 50);
+
+      slideTimers[group] = {
+        clear: () => {
+          if (timeoutId) clearTimeout(timeoutId);
+        }
+      };
     }
   }
 
-  // ---- RENDER INSPECTOR ----
+  document.getElementById('recDuration').addEventListener('input', function() {
+    updateSlideShow();
+  });
+
   function renderInspector(){
     if(!selected){
       inspectorEmpty.style.display='block';
@@ -884,8 +925,10 @@
         <div class="field"><label>W</label><input type="number" id="propW"></div>
         <div class="field"><label>H</label><input type="number" id="propH"></div>
       </div>
-      <div class="field"><label>Rotation</label><input type="range" id="propRot" min="-180" max="180" step="1"></div>
-      <div class="field"><label>Opacity</label><input type="range" id="propOpacity" min="0" max="1" step="0.05"></div>
+      <div class="row2">
+        <div class="field"><label>Rotation (deg)</label><input type="number" id="propRot" min="-180" max="180" step="1"></div>
+        <div class="field"><label>Opacity (0-1)</label><input type="number" id="propOpacity" min="0" max="1" step="0.05"></div>
+      </div>
     `;
 
     html += `
@@ -935,6 +978,9 @@
       `;
     }
     if(type==='image'){
+      const currentGroup = selected.dataset.slideGroup || '';
+      const currentStay = getGroupStayTime(currentGroup);
+      
       html += `
         <div class="section-title">Image</div>
         <label class="btn small" style="cursor:pointer;display:inline-flex;">Replace image
@@ -942,33 +988,25 @@
         </label>
         <div class="field" style="margin-top:8px;"><label>Corner radius</label><input type="range" id="propImgRadius" min="0" max="100" step="1"></div>
         
-        <div class="section-title">Slide Show</div>
-        <div class="field"><label>Slide group (same group = auto slide show)</label>
-          <input type="text" id="propSlideGroup" placeholder="e.g. slides" value="${selected.dataset.slideGroup || ''}">
+        <div class="section-title">Slide Show / Slider</div>
+        <div class="field"><label>Slide group (same name = auto loop show)</label>
+          <input type="text" id="propSlideGroup" placeholder="e.g. main-slider" value="${currentGroup}">
         </div>
-        <div class="row3">
-          <div class="field"><label>Anim duration (s)</label>
-            <input type="number" id="propAnimDur" step="0.1" min="0.1" value="${selected.dataset.animDur || 0.8}">
-          </div>
-          <div class="field"><label>Effect</label>
-            <select id="propAnim">
-              ${ANIMS.map(a=>`<option value="${a[0]}">${a[1]}</option>`).join('')}
-            </select>
-          </div>
-          <div class="field"><label style="color:var(--accent-2);">⚡ No white gap</label></div>
+        <div class="field"><label>Stay time (s) — time each slide stays visible</label>
+          <input type="number" id="propStayTime" step="0.1" min="0.1" value="${currentStay}">
+          <div style="font-size:10px;color:var(--muted);margin-top:2px;">⚠️ Same stay time applies to all slides in this group</div>
         </div>
         <div class="slide-controls">
-          <button class="btn small" id="slideAddNext">➕ Add next slide</button>
+          <button class="btn small" id="slideAddNext">➕ Add next slide image</button>
           <button class="btn small" id="slideRemove">❌ Remove from group</button>
-          <button class="btn small" id="slideReset">🔄 Reset slides</button>
+          <button class="btn small" id="slideReset">🔄 Reset index order</button>
         </div>
       `;
     }
 
-    // Single Animation section - only one, for all elements
     html += `
-      <div class="section-title">Animation</div>
-      <div class="field"><label>Effect</label>
+      <div class="section-title">Animation Settings</div>
+      <div class="field"><label>Effect / Transition</label>
         <select id="propAnimSingle">
           ${ANIMS.map(a=>`<option value="${a[0]}">${a[1]}</option>`).join('')}
         </select>
@@ -977,10 +1015,10 @@
         <div class="field"><label>Duration (s)</label><input type="number" step="0.1" id="propAnimDurSingle"></div>
         <div class="field"><label>Delay (s)</label><input type="number" step="0.1" id="propAnimDelay"></div>
       </div>
-      <div class="field"><label>Repeat</label>
+      <div class="field"><label>Repeat Configuration</label>
         <div class="seg">
           <button data-iter="1">Once</button>
-          <button data-iter="infinite">Loop</button>
+          <button data-iter="infinite">Loop Frame</button>
         </div>
       </div>
     `;
@@ -992,28 +1030,40 @@
     if(type==='image'){
       const groupInput = document.getElementById('propSlideGroup');
       if(groupInput){
-        groupInput.addEventListener('change', function(){
+        const handleGroupUpdate = function(){
           const oldGroup = selected.dataset.slideGroup || '';
-          selected.dataset.slideGroup = this.value.trim() || '';
-          if(oldGroup !== selected.dataset.slideGroup){
-            if(selected.dataset.slideGroup){
-              const groupEls = getGroupElements(selected.dataset.slideGroup);
+          const newGroup = this.value.trim() || '';
+          selected.dataset.slideGroup = newGroup;
+          if(oldGroup !== newGroup){
+            if(newGroup){
+              const groupEls = getGroupElements(newGroup);
               selected.dataset.slideIndex = groupEls.length;
             }
             refreshSlideGroup();
             updateSlideShow();
           }
-        });
-        groupInput.addEventListener('input', function(){
-          const oldGroup = selected.dataset.slideGroup || '';
-          selected.dataset.slideGroup = this.value.trim() || '';
-          if(oldGroup !== selected.dataset.slideGroup){
-            if(selected.dataset.slideGroup){
-              const groupEls = getGroupElements(selected.dataset.slideGroup);
-              selected.dataset.slideIndex = groupEls.length;
+        };
+        groupInput.addEventListener('change', handleGroupUpdate);
+        groupInput.addEventListener('input', handleGroupUpdate);
+      }
+      
+      const stayInput = document.getElementById('propStayTime');
+      if(stayInput){
+        stayInput.addEventListener('input', function(){
+          if(selected){
+            const val = parseFloat(this.value) || 0.5;
+            const group = selected.dataset.slideGroup;
+            if(group){
+              groupStayTime[group] = val;
+              // Update all elements in group
+              const groupEls = getGroupElements(group);
+              groupEls.forEach(el => {
+                el.dataset.stayTime = val;
+              });
+              updateSlideShow();
+            } else {
+              selected.dataset.stayTime = val;
             }
-            refreshSlideGroup();
-            updateSlideShow();
           }
         });
       }
@@ -1022,15 +1072,14 @@
       if(addBtn){
         addBtn.addEventListener('click', function(){
           const fileInput = document.getElementById('imageUpload');
-          if(fileInput){
-            fileInput.click();
-          }
+          if(fileInput) fileInput.click();
         });
       }
       
       const removeBtn = document.getElementById('slideRemove');
       if(removeBtn){
         removeBtn.addEventListener('click', function(){
+          const group = selected.dataset.slideGroup;
           delete selected.dataset.slideGroup;
           delete selected.dataset.slideIndex;
           refreshSlideGroup();
@@ -1046,9 +1095,7 @@
           const group = selected.dataset.slideGroup;
           if(group){
             const els = getGroupElements(group);
-            els.forEach((el, idx) => {
-              el.dataset.slideIndex = idx;
-            });
+            els.forEach((el, idx) => { el.dataset.slideIndex = idx; });
             refreshSlideGroup();
             updateSlideShow();
           }
@@ -1065,7 +1112,10 @@
     setVal('propH', parseFloat(selected.style.height)||0);
     const rotMatch = /rotate\((-?\d+(\.\d+)?)deg\)/.exec(selected.style.transform||'');
     setVal('propRot', rotMatch?rotMatch[1]:0);
-    setVal('propOpacity', selected.style.opacity===''?1:selected.style.opacity);
+    
+    const currentOpacity = selected.dataset.savedOpacity || selected.style.opacity;
+    setVal('propOpacity', (currentOpacity === '' || currentOpacity === undefined) ? 1 : currentOpacity);
+    
     if(document.getElementById('propFontSize')){
       setVal('propFontSize', parseFloat(selected.style.fontSize)||16);
       setVal('propColor', rgbToHex(selected.style.color) || '#1a1a1a');
@@ -1081,13 +1131,23 @@
     if(document.getElementById('propImgRadius')){
       setVal('propImgRadius', parseFloat(selected.style.borderRadius)||0);
     }
-    setVal('propAnim', selected.dataset.anim||'none');
+    setVal('propAnimSingle', selected.dataset.anim||'none');
     setVal('propAnimDurSingle', selected.dataset.animDur||0.8);
     setVal('propAnimDelay', selected.dataset.animDelay||0);
     highlightSeg('[data-iter]', selected.dataset.animIter||'1', 'iter');
 
     const sg = document.getElementById('propSlideGroup');
     if(sg) sg.value = selected.dataset.slideGroup || '';
+    
+    const stay = document.getElementById('propStayTime');
+    if(stay) {
+      const group = selected.dataset.slideGroup;
+      if(group && groupStayTime[group] !== undefined) {
+        stay.value = groupStayTime[group];
+      } else {
+        stay.value = selected.dataset.stayTime || 0.8;
+      }
+    }
   }
 
   function setVal(id,val){ const e=document.getElementById(id); if(e) e.value=val; }
@@ -1111,12 +1171,15 @@
     on('propW','input',e=>{ selected.style.width=e.target.value+'px'; });
     on('propH','input',e=>{ selected.style.height=e.target.value+'px'; });
     on('propRot','input',e=>{ 
-      const currentTransform = selected.style.transform || '';
-      const scaleMatch = /scale\(([\d.]+)\)/.exec(currentTransform);
+      const scaleMatch = /scale\(([\d.]+)\)/.exec(selected.style.transform||'');
       const scale = scaleMatch ? scaleMatch[1] : '1';
       selected.style.transform = `rotate(${e.target.value}deg) scale(${scale})`;
     });
-    on('propOpacity','input',e=>{ selected.style.opacity=e.target.value; });
+    on('propOpacity','input',e=>{ 
+      const val = e.target.value;
+      selected.style.opacity = val;
+      selected.dataset.savedOpacity = val;
+    });
 
     if(isText){
       on('propFont','change',e=>{ selected.style.fontFamily=e.target.value; });
@@ -1141,25 +1204,16 @@
         reader.readAsDataURL(f);
         e.target.value='';
       });
-      on('propAnimDur','change',e=>{
-        selected.dataset.animDur = e.target.value;
-        updateSlideShow();
-      });
-      on('propAnimDur','input',e=>{
-        selected.dataset.animDur = e.target.value;
-      });
-      on('propAnim','change',e=>{
-        selected.dataset.anim = e.target.value;
-        updateSlideShow();
-      });
     }
     on('propAnimSingle','change',e=>{ 
       selected.dataset.anim = e.target.value; 
       applyAnim(selected); 
+      if(selected.dataset.slideGroup) updateSlideShow();
     });
     on('propAnimDurSingle','input',e=>{ 
       selected.dataset.animDur = e.target.value; 
       applyAnim(selected); 
+      if(selected.dataset.slideGroup) updateSlideShow();
     });
     on('propAnimDelay','input',e=>{ 
       selected.dataset.animDelay = e.target.value; 
@@ -1174,8 +1228,7 @@
 
   function applyAnim(el){
     if(el.dataset.anim==='none'){ 
-      el.style.animation='none'; 
-      return; 
+      el.style.animation='none'; return; 
     }
     el.style.animation = `${el.dataset.anim} ${el.dataset.animDur}s ${el.dataset.animDelay}s ${el.dataset.animIter} both ease`;
   }
@@ -1191,8 +1244,7 @@
     });
   });
 
-  // ================ EXPORT FUNCTIONS ================
-  
+  // ================ EXPORT CANVAS TIMELINE ================
   function getSlideShowState(time, totalDuration) {
     const result = {};
     const elements = Array.from(stage.querySelectorAll('.element'));
@@ -1207,37 +1259,43 @@
     });
     
     for(const [group, els] of Object.entries(groups)){
-      els.sort((a,b) => {
-        const idxA = parseInt(a.dataset.slideIndex) || 0;
-        const idxB = parseInt(b.dataset.slideIndex) || 0;
-        return idxA - idxB;
-      });
+      els.sort((a,b) => (parseInt(a.dataset.slideIndex) || 0) - (parseInt(b.dataset.slideIndex) || 0));
       
       if(els.length <= 1) {
         result[group] = { element: els[0] || null, progress: 0 };
         continue;
       }
       
-      const animDur = getAnimDuration(els[0]);
-      const totalTime = animDur + 0.05;
-      const totalGroupTime = totalTime * els.length;
+      const stayTime = getGroupStayTime(group);
+      // Use uniform timing for all elements in group
+      const totalTimePerSlide = els.reduce((sum, el) => {
+        const animDur = getAnimDuration(el);
+        return sum + animDur + stayTime;
+      }, 0);
       
-      const loopedTime = time % totalGroupTime;
-      const slideIndex = Math.floor(loopedTime / totalTime);
-      const slideTime = loopedTime % totalTime;
-      const actualIndex = slideIndex % els.length;
+      let accumulatedTime = 0;
+      let found = false;
       
-      let progress = slideTime / animDur;
-      if(progress > 1) progress = 1;
+      for(let i = 0; i < els.length; i++) {
+        const el = els[i];
+        const animDur = getAnimDuration(el);
+        const segmentTime = animDur + stayTime;
+        
+        if(time < accumulatedTime + segmentTime || i === els.length - 1) {
+          const localTime = time - accumulatedTime;
+          let progress = localTime / animDur;
+          if(progress > 1) progress = 1;
+          result[group] = { element: el, progress: Math.max(0, progress) };
+          found = true;
+          break;
+        }
+        accumulatedTime += segmentTime;
+      }
       
-      result[group] = {
-        element: els[actualIndex],
-        progress: progress,
-        slideTime: slideTime,
-        animDur: animDur
-      };
+      if(!found && els.length > 0) {
+        result[group] = { element: els[els.length - 1], progress: 1 };
+      }
     }
-    
     return result;
   }
 
@@ -1251,15 +1309,14 @@
     const delay = parseFloat(el.dataset.animDelay) || 0;
     const iter = el.dataset.animIter || '1';
     
-    let rawP = Math.max(0, (progress - delay) / duration);
+    let rawP = (progress - delay) / duration;
     
     let p;
     if(iter === 'infinite') {
-      p = rawP % 1;
-      if(p < 0.001) p = 0.001;
-      if(p > 0.999) p = 0.999;
+      if(rawP < 0) p = 0;
+      else p = rawP % 1;
     } else {
-      p = Math.min(1, rawP);
+      p = Math.max(0, Math.min(1, rawP));
     }
     
     const ease = (t) => t < 0.5 ? 2*t*t : 1 - Math.pow(-2*t + 2, 2) / 2;
@@ -1268,61 +1325,52 @@
     let opacity = 1;
     let tx = 0, ty = 0, scale = 1;
     
-    switch(anim) {
-      case 'fadeIn':
-        opacity = ep;
-        break;
-      case 'slideInLeft':
-        opacity = ep;
-        tx = -60 * (1 - ep);
-        break;
-      case 'slideInRight':
-        opacity = ep;
-        tx = 60 * (1 - ep);
-        break;
-      case 'slideInUp':
-        opacity = ep;
-        ty = 40 * (1 - ep);
-        break;
-      case 'slideInDown':
-        opacity = ep;
-        ty = -40 * (1 - ep);
-        break;
-      case 'zoomIn':
-        opacity = ep;
-        scale = 0.5 + 0.5 * ep;
-        break;
-      case 'bounceIn':
-        if(p < 0.5) {
-          const bp = p / 0.5;
-          scale = 0.3 + 0.75 * bp;
-          opacity = 0.3 + 0.7 * bp;
-        } else if(p < 0.7) {
-          const bp = (p - 0.5) / 0.2;
-          scale = 1.05 - 0.1 * bp;
+    if(rawP < 0) {
+      if(anim.startsWith('slide') || anim==='fadeIn' || anim==='zoomIn' || anim==='bounceIn') opacity = 0;
+    } else {
+      switch(anim) {
+        case 'fadeIn':
+          opacity = ep;
+          break;
+        case 'slideInLeft':
+          opacity = ep; tx = -60 * (1 - ep);
+          break;
+        case 'slideInRight':
+          opacity = ep; tx = 60 * (1 - ep);
+          break;
+        case 'slideInUp':
+          opacity = ep; ty = 40 * (1 - ep);
+          break;
+        case 'slideInDown':
+          opacity = ep; ty = -40 * (1 - ep);
+          break;
+        case 'zoomIn':
+          opacity = ep; scale = 0.5 + 0.5 * ep;
+          break;
+        case 'bounceIn':
+          if(p < 0.5) {
+            const bp = p / 0.5; scale = 0.3 + 0.75 * bp; opacity = 0.3 + 0.7 * bp;
+          } else if(p < 0.7) {
+            const bp = (p - 0.5) / 0.2; scale = 1.05 - 0.1 * bp; opacity = 1;
+          } else if(p < 0.9) {
+            const bp = (p - 0.7) / 0.2; scale = 0.95 + 0.05 * bp; opacity = 1;
+          } else {
+            scale = 1; opacity = 1;
+          }
+          break;
+        case 'pulse':
+          scale = 1 + 0.05 * Math.sin(p * Math.PI * 2);
           opacity = 1;
-        } else if(p < 0.9) {
-          const bp = (p - 0.7) / 0.2;
-          scale = 0.95 + 0.05 * bp;
+          break;
+        case 'shake':
+          const shakeAmt = 6 * (1 - ep);
+          tx = Math.sin(p * 50) * shakeAmt;
           opacity = 1;
-        } else {
-          scale = 1;
+          break;
+        default:
           opacity = 1;
-        }
-        break;
-      case 'pulse':
-        scale = 1 + 0.05 * Math.sin(p * Math.PI * 2);
-        opacity = 1;
-        break;
-      case 'shake':
-        const shakeAmt = 6 * (1 - ep);
-        tx = Math.sin(p * 50) * shakeAmt;
-        opacity = 1;
-        break;
-      default:
-        opacity = 1;
+      }
     }
-    
     return { opacity, tx, ty, scale };
   }
 
@@ -1333,7 +1381,7 @@
     let h = parseFloat(el.style.height) || 50;
     
     const group = el.dataset.slideGroup;
-    let progress = time / (parseFloat(document.getElementById('recDuration').value) || 5);
+    let progress = time;
     let shouldRender = true;
     
     if(group && slideState && slideState[group]) {
@@ -1341,19 +1389,18 @@
       if(state.element !== el) {
         shouldRender = false;
       } else {
-        progress = state.progress || 0;
+        progress = state.progress * (parseFloat(el.dataset.animDur) || 0.8);
       }
     } else if(group) {
       const groupEls = getGroupElements(group);
-      if(groupEls.length > 0 && groupEls[0] !== el) {
-        shouldRender = false;
-      }
+      if(groupEls.length > 0 && groupEls[0] !== el) shouldRender = false;
     }
     
     if(!shouldRender) return;
     
     const animState = evaluateExportAnimation(el, progress);
-    const opacity = animState.opacity * (parseFloat(el.style.opacity) || 1);
+    const elementBaseOpacity = parseFloat(el.dataset.savedOpacity || el.style.opacity) || 1;
+    const opacity = animState.opacity * elementBaseOpacity;
     const tx = animState.tx || 0;
     const ty = animState.ty || 0;
     const scaleVal = animState.scale || 1;
@@ -1367,14 +1414,12 @@
     const scaledH = h * scale * scaleVal;
     
     ctx.save();
-    
-    ctx.translate(scaledX + scaledW / 2, scaledY + scaledH / 2);
+    ctx.translate(scaledX + (w * scale) / 2, scaledY + (h * scale) / 2);
     ctx.rotate(rotation * Math.PI / 180);
     ctx.globalAlpha = Math.max(0, Math.min(1, opacity));
     
-    const hw = scaledW / 2;
-    const hh = scaledH / 2;
-    
+    const hw = (w * scale * scaleVal) / 2;
+    const hh = (h * scale * scaleVal) / 2;
     const type = el.dataset.type;
     
     if(type === 'text' || type === 'button') {
@@ -1383,50 +1428,36 @@
         const radius = parseFloat(el.style.borderRadius) || 8;
         const rx = Math.min(radius * scale * scaleVal, Math.min(hw, hh) * 0.8);
         ctx.beginPath();
-        ctx.moveTo(-hw + rx, -hh);
-        ctx.lineTo(hw - rx, -hh);
-        ctx.quadraticCurveTo(hw, -hh, hw, -hh + rx);
-        ctx.lineTo(hw, hh - rx);
-        ctx.quadraticCurveTo(hw, hh, hw - rx, hh);
-        ctx.lineTo(-hw + rx, hh);
-        ctx.quadraticCurveTo(-hw, hh, -hw, hh - rx);
-        ctx.lineTo(-hw, -hh + rx);
-        ctx.quadraticCurveTo(-hw, -hh, -hw + rx, -hh);
-        ctx.closePath();
-        ctx.fill();
+        ctx.moveTo(-hw + rx, -hh); ctx.lineTo(hw - rx, -hh);
+        ctx.quadraticCurveTo(hw, -hh, hw, -hh + rx); ctx.lineTo(hw, hh - rx);
+        ctx.quadraticCurveTo(hw, hh, hw - rx, hh); ctx.lineTo(-hw + rx, hh);
+        ctx.quadraticCurveTo(-hw, hh, -hw, hh - rx); ctx.lineTo(-hw, -hh + rx);
+        ctx.quadraticCurveTo(-hw, -hh, -hw + rx, -hh); ctx.closePath(); ctx.fill();
       }
       
       const fontSize = parseFloat(el.style.fontSize) || 16;
       const fontWeight = el.style.fontWeight || '400';
       const fontFamily = el.style.fontFamily || 'Inter, sans-serif';
-      const textSize = fontSize * scale * scaleVal;
-      ctx.font = `${fontWeight} ${Math.max(8, textSize)}px ${fontFamily}`;
+      ctx.font = `${fontWeight} ${fontSize * scale * scaleVal}px ${fontFamily}`;
       ctx.fillStyle = el.style.color || '#1a1a1a';
       ctx.textAlign = el.style.textAlign || 'center';
       ctx.textBaseline = 'middle';
       
       let text = el.innerText || '';
-      const maxWidth = Math.max(10, scaledW - (8 * scale * scaleVal));
+      const maxWidth = Math.max(10, (w * scale * scaleVal) - (8 * scale * scaleVal));
       
       if(ctx.measureText(text).width > maxWidth && maxWidth > 10) {
-        let words = text.split(' ');
-        let lines = [];
-        let currentLine = '';
+        let words = text.split(' '), lines = [], currentLine = '';
         for(let word of words) {
           let testLine = currentLine + (currentLine ? ' ' : '') + word;
           if(ctx.measureText(testLine).width > maxWidth && currentLine) {
-            lines.push(currentLine);
-            currentLine = word;
-          } else {
-            currentLine = testLine;
-          }
+            lines.push(currentLine); currentLine = word;
+          } else { currentLine = testLine; }
         }
         if(currentLine) lines.push(currentLine);
         
         const lineHeight = fontSize * 1.2 * scale * scaleVal;
-        const totalHeight = lines.length * lineHeight;
-        let startY = -totalHeight/2 + lineHeight/2;
-        
+        let startY = -((lines.length * lineHeight) / 2) + lineHeight / 2;
         for(let line of lines) {
           if(line) ctx.fillText(line, 0, startY);
           startY += lineHeight;
@@ -1442,51 +1473,35 @@
         if(radius > 0) {
           const rx = Math.min(radius * scale * scaleVal, Math.min(hw, hh) * 0.8);
           ctx.beginPath();
-          ctx.moveTo(-hw + rx, -hh);
-          ctx.lineTo(hw - rx, -hh);
-          ctx.quadraticCurveTo(hw, -hh, hw, -hh + rx);
-          ctx.lineTo(hw, hh - rx);
-          ctx.quadraticCurveTo(hw, hh, hw - rx, hh);
-          ctx.lineTo(-hw + rx, hh);
-          ctx.quadraticCurveTo(-hw, hh, -hw, hh - rx);
-          ctx.lineTo(-hw, -hh + rx);
-          ctx.quadraticCurveTo(-hw, -hh, -hw + rx, -hh);
-          ctx.closePath();
-          ctx.clip();
+          ctx.moveTo(-hw + rx, -hh); ctx.lineTo(hw - rx, -hh);
+          ctx.quadraticCurveTo(hw, -hh, hw, -hh + rx); ctx.lineTo(hw, hh - rx);
+          ctx.quadraticCurveTo(hw, hh, hw - rx, hh); ctx.lineTo(-hw + rx, hh);
+          ctx.quadraticCurveTo(-hw, hh, -hw, hh - rx); ctx.lineTo(-hw, -hh + rx);
+          ctx.quadraticCurveTo(-hw, -hh, -hw + rx, -hh); ctx.closePath(); ctx.clip();
         }
-        ctx.drawImage(img, -hw, -hh, scaledW, scaledH);
+        ctx.drawImage(img, -hw, -hh, w * scale * scaleVal, h * scale * scaleVal);
       }
     }
     else if(type === 'shape') {
       ctx.fillStyle = el.style.background || '#5B8CFF';
       const radius = el.style.borderRadius || '6px';
       if(radius === '50%') {
-        ctx.beginPath();
-        ctx.arc(0, 0, Math.min(hw, hh), 0, Math.PI * 2);
-        ctx.fill();
+        ctx.beginPath(); ctx.arc(0, 0, Math.min(hw, hh), 0, Math.PI * 2); ctx.fill();
       } else {
         const r = Math.min(parseFloat(radius) * scale * scaleVal || 6 * scale * scaleVal, Math.min(hw, hh) * 0.8);
         ctx.beginPath();
-        ctx.moveTo(-hw + r, -hh);
-        ctx.lineTo(hw - r, -hh);
-        ctx.quadraticCurveTo(hw, -hh, hw, -hh + r);
-        ctx.lineTo(hw, hh - r);
-        ctx.quadraticCurveTo(hw, hh, hw - r, hh);
-        ctx.lineTo(-hw + r, hh);
-        ctx.quadraticCurveTo(-hw, hh, -hw, hh - r);
-        ctx.lineTo(-hw, -hh + r);
-        ctx.quadraticCurveTo(-hw, -hh, -hw + r, -hh);
-        ctx.closePath();
-        ctx.fill();
+        ctx.moveTo(-hw + r, -hh); ctx.lineTo(hw - r, -hh);
+        ctx.quadraticCurveTo(hw, -hh, hw, -hh + r); ctx.lineTo(hw, hh - r);
+        ctx.quadraticCurveTo(hw, hh, hw - r, hh); ctx.lineTo(-hw + r, hh);
+        ctx.quadraticCurveTo(-hw, hh, -hw, hh - r); ctx.lineTo(-hw, -hh + r);
+        ctx.quadraticCurveTo(-hw, -hh, -hw + r, -hh); ctx.closePath(); ctx.fill();
       }
     }
-    
     ctx.restore();
   }
 
   async function captureFramesWithAnimation(durationSec, fps, scale) {
     await document.fonts?.ready;
-    
     const totalFrames = Math.max(2, Math.round(durationSec * fps));
     const frames = [];
     const frameDelay = 1000 / fps;
@@ -1496,7 +1511,6 @@
     const canvasW = Math.round(stageW * scale);
     const canvasH = Math.round(stageH * scale);
     const bgColor = stage.style.backgroundColor || '#ffffff';
-    
     const elements = Array.from(stage.querySelectorAll('.element'));
     
     let bgImage = null;
@@ -1509,7 +1523,7 @@
         if(urlMatch && urlMatch[1]) {
           img.src = urlMatch[1];
           await new Promise((resolve) => {
-            if(img.complete && img.naturalWidth > 0) { resolve(); }
+            if(img.complete && img.naturalWidth > 0) resolve();
             else { img.onload = resolve; img.onerror = resolve; setTimeout(resolve, 1000); }
           });
           if(img.complete && img.naturalWidth > 0) bgImage = img;
@@ -1519,55 +1533,33 @@
     
     for(let i = 0; i < totalFrames; i++) {
       const canvas = document.createElement('canvas');
-      canvas.width = canvasW;
-      canvas.height = canvasH;
+      canvas.width = canvasW; canvas.height = canvasH;
       const ctx = canvas.getContext('2d', { willReadFrequently: true });
       
-      ctx.fillStyle = bgColor;
-      ctx.fillRect(0, 0, canvasW, canvasH);
-      
-      if(bgImage) {
-        ctx.drawImage(bgImage, 0, 0, canvasW, canvasH);
-      }
+      ctx.fillStyle = bgColor; ctx.fillRect(0, 0, canvasW, canvasH);
+      if(bgImage) ctx.drawImage(bgImage, 0, 0, canvasW, canvasH);
       
       const time = (i / (totalFrames - 1)) * durationSec;
-      
       const slideState = getSlideShowState(time, durationSec);
       
       for(const el of elements) {
-        const elOpacity = parseFloat(el.style.opacity);
-        if(elOpacity === 0) continue;
+        if(parseFloat(el.dataset.savedOpacity || el.style.opacity) === 0) continue;
         renderElementToCanvas(ctx, el, scale, time, slideState);
       }
-      
       frames.push(canvas);
-      
       if(i < totalFrames - 1) {
         await new Promise(r => setTimeout(r, frameDelay));
       }
     }
-    
     return frames;
-  }
-
-  function downloadBlob(content, filename, type){
-    const blob = new Blob([content], {type});
-    triggerDownload(blob, filename);
   }
 
   function triggerDownload(blob, filename){
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
-    a.href = url;
-    a.download = filename;
-    a.rel = 'noopener';
-    a.style.display = 'none';
-    document.body.appendChild(a);
-    a.click();
-    setTimeout(()=>{
-      a.remove();
-      URL.revokeObjectURL(url);
-    }, 4000);
+    a.href = url; a.download = filename; a.rel = 'noopener'; a.style.display = 'none';
+    document.body.appendChild(a); a.click();
+    setTimeout(()=>{ a.remove(); URL.revokeObjectURL(url); }, 4000);
   }
 
   document.getElementById('exportPngBtn').addEventListener('click', async function(){
@@ -1578,46 +1570,33 @@
       const stageW = stage.clientWidth || 320;
       const stageH = stage.clientHeight || 50;
       const canvas = document.createElement('canvas');
-      canvas.width = Math.round(stageW * scale);
-      canvas.height = Math.round(stageH * scale);
+      canvas.width = Math.round(stageW * scale); canvas.height = Math.round(stageH * scale);
       const ctx = canvas.getContext('2d');
       
-      const bgColor = stage.style.backgroundColor || '#ffffff';
-      ctx.fillStyle = bgColor;
+      ctx.fillStyle = stage.style.backgroundColor || '#ffffff';
       ctx.fillRect(0, 0, canvas.width, canvas.height);
       
       const elements = Array.from(stage.querySelectorAll('.element'));
       const slideState = getSlideShowState(0, 1);
       for(const el of elements) {
-        if(parseFloat(el.style.opacity) === 0) continue;
+        if(parseFloat(el.dataset.savedOpacity || el.style.opacity) === 0) continue;
         renderElementToCanvas(ctx, el, scale, 0, slideState);
       }
-      
-      canvas.toBlob(blob=>{
-        triggerDownload(blob, `ad-${stageW}x${stageH}.png`);
-      }, 'image/png');
+      canvas.toBlob(blob=>{ triggerDownload(blob, `ad-${stageW}x${stageH}.png`); }, 'image/png');
     }catch(err){
       console.error(err);
-      alert('PNG export fail hua: ' + (err && err.message ? err.message : err));
-    }finally{
-      btn.disabled=false; btn.textContent=origText;
-    }
+    }finally{ btn.disabled=false; btn.textContent=origText; }
   });
 
   document.getElementById('exportGifBtn').addEventListener('click', async function(){
-    const btn=this; const origText=btn.textContent;
-    btn.disabled=true;
+    const btn=this; btn.disabled=true;
     try{
       const dur = parseFloat(document.getElementById('recDuration').value) || 5;
-      const fps = 10;
+      const fps = 12;
       const scale = getQualityScale();
       
       btn.textContent='Rendering frames...';
       const frames = await captureFramesWithAnimation(dur, fps, scale);
-      
-      if(!frames || frames.length < 2) {
-        throw new Error('Koi frame capture nahi hua');
-      }
       
       btn.textContent='Loading GIF encoder...';
       await ensureLib('GIF', 'https://cdnjs.cloudflare.com/ajax/libs/gif.js/0.2.0/gif.js');
@@ -1626,13 +1605,9 @@
       const workerBlobUrl = await getGifWorkerBlobURL();
       
       const gif = new GIF({
-        workers: 2,
-        quality: 8,
-        width: frames[0].width,
-        height: frames[0].height,
-        workerScript: workerBlobUrl,
-        background: '#ffffff',
-        repeat: 0
+        workers: 2, quality: 8,
+        width: frames[0].width, height: frames[0].height,
+        workerScript: workerBlobUrl, repeat: 0
       });
       
       const delay = Math.round(1000/fps);
@@ -1640,36 +1615,16 @@
         gif.addFrame(frames[i], {delay: delay, copy: true});
       }
       
-      let finished = false;
-      const finishPromise = new Promise((resolve, reject) => {
-        gif.on('finished', function(blob){
-          finished = true;
-          resolve(blob);
-        });
-        gif.on('abort', function(){
-          reject(new Error('GIF encoding abort ho gayi'));
-        });
-        gif.on('progress', function(p){
-          btn.textContent = `Encoding... ${Math.round(p * 100)}%`;
-        });
+      gif.on('finished', function(blob){
+        triggerDownload(blob, `ad-${stage.clientWidth}x${stage.clientHeight}.gif`);
+        btn.disabled=false; btn.textContent='🎞 GIF';
       });
-      
+      gif.on('progress', function(p){
+        btn.textContent = `Encoding... ${Math.round(p * 100)}%`;
+      });
       gif.render();
-      
-      const timeoutPromise = new Promise((_, reject) => {
-        setTimeout(() => {
-          if(!finished) reject(new Error('GIF encoding timeout (5 minutes)'));
-        }, 300000);
-      });
-      
-      const result = await Promise.race([finishPromise, timeoutPromise]);
-      triggerDownload(result, `ad-${stage.clientWidth}x${stage.clientHeight}.gif`);
-      
     }catch(err){
-      console.error(err);
-      alert('GIF export fail hua: ' + (err && err.message ? err.message : err));
-    }finally{
-      btn.disabled=false; btn.textContent='🎞 GIF';
+      console.error(err); btn.disabled=false; btn.textContent='🎞 GIF';
     }
   });
 
@@ -1677,12 +1632,7 @@
     const btn=this; const origText=btn.textContent;
     btn.disabled=true;
     try{
-      if(!window.MediaRecorder){
-        alert('Yeh browser video recording support nahi karta. Chrome ya Edge try karein.');
-        btn.disabled=false; btn.textContent=origText;
-        return;
-      }
-      
+      if(!window.MediaRecorder){ alert('MediaRecorder missing.'); return; }
       const dur = parseFloat(document.getElementById('recDuration').value) || 5;
       const fps = 15;
       const scale = getQualityScale();
@@ -1690,12 +1640,7 @@
       btn.textContent='Rendering frames...';
       const frames = await captureFramesWithAnimation(dur, fps, scale);
       
-      if(!frames || frames.length < 2) {
-        throw new Error('Koi frame capture nahi hua');
-      }
-      
       btn.textContent='Encoding video...';
-
       const w=frames[0].width, h=frames[0].height;
       const rec=document.createElement('canvas'); rec.width=w; rec.height=h;
       const ctx=rec.getContext('2d', {willReadFrequently:true});
@@ -1703,8 +1648,6 @@
 
       let mimeType='video/webm;codecs=vp9', ext='webm';
       if(MediaRecorder.isTypeSupported('video/mp4')){ mimeType='video/mp4'; ext='mp4'; }
-      else if(!MediaRecorder.isTypeSupported(mimeType)){ mimeType='video/webm'; ext='webm'; }
-
       const recorder=new MediaRecorder(stream, {mimeType, videoBitsPerSecond: 8000000});
       const chunks=[];
       recorder.ondataavailable=e=>{ if(e.data && e.data.size) chunks.push(e.data); };
@@ -1714,54 +1657,36 @@
       const frameDelay = 1000/fps;
       for(let i=0;i<frames.length;i++){
         ctx.clearRect(0,0,w,h);
-        ctx.imageSmoothingEnabled = true;
-        ctx.imageSmoothingQuality = 'high';
         ctx.drawImage(frames[i],0,0,w,h);
-        if(i < frames.length - 1) {
-          await new Promise(r=>setTimeout(r, frameDelay));
-        }
+        if(i < frames.length - 1) await new Promise(r=>setTimeout(r, frameDelay));
       }
-      recorder.stop();
-      await stopped;
-
-      const blob=new Blob(chunks, {type:mimeType});
-      triggerDownload(blob, `ad-${w}x${h}.${ext}`);
-
-      if(ext!=='mp4'){
-        setTimeout(()=>alert('Note: aapke browser mein direct MP4 recording support nahi hai, isliye video .webm format mein save hui hai. MP4 chahiye ho to VLC ya CloudConvert se .webm ko .mp4 mein convert kar sakte hain.'), 300);
-      }
-    }catch(err){
-      console.error(err);
-      alert('Video export fail hua: ' + (err && err.message ? err.message : err));
-    }finally{
-      btn.disabled=false; btn.textContent=origText;
-    }
+      recorder.stop(); await stopped;
+      triggerDownload(new Blob(chunks, {type:mimeType}), `ad-${w}x${h}.${ext}`);
+    }catch(err){ console.error(err); }finally{ btn.disabled=false; btn.textContent=origText; }
   });
 
-  function getQualityScale(){
-    const val = parseFloat(document.getElementById('qualitySelect').value) || 1;
-    return val;
-  }
+  document.getElementById('exportHtmlBtn').addEventListener('click', function() {
+    const clonedStage = stage.cloneNode(true);
+    clonedStage.querySelectorAll('.resize-handle').forEach(h => h.remove());
+    clonedStage.querySelectorAll('.element').forEach(el => {
+      el.classList.remove('selected', 'editing'); el.style.boxShadow = 'none';
+    });
+    const exportStyles = Array.from(document.styleSheets[0].cssRules).map(rule => rule.cssText).join('\n');
+    const htmlOutput = `<!DOCTYPE html><html><head><meta charset="UTF-8"><style>${exportStyles}body{background:transparent;display:flex;justify-content:center;align-items:center;height:100vh;margin:0;}#stage{box-shadow:none;}</style></head><body>${clonedStage.outerHTML}<script>(function(){const stage=document.getElementById('stage');const slideTimers={};const groupStayTime={};function getAnimDuration(el){return parseFloat(el.dataset.animDur)||1.2;}function getGroupStayTime(groupName){if(groupStayTime[groupName]!==undefined)return groupStayTime[groupName];const els=Array.from(stage.querySelectorAll('.element')).filter(e=>e.dataset.slideGroup===groupName);if(els.length>0&&els[0].dataset.stayTime)return parseFloat(els[0].dataset.stayTime);return 0.8;}function updateSlideShow(){for(const key in slideTimers){clearTimeout(slideTimers[key]);clearInterval(slideTimers[key]);delete slideTimers[key];}const groups={};const elements=Array.from(stage.querySelectorAll('.element'));elements.forEach(el=>{const g=el.dataset.slideGroup;if(g){if(!groups[g])groups[g]=[];groups[g].push(el);}});for(const[group,els]of Object.entries(groups)){els.sort((a,b)=>(parseInt(a.dataset.slideIndex)||0)-(parseInt(b.dataset.slideIndex)||0));if(els.length<=1)continue;const stayTime=getGroupStayTime(group);els.forEach(el=>{el.dataset.stayTime=stayTime;});let timeoutId=null;function showSlide(index,animate=true){els.forEach(el=>{el.style.display='none';el.style.animation='none';});if(els[index]){els[index].style.display='flex';const targetOpacity=els[index].dataset.savedOpacity||els[index].style.opacity||'1';els[index].style.opacity=targetOpacity;const anim=els[index].dataset.anim;const dur=getAnimDuration(els[index]);if(anim&&anim!=='none'&&animate){els[index].style.animation='none';void els[index].offsetWidth;els[index].style.animation=\`\${anim} \${dur}s ease both\`;}}}showSlide(0,true);function scheduleNextSlide(index){const el=els[index];const animDur=getAnimDuration(el);const totalTime=(animDur+stayTime)*1000;if(timeoutId)clearTimeout(timeoutId);timeoutId=setTimeout(()=>{const nextIndex=(index+1)%els.length;showSlide(nextIndex,true);scheduleNextSlide(nextIndex);},totalTime);}setTimeout(()=>{scheduleNextSlide(0);},50);slideTimers[group]={clear:()=>{if(timeoutId)clearTimeout(timeoutId);}};}}updateSlideShow();})();<\/script></body></html>`;
+    triggerDownload(new Blob([htmlOutput], { type: 'text/html' }), `ad-creative-${stage.clientWidth}x${stage.clientHeight}.html`);
+  });
 
+  function getQualityScale(){ return parseFloat(document.getElementById('qualitySelect').value) || 1; }
   let gifWorkerBlobUrl = null;
   async function getGifWorkerBlobURL(){
     if(gifWorkerBlobUrl) return gifWorkerBlobUrl;
     try {
       const resp = await fetch('https://cdnjs.cloudflare.com/ajax/libs/gif.js/0.2.0/gif.worker.js');
-      if(!resp.ok) throw new Error('gif.worker.js download fail (status '+resp.status+')');
       const text = await resp.text();
-      const blob = new Blob([text], {type:'application/javascript'});
-      gifWorkerBlobUrl = URL.createObjectURL(blob);
+      gifWorkerBlobUrl = URL.createObjectURL(new Blob([text], {type:'application/javascript'}));
       return gifWorkerBlobUrl;
     } catch(e) {
-      const fallbackText = `self.onmessage = function(e) {
-  var data = e.data;
-  if (data.type === 'render') {
-    self.postMessage({ type: 'finished', result: data.frames });
-  }
-};`;
-      const blob = new Blob([fallbackText], {type:'application/javascript'});
-      gifWorkerBlobUrl = URL.createObjectURL(blob);
+      gifWorkerBlobUrl = URL.createObjectURL(new Blob([`self.onmessage=function(e){if(e.data.type==='render'){self.postMessage({type:'finished',result:e.data.frames});}};`], {type:'application/javascript'}));
       return gifWorkerBlobUrl;
     }
   }
@@ -1769,25 +1694,12 @@
   function ensureLib(varName, src){
     return new Promise((resolve, reject)=>{
       if(window[varName]){ resolve(); return; }
-      const existing = document.querySelector(`script[data-lib="${varName}"]`);
-      if(existing){ 
-        existing.addEventListener('load', ()=>resolve(), {once:true}); 
-        existing.addEventListener('error', reject, {once:true}); 
-        return; 
-      }
-      const s=document.createElement('script');
-      s.src=src; s.dataset.lib=varName;
-      s.onload=()=>resolve();
-      s.onerror=()=>reject(new Error('load failed: '+src));
-      document.head.appendChild(s);
+      const s=document.createElement('script'); s.src=src;
+      s.onload=()=>resolve(); s.onerror=()=>reject(); document.head.appendChild(s);
     });
   }
 
-  // ---- INIT ----
-  renderInspector();
-  refreshSlideGroup();
-  setTimeout(updateSlideShow, 200);
-
+  renderInspector(); refreshSlideGroup(); setTimeout(updateSlideShow, 200);
 })();
 </script>
 </body>
