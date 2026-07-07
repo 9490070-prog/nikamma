@@ -476,7 +476,7 @@
     el.style.width=w+'px';
     el.style.height=h+'px';
     el.style.transform='rotate(0deg) scale(1)';
-    el.style.opacity='1'; // Default Opacity 100% (1) Fixed
+    el.style.opacity='1';
     el.style.transformOrigin = 'center center';
     const handle=document.createElement('span');
     handle.className='resize-handle';
@@ -534,7 +534,7 @@
     const reader=new FileReader();
     reader.onload=function(ev){
       const el=makeBaseEl('image', 100, 100);
-      el.style.opacity = '1'; // Ensure new image explicitly gets 100% opacity
+      el.style.opacity = '1';
       const img=document.createElement('img');
       img.src=ev.target.result;
       img.style.objectFit='cover';
@@ -583,6 +583,12 @@
       el.dataset.editing='0';
       el.setAttribute('contenteditable','false');
       el.classList.remove('editing');
+    });
+    // FIX: Prevent Backspace/Delete from deleting element when editing
+    el.addEventListener('keydown', function(e) {
+      if (e.key === 'Backspace' || e.key === 'Delete') {
+        e.stopPropagation(); // Prevents bubbling to global keyboard handler
+      }
     });
   }
 
@@ -742,11 +748,20 @@
     if(group) updateSlideShow();
   }
 
+  // GLOBAL KEYBOARD: Only delete if NOT editing a text element
   document.addEventListener('keydown', function(e){
     if(!selected) return;
-    if(document.activeElement.isContentEditable) return;
+    // Check if any element is actively being edited
+    if (document.activeElement && document.activeElement.isContentEditable) {
+      // If we're editing text, let the default behavior happen (Backspace deletes chars)
+      // The element's own keydown handler stops propagation for Backspace/Delete
+      return;
+    }
     const step = e.shiftKey ? 10 : 1;
-    if(e.key==='Delete' || e.key==='Backspace'){ e.preventDefault(); deleteEl(selected); }
+    if(e.key==='Delete' || e.key==='Backspace'){ 
+      e.preventDefault(); 
+      deleteEl(selected); 
+    }
     if(e.key==='ArrowLeft'){ selected.style.left=(parseFloat(selected.style.left)-step)+'px'; syncInspectorPosition(); }
     if(e.key==='ArrowRight'){ selected.style.left=(parseFloat(selected.style.left)+step)+'px'; syncInspectorPosition(); }
     if(e.key==='ArrowUp'){ selected.style.top=(parseFloat(selected.style.top)-step)+'px'; syncInspectorPosition(); }
@@ -793,18 +808,12 @@
   }
 
   function getAnimDuration(el){
-    // Topbar control sync to single layer sliders speed control
     const globalDurationInput = document.getElementById('recDuration');
     const baseDuration = globalDurationInput ? parseFloat(globalDurationInput.value) : 5;
     return parseFloat(el.dataset.animDur) || (baseDuration / 4) || 0.8;
   }
 
-  // ADVANCED: Each slide stays visible for a "stay" time before switching to next
-  // The stay time is derived from the element's animDur (duration of the animation)
-  // After animation completes, the slide stays visible for animDur * 1.5 (stay factor)
-  // This ensures no delay between slides, just a smooth transition with a stay period.
   function getSlideStayTime(el) {
-    // stay time is equal to animation duration (so slide stays for same time it took to animate in)
     return parseFloat(el.dataset.animDur) || 0.8;
   }
 
@@ -851,34 +860,26 @@
         }
       }
 
-      // Show first slide immediately with animation
       showSlide(0, true);
 
-      // Schedule next slides: animation plays, then stays for stayTime, then next slide
       function scheduleNextSlide(index) {
         const el = els[index];
         const animDur = getAnimDuration(el);
-        const stayTime = getSlideStayTime(el); // stay time = duration of animation
-        
-        // Total time before next slide: animation duration + stay time
+        const stayTime = getSlideStayTime(el);
         const totalTime = (animDur + stayTime) * 1000;
         
         if (timeoutId) clearTimeout(timeoutId);
         timeoutId = setTimeout(() => {
           const nextIndex = (index + 1) % els.length;
-          // Show next slide with animation
           showSlide(nextIndex, true);
           scheduleNextSlide(nextIndex);
         }, totalTime);
       }
 
-      // Start the schedule after first slide is shown
-      // We need to wait a tiny bit for the first animation to start, then schedule
       setTimeout(() => {
         scheduleNextSlide(0);
       }, 50);
 
-      // Store the timeout so we can clear it later
       slideTimers[group] = {
         clear: () => {
           if (timeoutId) clearTimeout(timeoutId);
@@ -887,7 +888,6 @@
     }
   }
 
-  // Sync animation speeds instantly when user edits global duration input box
   document.getElementById('recDuration').addEventListener('input', function() {
     updateSlideShow();
   });
@@ -1028,7 +1028,6 @@
         groupInput.addEventListener('input', handleGroupUpdate);
       }
       
-      // Stay time control
       const stayInput = document.getElementById('propStayTime');
       if(stayInput){
         stayInput.addEventListener('input', function(){
@@ -1084,7 +1083,6 @@
     const rotMatch = /rotate\((-?\d+(\.\d+)?)deg\)/.exec(selected.style.transform||'');
     setVal('propRot', rotMatch?rotMatch[1]:0);
     
-    // Explicit fallback setting opacity to 1 if empty or 0 unexpectedly
     const currentOpacity = selected.dataset.savedOpacity || selected.style.opacity;
     setVal('propOpacity', (currentOpacity === '' || currentOpacity === undefined) ? 1 : currentOpacity);
     
@@ -1143,7 +1141,7 @@
     on('propOpacity','input',e=>{ 
       const val = e.target.value;
       selected.style.opacity = val;
-      selected.dataset.savedOpacity = val; // Protect the opacity state during slide toggle loops
+      selected.dataset.savedOpacity = val;
     });
 
     if(isText){
