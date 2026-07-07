@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
-<head> 
+<head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Ad Studio — Mobile Ad Creative Builder</title>
@@ -443,6 +443,8 @@
   let elCounter=0;
   let selected=null;
   let slideTimers = {};
+  // Store stay time per group
+  let groupStayTime = {};
 
   function getCustomSizeFromInspector(){
     const wInput = document.getElementById('newElWidth');
@@ -584,10 +586,9 @@
       el.setAttribute('contenteditable','false');
       el.classList.remove('editing');
     });
-    // FIX: Prevent Backspace/Delete from deleting element when editing
     el.addEventListener('keydown', function(e) {
       if (e.key === 'Backspace' || e.key === 'Delete') {
-        e.stopPropagation(); // Prevents bubbling to global keyboard handler
+        e.stopPropagation();
       }
     });
   }
@@ -748,13 +749,9 @@
     if(group) updateSlideShow();
   }
 
-  // GLOBAL KEYBOARD: Only delete if NOT editing a text element
   document.addEventListener('keydown', function(e){
     if(!selected) return;
-    // Check if any element is actively being edited
     if (document.activeElement && document.activeElement.isContentEditable) {
-      // If we're editing text, let the default behavior happen (Backspace deletes chars)
-      // The element's own keydown handler stops propagation for Backspace/Delete
       return;
     }
     const step = e.shiftKey ? 10 : 1;
@@ -813,8 +810,16 @@
     return parseFloat(el.dataset.animDur) || (baseDuration / 4) || 0.8;
   }
 
-  function getSlideStayTime(el) {
-    return parseFloat(el.dataset.animDur) || 0.8;
+  // Get stay time for a group (first element's stay time or default)
+  function getGroupStayTime(groupName){
+    if(groupStayTime[groupName] !== undefined) {
+      return groupStayTime[groupName];
+    }
+    const els = getGroupElements(groupName);
+    if(els.length > 0 && els[0].dataset.stayTime) {
+      return parseFloat(els[0].dataset.stayTime);
+    }
+    return 0.8; // default
   }
 
   function updateSlideShow(){
@@ -838,7 +843,13 @@
       els.sort((a,b) => (parseInt(a.dataset.slideIndex) || 0) - (parseInt(b.dataset.slideIndex) || 0));
       if(els.length <= 1) continue;
 
-      let currentIndex = 0;
+      // Use group stay time
+      const stayTime = getGroupStayTime(group);
+      // Update stayTime on all elements in group for consistency
+      els.forEach(el => {
+        el.dataset.stayTime = stayTime;
+      });
+
       let timeoutId = null;
       
       function showSlide(index, animate = true){
@@ -865,7 +876,6 @@
       function scheduleNextSlide(index) {
         const el = els[index];
         const animDur = getAnimDuration(el);
-        const stayTime = getSlideStayTime(el);
         const totalTime = (animDur + stayTime) * 1000;
         
         if (timeoutId) clearTimeout(timeoutId);
@@ -964,6 +974,9 @@
       `;
     }
     if(type==='image'){
+      const currentGroup = selected.dataset.slideGroup || '';
+      const currentStay = getGroupStayTime(currentGroup);
+      
       html += `
         <div class="section-title">Image</div>
         <label class="btn small" style="cursor:pointer;display:inline-flex;">Replace image
@@ -973,10 +986,11 @@
         
         <div class="section-title">Slide Show / Slider</div>
         <div class="field"><label>Slide group (same name = auto loop show)</label>
-          <input type="text" id="propSlideGroup" placeholder="e.g. main-slider" value="${selected.dataset.slideGroup || ''}">
+          <input type="text" id="propSlideGroup" placeholder="e.g. main-slider" value="${currentGroup}">
         </div>
         <div class="field"><label>Stay time (s) — time each slide stays visible</label>
-          <input type="number" id="propStayTime" step="0.1" min="0.1" value="${getSlideStayTime(selected)}">
+          <input type="number" id="propStayTime" step="0.1" min="0.1" value="${currentStay}">
+          <div style="font-size:10px;color:var(--muted);margin-top:2px;">⚠️ Same stay time applies to all slides in this group</div>
         </div>
         <div class="slide-controls">
           <button class="btn small" id="slideAddNext">➕ Add next slide image</button>
@@ -1014,10 +1028,11 @@
       if(groupInput){
         const handleGroupUpdate = function(){
           const oldGroup = selected.dataset.slideGroup || '';
-          selected.dataset.slideGroup = this.value.trim() || '';
-          if(oldGroup !== selected.dataset.slideGroup){
-            if(selected.dataset.slideGroup){
-              const groupEls = getGroupElements(selected.dataset.slideGroup);
+          const newGroup = this.value.trim() || '';
+          selected.dataset.slideGroup = newGroup;
+          if(oldGroup !== newGroup){
+            if(newGroup){
+              const groupEls = getGroupElements(newGroup);
               selected.dataset.slideIndex = groupEls.length;
             }
             refreshSlideGroup();
@@ -1033,8 +1048,18 @@
         stayInput.addEventListener('input', function(){
           if(selected){
             const val = parseFloat(this.value) || 0.5;
-            selected.dataset.stayTime = val;
-            updateSlideShow();
+            const group = selected.dataset.slideGroup;
+            if(group){
+              groupStayTime[group] = val;
+              // Update all elements in group
+              const groupEls = getGroupElements(group);
+              groupEls.forEach(el => {
+                el.dataset.stayTime = val;
+              });
+              updateSlideShow();
+            } else {
+              selected.dataset.stayTime = val;
+            }
           }
         });
       }
@@ -1050,6 +1075,7 @@
       const removeBtn = document.getElementById('slideRemove');
       if(removeBtn){
         removeBtn.addEventListener('click', function(){
+          const group = selected.dataset.slideGroup;
           delete selected.dataset.slideGroup;
           delete selected.dataset.slideIndex;
           refreshSlideGroup();
@@ -1110,7 +1136,14 @@
     if(sg) sg.value = selected.dataset.slideGroup || '';
     
     const stay = document.getElementById('propStayTime');
-    if(stay) stay.value = selected.dataset.stayTime || getSlideStayTime(selected);
+    if(stay) {
+      const group = selected.dataset.slideGroup;
+      if(group && groupStayTime[group] !== undefined) {
+        stay.value = groupStayTime[group];
+      } else {
+        stay.value = selected.dataset.stayTime || 0.8;
+      }
+    }
   }
 
   function setVal(id,val){ const e=document.getElementById(id); if(e) e.value=val; }
@@ -1207,7 +1240,7 @@
     });
   });
 
-  // ================ EXPORT CANVAS TIMELINE & STEP ALIGNMENT FIX ================
+  // ================ EXPORT CANVAS TIMELINE ================
   function getSlideShowState(time, totalDuration) {
     const result = {};
     const elements = Array.from(stage.querySelectorAll('.element'));
@@ -1229,10 +1262,10 @@
         continue;
       }
       
-      // Use each element's own duration for correct timing
-      const totalTime = els.reduce((sum, el) => {
+      const stayTime = getGroupStayTime(group);
+      // Use uniform timing for all elements in group
+      const totalTimePerSlide = els.reduce((sum, el) => {
         const animDur = getAnimDuration(el);
-        const stayTime = parseFloat(el.dataset.stayTime) || getSlideStayTime(el);
         return sum + animDur + stayTime;
       }, 0);
       
@@ -1242,7 +1275,6 @@
       for(let i = 0; i < els.length; i++) {
         const el = els[i];
         const animDur = getAnimDuration(el);
-        const stayTime = parseFloat(el.dataset.stayTime) || getSlideStayTime(el);
         const segmentTime = animDur + stayTime;
         
         if(time < accumulatedTime + segmentTime || i === els.length - 1) {
@@ -1636,7 +1668,7 @@
       el.classList.remove('selected', 'editing'); el.style.boxShadow = 'none';
     });
     const exportStyles = Array.from(document.styleSheets[0].cssRules).map(rule => rule.cssText).join('\n');
-    const htmlOutput = `<!DOCTYPE html><html><head><meta charset="UTF-8"><style>${exportStyles}body{background:transparent;display:flex;justify-content:center;align-items:center;height:100vh;margin:0;}#stage{box-shadow:none;}</style></head><body>${clonedStage.outerHTML}<script>(function(){const stage=document.getElementById('stage');const slideTimers={};function getAnimDuration(el){return parseFloat(el.dataset.animDur)||1.2;}function getSlideStayTime(el){return parseFloat(el.dataset.stayTime)||parseFloat(el.dataset.animDur)||0.8;}function updateSlideShow(){for(const key in slideTimers){clearTimeout(slideTimers[key]);clearInterval(slideTimers[key]);delete slideTimers[key];}const groups={};const elements=Array.from(stage.querySelectorAll('.element'));elements.forEach(el=>{const g=el.dataset.slideGroup;if(g){if(!groups[g])groups[g]=[];groups[g].push(el);}});for(const[group,els]of Object.entries(groups)){els.sort((a,b)=>(parseInt(a.dataset.slideIndex)||0)-(parseInt(b.dataset.slideIndex)||0));if(els.length<=1)continue;let currentIndex=0;let timeoutId=null;function showSlide(index,animate=true){els.forEach(el=>{el.style.display='none';el.style.animation='none';});if(els[index]){els[index].style.display='flex';const targetOpacity=els[index].dataset.savedOpacity||els[index].style.opacity||'1';els[index].style.opacity=targetOpacity;const anim=els[index].dataset.anim;const dur=getAnimDuration(els[index]);if(anim&&anim!=='none'&&animate){els[index].style.animation='none';void els[index].offsetWidth;els[index].style.animation=\`\${anim} \${dur}s ease both\`;}}}showSlide(0,true);function scheduleNextSlide(index){const el=els[index];const animDur=getAnimDuration(el);const stayTime=getSlideStayTime(el);const totalTime=(animDur+stayTime)*1000;if(timeoutId)clearTimeout(timeoutId);timeoutId=setTimeout(()=>{const nextIndex=(index+1)%els.length;showSlide(nextIndex,true);scheduleNextSlide(nextIndex);},totalTime);}setTimeout(()=>{scheduleNextSlide(0);},50);slideTimers[group]={clear:()=>{if(timeoutId)clearTimeout(timeoutId);}};}}updateSlideShow();})();<\/script></body></html>`;
+    const htmlOutput = `<!DOCTYPE html><html><head><meta charset="UTF-8"><style>${exportStyles}body{background:transparent;display:flex;justify-content:center;align-items:center;height:100vh;margin:0;}#stage{box-shadow:none;}</style></head><body>${clonedStage.outerHTML}<script>(function(){const stage=document.getElementById('stage');const slideTimers={};const groupStayTime={};function getAnimDuration(el){return parseFloat(el.dataset.animDur)||1.2;}function getGroupStayTime(groupName){if(groupStayTime[groupName]!==undefined)return groupStayTime[groupName];const els=Array.from(stage.querySelectorAll('.element')).filter(e=>e.dataset.slideGroup===groupName);if(els.length>0&&els[0].dataset.stayTime)return parseFloat(els[0].dataset.stayTime);return 0.8;}function updateSlideShow(){for(const key in slideTimers){clearTimeout(slideTimers[key]);clearInterval(slideTimers[key]);delete slideTimers[key];}const groups={};const elements=Array.from(stage.querySelectorAll('.element'));elements.forEach(el=>{const g=el.dataset.slideGroup;if(g){if(!groups[g])groups[g]=[];groups[g].push(el);}});for(const[group,els]of Object.entries(groups)){els.sort((a,b)=>(parseInt(a.dataset.slideIndex)||0)-(parseInt(b.dataset.slideIndex)||0));if(els.length<=1)continue;const stayTime=getGroupStayTime(group);els.forEach(el=>{el.dataset.stayTime=stayTime;});let timeoutId=null;function showSlide(index,animate=true){els.forEach(el=>{el.style.display='none';el.style.animation='none';});if(els[index]){els[index].style.display='flex';const targetOpacity=els[index].dataset.savedOpacity||els[index].style.opacity||'1';els[index].style.opacity=targetOpacity;const anim=els[index].dataset.anim;const dur=getAnimDuration(els[index]);if(anim&&anim!=='none'&&animate){els[index].style.animation='none';void els[index].offsetWidth;els[index].style.animation=\`\${anim} \${dur}s ease both\`;}}}showSlide(0,true);function scheduleNextSlide(index){const el=els[index];const animDur=getAnimDuration(el);const totalTime=(animDur+stayTime)*1000;if(timeoutId)clearTimeout(timeoutId);timeoutId=setTimeout(()=>{const nextIndex=(index+1)%els.length;showSlide(nextIndex,true);scheduleNextSlide(nextIndex);},totalTime);}setTimeout(()=>{scheduleNextSlide(0);},50);slideTimers[group]={clear:()=>{if(timeoutId)clearTimeout(timeoutId);}};}}updateSlideShow();})();<\/script></body></html>`;
     triggerDownload(new Blob([htmlOutput], { type: 'text/html' }), `ad-creative-${stage.clientWidth}x${stage.clientHeight}.html`);
   });
 
