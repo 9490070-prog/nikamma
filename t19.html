@@ -1240,7 +1240,7 @@
     });
   });
 
-  // ================ EXPORT CANVAS TIMELINE ================
+  // ================ EXPORT CANVAS TIMELINE - FIXED FOR LARGE STAY TIMES ================
   function getSlideShowState(time, totalDuration) {
     const result = {};
     const elements = Array.from(stage.querySelectorAll('.element'));
@@ -1263,12 +1263,19 @@
       }
       
       const stayTime = getGroupStayTime(group);
-      // Use uniform timing for all elements in group
-      const totalTimePerSlide = els.reduce((sum, el) => {
-        const animDur = getAnimDuration(el);
-        return sum + animDur + stayTime;
-      }, 0);
       
+      // Calculate total time for one full loop
+      let totalLoopTime = 0;
+      els.forEach(el => {
+        const animDur = getAnimDuration(el);
+        totalLoopTime += animDur + stayTime;
+      });
+      
+      // If totalLoopTime is 0, use default
+      if(totalLoopTime === 0) totalLoopTime = 1;
+      
+      // Wrap time to loop within the group's total time
+      let loopedTime = time % totalLoopTime;
       let accumulatedTime = 0;
       let found = false;
       
@@ -1277,11 +1284,12 @@
         const animDur = getAnimDuration(el);
         const segmentTime = animDur + stayTime;
         
-        if(time < accumulatedTime + segmentTime || i === els.length - 1) {
-          const localTime = time - accumulatedTime;
+        if(loopedTime < accumulatedTime + segmentTime || i === els.length - 1) {
+          const localTime = loopedTime - accumulatedTime;
           let progress = localTime / animDur;
           if(progress > 1) progress = 1;
-          result[group] = { element: el, progress: Math.max(0, progress) };
+          if(progress < 0) progress = 0;
+          result[group] = { element: el, progress: progress };
           found = true;
           break;
         }
