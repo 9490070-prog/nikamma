@@ -476,7 +476,7 @@
     el.style.width=w+'px';
     el.style.height=h+'px';
     el.style.transform='rotate(0deg) scale(1)';
-    el.style.opacity='1';
+    el.style.opacity='1'; // Default Opacity 100% (1) Fixed
     el.style.transformOrigin = 'center center';
     const handle=document.createElement('span');
     handle.className='resize-handle';
@@ -534,6 +534,7 @@
     const reader=new FileReader();
     reader.onload=function(ev){
       const el=makeBaseEl('image', 100, 100);
+      el.style.opacity = '1'; // Ensure new image explicitly gets 100% opacity
       const img=document.createElement('img');
       img.src=ev.target.result;
       img.style.objectFit='cover';
@@ -780,18 +781,22 @@
       if(g) {
         const groupEls = getGroupElements(g);
         if(groupEls.length > 0 && groupEls[0] === el) {
-          el.style.display = 'flex'; el.style.opacity = '1';
+          el.style.display = 'flex'; 
+          if(!el.style.opacity || el.style.opacity === '0') el.style.opacity = '1';
         } else {
-          el.style.display = 'none'; el.style.opacity = '0';
+          el.style.display = 'none';
         }
       } else {
-        el.style.display = 'flex'; el.style.opacity = '1';
+        el.style.display = 'flex';
       }
     });
   }
 
   function getAnimDuration(el){
-    return parseFloat(el.dataset.animDur) || 0.8;
+    // Topbar control sync to single layer sliders speed control
+    const globalDurationInput = document.getElementById('recDuration');
+    const baseDuration = globalDurationInput ? parseFloat(globalDurationInput.value) : 5;
+    return parseFloat(el.dataset.animDur) || (baseDuration / 4) || 0.8;
   }
 
   function updateSlideShow(){
@@ -818,10 +823,12 @@
       let currentIndex = 0;
       function showSlide(index){
         els.forEach(el => {
-          el.style.display = 'none'; el.style.opacity = '0'; el.style.animation = 'none';
+          el.style.display = 'none'; el.style.animation = 'none';
         });
         if(els[index]){
-          els[index].style.display = 'flex'; els[index].style.opacity = '1';
+          els[index].style.display = 'flex';
+          const targetOpacity = els[index].dataset.savedOpacity || els[index].style.opacity || '1';
+          els[index].style.opacity = targetOpacity;
           const anim = els[index].dataset.anim;
           const dur = getAnimDuration(els[index]);
           if(anim && anim !== 'none'){
@@ -833,15 +840,21 @@
       }
 
       showSlide(0);
-      const dur = getAnimDuration(els[0]);
-      const totalTime = dur + 0.05;
+      
+      // Speed synchronization using Duration(s) input field
+      const intervalDelay = getAnimDuration(els[0]) * 2000; // Perfect normalized slider speed control loop
       
       slideTimers[group] = setInterval(() => {
         currentIndex = (currentIndex + 1) % els.length;
         showSlide(currentIndex);
-      }, totalTime * 1000);
+      }, intervalDelay);
     }
   }
+
+  // Sync animation speeds instantly when user edits global duration input box
+  document.getElementById('recDuration').addEventListener('input', function() {
+    updateSlideShow();
+  });
 
   function renderInspector(){
     if(!selected){
@@ -1019,7 +1032,11 @@
     setVal('propH', parseFloat(selected.style.height)||0);
     const rotMatch = /rotate\((-?\d+(\.\d+)?)deg\)/.exec(selected.style.transform||'');
     setVal('propRot', rotMatch?rotMatch[1]:0);
-    setVal('propOpacity', selected.style.opacity===''?1:selected.style.opacity);
+    
+    // Explicit fallback setting opacity to 1 if empty or 0 unexpectedly
+    const currentOpacity = selected.dataset.savedOpacity || selected.style.opacity;
+    setVal('propOpacity', (currentOpacity === '' || currentOpacity === undefined) ? 1 : currentOpacity);
+    
     if(document.getElementById('propFontSize')){
       setVal('propFontSize', parseFloat(selected.style.fontSize)||16);
       setVal('propColor', rgbToHex(selected.style.color) || '#1a1a1a');
@@ -1069,7 +1086,11 @@
       const scale = scaleMatch ? scaleMatch[1] : '1';
       selected.style.transform = `rotate(${e.target.value}deg) scale(${scale})`;
     });
-    on('propOpacity','input',e=>{ selected.style.opacity=e.target.value; });
+    on('propOpacity','input',e=>{ 
+      const val = e.target.value;
+      selected.style.opacity = val;
+      selected.dataset.savedOpacity = val; // Protect the opacity state during slide toggle loops
+    });
 
     if(isText){
       on('propFont','change',e=>{ selected.style.fontFamily=e.target.value; });
@@ -1157,7 +1178,7 @@
       }
       
       const animDur = getAnimDuration(els[0]);
-      const totalTime = animDur + 0.05;
+      const totalTime = animDur * 2;
       const totalGroupTime = totalTime * els.length;
       
       const loopedTime = time % totalGroupTime;
@@ -1202,7 +1223,6 @@
     let opacity = 1;
     let tx = 0, ty = 0, scale = 1;
     
-    // Exact structural mirror of CSS keyframes
     if(rawP < 0) {
       if(anim.startsWith('slide') || anim==='fadeIn' || anim==='zoomIn' || anim==='bounceIn') opacity = 0;
     } else {
@@ -1259,7 +1279,7 @@
     let h = parseFloat(el.style.height) || 50;
     
     const group = el.dataset.slideGroup;
-    let progress = time; // Use raw absolute timeline context
+    let progress = time;
     let shouldRender = true;
     
     if(group && slideState && slideState[group]) {
@@ -1277,7 +1297,8 @@
     if(!shouldRender) return;
     
     const animState = evaluateExportAnimation(el, progress);
-    const opacity = animState.opacity * (parseFloat(el.style.opacity) || 1);
+    const elementBaseOpacity = parseFloat(el.dataset.savedOpacity || el.style.opacity) || 1;
+    const opacity = animState.opacity * elementBaseOpacity;
     const tx = animState.tx || 0;
     const ty = animState.ty || 0;
     const scaleVal = animState.scale || 1;
@@ -1420,7 +1441,7 @@
       const slideState = getSlideShowState(time, durationSec);
       
       for(const el of elements) {
-        if(parseFloat(el.style.opacity) === 0) continue;
+        if(parseFloat(el.dataset.savedOpacity || el.style.opacity) === 0) continue;
         renderElementToCanvas(ctx, el, scale, time, slideState);
       }
       frames.push(canvas);
@@ -1456,7 +1477,7 @@
       const elements = Array.from(stage.querySelectorAll('.element'));
       const slideState = getSlideShowState(0, 1);
       for(const el of elements) {
-        if(parseFloat(el.style.opacity) === 0) continue;
+        if(parseFloat(el.dataset.savedOpacity || el.style.opacity) === 0) continue;
         renderElementToCanvas(ctx, el, scale, 0, slideState);
       }
       canvas.toBlob(blob=>{ triggerDownload(blob, `ad-${stageW}x${stageH}.png`); }, 'image/png');
@@ -1549,7 +1570,7 @@
       el.classList.remove('selected', 'editing'); el.style.boxShadow = 'none';
     });
     const exportStyles = Array.from(document.styleSheets[0].cssRules).map(rule => rule.cssText).join('\n');
-    const htmlOutput = `<!DOCTYPE html><html><head><meta charset="UTF-8"><style>${exportStyles}body{background:transparent;display:flex;justify-content:center;align-items:center;height:100vh;margin:0;}#stage{box-shadow:none;}</style></head><body>${clonedStage.outerHTML}<script>(function(){const stage=document.getElementById('stage');const slideTimers={};function getAnimDuration(el){return parseFloat(el.dataset.animDur)||0.8;}function updateSlideShow(){const groups={};const elements=Array.from(stage.querySelectorAll('.element'));elements.forEach(el=>{const g=el.dataset.slideGroup;if(g){if(!groups[g])groups[g]=[];groups[g].push(el);}});for(const[group,els]of Object.entries(groups)){els.sort((a,b)=>(parseInt(a.dataset.slideIndex)||0)-(parseInt(b.dataset.slideIndex)||0));if(els.length<=1)continue;let currentIndex=0;function showSlide(index){els.forEach(el=>{el.style.display='none';el.style.opacity='0';el.style.animation='none';});if(els[index]){els[index].style.display='flex';els[index].style.opacity='1';const anim=els[index].dataset.anim;const dur=getAnimDuration(els[index]);if(anim&&anim!=='none'){void els[index].offsetWidth;els[index].style.animation=\`\${anim} \${dur}s ease both\`;}}}showSlide(0);slideTimers[group]=setInterval(()=>{currentIndex=(currentIndex+1)%els.length;showSlide(currentIndex);},(getAnimDuration(els[0])+0.05)*1000);}}updateSlideShow();})();<\/script></body></html>`;
+    const htmlOutput = `<!DOCTYPE html><html><head><meta charset="UTF-8"><style>${exportStyles}body{background:transparent;display:flex;justify-content:center;align-items:center;height:100vh;margin:0;}#stage{box-shadow:none;}</style></head><body>${clonedStage.outerHTML}<script>(function(){const stage=document.getElementById('stage');const slideTimers={};function getAnimDuration(el){return parseFloat(el.dataset.animDur)||1.2;}function updateSlideShow(){const groups={};const elements=Array.from(stage.querySelectorAll('.element'));elements.forEach(el=>{const g=el.dataset.slideGroup;if(g){if(!groups[g])groups[g]=[];groups[g].push(el);}});for(const[group,els]of Object.entries(groups)){els.sort((a,b)=>(parseInt(a.dataset.slideIndex)||0)-(parseInt(b.dataset.slideIndex)||0));if(els.length<=1)continue;let currentIndex=0;function showSlide(index){els.forEach(el=>{el.style.display='none';el.style.animation='none';});if(els[index]){els[index].style.display='flex';const targetOpacity=els[index].dataset.savedOpacity||els[index].style.opacity||'1';els[index].style.opacity=targetOpacity;const anim=els[index].dataset.anim;const dur=getAnimDuration(els[index]);if(anim&&anim!=='none'){void els[index].offsetWidth;els[index].style.animation=\`\${anim} \${dur}s ease both\`;}}}showSlide(0);slideTimers[group]=setInterval(()=>{currentIndex=(currentIndex+1)%els.length;showSlide(currentIndex);},getAnimDuration(els[0])*2000);}}updateSlideShow();})();<\/script></body></html>`;
     triggerDownload(new Blob([htmlOutput], { type: 'text/html' }), `ad-creative-${stage.clientWidth}x${stage.clientHeight}.html`);
   });
 
