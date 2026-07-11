@@ -238,7 +238,6 @@
   ::-webkit-scrollbar-thumb{background:#2b303a;border-radius:6px;}
   ::-webkit-scrollbar-track{background:transparent;}
 
-  /* ANIMATION KEYFRAMES */
   @keyframes fadeIn { from{opacity:0;} to{opacity:1;} }
   @keyframes slideInLeft { from{opacity:0;transform:translateX(-60px);} to{opacity:1;transform:translateX(0);} }
   @keyframes slideInRight { from{opacity:0;transform:translateX(60px);} to{opacity:1;transform:translateX(0);} }
@@ -315,6 +314,8 @@
     padding:2px 10px;
     border-radius:12px;
     border:1px solid var(--border);
+    min-width:80px;
+    text-align:center;
   }
 
   @media(max-width:900px){
@@ -356,16 +357,16 @@
       <input type="checkbox" id="phoneToggle" style="margin:0;"> Phone preview
     </label>
     <div class="right-group">
-      <button class="btn small" id="playBtn">▶ Play animations</button>
+      <button class="btn small" id="playBtn">▶ Play</button>
       <label style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--muted);">
-        Duration <input type="number" id="recDuration" value="5" min="0.5" max="20" step="0.5">s
+        Duration <input type="number" id="recDuration" value="3" min="0.5" max="20" step="0.5">s
       </label>
       <label style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--muted);">
         Quality
         <select id="qualitySelect">
-          <option value="1">Standard (1x)</option>
-          <option value="2" selected>High (2x)</option>
-          <option value="3">Ultra (3x)</option>
+          <option value="1">1x</option>
+          <option value="2" selected>2x</option>
+          <option value="3">3x</option>
         </select>
       </label>
       
@@ -397,7 +398,7 @@
         </div>
         <div class="tool-btn" id="addButton">
           <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><rect x="3" y="8" width="18" height="8" rx="4"/></svg>
-          Button/CTA
+          Button
         </div>
         <div class="tool-btn" id="addImageTool">
           <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="8.5" cy="9.5" r="1.5"/><path d="M21 16l-5-5-4 4-3-3-5 5"/></svg>
@@ -406,7 +407,7 @@
         </div>
         <div class="tool-btn" id="addShapeRect">
           <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><rect x="4" y="4" width="16" height="16" rx="2"/></svg>
-          Rectangle
+          Rect
         </div>
         <div class="tool-btn" id="addShapeCircle">
           <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><circle cx="12" cy="12" r="9"/></svg>
@@ -1777,24 +1778,23 @@
       const response = await fetch(dataUrl);
       const blob = await response.blob();
       
-      // Show file size after export
       const sizeKB = (blob.size / 1024).toFixed(1);
-      fileSizeDisplay.textContent = '📄 Exported: ' + sizeKB + ' KB';
+      fileSizeDisplay.textContent = '📄 PNG: ' + sizeKB + ' KB';
       
       triggerDownload(blob, `ad-${stageW}x${stageH}.jpg`);
     }catch(err){ console.error(err); }
     finally{ btn.disabled=false; btn.textContent=origText; }
   });
 
-  // ========== GIF EXPORT - FIXED WITH PROPER COMPRESSION ==========
+  // ========== GIF EXPORT - FIXED WITH MAX COMPRESSION ==========
   document.getElementById('exportGifBtn').addEventListener('click', async function(){
     const btn=this; 
     const origText=btn.textContent;
     btn.disabled=true;
     try{
-      const dur = parseFloat(document.getElementById('recDuration').value) || 5;
-      const fps = 10; // Lower FPS for smaller file
-      const scale = getQualityScale();
+      const dur = parseFloat(document.getElementById('recDuration').value) || 3;
+      const fps = 8; // Lower FPS = much smaller file
+      const scale = Math.min(1, getQualityScale()); // Scale down for smaller GIF
       const compressionLevel = compressSelect.value;
       
       btn.textContent='📸 Rendering frames...';
@@ -1805,81 +1805,74 @@
       
       const workerBlobUrl = await getGifWorkerBlobURL();
       
-      // GIF quality based on compression level
+      // Extreme compression for small file size
       let gifQuality, colorCount;
       switch(compressionLevel) {
         case 'low': 
-          gifQuality = 10; 
-          colorCount = 256;
+          gifQuality = 15; 
+          colorCount = 128;
           break;
         case 'normal': 
-          gifQuality = 7; 
-          colorCount = 128;
-          break;
-        case 'high': 
-          gifQuality = 3; 
+          gifQuality = 10; 
           colorCount = 64;
           break;
+        case 'high': 
+          gifQuality = 5; 
+          colorCount = 32;
+          break;
         default: 
-          gifQuality = 7; 
-          colorCount = 128;
+          gifQuality = 10; 
+          colorCount = 64;
       }
       
-      // Create GIF with optimized settings
+      // Create GIF with max compression
       const gif = new GIF({
         workers: 2, 
         quality: gifQuality,
-        width: frames[0].width, 
-        height: frames[0].height,
+        width: Math.round(frames[0].width / 1.5), // Reduce resolution
+        height: Math.round(frames[0].height / 1.5),
         workerScript: workerBlobUrl, 
         repeat: 0,
         background: '#ffffff',
-        dither: false // Disable dithering for smaller size
+        dither: false,
+        transparency: false
       });
       
       const delay = Math.round(1000/fps);
       
-      // Add frames with optimization
+      // Add frames with extreme color reduction
       for(let i = 0; i < frames.length; i++) {
-        // Reduce frame quality for smaller GIF
         const frameCanvas = document.createElement('canvas');
-        frameCanvas.width = frames[0].width;
-        frameCanvas.height = frames[0].height;
+        frameCanvas.width = gif.width;
+        frameCanvas.height = gif.height;
         const frameCtx = frameCanvas.getContext('2d');
         
-        // Draw with reduced quality for GIF
         frameCtx.imageSmoothingEnabled = true;
-        frameCtx.imageSmoothingQuality = 'medium';
-        frameCtx.drawImage(frames[i], 0, 0);
+        frameCtx.imageSmoothingQuality = 'low';
+        frameCtx.drawImage(frames[i], 0, 0, gif.width, gif.height);
         
-        // Color quantization for smaller size
-        if(compressionLevel === 'high') {
-          // Reduce colors for high compression
-          const imageData = frameCtx.getImageData(0, 0, frameCanvas.width, frameCanvas.height);
-          const data = imageData.data;
-          for(let j = 0; j < data.length; j += 4) {
-            // Quantize colors to reduce palette
-            data[j] = Math.round(data[j] / 32) * 32;
-            data[j+1] = Math.round(data[j+1] / 32) * 32;
-            data[j+2] = Math.round(data[j+2] / 32) * 32;
-          }
-          frameCtx.putImageData(imageData, 0, 0);
+        // Aggressive color quantization
+        const imageData = frameCtx.getImageData(0, 0, frameCanvas.width, frameCanvas.height);
+        const data = imageData.data;
+        const step = compressionLevel === 'high' ? 8 : 4;
+        for(let j = 0; j < data.length; j += 4) {
+          data[j] = Math.round(data[j] / step) * step;
+          data[j+1] = Math.round(data[j+1] / step) * step;
+          data[j+2] = Math.round(data[j+2] / step) * step;
         }
+        frameCtx.putImageData(imageData, 0, 0);
         
         gif.addFrame(frameCanvas, {delay: delay, copy: true});
         
-        // Update progress
-        if(i % 5 === 0) {
+        if(i % 3 === 0) {
           btn.textContent = `📦 GIF ${Math.round((i/frames.length)*100)}%`;
         }
       }
       
-      btn.textContent = '⏳ Encoding GIF...';
+      btn.textContent = '⏳ Encoding...';
       
-      let finalSize = 0;
       gif.on('finished', function(blob){
-        finalSize = blob.size;
-        const sizeKB = (finalSize / 1024).toFixed(1);
+        const sizeKB = (blob.size / 1024).toFixed(1);
         fileSizeDisplay.textContent = '📄 GIF: ' + sizeKB + ' KB';
         triggerDownload(blob, `ad-${stage.clientWidth}x${stage.clientHeight}.gif`);
         btn.disabled=false; 
@@ -1887,7 +1880,7 @@
       });
       
       gif.on('progress', function(p){
-        btn.textContent = `📦 Encoding... ${Math.round(p * 100)}%`;
+        btn.textContent = `📦 ${Math.round(p * 100)}%`;
       });
       
       gif.render();
@@ -1913,24 +1906,25 @@
     btn.disabled=true;
     try{
       if(!window.MediaRecorder){ alert('MediaRecorder missing.'); return; }
-      const dur = parseFloat(document.getElementById('recDuration').value) || 5;
-      const fps = 12;
+      const dur = parseFloat(document.getElementById('recDuration').value) || 3;
+      const fps = 10;
       const scale = getQualityScale();
       const compressionLevel = compressSelect.value;
       
       let videoBitrate;
       switch(compressionLevel) {
-        case 'low': videoBitrate = 8000000; break;
-        case 'normal': videoBitrate = 4000000; break;
-        case 'high': videoBitrate = 1500000; break;
-        default: videoBitrate = 4000000;
+        case 'low': videoBitrate = 6000000; break;
+        case 'normal': videoBitrate = 3000000; break;
+        case 'high': videoBitrate = 1000000; break;
+        default: videoBitrate = 3000000;
       }
       
       btn.textContent='📸 Rendering frames...';
       const frames = await captureFramesWithAnimation(dur, fps, scale);
       
       btn.textContent='🎬 Encoding video...';
-      const w=frames[0].width, h=frames[0].height;
+      const w=Math.round(frames[0].width / 1.2);
+      const h=Math.round(frames[0].height / 1.2);
       const rec=document.createElement('canvas'); rec.width=w; rec.height=h;
       const ctx=rec.getContext('2d', {willReadFrequently:true});
       const stream = rec.captureStream(fps);
@@ -1949,7 +1943,9 @@
       const frameDelay = 1000/fps;
       for(let i=0;i<frames.length;i++){
         ctx.clearRect(0,0,w,h);
-        ctx.drawImage(frames[i],0,0,w,h);
+        ctx.imageSmoothingEnabled = true;
+        ctx.imageSmoothingQuality = 'low';
+        ctx.drawImage(frames[i], 0, 0, w, h);
         if(i < frames.length - 1) await new Promise(r=>setTimeout(r, frameDelay));
       }
       recorder.stop(); await stopped;
@@ -1989,7 +1985,7 @@
     if (dataUrls.length > 0) {
       let completed = 0;
       dataUrls.forEach((dataUrl, index) => {
-        compressImageDataURL(dataUrl, compressionQuality, 600).then(compressedUrl => {
+        compressImageDataURL(dataUrl, compressionQuality, 400).then(compressedUrl => {
           compressedHTML = compressedHTML.replace(dataUrl, compressedUrl);
           completed++;
           if (completed === dataUrls.length) {
