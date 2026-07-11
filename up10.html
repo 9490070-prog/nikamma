@@ -238,7 +238,7 @@
   ::-webkit-scrollbar-thumb{background:#2b303a;border-radius:6px;}
   ::-webkit-scrollbar-track{background:transparent;}
 
-  /* ANIMATION KEYFRAMES MATCHED PERFECTLY FOR PREVIEW AND EXPORT */
+  /* ANIMATION KEYFRAMES */
   @keyframes fadeIn { from{opacity:0;} to{opacity:1;} }
   @keyframes slideInLeft { from{opacity:0;transform:translateX(-60px);} to{opacity:1;transform:translateX(0);} }
   @keyframes slideInRight { from{opacity:0;transform:translateX(60px);} to{opacity:1;transform:translateX(0);} }
@@ -274,7 +274,6 @@
     padding:4px 10px;
   }
 
-  /* Custom Style for Custom Canvas Input Box */
   .custom-size-group {
     display: flex;
     align-items: center;
@@ -286,7 +285,6 @@
     width: 60px !important;
   }
 
-  /* Compression indicator */
   .compress-opt {
     display:flex;
     align-items:center;
@@ -310,7 +308,6 @@
   .badge.normal { border-color:#FFB020; color:#FFB020; }
   .badge.high { border-color:#FF5C6C; color:#FF5C6C; }
   
-  /* File size indicator */
   .size-indicator {
     font-size:11px;
     color:var(--muted);
@@ -372,7 +369,6 @@
         </select>
       </label>
       
-      <!-- IMAGE COMPRESSION SETTINGS - NEW -->
       <div class="compress-opt">
         <span>📦</span>
         <select id="importCompression">
@@ -524,7 +520,6 @@
     const f=e.target.files[0]; if(!f) return;
     const reader=new FileReader();
     reader.onload=ev=>{ 
-      // Compress background image too
       compressImageDataURL(ev.target.result, getImportCompressionQuality(), 1200, 1200).then(compressed => {
         stage.style.backgroundImage=`url(${compressed})`;
         updateFileSizeDisplay(compressed);
@@ -569,7 +564,6 @@
       fileSizeDisplay.textContent = '📄 0 KB';
       return;
     }
-    // Calculate size from base64
     const base64 = dataUrl.split(',')[1] || '';
     const sizeInBytes = Math.ceil((base64.length * 3) / 4);
     let sizeDisplay;
@@ -590,7 +584,6 @@
         let w = img.width;
         let h = img.height;
         
-        // Resize if too large
         const maxDim = maxSize || 800;
         if (w > maxDim || h > maxDim) {
           const ratio = Math.min(maxDim / w, maxDim / h);
@@ -606,7 +599,6 @@
         ctx.imageSmoothingQuality = 'high';
         ctx.drawImage(img, 0, 0, w, h);
         
-        // Use JPEG for compression (smaller size)
         const compressed = canvas.toDataURL('image/jpeg', quality);
         resolve(compressed);
       };
@@ -709,18 +701,15 @@
     setupTextEditing(el);
   }
   
-  // ========== IMAGE ADD WITH COMPRESSION ==========
   function addImageFromFile(file, slideGroup){
     const reader=new FileReader();
     reader.onload=async function(ev){
       const dataUrl = ev.target.result;
       
-      // COMPRESS THE IMAGE BEFORE ADDING
       const quality = getImportCompressionQuality();
       const maxSize = getMaxImageSize();
       const compressedDataUrl = await compressImageDataURL(dataUrl, quality, maxSize);
       
-      // Show compressed size
       updateFileSizeDisplay(compressedDataUrl);
       
       const el=makeBaseEl('image', 100, 100);
@@ -732,7 +721,6 @@
       img.style.height='100%';
       el.insertBefore(img, el.firstChild);
       
-      // Store original file name for reference
       el.dataset.originalName = file.name;
       el.dataset.compressedSize = (compressedDataUrl.length / 1024).toFixed(1) + ' KB';
       
@@ -1761,7 +1749,7 @@
 
   function getQualityScale(){ return parseFloat(document.getElementById('qualitySelect').value) || 1; }
 
-  // Export functions (simplified for brevity - keeping original functionality)
+  // ========== PNG EXPORT ==========
   document.getElementById('exportPngBtn').addEventListener('click', async function(){
     const btn=this; const origText=btn.textContent;
     btn.disabled=true; btn.textContent='Rendering…';
@@ -1788,80 +1776,170 @@
       const dataUrl = canvas.toDataURL('image/jpeg', compressionQuality);
       const response = await fetch(dataUrl);
       const blob = await response.blob();
+      
+      // Show file size after export
+      const sizeKB = (blob.size / 1024).toFixed(1);
+      fileSizeDisplay.textContent = '📄 Exported: ' + sizeKB + ' KB';
+      
       triggerDownload(blob, `ad-${stageW}x${stageH}.jpg`);
     }catch(err){ console.error(err); }
     finally{ btn.disabled=false; btn.textContent=origText; }
   });
 
+  // ========== GIF EXPORT - FIXED WITH PROPER COMPRESSION ==========
   document.getElementById('exportGifBtn').addEventListener('click', async function(){
-    const btn=this; btn.disabled=true;
+    const btn=this; 
+    const origText=btn.textContent;
+    btn.disabled=true;
     try{
       const dur = parseFloat(document.getElementById('recDuration').value) || 5;
-      const fps = 12;
+      const fps = 10; // Lower FPS for smaller file
       const scale = getQualityScale();
-      const compressionQuality = getImportCompressionQuality();
-      const gifQuality = Math.round(compressionQuality * 10);
+      const compressionLevel = compressSelect.value;
       
-      btn.textContent='Rendering frames...';
+      btn.textContent='📸 Rendering frames...';
       const frames = await captureFramesWithAnimation(dur, fps, scale);
       
-      btn.textContent='Loading GIF encoder...';
+      btn.textContent='📦 Compressing GIF...';
       await ensureLib('GIF', 'https://cdnjs.cloudflare.com/ajax/libs/gif.js/0.2.0/gif.js');
       
-      btn.textContent='Encoding GIF...';
       const workerBlobUrl = await getGifWorkerBlobURL();
       
+      // GIF quality based on compression level
+      let gifQuality, colorCount;
+      switch(compressionLevel) {
+        case 'low': 
+          gifQuality = 10; 
+          colorCount = 256;
+          break;
+        case 'normal': 
+          gifQuality = 7; 
+          colorCount = 128;
+          break;
+        case 'high': 
+          gifQuality = 3; 
+          colorCount = 64;
+          break;
+        default: 
+          gifQuality = 7; 
+          colorCount = 128;
+      }
+      
+      // Create GIF with optimized settings
       const gif = new GIF({
         workers: 2, 
-        quality: Math.max(2, Math.min(10, gifQuality)),
+        quality: gifQuality,
         width: frames[0].width, 
         height: frames[0].height,
         workerScript: workerBlobUrl, 
-        repeat: 0
+        repeat: 0,
+        background: '#ffffff',
+        dither: false // Disable dithering for smaller size
       });
       
       const delay = Math.round(1000/fps);
+      
+      // Add frames with optimization
       for(let i = 0; i < frames.length; i++) {
-        gif.addFrame(frames[i], {delay: delay, copy: true});
+        // Reduce frame quality for smaller GIF
+        const frameCanvas = document.createElement('canvas');
+        frameCanvas.width = frames[0].width;
+        frameCanvas.height = frames[0].height;
+        const frameCtx = frameCanvas.getContext('2d');
+        
+        // Draw with reduced quality for GIF
+        frameCtx.imageSmoothingEnabled = true;
+        frameCtx.imageSmoothingQuality = 'medium';
+        frameCtx.drawImage(frames[i], 0, 0);
+        
+        // Color quantization for smaller size
+        if(compressionLevel === 'high') {
+          // Reduce colors for high compression
+          const imageData = frameCtx.getImageData(0, 0, frameCanvas.width, frameCanvas.height);
+          const data = imageData.data;
+          for(let j = 0; j < data.length; j += 4) {
+            // Quantize colors to reduce palette
+            data[j] = Math.round(data[j] / 32) * 32;
+            data[j+1] = Math.round(data[j+1] / 32) * 32;
+            data[j+2] = Math.round(data[j+2] / 32) * 32;
+          }
+          frameCtx.putImageData(imageData, 0, 0);
+        }
+        
+        gif.addFrame(frameCanvas, {delay: delay, copy: true});
+        
+        // Update progress
+        if(i % 5 === 0) {
+          btn.textContent = `📦 GIF ${Math.round((i/frames.length)*100)}%`;
+        }
       }
       
+      btn.textContent = '⏳ Encoding GIF...';
+      
+      let finalSize = 0;
       gif.on('finished', function(blob){
+        finalSize = blob.size;
+        const sizeKB = (finalSize / 1024).toFixed(1);
+        fileSizeDisplay.textContent = '📄 GIF: ' + sizeKB + ' KB';
         triggerDownload(blob, `ad-${stage.clientWidth}x${stage.clientHeight}.gif`);
-        btn.disabled=false; btn.textContent='🎞 GIF';
+        btn.disabled=false; 
+        btn.textContent='🎞 GIF';
       });
+      
       gif.on('progress', function(p){
-        btn.textContent = `Encoding... ${Math.round(p * 100)}%`;
+        btn.textContent = `📦 Encoding... ${Math.round(p * 100)}%`;
       });
+      
       gif.render();
-    }catch(err){ console.error(err); btn.disabled=false; btn.textContent='🎞 GIF'; }
+      
+      // Timeout fallback
+      setTimeout(() => {
+        if(btn.disabled) {
+          btn.disabled = false;
+          btn.textContent = '🎞 GIF';
+        }
+      }, 60000);
+      
+    }catch(err){ 
+      console.error('GIF Error:', err); 
+      btn.disabled=false; 
+      btn.textContent='🎞 GIF';
+    }
   });
 
+  // ========== VIDEO EXPORT ==========
   document.getElementById('exportVideoBtn').addEventListener('click', async function(){
     const btn=this; const origText=btn.textContent;
     btn.disabled=true;
     try{
       if(!window.MediaRecorder){ alert('MediaRecorder missing.'); return; }
       const dur = parseFloat(document.getElementById('recDuration').value) || 5;
-      const fps = 15;
+      const fps = 12;
       const scale = getQualityScale();
+      const compressionLevel = compressSelect.value;
       
-      btn.textContent='Rendering frames...';
+      let videoBitrate;
+      switch(compressionLevel) {
+        case 'low': videoBitrate = 8000000; break;
+        case 'normal': videoBitrate = 4000000; break;
+        case 'high': videoBitrate = 1500000; break;
+        default: videoBitrate = 4000000;
+      }
+      
+      btn.textContent='📸 Rendering frames...';
       const frames = await captureFramesWithAnimation(dur, fps, scale);
       
-      btn.textContent='Encoding video...';
+      btn.textContent='🎬 Encoding video...';
       const w=frames[0].width, h=frames[0].height;
       const rec=document.createElement('canvas'); rec.width=w; rec.height=h;
       const ctx=rec.getContext('2d', {willReadFrequently:true});
       const stream = rec.captureStream(fps);
 
-      const compressionQuality = getImportCompressionQuality();
-      const bitrate = Math.round(8000000 * compressionQuality);
-      
       let mimeType='video/webm;codecs=vp9', ext='webm';
       if(MediaRecorder.isTypeSupported('video/mp4')){ mimeType='video/mp4'; ext='mp4'; }
       const recorder=new MediaRecorder(stream, {
         mimeType, 
-        videoBitsPerSecond: bitrate
+        videoBitsPerSecond: videoBitrate
       });
       const chunks=[];
       recorder.ondataavailable=e=>{ if(e.data && e.data.size) chunks.push(e.data); };
@@ -1875,15 +1953,21 @@
         if(i < frames.length - 1) await new Promise(r=>setTimeout(r, frameDelay));
       }
       recorder.stop(); await stopped;
-      triggerDownload(new Blob(chunks, {type:mimeType}), `ad-${w}x${h}.${ext}`);
+      
+      const blob = new Blob(chunks, {type:mimeType});
+      const sizeKB = (blob.size / 1024).toFixed(1);
+      fileSizeDisplay.textContent = '📄 Video: ' + sizeKB + ' KB';
+      
+      triggerDownload(blob, `ad-${w}x${h}.${ext}`);
     }catch(err){ console.error(err); }
     finally{ btn.disabled=false; btn.textContent=origText; }
   });
 
+  // ========== HTML EXPORT ==========
   document.getElementById('exportHtmlBtn').addEventListener('click', function() {
     const btn=this;
     btn.disabled=true;
-    btn.textContent='Compressing...';
+    btn.textContent='📦 Compressing...';
     
     const clonedStage = stage.cloneNode(true);
     clonedStage.querySelectorAll('.resize-handle').forEach(h => h.remove());
@@ -1893,7 +1977,6 @@
     const exportStyles = Array.from(document.styleSheets[0].cssRules).map(rule => rule.cssText).join('\n');
     let htmlOutput = `<!DOCTYPE html><html><head><meta charset="UTF-8"><style>${exportStyles}body{background:transparent;display:flex;justify-content:center;align-items:center;height:100vh;margin:0;}#stage{box-shadow:none;}</style></head><body>${clonedStage.outerHTML}<script>(function(){const stage=document.getElementById('stage');const slideTimers={};const groupStayTime={};function getAnimDuration(el){return parseFloat(el.dataset.animDur)||1.2;}function getGroupStayTime(groupName){if(groupStayTime[groupName]!==undefined)return groupStayTime[groupName];const els=Array.from(stage.querySelectorAll('.element')).filter(e=>e.dataset.slideGroup===groupName);if(els.length>0&&els[0].dataset.stayTime)return parseFloat(els[0].dataset.stayTime);return 0.8;}function updateSlideShow(){for(const key in slideTimers){clearTimeout(slideTimers[key]);clearInterval(slideTimers[key]);delete slideTimers[key];}const groups={};const elements=Array.from(stage.querySelectorAll('.element'));elements.forEach(el=>{const g=el.dataset.slideGroup;if(g){if(!groups[g])groups[g]=[];groups[g].push(el);}});for(const[group,els]of Object.entries(groups)){els.sort((a,b)=>(parseInt(a.dataset.slideIndex)||0)-(parseInt(b.dataset.slideIndex)||0));if(els.length<=1)continue;const stayTime=getGroupStayTime(group);els.forEach(el=>{el.dataset.stayTime=stayTime;});let timeoutId=null;function showSlide(index,animate=true){els.forEach(el=>{el.style.display='none';el.style.animation='none';});if(els[index]){els[index].style.display='flex';const targetOpacity=els[index].dataset.savedOpacity||els[index].style.opacity||'1';els[index].style.opacity=targetOpacity;const anim=els[index].dataset.anim;const dur=getAnimDuration(els[index]);if(anim&&anim!=='none'&&animate){els[index].style.animation='none';void els[index].offsetWidth;els[index].style.animation=\`\${anim} \${dur}s ease both\`;}}}showSlide(0,true);function scheduleNextSlide(index){const el=els[index];const animDur=getAnimDuration(el);const totalTime=(animDur+stayTime)*1000;if(timeoutId)clearTimeout(timeoutId);timeoutId=setTimeout(()=>{const nextIndex=(index+1)%els.length;showSlide(nextIndex,true);scheduleNextSlide(nextIndex);},totalTime);}setTimeout(()=>{scheduleNextSlide(0);},50);slideTimers[group]={clear:()=>{if(timeoutId)clearTimeout(timeoutId);}};}}updateSlideShow();})();<\/script></body></html>`;
     
-    // Compress HTML images
     const compressionQuality = getImportCompressionQuality();
     const dataUrlRegex = /src=["'](data:image\/[^"']+)["']/g;
     let match;
@@ -1910,12 +1993,16 @@
           compressedHTML = compressedHTML.replace(dataUrl, compressedUrl);
           completed++;
           if (completed === dataUrls.length) {
+            const sizeKB = (compressedHTML.length / 1024).toFixed(1);
+            fileSizeDisplay.textContent = '📄 HTML: ' + sizeKB + ' KB';
             triggerDownload(new Blob([compressedHTML], { type: 'text/html' }), `ad-creative-${stage.clientWidth}x${stage.clientHeight}.html`);
             btn.disabled=false; btn.textContent='⬇ HTML';
           }
         });
       });
     } else {
+      const sizeKB = (htmlOutput.length / 1024).toFixed(1);
+      fileSizeDisplay.textContent = '📄 HTML: ' + sizeKB + ' KB';
       triggerDownload(new Blob([htmlOutput], { type: 'text/html' }), `ad-creative-${stage.clientWidth}x${stage.clientHeight}.html`);
       btn.disabled=false; btn.textContent='⬇ HTML';
     }
