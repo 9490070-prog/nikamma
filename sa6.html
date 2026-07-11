@@ -671,6 +671,7 @@
     el.style.lineHeight='1.2';
     setupTextEditing(el);
   }
+  
   function addButton(){
     const el=makeBaseEl('button', 110, 34);
     el.innerText='Install Now';
@@ -681,24 +682,29 @@
     el.style.background='#5B8CFF';
     el.style.borderRadius='17px';
     el.style.textAlign='center';
-    // Add URL property for button click
     el.dataset.url = '';
     el.style.cursor = 'pointer';
+    
+    // Click handler for button
     el.addEventListener('click', function(e) {
-        if (el.dataset.url) {
-            window.open(el.dataset.url, '_blank');
+        e.stopPropagation();
+        if (this.dataset.url && this.dataset.url.trim() !== '') {
+            window.open(this.dataset.url, '_blank');
         } else {
-            alert('URL not set. Set URL in inspector.');
+            alert('URL not set. Please set URL in inspector.');
         }
     });
+    
     setupTextEditing(el);
   }
+  
   function addShape(kind){
     const el=makeBaseEl('shape', 80, 80);
     el.style.background='#5B8CFF';
     el.style.borderRadius = kind==='circle' ? '50%' : '6px';
     el.dataset.shape = kind;
   }
+  
   function addBadge(){
     const el=makeBaseEl('button', 90, 26);
     el.innerText='AD';
@@ -711,13 +717,17 @@
     el.style.textAlign='center';
     el.dataset.url = '';
     el.style.cursor = 'pointer';
+    
+    // Click handler for badge
     el.addEventListener('click', function(e) {
-        if (el.dataset.url) {
-            window.open(el.dataset.url, '_blank');
+        e.stopPropagation();
+        if (this.dataset.url && this.dataset.url.trim() !== '') {
+            window.open(this.dataset.url, '_blank');
         } else {
-            alert('URL not set. Set URL in inspector.');
+            alert('URL not set. Please set URL in inspector.');
         }
     });
+    
     setupTextEditing(el);
   }
   
@@ -895,7 +905,8 @@
       const groupInfo = el.dataset.slideGroup ? ` [${el.dataset.slideGroup}]` : '';
       const sizeInfo = el.dataset.compressedSize ? ` 📄${el.dataset.compressedSize}` : '';
       const animInfo = el.dataset.anim && el.dataset.anim !== 'none' ? ` 🎬${el.dataset.anim}` : '';
-      row.innerHTML = `<span class="lname">${label} — ${el.dataset.id}${groupInfo}${sizeInfo}${animInfo}</span>
+      const urlInfo = el.dataset.url ? ` 🔗${el.dataset.url.substring(0,15)}` : '';
+      row.innerHTML = `<span class="lname">${label} — ${el.dataset.id}${groupInfo}${sizeInfo}${animInfo}${urlInfo}</span>
         <button data-act="up" title="Forward">⬆</button>
         <button data-act="down" title="Backward">⬇</button>
         <button data-act="dup" title="Duplicate">⧉</button>
@@ -932,14 +943,15 @@
     attachDrag(clone, handle);
     if(clone.dataset.type==='text' || clone.dataset.type==='button') {
         setupTextEditing(clone);
-        // Re-apply click listener for button
+        // Re-apply click listener for button/badge duplicates
         if(clone.dataset.type === 'button') {
             clone.style.cursor = 'pointer';
             clone.addEventListener('click', function(e) {
-                if (clone.dataset.url) {
-                    window.open(clone.dataset.url, '_blank');
+                e.stopPropagation();
+                if (this.dataset.url && this.dataset.url.trim() !== '') {
+                    window.open(this.dataset.url, '_blank');
                 } else {
-                    alert('URL not set. Set URL in inspector.');
+                    alert('URL not set. Please set URL in inspector.');
                 }
             });
         }
@@ -1141,12 +1153,14 @@
       </div>
     `;
 
-    // Button specific URL property
+    // Button specific URL property for both button and badge
     if(type === 'button'){
+        const currentUrl = selected.dataset.url || '';
         html += `
             <div class="section-title">Button URL</div>
-            <div class="field"><label>Click URL</label>
-                <input type="text" id="propUrl" placeholder="https://example.com" value="${selected.dataset.url || ''}">
+            <div class="field"><label>Click URL (leave empty for no action)</label>
+                <input type="text" id="propUrl" placeholder="https://example.com" value="${currentUrl}">
+                <div style="font-size:9px;color:var(--muted);margin-top:2px;">💡 Button click par ye URL open hogi</div>
             </div>
         `;
     }
@@ -2092,49 +2106,217 @@
     finally{ btn.disabled=false; btn.textContent=origText; }
   });
 
-  // ========== HTML EXPORT ==========
+  // ========== HTML EXPORT - FULLY FIXED ==========
   document.getElementById('exportHtmlBtn').addEventListener('click', function() {
     const btn=this;
     btn.disabled=true;
     btn.textContent='⏳';
     
+    // Create a deep clone of the stage
     const clonedStage = stage.cloneNode(true);
+    
+    // Remove resize handles and selection styles
     clonedStage.querySelectorAll('.resize-handle').forEach(h => h.remove());
     clonedStage.querySelectorAll('.element').forEach(el => {
-      el.classList.remove('selected', 'editing'); el.style.boxShadow = 'none';
-      // Preserve button click functionality in export
+      el.classList.remove('selected', 'editing');
+      el.style.boxShadow = 'none';
+      
+      // Ensure button elements have click handlers in export
       if(el.dataset.type === 'button') {
         el.style.cursor = 'pointer';
-        el.addEventListener('click', function(e) {
-            if (el.dataset.url) {
-                window.open(el.dataset.url, '_blank');
-            }
-        });
+        // Store URL in a data attribute for the exported HTML
+        const url = el.dataset.url || '';
+        // Add inline onclick handler for exported HTML
+        if(url && url.trim() !== '') {
+          el.setAttribute('onclick', `window.open('${url}', '_blank');`);
+        } else {
+          el.setAttribute('onclick', "alert('URL not set in exported ad.');");
+        }
       }
     });
-    const exportStyles = Array.from(document.styleSheets[0].cssRules).map(rule => rule.cssText).join('\n');
-    let htmlOutput = `<!DOCTYPE html><html><head><meta charset="UTF-8"><style>${exportStyles}body{background:transparent;display:flex;justify-content:center;align-items:center;height:100vh;margin:0;}#stage{box-shadow:none;}</style></head><body>${clonedStage.outerHTML}<script>(function(){const stage=document.getElementById('stage');const slideTimers={};const groupStayTime={};function getAnimDuration(el){return parseFloat(el.dataset.animDur)||1.2;}function getGroupStayTime(groupName){if(groupStayTime[groupName]!==undefined)return groupStayTime[groupName];const els=Array.from(stage.querySelectorAll('.element')).filter(e=>e.dataset.slideGroup===groupName);if(els.length>0&&els[0].dataset.stayTime)return parseFloat(els[0].dataset.stayTime);return 0.8;}function updateSlideShow(){for(const key in slideTimers){clearTimeout(slideTimers[key]);clearInterval(slideTimers[key]);delete slideTimers[key];}const groups={};const elements=Array.from(stage.querySelectorAll('.element'));elements.forEach(el=>{const g=el.dataset.slideGroup;if(g){if(!groups[g])groups[g]=[];groups[g].push(el);}});for(const[group,els]of Object.entries(groups)){els.sort((a,b)=>(parseInt(a.dataset.slideIndex)||0)-(parseInt(b.dataset.slideIndex)||0));if(els.length<=1)continue;const stayTime=getGroupStayTime(group);els.forEach(el=>{el.dataset.stayTime=stayTime;});let timeoutId=null;function showSlide(index,animate=true){els.forEach(el=>{el.style.display='none';el.style.animation='none';});if(els[index]){els[index].style.display='flex';const targetOpacity=els[index].dataset.savedOpacity||els[index].style.opacity||'1';els[index].style.opacity=targetOpacity;const anim=els[index].dataset.anim;const dur=getAnimDuration(els[index]);if(anim&&anim!=='none'&&animate){els[index].style.animation='none';void els[index].offsetWidth;els[index].style.animation=\`\${anim} \${dur}s ease both\`;}}}showSlide(0,true);function scheduleNextSlide(index){const el=els[index];const animDur=getAnimDuration(el);const totalTime=(animDur+stayTime)*1000;if(timeoutId)clearTimeout(timeoutId);timeoutId=setTimeout(()=>{const nextIndex=(index+1)%els.length;showSlide(nextIndex,true);scheduleNextSlide(nextIndex);},totalTime);}setTimeout(()=>{scheduleNextSlide(0);},50);slideTimers[group]={clear:()=>{if(timeoutId)clearTimeout(timeoutId);}};}}updateSlideShow();})();<\/script></body></html>`;
     
+    const exportStyles = Array.from(document.styleSheets[0].cssRules).map(rule => rule.cssText).join('\n');
+    
+    // Build the complete HTML with proper button functionality
+    let htmlOutput = `<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ad Creative</title>
+  <style>
+    ${exportStyles}
+    body {
+      background: transparent;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
+      padding: 20px;
+      box-sizing: border-box;
+    }
+    #stage {
+      box-shadow: none;
+      border-radius: 4px;
+      overflow: hidden;
+    }
+    .element {
+      cursor: default !important;
+    }
+    .element.el-button {
+      cursor: pointer !important;
+    }
+  </style>
+</head>
+<body>
+${clonedStage.outerHTML}
+<script>
+  (function() {
+    // Ensure all button elements work in exported HTML
+    document.querySelectorAll('.element.el-button').forEach(function(btn) {
+      // If onclick is already set, keep it
+      if (!btn.getAttribute('onclick')) {
+        const url = btn.dataset.url || '';
+        if (url && url.trim() !== '') {
+          btn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            window.open(url, '_blank');
+          });
+        } else {
+          btn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            alert('URL not set in exported ad.');
+          });
+        }
+      }
+    });
+    
+    // Slide show functionality
+    const stage = document.getElementById('stage');
+    const slideTimers = {};
+    const groupStayTime = {};
+    
+    function getAnimDuration(el) {
+      return parseFloat(el.dataset.animDur) || 1.2;
+    }
+    
+    function getGroupStayTime(groupName) {
+      if (groupStayTime[groupName] !== undefined) return groupStayTime[groupName];
+      const els = Array.from(stage.querySelectorAll('.element')).filter(e => e.dataset.slideGroup === groupName);
+      if (els.length > 0 && els[0].dataset.stayTime) return parseFloat(els[0].dataset.stayTime);
+      return 0.8;
+    }
+    
+    function updateSlideShow() {
+      for (const key in slideTimers) {
+        clearTimeout(slideTimers[key]);
+        clearInterval(slideTimers[key]);
+        delete slideTimers[key];
+      }
+      
+      const groups = {};
+      const elements = Array.from(stage.querySelectorAll('.element'));
+      elements.forEach(el => {
+        const g = el.dataset.slideGroup;
+        if (g) {
+          if (!groups[g]) groups[g] = [];
+          groups[g].push(el);
+        }
+      });
+      
+      for (const [group, els] of Object.entries(groups)) {
+        els.sort((a, b) => (parseInt(a.dataset.slideIndex) || 0) - (parseInt(b.dataset.slideIndex) || 0));
+        if (els.length <= 1) continue;
+        
+        const stayTime = getGroupStayTime(group);
+        els.forEach(el => {
+          el.dataset.stayTime = stayTime;
+        });
+        
+        let timeoutId = null;
+        
+        function showSlide(index, animate = true) {
+          els.forEach(el => {
+            el.style.display = 'none';
+            el.style.animation = 'none';
+          });
+          if (els[index]) {
+            els[index].style.display = 'flex';
+            const targetOpacity = els[index].dataset.savedOpacity || els[index].style.opacity || '1';
+            els[index].style.opacity = targetOpacity;
+            const anim = els[index].dataset.anim;
+            const dur = getAnimDuration(els[index]);
+            if (anim && anim !== 'none' && animate) {
+              els[index].style.animation = 'none';
+              void els[index].offsetWidth;
+              els[index].style.animation = anim + ' ' + dur + 's ease both';
+            }
+          }
+        }
+        
+        showSlide(0, true);
+        
+        function scheduleNextSlide(index) {
+          const el = els[index];
+          const animDur = getAnimDuration(el);
+          const totalTime = (animDur + stayTime) * 1000;
+          
+          if (timeoutId) clearTimeout(timeoutId);
+          timeoutId = setTimeout(() => {
+            const nextIndex = (index + 1) % els.length;
+            showSlide(nextIndex, true);
+            scheduleNextSlide(nextIndex);
+          }, totalTime);
+        }
+        
+        setTimeout(() => {
+          scheduleNextSlide(0);
+        }, 50);
+        
+        slideTimers[group] = {
+          clear: () => {
+            if (timeoutId) clearTimeout(timeoutId);
+          }
+        };
+      }
+    }
+    
+    updateSlideShow();
+  })();
+</script>
+</body>
+</html>`;
+    
+    // Compress images in HTML
     const compressionQuality = getImportCompressionQuality();
     const dataUrlRegex = /src=["'](data:image\/[^"']+)["']/g;
     let match;
     let compressedHTML = htmlOutput;
     const dataUrls = [];
-    while ((match = dataUrlRegex.exec(htmlOutput)) !== null) {
-      dataUrls.push(match[1]);
+    
+    // Find all data URLs in the HTML
+    const tempMatch = htmlOutput.match(/src=["'](data:image\/[^"']+)["']/g);
+    if (tempMatch) {
+      tempMatch.forEach(m => {
+        const url = m.replace(/src=["']/, '').replace(/["']$/, '');
+        dataUrls.push(url);
+      });
     }
     
     if (dataUrls.length > 0) {
       let completed = 0;
       dataUrls.forEach((dataUrl, index) => {
         compressImageDataURL(dataUrl, compressionQuality, 400).then(compressedUrl => {
+          // Replace only this specific URL
           compressedHTML = compressedHTML.replace(dataUrl, compressedUrl);
           completed++;
           if (completed === dataUrls.length) {
             const sizeKB = (compressedHTML.length / 1024).toFixed(1);
             fileSizeDisplay.textContent = '📄 HTML: ' + sizeKB + ' KB';
             triggerDownload(new Blob([compressedHTML], { type: 'text/html' }), `ad-creative-${stage.clientWidth}x${stage.clientHeight}.html`);
-            btn.disabled=false; btn.textContent='⬇ HTML';
+            btn.disabled=false; 
+            btn.textContent='⬇ HTML';
           }
         });
       });
@@ -2142,7 +2324,8 @@
       const sizeKB = (htmlOutput.length / 1024).toFixed(1);
       fileSizeDisplay.textContent = '📄 HTML: ' + sizeKB + ' KB';
       triggerDownload(new Blob([htmlOutput], { type: 'text/html' }), `ad-creative-${stage.clientWidth}x${stage.clientHeight}.html`);
-      btn.disabled=false; btn.textContent='⬇ HTML';
+      btn.disabled=false; 
+      btn.textContent='⬇ HTML';
     }
   });
 
