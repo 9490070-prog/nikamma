@@ -1,337 +1,337 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Ad Studio — Mobile Ad Creative Builder</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-<style>
-  :root{
-    --ink:#0F1115;
-    --panel:#181B21;
-    --panel-2:#1F232B;
-    --border:#262B33;
-    --text:#E7E9ED;
-    --muted:#8B929E;
-    --accent:#5B8CFF;
-    --accent-2:#FFB020;
-    --danger:#FF5C6C;
-    --radius:10px;
-    font-size:14px;
-  }
-  *{box-sizing:border-box;}
-  html,body{height:100%;}
-  body{
-    margin:0;
-    background:var(--ink);
-    color:var(--text);
-    font-family:'Inter',sans-serif;
-    overflow-x:hidden;
-  }
-  h1,h2,h3,.brand,.tool-label{font-family:'Space Grotesk',sans-serif;}
-
-  #app{
-    display:flex;
-    flex-direction:column;
-    height:100vh;
-  }
-  #topbar{
-    display:flex;
-    align-items:center;
-    gap:12px;
-    padding:8px 14px;
-    background:linear-gradient(180deg,#1B1F26,#171A20);
-    border-bottom:1px solid var(--border);
-    flex-wrap:wrap;
-  }
-  .brand{font-weight:700;font-size:15px;letter-spacing:0.2px;display:flex;align-items:center;gap:8px;}
-  .brand .dot{width:9px;height:9px;border-radius:50%;background:var(--accent-2);box-shadow:0 0 10px var(--accent-2);}
-  #topbar .sep{width:1px;height:24px;background:var(--border);}
-  select, input[type=text], input[type=number]{
-    background:var(--panel-2);
-    border:1px solid var(--border);
-    color:var(--text);
-    border-radius:6px;
-    padding:5px 7px;
-    font-family:inherit;
-    font-size:12px;
-    width:100%;
-  }
-  select:focus, input:focus{outline:1px solid var(--accent);}
-  .btn{
-    background:var(--panel-2);
-    border:1px solid var(--border);
-    color:var(--text);
-    padding:5px 10px;
-    border-radius:6px;
-    font-size:12px;
-    font-weight:500;
-    cursor:pointer;
-    display:flex;align-items:center;gap:5px;
-    transition:.15s ease;
-  }
-  .btn:hover{background:#262B33;border-color:#333a45;}
-  .btn.primary{background:var(--accent);border-color:var(--accent);color:#fff;}
-  .btn.primary:hover{filter:brightness(1.08);}
-  .btn.accent{background:var(--accent-2);border-color:var(--accent-2);color:#221600;}
-  .btn.accent:hover{filter:brightness(1.06);}
-  .btn.ghost{background:transparent;}
-  .btn.small{padding:4px 8px;font-size:11px;}
-  .btn:disabled{opacity:.4;cursor:not-allowed;}
-  #topbar .right-group{margin-left:auto;display:flex;gap:6px;align-items:center;flex-wrap:wrap;}
-
-  #workspace{
-    display:grid;
-    grid-template-columns:200px 1fr 260px;
-    flex:1;
-    overflow:hidden;
-  }
-  .rail{
-    background:var(--panel);
-    border-right:1px solid var(--border);
-    overflow-y:auto;
-    padding:12px;
-  }
-  #inspector{
-    background:var(--panel);
-    border-left:1px solid var(--border);
-    border-right:none;
-    overflow-y:auto;
-    padding:12px;
-  }
-  .section-title{
-    font-size:10px;
-    text-transform:uppercase;
-    letter-spacing:.08em;
-    color:var(--muted);
-    margin:14px 0 6px;
-    font-weight:600;
-  }
-  .section-title:first-child{margin-top:0;}
-  .tool-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px;}
-  .tool-btn{
-    background:var(--panel-2);
-    border:1px solid var(--border);
-    border-radius:8px;
-    padding:10px 4px;
-    display:flex;flex-direction:column;align-items:center;gap:4px;
-    cursor:pointer;color:var(--text);font-size:10px;
-    transition:.15s ease;
-  }
-  .tool-btn:hover{border-color:var(--accent);background:#20242c;transform:translateY(-1px);}
-  .tool-btn svg{width:18px;height:18px;stroke:var(--accent);}
-
-  #layerList{display:flex;flex-direction:column;gap:4px;}
-  .layer-row{
-    display:flex;align-items:center;gap:6px;
-    background:var(--panel-2);border:1px solid var(--border);
-    border-radius:6px;padding:4px 6px;font-size:11px;cursor:pointer;
-  }
-  .layer-row.active{border-color:var(--accent);background:#1c2433;}
-  .layer-row .lname{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:10px;}
-  .layer-row button{background:none;border:none;color:var(--muted);cursor:pointer;padding:1px 3px;font-size:10px;}
-  .layer-row button:hover{color:var(--text);}
-
-  #stageArea{
-    display:flex;flex-direction:column;align-items:center;justify-content:center;
-    background:
-      radial-gradient(circle at 1px 1px, #23272f 1px, transparent 0) 0 0/22px 22px,
-      var(--ink);
-    position:relative;
-    overflow:auto;
-    padding:20px;
-    min-height:300px;
-  }
-  #sizeLabel{
-    color:var(--muted);font-size:11px;margin-bottom:10px;
-    background:var(--panel);border:1px solid var(--border);
-    padding:3px 10px;border-radius:20px;
-  }
-  #phoneWrap{display:none;}
-  #phoneWrap.on{
-    display:block;
-    padding:20px 10px;
-    background:#0b0c10;
-    border:2px solid #2b2f38;
-    border-radius:36px;
-    box-shadow:0 30px 60px -20px rgba(0,0,0,.7);
-    position:relative;
-  }
-  #phoneWrap.on::before{
-    content:'';position:absolute;top:8px;left:50%;transform:translateX(-50%);
-    width:60px;height:5px;background:#2b2f38;border-radius:4px;
-  }
-  .fake-status{
-    height:16px;background:#12141a;border-radius:4px 4px 0 0;
-    display:flex;align-items:center;justify-content:space-between;
-    padding:0 8px;font-size:8px;color:#666;margin-bottom:2px;
-  }
-  .fake-app-content{
-    height:40px;background:repeating-linear-gradient(90deg,#181b21,#181b21 40px,#1c2029 40px,#1c2029 80px);
-    display:flex;align-items:center;justify-content:center;color:#444;font-size:9px;
-    border-bottom:2px dashed #333;
-  }
-
-  #stage {
-    position:relative;
-    background:#ffffff;
-    background-size:cover;
-    background-position:center;
-    overflow:hidden;
-    box-shadow:0 20px 45px -15px rgba(0,0,0,.6);
-    border-radius:4px;
-  }
-
-  .element {
-    position:absolute;
-    cursor:grab;
-    display:flex;
-    outline:none;
-    user-select:none;
-    backface-visibility:hidden;
-    -webkit-font-smoothing:antialiased;
-    text-rendering:optimizeLegibility;
-    transform-origin: center center;
-    touch-action:none;
-  }
-  .element.el-image img {
-    image-rendering:auto;
-  }
-  .element.selected{box-shadow:0 0 0 2px var(--accent), 0 0 0 5px rgba(91,140,255,.18);}
-  .element.el-text, .element.el-button{
-    align-items:center;justify-content:center;
-    padding:2px;
-    word-break:break-word;
-    cursor:grab;
-  }
-  .element.editing{cursor:text;}
-  .element .resize-handle{
-    position:absolute;right:-5px;bottom:-5px;
-    width:10px;height:10px;border-radius:50%;
-    background:var(--accent);border:2px solid #fff;
-    cursor:nwse-resize;display:none;
-  }
-  .element.selected .resize-handle{display:block;}
-  .element.el-image img, .element.el-image{width:100%;height:100%;}
-  .element.el-image img{pointer-events:none;display:block;}
-  .element.el-shape{pointer-events:auto;}
-
-  .field{margin-bottom:8px;}
-  .field label{display:block;font-size:10px;color:var(--muted);margin-bottom:3px;}
-  .row2{display:grid;grid-template-columns:1fr 1fr;gap:6px;}
-  .row3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:5px;}
-  .row4{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:5px;}
-  input[type=range]{width:100%;accent-color:var(--accent);}
-  input[type=color]{width:100%;height:28px;border:1px solid var(--border);border-radius:6px;background:var(--panel-2);padding:2px;cursor:pointer;}
-  #topbar select, #topbar input[type=number] { width: auto; }
-  .seg{display:flex;border:1px solid var(--border);border-radius:6px;overflow:hidden;}
-  .seg button{flex:1;background:var(--panel-2);border:none;color:var(--muted);padding:4px 0;cursor:pointer;font-size:11px;}
-  .seg button.active{background:var(--accent);color:#fff;}
-  .empty-hint{color:var(--muted);font-size:11px;line-height:1.6;padding:16px 4px;text-align:center;}
-  #stage:empty::after{content:'';}
-  #stage.exporting .element{box-shadow:none !important;}
-  #stage.exporting .resize-handle{display:none !important;}
-  #recDuration{width:50px;}
-
-  ::-webkit-scrollbar{width:7px;height:7px;}
-  ::-webkit-scrollbar-thumb{background:#2b303a;border-radius:4px;}
-  ::-webkit-scrollbar-track{background:transparent;}
-
-  @keyframes fadeIn { from{opacity:0;} to{opacity:1;} }
-  @keyframes slideInLeft { from{opacity:0;transform:translateX(-60px);} to{opacity:1;transform:translateX(0);} }
-  @keyframes slideInRight { from{opacity:0;transform:translateX(60px);} to{opacity:1;transform:translateX(0);} }
-  @keyframes slideInUp { from{opacity:0;transform:translateY(40px);} to{opacity:1;transform:translateY(0);} }
-  @keyframes slideInDown { from{opacity:0;transform:translateY(-40px);} to{opacity:1;transform:translateY(0);} }
-  @keyframes zoomIn { from{opacity:0;transform:scale(0.5);} to{opacity:1;transform:scale(1);} }
-  @keyframes bounceIn {
-    0%{opacity:0;transform:scale(0.3);}
-    50%{opacity:1;transform:scale(1.05);}
-    70%{transform:scale(0.95);}
-    100%{opacity:1;transform:scale(1);}
-  }
-  @keyframes pulse {
-    0%,100%{transform:scale(1);}
-    50%{transform:scale(1.05);}
-  }
-  @keyframes shake {
-    0%,100%{transform:translateX(0);}
-    20%{transform:translateX(-6px);}
-    40%{transform:translateX(6px);}
-    60%{transform:translateX(-4px);}
-    80%{transform:translateX(4px);}
-  }
-
-  .slide-controls {
-    display:flex;
-    gap:4px;
-    flex-wrap:wrap;
-    margin-top:4px;
-  }
-  .slide-controls .btn {
-    font-size:10px;
-    padding:3px 8px;
-  }
-
-  .custom-size-group {
-    display: flex;
-    align-items: center;
-    gap: 4px;
-    font-size: 11px;
-    color: var(--muted);
-  }
-  .custom-size-group input {
-    width: 50px !important;
-  }
-
-  .compress-opt {
-    display:flex;
-    align-items:center;
-    gap:4px;
-    font-size:11px;
-    color:var(--muted);
-  }
-  .compress-opt select {
-    width:auto;
-    padding:3px 6px;
-    font-size:11px;
-  }
-  .compress-opt .badge {
-    font-size:9px;
-    padding:2px 8px;
-    border-radius:10px;
-    background:var(--panel-2);
-    border:1px solid var(--border);
-  }
-  .badge.low { border-color:#4CAF50; color:#4CAF50; }
-  .badge.normal { border-color:#FFB020; color:#FFB020; }
-  .badge.high { border-color:#FF5C6C; color:#FF5C6C; }
-  
-  .size-indicator {
-    font-size:10px;
-    color:var(--muted);
-    background:var(--panel-2);
-    padding:2px 8px;
-    border-radius:10px;
-    border:1px solid var(--border);
-    min-width:60px;
-    text-align:center;
-  }
-
-  @media(max-width:900px){
-    body{overflow:auto;}
-    #app{height:auto;min-height:100vh;}
-    #topbar{gap:8px;justify-content:center;}
-    #topbar .right-group{margin-left:0;justify-content:center;width:100%;margin-top:4px;}
-    #workspace{
-      grid-template-columns:1fr;
-      height:auto;
-      overflow:visible;
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ad Studio — Mobile Ad Creative Builder</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root{
+      --ink:#0F1115;
+      --panel:#181B21;
+      --panel-2:#1F232B;
+      --border:#262B33;
+      --text:#E7E9ED;
+      --muted:#8B929E;
+      --accent:#5B8CFF;
+      --accent-2:#FFB020;
+      --danger:#FF5C6C;
+      --radius:10px;
+      font-size:14px;
     }
-    .rail{border-right:none;border-bottom:1px solid var(--border);}
-    #inspector{border-left:none;border-top:1px solid var(--border);}
-  }
-</style>
+    *{box-sizing:border-box;}
+    html,body{height:100%;}
+    body{
+      margin:0;
+      background:var(--ink);
+      color:var(--text);
+      font-family:'Inter',sans-serif;
+      overflow-x:hidden;
+    }
+    h1,h2,h3,.brand,.tool-label{font-family:'Space Grotesk',sans-serif;}
+
+    #app{
+      display:flex;
+      flex-direction:column;
+      height:100vh;
+    }
+    #topbar{
+      display:flex;
+      align-items:center;
+      gap:12px;
+      padding:8px 14px;
+      background:linear-gradient(180deg,#1B1F26,#171A20);
+      border-bottom:1px solid var(--border);
+      flex-wrap:wrap;
+    }
+    .brand{font-weight:700;font-size:15px;letter-spacing:0.2px;display:flex;align-items:center;gap:8px;}
+    .brand .dot{width:9px;height:9px;border-radius:50%;background:var(--accent-2);box-shadow:0 0 10px var(--accent-2);}
+    #topbar .sep{width:1px;height:24px;background:var(--border);}
+    select, input[type=text], input[type=number]{
+      background:var(--panel-2);
+      border:1px solid var(--border);
+      color:var(--text);
+      border-radius:6px;
+      padding:5px 7px;
+      font-family:inherit;
+      font-size:12px;
+      width:100%;
+    }
+    select:focus, input:focus{outline:1px solid var(--accent);}
+    .btn{
+      background:var(--panel-2);
+      border:1px solid var(--border);
+      color:var(--text);
+      padding:5px 10px;
+      border-radius:6px;
+      font-size:12px;
+      font-weight:500;
+      cursor:pointer;
+      display:flex;align-items:center;gap:5px;
+      transition:.15s ease;
+    }
+    .btn:hover{background:#262B33;border-color:#333a45;}
+    .btn.primary{background:var(--accent);border-color:var(--accent);color:#fff;}
+    .btn.primary:hover{filter:brightness(1.08);}
+    .btn.accent{background:var(--accent-2);border-color:var(--accent-2);color:#221600;}
+    .btn.accent:hover{filter:brightness(1.06);}
+    .btn.ghost{background:transparent;}
+    .btn.small{padding:4px 8px;font-size:11px;}
+    .btn:disabled{opacity:.4;cursor:not-allowed;}
+    #topbar .right-group{margin-left:auto;display:flex;gap:6px;align-items:center;flex-wrap:wrap;}
+
+    #workspace{
+      display:grid;
+      grid-template-columns:200px 1fr 260px;
+      flex:1;
+      overflow:hidden;
+    }
+    .rail{
+      background:var(--panel);
+      border-right:1px solid var(--border);
+      overflow-y:auto;
+      padding:12px;
+    }
+    #inspector{
+      background:var(--panel);
+      border-left:1px solid var(--border);
+      border-right:none;
+      overflow-y:auto;
+      padding:12px;
+    }
+    .section-title{
+      font-size:10px;
+      text-transform:uppercase;
+      letter-spacing:.08em;
+      color:var(--muted);
+      margin:14px 0 6px;
+      font-weight:600;
+    }
+    .section-title:first-child{margin-top:0;}
+    .tool-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px;}
+    .tool-btn{
+      background:var(--panel-2);
+      border:1px solid var(--border);
+      border-radius:8px;
+      padding:10px 4px;
+      display:flex;flex-direction:column;align-items:center;gap:4px;
+      cursor:pointer;color:var(--text);font-size:10px;
+      transition:.15s ease;
+    }
+    .tool-btn:hover{border-color:var(--accent);background:#20242c;transform:translateY(-1px);}
+    .tool-btn svg{width:18px;height:18px;stroke:var(--accent);}
+
+    #layerList{display:flex;flex-direction:column;gap:4px;}
+    .layer-row{
+      display:flex;align-items:center;gap:6px;
+      background:var(--panel-2);border:1px solid var(--border);
+      border-radius:6px;padding:4px 6px;font-size:11px;cursor:pointer;
+    }
+    .layer-row.active{border-color:var(--accent);background:#1c2433;}
+    .layer-row .lname{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:10px;}
+    .layer-row button{background:none;border:none;color:var(--muted);cursor:pointer;padding:1px 3px;font-size:10px;}
+    .layer-row button:hover{color:var(--text);}
+
+    #stageArea{
+      display:flex;flex-direction:column;align-items:center;justify-content:center;
+      background:
+        radial-gradient(circle at 1px 1px, #23272f 1px, transparent 0) 0 0/22px 22px,
+        var(--ink);
+      position:relative;
+      overflow:auto;
+      padding:20px;
+      min-height:300px;
+    }
+    #sizeLabel{
+      color:var(--muted);font-size:11px;margin-bottom:10px;
+      background:var(--panel);border:1px solid var(--border);
+      padding:3px 10px;border-radius:20px;
+    }
+    #phoneWrap{display:none;}
+    #phoneWrap.on{
+      display:block;
+      padding:20px 10px;
+      background:#0b0c10;
+      border:2px solid #2b2f38;
+      border-radius:36px;
+      box-shadow:0 30px 60px -20px rgba(0,0,0,.7);
+      position:relative;
+    }
+    #phoneWrap.on::before{
+      content:'';position:absolute;top:8px;left:50%;transform:translateX(-50%);
+      width:60px;height:5px;background:#2b2f38;border-radius:4px;
+    }
+    .fake-status{
+      height:16px;background:#12141a;border-radius:4px 4px 0 0;
+      display:flex;align-items:center;justify-content:space-between;
+      padding:0 8px;font-size:8px;color:#666;margin-bottom:2px;
+    }
+    .fake-app-content{
+      height:40px;background:repeating-linear-gradient(90deg,#181b21,#181b21 40px,#1c2029 40px,#1c2029 80px);
+      display:flex;align-items:center;justify-content:center;color:#444;font-size:9px;
+      border-bottom:2px dashed #333;
+    }
+
+    #stage {
+      position:relative;
+      background:#ffffff;
+      background-size:cover;
+      background-position:center;
+      overflow:hidden;
+      box-shadow:0 20px 45px -15px rgba(0,0,0,.6);
+      border-radius:4px;
+    }
+
+    .element {
+      position:absolute;
+      cursor:grab;
+      display:flex;
+      outline:none;
+      user-select:none;
+      backface-visibility:hidden;
+      -webkit-font-smoothing:antialiased;
+      text-rendering:optimizeLegibility;
+      transform-origin: center center;
+      touch-action:none;
+    }
+    .element.el-image img {
+      image-rendering:auto;
+    }
+    .element.selected{box-shadow:0 0 0 2px var(--accent), 0 0 0 5px rgba(91,140,255,.18);}
+    .element.el-text, .element.el-button{
+      align-items:center;justify-content:center;
+      padding:2px;
+      word-break:break-word;
+      cursor:grab;
+    }
+    .element.editing{cursor:text;}
+    .element .resize-handle{
+      position:absolute;right:-5px;bottom:-5px;
+      width:10px;height:10px;border-radius:50%;
+      background:var(--accent);border:2px solid #fff;
+      cursor:nwse-resize;display:none;
+    }
+    .element.selected .resize-handle{display:block;}
+    .element.el-image img, .element.el-image{width:100%;height:100%;}
+    .element.el-image img{pointer-events:none;display:block;}
+    .element.el-shape{pointer-events:auto;}
+
+    .field{margin-bottom:8px;}
+    .field label{display:block;font-size:10px;color:var(--muted);margin-bottom:3px;}
+    .row2{display:grid;grid-template-columns:1fr 1fr;gap:6px;}
+    .row3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:5px;}
+    .row4{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:5px;}
+    input[type=range]{width:100%;accent-color:var(--accent);}
+    input[type=color]{width:100%;height:28px;border:1px solid var(--border);border-radius:6px;background:var(--panel-2);padding:2px;cursor:pointer;}
+    #topbar select, #topbar input[type=number] { width: auto; }
+    .seg{display:flex;border:1px solid var(--border);border-radius:6px;overflow:hidden;}
+    .seg button{flex:1;background:var(--panel-2);border:none;color:var(--muted);padding:4px 0;cursor:pointer;font-size:11px;}
+    .seg button.active{background:var(--accent);color:#fff;}
+    .empty-hint{color:var(--muted);font-size:11px;line-height:1.6;padding:16px 4px;text-align:center;}
+    #stage:empty::after{content:'';}
+    #stage.exporting .element{box-shadow:none !important;}
+    #stage.exporting .resize-handle{display:none !important;}
+    #recDuration{width:50px;}
+
+    ::-webkit-scrollbar{width:7px;height:7px;}
+    ::-webkit-scrollbar-thumb{background:#2b303a;border-radius:4px;}
+    ::-webkit-scrollbar-track{background:transparent;}
+
+    @keyframes fadeIn { from{opacity:0;} to{opacity:1;} }
+    @keyframes slideInLeft { from{opacity:0;transform:translateX(-60px);} to{opacity:1;transform:translateX(0);} }
+    @keyframes slideInRight { from{opacity:0;transform:translateX(60px);} to{opacity:1;transform:translateX(0);} }
+    @keyframes slideInUp { from{opacity:0;transform:translateY(40px);} to{opacity:1;transform:translateY(0);} }
+    @keyframes slideInDown { from{opacity:0;transform:translateY(-40px);} to{opacity:1;transform:translateY(0);} }
+    @keyframes zoomIn { from{opacity:0;transform:scale(0.5);} to{opacity:1;transform:scale(1);} }
+    @keyframes bounceIn {
+      0%{opacity:0;transform:scale(0.3);}
+      50%{opacity:1;transform:scale(1.05);}
+      70%{transform:scale(0.95);}
+      100%{opacity:1;transform:scale(1);}
+    }
+    @keyframes pulse {
+      0%,100%{transform:scale(1);}
+      50%{transform:scale(1.05);}
+    }
+    @keyframes shake {
+      0%,100%{transform:translateX(0);}
+      20%{transform:translateX(-6px);}
+      40%{transform:translateX(6px);}
+      60%{transform:translateX(-4px);}
+      80%{transform:translateX(4px);}
+    }
+
+    .slide-controls {
+      display:flex;
+      gap:4px;
+      flex-wrap:wrap;
+      margin-top:4px;
+    }
+    .slide-controls .btn {
+      font-size:10px;
+      padding:3px 8px;
+    }
+
+    .custom-size-group {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 11px;
+      color: var(--muted);
+    }
+    .custom-size-group input {
+      width: 50px !important;
+    }
+
+    .compress-opt {
+      display:flex;
+      align-items:center;
+      gap:4px;
+      font-size:11px;
+      color:var(--muted);
+    }
+    .compress-opt select {
+      width:auto;
+      padding:3px 6px;
+      font-size:11px;
+    }
+    .compress-opt .badge {
+      font-size:9px;
+      padding:2px 8px;
+      border-radius:10px;
+      background:var(--panel-2);
+      border:1px solid var(--border);
+    }
+    .badge.low { border-color:#4CAF50; color:#4CAF50; }
+    .badge.normal { border-color:#FFB020; color:#FFB020; }
+    .badge.high { border-color:#FF5C6C; color:#FF5C6C; }
+    
+    .size-indicator {
+      font-size:10px;
+      color:var(--muted);
+      background:var(--panel-2);
+      padding:2px 8px;
+      border-radius:10px;
+      border:1px solid var(--border);
+      min-width:60px;
+      text-align:center;
+    }
+
+    @media(max-width:900px){
+      body{overflow:auto;}
+      #app{height:auto;min-height:100vh;}
+      #topbar{gap:8px;justify-content:center;}
+      #topbar .right-group{margin-left:0;justify-content:center;width:100%;margin-top:4px;}
+      #workspace{
+        grid-template-columns:1fr;
+        height:auto;
+        overflow:visible;
+      }
+      .rail{border-right:none;border-bottom:1px solid var(--border);}
+      #inspector{border-left:none;border-top:1px solid var(--border);}
+    }
+  </style>
 </head>
 <body>
 <div id="app">
@@ -671,7 +671,6 @@
     el.style.lineHeight='1.2';
     setupTextEditing(el);
   }
-  
   function addButton(){
     const el=makeBaseEl('button', 110, 34);
     el.innerText='Install Now';
@@ -682,29 +681,14 @@
     el.style.background='#5B8CFF';
     el.style.borderRadius='17px';
     el.style.textAlign='center';
-    el.dataset.url = '';
-    el.style.cursor = 'pointer';
-    
-    // Click handler for button
-    el.addEventListener('click', function(e) {
-        e.stopPropagation();
-        if (this.dataset.url && this.dataset.url.trim() !== '') {
-            window.open(this.dataset.url, '_blank');
-        } else {
-            alert('URL not set. Please set URL in inspector.');
-        }
-    });
-    
     setupTextEditing(el);
   }
-  
   function addShape(kind){
     const el=makeBaseEl('shape', 80, 80);
     el.style.background='#5B8CFF';
     el.style.borderRadius = kind==='circle' ? '50%' : '6px';
     el.dataset.shape = kind;
   }
-  
   function addBadge(){
     const el=makeBaseEl('button', 90, 26);
     el.innerText='AD';
@@ -715,19 +699,6 @@
     el.style.background='#FFB020';
     el.style.borderRadius='5px';
     el.style.textAlign='center';
-    el.dataset.url = '';
-    el.style.cursor = 'pointer';
-    
-    // Click handler for badge
-    el.addEventListener('click', function(e) {
-        e.stopPropagation();
-        if (this.dataset.url && this.dataset.url.trim() !== '') {
-            window.open(this.dataset.url, '_blank');
-        } else {
-            alert('URL not set. Please set URL in inspector.');
-        }
-    });
-    
     setupTextEditing(el);
   }
   
@@ -905,8 +876,7 @@
       const groupInfo = el.dataset.slideGroup ? ` [${el.dataset.slideGroup}]` : '';
       const sizeInfo = el.dataset.compressedSize ? ` 📄${el.dataset.compressedSize}` : '';
       const animInfo = el.dataset.anim && el.dataset.anim !== 'none' ? ` 🎬${el.dataset.anim}` : '';
-      const urlInfo = el.dataset.url ? ` 🔗${el.dataset.url.substring(0,15)}` : '';
-      row.innerHTML = `<span class="lname">${label} — ${el.dataset.id}${groupInfo}${sizeInfo}${animInfo}${urlInfo}</span>
+      row.innerHTML = `<span class="lname">${label} — ${el.dataset.id}${groupInfo}${sizeInfo}${animInfo}</span>
         <button data-act="up" title="Forward">⬆</button>
         <button data-act="down" title="Backward">⬇</button>
         <button data-act="dup" title="Duplicate">⧉</button>
@@ -941,21 +911,7 @@
     clone.style.top=(parseFloat(el.style.top)+14)+'px';
     const handle=clone.querySelector('.resize-handle');
     attachDrag(clone, handle);
-    if(clone.dataset.type==='text' || clone.dataset.type==='button') {
-        setupTextEditing(clone);
-        // Re-apply click listener for button/badge duplicates
-        if(clone.dataset.type === 'button') {
-            clone.style.cursor = 'pointer';
-            clone.addEventListener('click', function(e) {
-                e.stopPropagation();
-                if (this.dataset.url && this.dataset.url.trim() !== '') {
-                    window.open(this.dataset.url, '_blank');
-                } else {
-                    alert('URL not set. Please set URL in inspector.');
-                }
-            });
-        }
-    }
+    if(clone.dataset.type==='text' || clone.dataset.type==='button') setupTextEditing(clone);
     if(el.dataset.slideGroup){
       clone.dataset.slideGroup = el.dataset.slideGroup;
       const groupEls = getGroupElements(el.dataset.slideGroup);
@@ -1152,18 +1108,6 @@
         <div class="field"><label>Opacity (0-1)</label><input type="number" id="propOpacity" min="0" max="1" step="0.05"></div>
       </div>
     `;
-
-    // Button specific URL property for both button and badge
-    if(type === 'button'){
-        const currentUrl = selected.dataset.url || '';
-        html += `
-            <div class="section-title">Button URL</div>
-            <div class="field"><label>Click URL (leave empty for no action)</label>
-                <input type="text" id="propUrl" placeholder="https://example.com" value="${currentUrl}">
-                <div style="font-size:9px;color:var(--muted);margin-top:2px;">💡 Button click par ye URL open hogi</div>
-            </div>
-        `;
-    }
 
     html += `
       <div class="section-title">New element default size</div>
@@ -1374,11 +1318,6 @@
     const currentOpacity = selected.dataset.savedOpacity || selected.style.opacity;
     setVal('propOpacity', (currentOpacity === '' || currentOpacity === undefined) ? 1 : currentOpacity);
     
-    if(selected.dataset.type === 'button'){
-        const urlInput = document.getElementById('propUrl');
-        if(urlInput) urlInput.value = selected.dataset.url || '';
-    }
-    
     if(document.getElementById('propFontSize')){
       setVal('propFontSize', parseFloat(selected.style.fontSize)||16);
       setVal('propColor', rgbToHex(selected.style.color) || '#1a1a1a');
@@ -1443,19 +1382,6 @@
       selected.style.opacity = val;
       selected.dataset.savedOpacity = val;
     });
-
-    // URL binding for button
-    if(type === 'button'){
-        const urlInput = document.getElementById('propUrl');
-        if(urlInput){
-            urlInput.addEventListener('input', function(){
-                selected.dataset.url = this.value;
-            });
-            urlInput.addEventListener('change', function(){
-                selected.dataset.url = this.value;
-            });
-        }
-    }
 
     if(isText){
       on('propFont','change',e=>{ selected.style.fontFamily=e.target.value; });
@@ -1532,13 +1458,11 @@
   });
 
   // ================ EXPORT FUNCTIONS ================
-  // ========== FIXED: getSlideShowState - ALL slides visible ==========
   function getSlideShowState(time, totalDuration) {
     const result = {};
     const elements = Array.from(stage.querySelectorAll('.element'));
     const groups = {};
     
-    // Group elements by slide group
     elements.forEach(el => {
       const g = el.dataset.slideGroup;
       if(g) {
@@ -1547,19 +1471,16 @@
       }
     });
     
-    // For each group, determine which slide should be visible at this time
     for(const [group, els] of Object.entries(groups)){
       els.sort((a,b) => (parseInt(a.dataset.slideIndex) || 0) - (parseInt(b.dataset.slideIndex) || 0));
       
       if(els.length <= 1) {
-        // Single slide - always visible
         result[group] = { element: els[0] || null, progress: 0, slideIndex: 0, totalSlides: 1 };
         continue;
       }
       
       const stayTime = getGroupStayTime(group);
       
-      // Calculate total cycle time
       let totalCycleTime = 0;
       const slideTimes = [];
       for(let i = 0; i < els.length; i++) {
@@ -1569,7 +1490,6 @@
         totalCycleTime += segmentTime;
       }
       
-      // Find which slide should be visible
       let elapsedTime = time % totalCycleTime;
       let found = false;
       
@@ -1599,7 +1519,6 @@
       }
     }
     
-    // For elements without any group, they are always visible
     return result;
   }
 
@@ -1690,20 +1609,17 @@
     
     if(group && slideState && slideState[group]) {
       const state = slideState[group];
-      // Only render if this element is the current slide for its group
       if(state.element !== el) {
         shouldRender = false;
       } else {
         progress = state.progress * (parseFloat(el.dataset.animDur) || 0.8);
       }
     } else if(group) {
-      // If group exists but not in slideState, check if this is the first slide
       const groupEls = getGroupElements(group);
       if(groupEls.length > 0 && groupEls[0] !== el) {
         shouldRender = false;
       }
     }
-    // Elements without group are always rendered
     
     if(!shouldRender) return;
     
@@ -1851,7 +1767,6 @@
       const time = (i / (totalFrames - 1)) * durationSec;
       const slideState = getSlideShowState(time, durationSec);
       
-      // Render all elements
       for(const el of elements) {
         const opacity = parseFloat(el.dataset.savedOpacity || el.style.opacity);
         if(opacity === 0) continue;
@@ -1965,8 +1880,18 @@
           colorCount = 64;
       }
       
-      const gifW = Math.max(100, Math.round(frames[0].width / 1.8));
-      const gifH = Math.max(50, Math.round(frames[0].height / 1.8));
+      // Fixed: Ensure GIF dimensions are reasonable (max 800px width to prevent freezing)
+      const maxGifDim = 800;
+      let gifW = Math.round(frames[0].width);
+      let gifH = Math.round(frames[0].height);
+      if (gifW > maxGifDim || gifH > maxGifDim) {
+        const ratio = Math.min(maxGifDim / gifW, maxGifDim / gifH);
+        gifW = Math.round(gifW * ratio);
+        gifH = Math.round(gifH * ratio);
+      }
+      // Ensure at least 64px
+      gifW = Math.max(64, gifW);
+      gifH = Math.max(64, gifH);
       
       const optimizedFrames = [];
       for(let i = 0; i < frames.length; i++) {
@@ -2024,7 +1949,7 @@
       gif.render();
       
       let attempts = 0;
-      while (!gifFinished && attempts < 100) {
+      while (!gifFinished && attempts < 150) {
         await new Promise(r => setTimeout(r, 100));
         attempts++;
       }
@@ -2070,8 +1995,18 @@
       const frames = await captureFramesWithAnimation(dur, fps, scale);
       
       btn.textContent='⏳ Encoding...';
-      const w=Math.round(frames[0].width / 1.2);
-      const h=Math.round(frames[0].height / 1.2);
+      // Fixed: Ensure video dimensions are reasonable (max 1200px)
+      const maxDim = 1200;
+      let w = Math.round(frames[0].width);
+      let h = Math.round(frames[0].height);
+      if (w > maxDim || h > maxDim) {
+        const ratio = Math.min(maxDim / w, maxDim / h);
+        w = Math.round(w * ratio);
+        h = Math.round(h * ratio);
+      }
+      w = Math.max(100, w);
+      h = Math.max(100, h);
+      
       const rec=document.createElement('canvas'); rec.width=w; rec.height=h;
       const ctx=rec.getContext('2d', {willReadFrequently:true});
       const stream = rec.captureStream(fps);
@@ -2106,217 +2041,40 @@
     finally{ btn.disabled=false; btn.textContent=origText; }
   });
 
-  // ========== HTML EXPORT - FULLY FIXED ==========
+  // ========== HTML EXPORT ==========
   document.getElementById('exportHtmlBtn').addEventListener('click', function() {
     const btn=this;
     btn.disabled=true;
     btn.textContent='⏳';
     
-    // Create a deep clone of the stage
     const clonedStage = stage.cloneNode(true);
-    
-    // Remove resize handles and selection styles
     clonedStage.querySelectorAll('.resize-handle').forEach(h => h.remove());
     clonedStage.querySelectorAll('.element').forEach(el => {
-      el.classList.remove('selected', 'editing');
-      el.style.boxShadow = 'none';
-      
-      // Ensure button elements have click handlers in export
-      if(el.dataset.type === 'button') {
-        el.style.cursor = 'pointer';
-        // Store URL in a data attribute for the exported HTML
-        const url = el.dataset.url || '';
-        // Add inline onclick handler for exported HTML
-        if(url && url.trim() !== '') {
-          el.setAttribute('onclick', `window.open('${url}', '_blank');`);
-        } else {
-          el.setAttribute('onclick', "alert('URL not set in exported ad.');");
-        }
-      }
+      el.classList.remove('selected', 'editing'); el.style.boxShadow = 'none';
     });
-    
     const exportStyles = Array.from(document.styleSheets[0].cssRules).map(rule => rule.cssText).join('\n');
+    let htmlOutput = `<!DOCTYPE html><html><head><meta charset="UTF-8"><style>${exportStyles}body{background:transparent;display:flex;justify-content:center;align-items:center;height:100vh;margin:0;}#stage{box-shadow:none;}</style></head><body>${clonedStage.outerHTML}<script>(function(){const stage=document.getElementById('stage');const slideTimers={};const groupStayTime={};function getAnimDuration(el){return parseFloat(el.dataset.animDur)||1.2;}function getGroupStayTime(groupName){if(groupStayTime[groupName]!==undefined)return groupStayTime[groupName];const els=Array.from(stage.querySelectorAll('.element')).filter(e=>e.dataset.slideGroup===groupName);if(els.length>0&&els[0].dataset.stayTime)return parseFloat(els[0].dataset.stayTime);return 0.8;}function updateSlideShow(){for(const key in slideTimers){clearTimeout(slideTimers[key]);clearInterval(slideTimers[key]);delete slideTimers[key];}const groups={};const elements=Array.from(stage.querySelectorAll('.element'));elements.forEach(el=>{const g=el.dataset.slideGroup;if(g){if(!groups[g])groups[g]=[];groups[g].push(el);}});for(const[group,els]of Object.entries(groups)){els.sort((a,b)=>(parseInt(a.dataset.slideIndex)||0)-(parseInt(b.dataset.slideIndex)||0));if(els.length<=1)continue;const stayTime=getGroupStayTime(group);els.forEach(el=>{el.dataset.stayTime=stayTime;});let timeoutId=null;function showSlide(index,animate=true){els.forEach(el=>{el.style.display='none';el.style.animation='none';});if(els[index]){els[index].style.display='flex';const targetOpacity=els[index].dataset.savedOpacity||els[index].style.opacity||'1';els[index].style.opacity=targetOpacity;const anim=els[index].dataset.anim;const dur=getAnimDuration(els[index]);if(anim&&anim!=='none'&&animate){els[index].style.animation='none';void els[index].offsetWidth;els[index].style.animation=\`\${anim} \${dur}s ease both\`;}}}showSlide(0,true);function scheduleNextSlide(index){const el=els[index];const animDur=getAnimDuration(el);const totalTime=(animDur+stayTime)*1000;if(timeoutId)clearTimeout(timeoutId);timeoutId=setTimeout(()=>{const nextIndex=(index+1)%els.length;showSlide(nextIndex,true);scheduleNextSlide(nextIndex);},totalTime);}setTimeout(()=>{scheduleNextSlide(0);},50);slideTimers[group]={clear:()=>{if(timeoutId)clearTimeout(timeoutId);}};}}updateSlideShow();})();<\/script></body></html>`;
     
-    // Build the complete HTML with proper button functionality
-    let htmlOutput = `<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Ad Creative</title>
-  <style>
-    ${exportStyles}
-    body {
-      background: transparent;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      height: 100vh;
-      margin: 0;
-      padding: 20px;
-      box-sizing: border-box;
-    }
-    #stage {
-      box-shadow: none;
-      border-radius: 4px;
-      overflow: hidden;
-    }
-    .element {
-      cursor: default !important;
-    }
-    .element.el-button {
-      cursor: pointer !important;
-    }
-  </style>
-</head>
-<body>
-${clonedStage.outerHTML}
-<script>
-  (function() {
-    // Ensure all button elements work in exported HTML
-    document.querySelectorAll('.element.el-button').forEach(function(btn) {
-      // If onclick is already set, keep it
-      if (!btn.getAttribute('onclick')) {
-        const url = btn.dataset.url || '';
-        if (url && url.trim() !== '') {
-          btn.addEventListener('click', function(e) {
-            e.stopPropagation();
-            window.open(url, '_blank');
-          });
-        } else {
-          btn.addEventListener('click', function(e) {
-            e.stopPropagation();
-            alert('URL not set in exported ad.');
-          });
-        }
-      }
-    });
-    
-    // Slide show functionality
-    const stage = document.getElementById('stage');
-    const slideTimers = {};
-    const groupStayTime = {};
-    
-    function getAnimDuration(el) {
-      return parseFloat(el.dataset.animDur) || 1.2;
-    }
-    
-    function getGroupStayTime(groupName) {
-      if (groupStayTime[groupName] !== undefined) return groupStayTime[groupName];
-      const els = Array.from(stage.querySelectorAll('.element')).filter(e => e.dataset.slideGroup === groupName);
-      if (els.length > 0 && els[0].dataset.stayTime) return parseFloat(els[0].dataset.stayTime);
-      return 0.8;
-    }
-    
-    function updateSlideShow() {
-      for (const key in slideTimers) {
-        clearTimeout(slideTimers[key]);
-        clearInterval(slideTimers[key]);
-        delete slideTimers[key];
-      }
-      
-      const groups = {};
-      const elements = Array.from(stage.querySelectorAll('.element'));
-      elements.forEach(el => {
-        const g = el.dataset.slideGroup;
-        if (g) {
-          if (!groups[g]) groups[g] = [];
-          groups[g].push(el);
-        }
-      });
-      
-      for (const [group, els] of Object.entries(groups)) {
-        els.sort((a, b) => (parseInt(a.dataset.slideIndex) || 0) - (parseInt(b.dataset.slideIndex) || 0));
-        if (els.length <= 1) continue;
-        
-        const stayTime = getGroupStayTime(group);
-        els.forEach(el => {
-          el.dataset.stayTime = stayTime;
-        });
-        
-        let timeoutId = null;
-        
-        function showSlide(index, animate = true) {
-          els.forEach(el => {
-            el.style.display = 'none';
-            el.style.animation = 'none';
-          });
-          if (els[index]) {
-            els[index].style.display = 'flex';
-            const targetOpacity = els[index].dataset.savedOpacity || els[index].style.opacity || '1';
-            els[index].style.opacity = targetOpacity;
-            const anim = els[index].dataset.anim;
-            const dur = getAnimDuration(els[index]);
-            if (anim && anim !== 'none' && animate) {
-              els[index].style.animation = 'none';
-              void els[index].offsetWidth;
-              els[index].style.animation = anim + ' ' + dur + 's ease both';
-            }
-          }
-        }
-        
-        showSlide(0, true);
-        
-        function scheduleNextSlide(index) {
-          const el = els[index];
-          const animDur = getAnimDuration(el);
-          const totalTime = (animDur + stayTime) * 1000;
-          
-          if (timeoutId) clearTimeout(timeoutId);
-          timeoutId = setTimeout(() => {
-            const nextIndex = (index + 1) % els.length;
-            showSlide(nextIndex, true);
-            scheduleNextSlide(nextIndex);
-          }, totalTime);
-        }
-        
-        setTimeout(() => {
-          scheduleNextSlide(0);
-        }, 50);
-        
-        slideTimers[group] = {
-          clear: () => {
-            if (timeoutId) clearTimeout(timeoutId);
-          }
-        };
-      }
-    }
-    
-    updateSlideShow();
-  })();
-</script>
-</body>
-</html>`;
-    
-    // Compress images in HTML
     const compressionQuality = getImportCompressionQuality();
     const dataUrlRegex = /src=["'](data:image\/[^"']+)["']/g;
     let match;
     let compressedHTML = htmlOutput;
     const dataUrls = [];
-    
-    // Find all data URLs in the HTML
-    const tempMatch = htmlOutput.match(/src=["'](data:image\/[^"']+)["']/g);
-    if (tempMatch) {
-      tempMatch.forEach(m => {
-        const url = m.replace(/src=["']/, '').replace(/["']$/, '');
-        dataUrls.push(url);
-      });
+    while ((match = dataUrlRegex.exec(htmlOutput)) !== null) {
+      dataUrls.push(match[1]);
     }
     
     if (dataUrls.length > 0) {
       let completed = 0;
       dataUrls.forEach((dataUrl, index) => {
         compressImageDataURL(dataUrl, compressionQuality, 400).then(compressedUrl => {
-          // Replace only this specific URL
           compressedHTML = compressedHTML.replace(dataUrl, compressedUrl);
           completed++;
           if (completed === dataUrls.length) {
             const sizeKB = (compressedHTML.length / 1024).toFixed(1);
             fileSizeDisplay.textContent = '📄 HTML: ' + sizeKB + ' KB';
             triggerDownload(new Blob([compressedHTML], { type: 'text/html' }), `ad-creative-${stage.clientWidth}x${stage.clientHeight}.html`);
-            btn.disabled=false; 
-            btn.textContent='⬇ HTML';
+            btn.disabled=false; btn.textContent='⬇ HTML';
           }
         });
       });
@@ -2324,8 +2082,7 @@ ${clonedStage.outerHTML}
       const sizeKB = (htmlOutput.length / 1024).toFixed(1);
       fileSizeDisplay.textContent = '📄 HTML: ' + sizeKB + ' KB';
       triggerDownload(new Blob([htmlOutput], { type: 'text/html' }), `ad-creative-${stage.clientWidth}x${stage.clientHeight}.html`);
-      btn.disabled=false; 
-      btn.textContent='⬇ HTML';
+      btn.disabled=false; btn.textContent='⬇ HTML';
     }
   });
 
