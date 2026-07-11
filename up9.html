@@ -286,22 +286,22 @@
     width: 60px !important;
   }
 
-  /* Compression level indicator */
-  .compression-indicator {
+  /* Compression indicator */
+  .compress-opt {
     display:flex;
     align-items:center;
-    gap:8px;
+    gap:6px;
     font-size:12px;
     color:var(--muted);
   }
-  .compression-indicator select {
+  .compress-opt select {
     width:auto;
     padding:4px 8px;
     font-size:12px;
   }
-  .compression-indicator .badge {
+  .compress-opt .badge {
     font-size:10px;
-    padding:2px 8px;
+    padding:2px 10px;
     border-radius:12px;
     background:var(--panel-2);
     border:1px solid var(--border);
@@ -309,6 +309,16 @@
   .badge.low { border-color:#4CAF50; color:#4CAF50; }
   .badge.normal { border-color:#FFB020; color:#FFB020; }
   .badge.high { border-color:#FF5C6C; color:#FF5C6C; }
+  
+  /* File size indicator */
+  .size-indicator {
+    font-size:11px;
+    color:var(--muted);
+    background:var(--panel-2);
+    padding:2px 10px;
+    border-radius:12px;
+    border:1px solid var(--border);
+  }
 
   @media(max-width:900px){
     body{overflow:auto;}
@@ -361,15 +371,19 @@
           <option value="3">Ultra (3x)</option>
         </select>
       </label>
-      <div class="compression-indicator">
+      
+      <!-- IMAGE COMPRESSION SETTINGS - NEW -->
+      <div class="compress-opt">
         <span>📦</span>
-        <select id="compressionLevel">
+        <select id="importCompression">
           <option value="low">Low</option>
           <option value="normal" selected>Normal</option>
           <option value="high">High</option>
         </select>
-        <span class="badge normal" id="compressionBadge">Normal</span>
+        <span class="badge normal" id="compressBadge">Normal</span>
       </div>
+      <span class="size-indicator" id="fileSizeDisplay">📄 0 KB</span>
+      
       <button class="btn primary small" id="exportHtmlBtn">⬇ HTML</button>
       <button class="btn accent small" id="exportPngBtn">🖼 PNG</button>
       <button class="btn small" id="exportGifBtn">🎞 GIF</button>
@@ -476,14 +490,13 @@
     applySize(s.w, s.h);
   });
 
-  // Manual input events for custom size textboxes
   function handleCustomSizeInput() {
     let w = parseInt(canvasCustomWidth.value) || 320;
     let h = parseInt(canvasCustomHeight.value) || 50;
     stage.style.width = w+'px';
     stage.style.height = h+'px';
     sizeLabel.textContent = w+' × '+h+' px';
-    sizePreset.value = 8; // Switch preset selection dropdown automatically to "Custom"
+    sizePreset.value = 8;
   }
 
   canvasCustomWidth.addEventListener('input', handleCustomSizeInput);
@@ -510,37 +523,101 @@
   document.getElementById('bgUpload').addEventListener('change', function(e){
     const f=e.target.files[0]; if(!f) return;
     const reader=new FileReader();
-    reader.onload=ev=>{ stage.style.backgroundImage=`url(${ev.target.result})`; };
+    reader.onload=ev=>{ 
+      // Compress background image too
+      compressImageDataURL(ev.target.result, getImportCompressionQuality(), 1200, 1200).then(compressed => {
+        stage.style.backgroundImage=`url(${compressed})`;
+        updateFileSizeDisplay(compressed);
+      });
+    };
     reader.readAsDataURL(f);
   });
 
-  // Compression level management
-  const compressionSelect = document.getElementById('compressionLevel');
-  const compressionBadge = document.getElementById('compressionBadge');
-  
-  compressionSelect.addEventListener('change', function() {
+  // ========== COMPRESSION SYSTEM ==========
+  const compressSelect = document.getElementById('importCompression');
+  const compressBadge = document.getElementById('compressBadge');
+  const fileSizeDisplay = document.getElementById('fileSizeDisplay');
+
+  compressSelect.addEventListener('change', function() {
     const level = this.value;
-    compressionBadge.textContent = level.charAt(0).toUpperCase() + level.slice(1);
-    compressionBadge.className = 'badge ' + level;
+    compressBadge.textContent = level.charAt(0).toUpperCase() + level.slice(1);
+    compressBadge.className = 'badge ' + level;
   });
 
-  function getCompressionLevel() {
-    return compressionSelect.value; // 'low', 'normal', 'high'
-  }
-
-  function getCompressionSettings(level) {
+  function getImportCompressionQuality() {
+    const level = compressSelect.value;
     switch(level) {
-      case 'low':
-        return { quality: 0.95, gifQuality: 10, videoBitrate: 12000000, pngCompression: 0 };
-      case 'normal':
-        return { quality: 0.85, gifQuality: 8, videoBitrate: 6000000, pngCompression: 6 };
-      case 'high':
-        return { quality: 0.70, gifQuality: 4, videoBitrate: 2000000, pngCompression: 9 };
-      default:
-        return { quality: 0.85, gifQuality: 8, videoBitrate: 6000000, pngCompression: 6 };
+      case 'low': return 0.92;
+      case 'normal': return 0.82;
+      case 'high': return 0.65;
+      default: return 0.82;
     }
   }
 
+  function getMaxImageSize() {
+    const level = compressSelect.value;
+    switch(level) {
+      case 'low': return 1200;
+      case 'normal': return 800;
+      case 'high': return 500;
+      default: return 800;
+    }
+  }
+
+  function updateFileSizeDisplay(dataUrl) {
+    if (!dataUrl) {
+      fileSizeDisplay.textContent = '📄 0 KB';
+      return;
+    }
+    // Calculate size from base64
+    const base64 = dataUrl.split(',')[1] || '';
+    const sizeInBytes = Math.ceil((base64.length * 3) / 4);
+    let sizeDisplay;
+    if (sizeInBytes < 1024) {
+      sizeDisplay = sizeInBytes + ' B';
+    } else if (sizeInBytes < 1024 * 1024) {
+      sizeDisplay = (sizeInBytes / 1024).toFixed(1) + ' KB';
+    } else {
+      sizeDisplay = (sizeInBytes / (1024 * 1024)).toFixed(2) + ' MB';
+    }
+    fileSizeDisplay.textContent = '📄 ' + sizeDisplay;
+  }
+
+  function compressImageDataURL(dataURL, quality, maxSize) {
+    return new Promise((resolve) => {
+      const img = new Image();
+      img.onload = function() {
+        let w = img.width;
+        let h = img.height;
+        
+        // Resize if too large
+        const maxDim = maxSize || 800;
+        if (w > maxDim || h > maxDim) {
+          const ratio = Math.min(maxDim / w, maxDim / h);
+          w = Math.round(w * ratio);
+          h = Math.round(h * ratio);
+        }
+        
+        const canvas = document.createElement('canvas');
+        canvas.width = w;
+        canvas.height = h;
+        const ctx = canvas.getContext('2d');
+        ctx.imageSmoothingEnabled = true;
+        ctx.imageSmoothingQuality = 'high';
+        ctx.drawImage(img, 0, 0, w, h);
+        
+        // Use JPEG for compression (smaller size)
+        const compressed = canvas.toDataURL('image/jpeg', quality);
+        resolve(compressed);
+      };
+      img.onerror = function() {
+        resolve(dataURL);
+      };
+      img.src = dataURL;
+    });
+  }
+
+  // ========== ELEMENT FUNCTIONS ==========
   let elCounter=0;
   let selected=null;
   let slideTimers = {};
@@ -632,17 +709,33 @@
     setupTextEditing(el);
   }
   
+  // ========== IMAGE ADD WITH COMPRESSION ==========
   function addImageFromFile(file, slideGroup){
     const reader=new FileReader();
-    reader.onload=function(ev){
+    reader.onload=async function(ev){
+      const dataUrl = ev.target.result;
+      
+      // COMPRESS THE IMAGE BEFORE ADDING
+      const quality = getImportCompressionQuality();
+      const maxSize = getMaxImageSize();
+      const compressedDataUrl = await compressImageDataURL(dataUrl, quality, maxSize);
+      
+      // Show compressed size
+      updateFileSizeDisplay(compressedDataUrl);
+      
       const el=makeBaseEl('image', 100, 100);
       el.style.opacity = '1';
       const img=document.createElement('img');
-      img.src=ev.target.result;
+      img.src=compressedDataUrl;
       img.style.objectFit='cover';
       img.style.width='100%';
       img.style.height='100%';
       el.insertBefore(img, el.firstChild);
+      
+      // Store original file name for reference
+      el.dataset.originalName = file.name;
+      el.dataset.compressedSize = (compressedDataUrl.length / 1024).toFixed(1) + ' KB';
+      
       if(slideGroup){
         el.dataset.slideGroup = slideGroup;
         const groupEls = getGroupElements(slideGroup);
@@ -792,7 +885,8 @@
       row.className='layer-row'+(el===selected?' active':'');
       const label = el.dataset.type.charAt(0).toUpperCase()+el.dataset.type.slice(1);
       const groupInfo = el.dataset.slideGroup ? ` [${el.dataset.slideGroup}]` : '';
-      row.innerHTML = `<span class="lname">${label} — ${el.dataset.id}${groupInfo}</span>
+      const sizeInfo = el.dataset.compressedSize ? ` 📄${el.dataset.compressedSize}` : '';
+      row.innerHTML = `<span class="lname">${label} — ${el.dataset.id}${groupInfo}${sizeInfo}</span>
         <button data-act="up" title="Forward">⬆</button>
         <button data-act="down" title="Backward">⬇</button>
         <button data-act="dup" title="Duplicate">⧉</button>
@@ -1073,9 +1167,13 @@
     if(type==='image'){
       const currentGroup = selected.dataset.slideGroup || '';
       const currentStay = getGroupStayTime(currentGroup);
+      const compressedSize = selected.dataset.compressedSize || 'Unknown';
       
       html += `
         <div class="section-title">Image</div>
+        <div class="field" style="background:var(--panel-2);padding:6px 10px;border-radius:6px;margin-bottom:10px;">
+          <span style="color:var(--muted);font-size:11px;">📄 Compressed size: <strong style="color:var(--text);">${compressedSize}</strong></span>
+        </div>
         <label class="btn small" style="cursor:pointer;display:inline-flex;">Replace image
           <input type="file" id="propReplaceImg" accept="image/*" style="display:none;">
         </label>
@@ -1286,12 +1384,20 @@
     }
     if(type==='image'){
       on('propImgRadius','input',e=>{ selected.style.borderRadius=e.target.value+'px'; });
-      on('propReplaceImg','change',e=>{
+      on('propReplaceImg','change',function(e){
         const f=e.target.files[0]; if(!f) return;
         const reader=new FileReader();
-        reader.onload=ev=>{ 
+        reader.onload=async function(ev) {
+          const quality = getImportCompressionQuality();
+          const maxSize = getMaxImageSize();
+          const compressed = await compressImageDataURL(ev.target.result, quality, maxSize);
           const img = selected.querySelector('img');
-          if(img) img.src = ev.target.result;
+          if(img) {
+            img.src = compressed;
+            selected.dataset.compressedSize = (compressed.length / 1024).toFixed(1) + ' KB';
+            updateFileSizeDisplay(compressed);
+            refreshLayers();
+          }
         };
         reader.readAsDataURL(f);
         e.target.value='';
@@ -1336,7 +1442,7 @@
     });
   });
 
-  // ================ EXPORT CANVAS TIMELINE ================
+  // ================ EXPORT FUNCTIONS ================
   function getSlideShowState(time, totalDuration) {
     const result = {};
     const elements = Array.from(stage.querySelectorAll('.element'));
@@ -1463,79 +1569,6 @@
       }
     }
     return { opacity, tx, ty, scale };
-  }
-
-  // Helper: Compress image data URL
-  function compressImageDataURL(dataURL, quality, maxWidth, maxHeight) {
-    return new Promise((resolve) => {
-      const img = new Image();
-      img.onload = function() {
-        let w = img.width;
-        let h = img.height;
-        
-        // Resize if too large
-        if (maxWidth && w > maxWidth) {
-          const ratio = maxWidth / w;
-          w = maxWidth;
-          h = h * ratio;
-        }
-        if (maxHeight && h > maxHeight) {
-          const ratio = maxHeight / h;
-          h = maxHeight;
-          w = w * ratio;
-        }
-        
-        const canvas = document.createElement('canvas');
-        canvas.width = w;
-        canvas.height = h;
-        const ctx = canvas.getContext('2d');
-        ctx.imageSmoothingEnabled = true;
-        ctx.imageSmoothingQuality = 'high';
-        ctx.drawImage(img, 0, 0, w, h);
-        resolve(canvas.toDataURL('image/jpeg', quality));
-      };
-      img.onerror = function() {
-        resolve(dataURL);
-      };
-      img.src = dataURL;
-    });
-  }
-
-  // Helper: Compress HTML with images
-  function compressHTML(htmlString, compressionLevel) {
-    const settings = getCompressionSettings(compressionLevel);
-    const quality = settings.quality;
-    
-    // Find all data URLs in the HTML
-    const dataUrlRegex = /src=["'](data:image\/[^"']+)["']/g;
-    let match;
-    let compressedHTML = htmlString;
-    const promises = [];
-    
-    // Collect all data URLs to compress
-    const dataUrls = [];
-    while ((match = dataUrlRegex.exec(htmlString)) !== null) {
-      dataUrls.push(match[1]);
-    }
-    
-    // Compress each data URL
-    return new Promise((resolve) => {
-      if (dataUrls.length === 0) {
-        resolve(htmlString);
-        return;
-      }
-      
-      let completed = 0;
-      dataUrls.forEach((dataUrl, index) => {
-        compressImageDataURL(dataUrl, quality, 800, 800).then(compressedUrl => {
-          compressedHTML = compressedHTML.replace(dataUrl, compressedUrl);
-          completed++;
-          if (completed === dataUrls.length) {
-            resolve(compressedHTML);
-          }
-        });
-      });
-    });
   }
 
   function renderElementToCanvas(ctx, el, scale, time, slideState) {
@@ -1726,15 +1759,14 @@
     setTimeout(()=>{ a.remove(); URL.revokeObjectURL(url); }, 4000);
   }
 
-  // ================ EXPORT WITH COMPRESSION ================
+  function getQualityScale(){ return parseFloat(document.getElementById('qualitySelect').value) || 1; }
+
+  // Export functions (simplified for brevity - keeping original functionality)
   document.getElementById('exportPngBtn').addEventListener('click', async function(){
     const btn=this; const origText=btn.textContent;
     btn.disabled=true; btn.textContent='Rendering…';
     try{
       const scale = getQualityScale();
-      const compressionLevel = getCompressionLevel();
-      const settings = getCompressionSettings(compressionLevel);
-      
       const stageW = stage.clientWidth || 320;
       const stageH = stage.clientHeight || 50;
       const canvas = document.createElement('canvas');
@@ -1752,16 +1784,13 @@
         renderElementToCanvas(ctx, el, scale, 0, slideState);
       }
       
-      // PNG compression using canvas toDataURL with quality
-      const dataUrl = canvas.toDataURL('image/jpeg', settings.quality);
-      
-      // Convert base64 to blob
+      const compressionQuality = getImportCompressionQuality();
+      const dataUrl = canvas.toDataURL('image/jpeg', compressionQuality);
       const response = await fetch(dataUrl);
       const blob = await response.blob();
       triggerDownload(blob, `ad-${stageW}x${stageH}.jpg`);
-    }catch(err){
-      console.error(err);
-    }finally{ btn.disabled=false; btn.textContent=origText; }
+    }catch(err){ console.error(err); }
+    finally{ btn.disabled=false; btn.textContent=origText; }
   });
 
   document.getElementById('exportGifBtn').addEventListener('click', async function(){
@@ -1770,8 +1799,8 @@
       const dur = parseFloat(document.getElementById('recDuration').value) || 5;
       const fps = 12;
       const scale = getQualityScale();
-      const compressionLevel = getCompressionLevel();
-      const settings = getCompressionSettings(compressionLevel);
+      const compressionQuality = getImportCompressionQuality();
+      const gifQuality = Math.round(compressionQuality * 10);
       
       btn.textContent='Rendering frames...';
       const frames = await captureFramesWithAnimation(dur, fps, scale);
@@ -1784,7 +1813,7 @@
       
       const gif = new GIF({
         workers: 2, 
-        quality: settings.gifQuality, // Lower quality = smaller file
+        quality: Math.max(2, Math.min(10, gifQuality)),
         width: frames[0].width, 
         height: frames[0].height,
         workerScript: workerBlobUrl, 
@@ -1804,9 +1833,7 @@
         btn.textContent = `Encoding... ${Math.round(p * 100)}%`;
       });
       gif.render();
-    }catch(err){
-      console.error(err); btn.disabled=false; btn.textContent='🎞 GIF';
-    }
+    }catch(err){ console.error(err); btn.disabled=false; btn.textContent='🎞 GIF'; }
   });
 
   document.getElementById('exportVideoBtn').addEventListener('click', async function(){
@@ -1817,8 +1844,6 @@
       const dur = parseFloat(document.getElementById('recDuration').value) || 5;
       const fps = 15;
       const scale = getQualityScale();
-      const compressionLevel = getCompressionLevel();
-      const settings = getCompressionSettings(compressionLevel);
       
       btn.textContent='Rendering frames...';
       const frames = await captureFramesWithAnimation(dur, fps, scale);
@@ -1829,12 +1854,14 @@
       const ctx=rec.getContext('2d', {willReadFrequently:true});
       const stream = rec.captureStream(fps);
 
-      // Use compression bitrate
+      const compressionQuality = getImportCompressionQuality();
+      const bitrate = Math.round(8000000 * compressionQuality);
+      
       let mimeType='video/webm;codecs=vp9', ext='webm';
       if(MediaRecorder.isTypeSupported('video/mp4')){ mimeType='video/mp4'; ext='mp4'; }
       const recorder=new MediaRecorder(stream, {
         mimeType, 
-        videoBitsPerSecond: settings.videoBitrate
+        videoBitsPerSecond: bitrate
       });
       const chunks=[];
       recorder.ondataavailable=e=>{ if(e.data && e.data.size) chunks.push(e.data); };
@@ -1849,7 +1876,8 @@
       }
       recorder.stop(); await stopped;
       triggerDownload(new Blob(chunks, {type:mimeType}), `ad-${w}x${h}.${ext}`);
-    }catch(err){ console.error(err); }finally{ btn.disabled=false; btn.textContent=origText; }
+    }catch(err){ console.error(err); }
+    finally{ btn.disabled=false; btn.textContent=origText; }
   });
 
   document.getElementById('exportHtmlBtn').addEventListener('click', function() {
@@ -1865,20 +1893,34 @@
     const exportStyles = Array.from(document.styleSheets[0].cssRules).map(rule => rule.cssText).join('\n');
     let htmlOutput = `<!DOCTYPE html><html><head><meta charset="UTF-8"><style>${exportStyles}body{background:transparent;display:flex;justify-content:center;align-items:center;height:100vh;margin:0;}#stage{box-shadow:none;}</style></head><body>${clonedStage.outerHTML}<script>(function(){const stage=document.getElementById('stage');const slideTimers={};const groupStayTime={};function getAnimDuration(el){return parseFloat(el.dataset.animDur)||1.2;}function getGroupStayTime(groupName){if(groupStayTime[groupName]!==undefined)return groupStayTime[groupName];const els=Array.from(stage.querySelectorAll('.element')).filter(e=>e.dataset.slideGroup===groupName);if(els.length>0&&els[0].dataset.stayTime)return parseFloat(els[0].dataset.stayTime);return 0.8;}function updateSlideShow(){for(const key in slideTimers){clearTimeout(slideTimers[key]);clearInterval(slideTimers[key]);delete slideTimers[key];}const groups={};const elements=Array.from(stage.querySelectorAll('.element'));elements.forEach(el=>{const g=el.dataset.slideGroup;if(g){if(!groups[g])groups[g]=[];groups[g].push(el);}});for(const[group,els]of Object.entries(groups)){els.sort((a,b)=>(parseInt(a.dataset.slideIndex)||0)-(parseInt(b.dataset.slideIndex)||0));if(els.length<=1)continue;const stayTime=getGroupStayTime(group);els.forEach(el=>{el.dataset.stayTime=stayTime;});let timeoutId=null;function showSlide(index,animate=true){els.forEach(el=>{el.style.display='none';el.style.animation='none';});if(els[index]){els[index].style.display='flex';const targetOpacity=els[index].dataset.savedOpacity||els[index].style.opacity||'1';els[index].style.opacity=targetOpacity;const anim=els[index].dataset.anim;const dur=getAnimDuration(els[index]);if(anim&&anim!=='none'&&animate){els[index].style.animation='none';void els[index].offsetWidth;els[index].style.animation=\`\${anim} \${dur}s ease both\`;}}}showSlide(0,true);function scheduleNextSlide(index){const el=els[index];const animDur=getAnimDuration(el);const totalTime=(animDur+stayTime)*1000;if(timeoutId)clearTimeout(timeoutId);timeoutId=setTimeout(()=>{const nextIndex=(index+1)%els.length;showSlide(nextIndex,true);scheduleNextSlide(nextIndex);},totalTime);}setTimeout(()=>{scheduleNextSlide(0);},50);slideTimers[group]={clear:()=>{if(timeoutId)clearTimeout(timeoutId);}};}}updateSlideShow();})();<\/script></body></html>`;
     
-    // Apply compression
-    const compressionLevel = getCompressionLevel();
-    compressHTML(htmlOutput, compressionLevel).then(compressedHtml => {
-      triggerDownload(new Blob([compressedHtml], { type: 'text/html' }), `ad-creative-${stage.clientWidth}x${stage.clientHeight}.html`);
-      btn.disabled=false; 
-      btn.textContent='⬇ HTML';
-    }).catch(() => {
+    // Compress HTML images
+    const compressionQuality = getImportCompressionQuality();
+    const dataUrlRegex = /src=["'](data:image\/[^"']+)["']/g;
+    let match;
+    let compressedHTML = htmlOutput;
+    const dataUrls = [];
+    while ((match = dataUrlRegex.exec(htmlOutput)) !== null) {
+      dataUrls.push(match[1]);
+    }
+    
+    if (dataUrls.length > 0) {
+      let completed = 0;
+      dataUrls.forEach((dataUrl, index) => {
+        compressImageDataURL(dataUrl, compressionQuality, 600).then(compressedUrl => {
+          compressedHTML = compressedHTML.replace(dataUrl, compressedUrl);
+          completed++;
+          if (completed === dataUrls.length) {
+            triggerDownload(new Blob([compressedHTML], { type: 'text/html' }), `ad-creative-${stage.clientWidth}x${stage.clientHeight}.html`);
+            btn.disabled=false; btn.textContent='⬇ HTML';
+          }
+        });
+      });
+    } else {
       triggerDownload(new Blob([htmlOutput], { type: 'text/html' }), `ad-creative-${stage.clientWidth}x${stage.clientHeight}.html`);
-      btn.disabled=false; 
-      btn.textContent='⬇ HTML';
-    });
+      btn.disabled=false; btn.textContent='⬇ HTML';
+    }
   });
 
-  function getQualityScale(){ return parseFloat(document.getElementById('qualitySelect').value) || 1; }
   let gifWorkerBlobUrl = null;
   async function getGifWorkerBlobURL(){
     if(gifWorkerBlobUrl) return gifWorkerBlobUrl;
