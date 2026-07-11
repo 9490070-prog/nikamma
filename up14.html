@@ -599,7 +599,6 @@
         ctx.imageSmoothingQuality = 'high';
         ctx.drawImage(img, 0, 0, w, h);
         
-        // Use PNG for better quality, but compress
         const compressed = canvas.toDataURL('image/png');
         resolve(compressed);
       };
@@ -1044,7 +1043,6 @@
           els[index].style.display = 'flex';
           const targetOpacity = els[index].dataset.savedOpacity || els[index].style.opacity || '1';
           els[index].style.opacity = targetOpacity;
-          // PER-SLIDE ANIMATION - each image has its own animation
           const anim = els[index].dataset.anim;
           const dur = getAnimDuration(els[index]);
           if(anim && anim !== 'none' && animate){
@@ -1460,11 +1458,13 @@
   });
 
   // ================ EXPORT FUNCTIONS ================
+  // ========== FIXED: getSlideShowState - ALL slides visible ==========
   function getSlideShowState(time, totalDuration) {
     const result = {};
     const elements = Array.from(stage.querySelectorAll('.element'));
     const groups = {};
     
+    // Group elements by slide group
     elements.forEach(el => {
       const g = el.dataset.slideGroup;
       if(g) {
@@ -1473,38 +1473,59 @@
       }
     });
     
+    // For each group, determine which slide should be visible at this time
     for(const [group, els] of Object.entries(groups)){
       els.sort((a,b) => (parseInt(a.dataset.slideIndex) || 0) - (parseInt(b.dataset.slideIndex) || 0));
       
       if(els.length <= 1) {
-        result[group] = { element: els[0] || null, progress: 0 };
+        // Single slide - always visible
+        result[group] = { element: els[0] || null, progress: 0, slideIndex: 0, totalSlides: 1 };
         continue;
       }
       
       const stayTime = getGroupStayTime(group);
-      let accumulatedTime = 0;
+      
+      // Calculate total cycle time
+      let totalCycleTime = 0;
+      const slideTimes = [];
+      for(let i = 0; i < els.length; i++) {
+        const animDur = getAnimDuration(els[i]);
+        const segmentTime = animDur + stayTime;
+        slideTimes.push(segmentTime);
+        totalCycleTime += segmentTime;
+      }
+      
+      // Find which slide should be visible
+      let elapsedTime = time % totalCycleTime;
       let found = false;
       
       for(let i = 0; i < els.length; i++) {
-        const el = els[i];
-        const animDur = getAnimDuration(el);
-        const segmentTime = animDur + stayTime;
-        
-        if(time < accumulatedTime + segmentTime || i === els.length - 1) {
-          const localTime = time - accumulatedTime;
+        if(elapsedTime < slideTimes[i] || i === els.length - 1) {
+          const localTime = elapsedTime;
+          const animDur = getAnimDuration(els[i]);
           let progress = localTime / animDur;
           if(progress > 1) progress = 1;
-          result[group] = { element: el, progress: Math.max(0, progress) };
+          if(progress < 0) progress = 0;
+          
+          result[group] = { 
+            element: els[i], 
+            progress: progress, 
+            slideIndex: i,
+            totalSlides: els.length,
+            stayTime: stayTime
+          };
           found = true;
           break;
         }
-        accumulatedTime += segmentTime;
+        elapsedTime -= slideTimes[i];
       }
       
       if(!found && els.length > 0) {
-        result[group] = { element: els[els.length - 1], progress: 1 };
+        result[group] = { element: els[els.length - 1], progress: 1, slideIndex: els.length - 1, totalSlides: els.length };
       }
     }
+    
+    // For elements without any group, they are always visible
     return result;
   }
 
@@ -1595,15 +1616,20 @@
     
     if(group && slideState && slideState[group]) {
       const state = slideState[group];
+      // Only render if this element is the current slide for its group
       if(state.element !== el) {
         shouldRender = false;
       } else {
         progress = state.progress * (parseFloat(el.dataset.animDur) || 0.8);
       }
     } else if(group) {
+      // If group exists but not in slideState, check if this is the first slide
       const groupEls = getGroupElements(group);
-      if(groupEls.length > 0 && groupEls[0] !== el) shouldRender = false;
+      if(groupEls.length > 0 && groupEls[0] !== el) {
+        shouldRender = false;
+      }
     }
+    // Elements without group are always rendered
     
     if(!shouldRender) return;
     
@@ -1751,8 +1777,10 @@
       const time = (i / (totalFrames - 1)) * durationSec;
       const slideState = getSlideShowState(time, durationSec);
       
+      // Render all elements
       for(const el of elements) {
-        if(parseFloat(el.dataset.savedOpacity || el.style.opacity) === 0) continue;
+        const opacity = parseFloat(el.dataset.savedOpacity || el.style.opacity);
+        if(opacity === 0) continue;
         renderElementToCanvas(ctx, el, scale, time, slideState);
       }
       frames.push(canvas);
@@ -1803,7 +1831,6 @@
         renderElementToCanvas(ctx, el, scale, 0, slideState);
       }
       
-      // PNG format for better quality
       const dataUrl = canvas.toDataURL('image/png');
       const response = await fetch(dataUrl);
       const blob = await response.blob();
