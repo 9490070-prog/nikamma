@@ -542,20 +542,20 @@
   function getImportCompressionQuality() {
     const level = compressSelect.value;
     switch(level) {
-      case 'low': return 0.92;
-      case 'normal': return 0.82;
-      case 'high': return 0.65;
-      default: return 0.82;
+      case 'low': return 0.95;
+      case 'normal': return 0.90;
+      case 'high': return 0.80;
+      default: return 0.90;
     }
   }
 
   function getMaxImageSize() {
     const level = compressSelect.value;
     switch(level) {
-      case 'low': return 1200;
-      case 'normal': return 800;
-      case 'high': return 500;
-      default: return 800;
+      case 'low': return 1600;
+      case 'normal': return 1200;
+      case 'high': return 800;
+      default: return 1200;
     }
   }
 
@@ -584,7 +584,7 @@
         let w = img.width;
         let h = img.height;
         
-        const maxDim = maxSize || 800;
+        const maxDim = maxSize || 1200;
         if (w > maxDim || h > maxDim) {
           const ratio = Math.min(maxDim / w, maxDim / h);
           w = Math.round(w * ratio);
@@ -599,7 +599,8 @@
         ctx.imageSmoothingQuality = 'high';
         ctx.drawImage(img, 0, 0, w, h);
         
-        const compressed = canvas.toDataURL('image/jpeg', quality);
+        // Use PNG for better quality, but compress
+        const compressed = canvas.toDataURL('image/png');
         resolve(compressed);
       };
       img.onerror = function() {
@@ -642,6 +643,7 @@
     el.dataset.animIter='1';
     el.dataset.slideGroup = '';
     el.dataset.slideIndex = '0';
+    el.dataset.savedOpacity = '1';
     el.style.left=((stage.clientWidth-w)/2)+'px';
     el.style.top=((stage.clientHeight-h)/2)+'px';
     el.style.width=w+'px';
@@ -874,7 +876,8 @@
       const label = el.dataset.type.charAt(0).toUpperCase()+el.dataset.type.slice(1);
       const groupInfo = el.dataset.slideGroup ? ` [${el.dataset.slideGroup}]` : '';
       const sizeInfo = el.dataset.compressedSize ? ` 📄${el.dataset.compressedSize}` : '';
-      row.innerHTML = `<span class="lname">${label} — ${el.dataset.id}${groupInfo}${sizeInfo}</span>
+      const animInfo = el.dataset.anim && el.dataset.anim !== 'none' ? ` 🎬${el.dataset.anim}` : '';
+      row.innerHTML = `<span class="lname">${label} — ${el.dataset.id}${groupInfo}${sizeInfo}${animInfo}</span>
         <button data-act="up" title="Forward">⬆</button>
         <button data-act="down" title="Backward">⬇</button>
         <button data-act="dup" title="Duplicate">⧉</button>
@@ -956,6 +959,7 @@
     ["zoomIn","Zoom In"],["bounceIn","Bounce In"],["pulse","Pulse (loop)"],["shake","Shake"]
   ];
 
+  // ========== SLIDE SHOW WITH PER-SLIDE ANIMATION ==========
   function refreshSlideGroup(){
     const groups = {};
     const elements = Array.from(stage.querySelectorAll('.element'));
@@ -1040,6 +1044,7 @@
           els[index].style.display = 'flex';
           const targetOpacity = els[index].dataset.savedOpacity || els[index].style.opacity || '1';
           els[index].style.opacity = targetOpacity;
+          // PER-SLIDE ANIMATION - each image has its own animation
           const anim = els[index].dataset.anim;
           const dur = getAnimDuration(els[index]);
           if(anim && anim !== 'none' && animate){
@@ -1156,51 +1161,72 @@
       const currentGroup = selected.dataset.slideGroup || '';
       const currentStay = getGroupStayTime(currentGroup);
       const compressedSize = selected.dataset.compressedSize || 'Unknown';
+      const currentAnim = selected.dataset.anim || 'none';
       
       html += `
         <div class="section-title">Image</div>
         <div class="field" style="background:var(--panel-2);padding:4px 8px;border-radius:4px;margin-bottom:8px;">
           <span style="color:var(--muted);font-size:10px;">📄 Compressed size: <strong style="color:var(--text);">${compressedSize}</strong></span>
         </div>
-        <label class="btn small" style="cursor:pointer;display:inline-flex;">Replace image
+        <label class="btn small" style="cursor:pointer;display:inline-flex;">🔄 Replace image
           <input type="file" id="propReplaceImg" accept="image/*" style="display:none;">
         </label>
         <div class="field" style="margin-top:6px;"><label>Corner radius</label><input type="range" id="propImgRadius" min="0" max="100" step="1"></div>
         
-        <div class="section-title">Slide Show / Slider</div>
-        <div class="field"><label>Slide group (same name = auto loop show)</label>
+        <div class="section-title">🎬 Per-Image Animation</div>
+        <div class="field"><label>Animation Effect</label>
+          <select id="propAnimSingle">
+            ${ANIMS.map(a=>`<option value="${a[0]}" ${a[0]===currentAnim?'selected':''}>${a[1]}</option>`).join('')}
+          </select>
+        </div>
+        <div class="row2">
+          <div class="field"><label>Duration (s)</label><input type="number" step="0.1" id="propAnimDurSingle" value="${selected.dataset.animDur||0.8}"></div>
+          <div class="field"><label>Delay (s)</label><input type="number" step="0.1" id="propAnimDelay" value="${selected.dataset.animDelay||0}"></div>
+        </div>
+        <div class="field"><label>Repeat</label>
+          <div class="seg">
+            <button data-iter="1" ${selected.dataset.animIter==='1'?'class="active"':''}>Once</button>
+            <button data-iter="infinite" ${selected.dataset.animIter==='infinite'?'class="active"':''}>Loop</button>
+          </div>
+        </div>
+        
+        <div class="section-title">📺 Slide Show Group</div>
+        <div class="field"><label>Group name (same name = auto slideshow)</label>
           <input type="text" id="propSlideGroup" placeholder="e.g. main-slider" value="${currentGroup}">
         </div>
-        <div class="field"><label>Stay time (s) — time each slide stays visible</label>
+        <div class="field"><label>Stay time (s) — each slide visible time</label>
           <input type="number" id="propStayTime" step="0.1" min="0.1" value="${currentStay}">
-          <div style="font-size:9px;color:var(--muted);margin-top:2px;">⚠️ Same stay time applies to all slides in this group</div>
         </div>
         <div class="slide-controls">
-          <button class="btn small" id="slideAddNext">➕ Add next slide image</button>
+          <button class="btn small" id="slideAddNext">➕ Add next slide</button>
           <button class="btn small" id="slideRemove">❌ Remove from group</button>
-          <button class="btn small" id="slideReset">🔄 Reset index order</button>
+          <button class="btn small" id="slideReset">🔄 Reset order</button>
         </div>
+        <div style="font-size:9px;color:var(--muted);margin-top:4px;">💡 Har slide ki apni animation ho sakti hai!</div>
       `;
     }
 
-    html += `
-      <div class="section-title">Animation Settings</div>
-      <div class="field"><label>Effect / Transition</label>
-        <select id="propAnimSingle">
-          ${ANIMS.map(a=>`<option value="${a[0]}">${a[1]}</option>`).join('')}
-        </select>
-      </div>
-      <div class="row2">
-        <div class="field"><label>Duration (s)</label><input type="number" step="0.1" id="propAnimDurSingle"></div>
-        <div class="field"><label>Delay (s)</label><input type="number" step="0.1" id="propAnimDelay"></div>
-      </div>
-      <div class="field"><label>Repeat Configuration</label>
-        <div class="seg">
-          <button data-iter="1">Once</button>
-          <button data-iter="infinite">Loop Frame</button>
+    // For non-image elements, still show animation settings
+    if(type !== 'image'){
+      html += `
+        <div class="section-title">🎬 Animation Settings</div>
+        <div class="field"><label>Effect</label>
+          <select id="propAnimSingle">
+            ${ANIMS.map(a=>`<option value="${a[0]}">${a[1]}</option>`).join('')}
+          </select>
         </div>
-      </div>
-    `;
+        <div class="row2">
+          <div class="field"><label>Duration (s)</label><input type="number" step="0.1" id="propAnimDurSingle"></div>
+          <div class="field"><label>Delay (s)</label><input type="number" step="0.1" id="propAnimDelay"></div>
+        </div>
+        <div class="field"><label>Repeat</label>
+          <div class="seg">
+            <button data-iter="1">Once</button>
+            <button data-iter="infinite">Loop</button>
+          </div>
+        </div>
+      `;
+    }
 
     inspectorBody.innerHTML = html;
     bindInspector(type, isText);
@@ -1391,30 +1417,33 @@
         e.target.value='';
       });
     }
-    on('propAnimSingle','change',e=>{ 
+    // Animation bindings - works for all elements including images
+    on('propAnimSingle','change',function(e){ 
       selected.dataset.anim = e.target.value; 
       applyAnim(selected); 
       if(selected.dataset.slideGroup) updateSlideShow();
+      refreshLayers();
     });
-    on('propAnimDurSingle','input',e=>{ 
+    on('propAnimDurSingle','input',function(e){ 
       selected.dataset.animDur = e.target.value; 
       applyAnim(selected); 
       if(selected.dataset.slideGroup) updateSlideShow();
     });
-    on('propAnimDelay','input',e=>{ 
+    on('propAnimDelay','input',function(e){ 
       selected.dataset.animDelay = e.target.value; 
       applyAnim(selected); 
     });
-    document.querySelectorAll('[data-iter]').forEach(b=>b.onclick=()=>{
-      selected.dataset.animIter=b.dataset.iter; 
-      highlightSeg('[data-iter]', b.dataset.iter,'iter'); 
+    document.querySelectorAll('[data-iter]').forEach(b=>b.onclick=function(){
+      selected.dataset.animIter=this.dataset.iter; 
+      highlightSeg('[data-iter]', this.dataset.iter,'iter'); 
       applyAnim(selected);
     });
   }
 
   function applyAnim(el){
     if(el.dataset.anim==='none'){ 
-      el.style.animation='none'; return; 
+      el.style.animation='none'; 
+      return; 
     }
     el.style.animation = `${el.dataset.anim} ${el.dataset.animDur}s ${el.dataset.animDelay}s ${el.dataset.animIter} both ease`;
   }
@@ -1453,11 +1482,6 @@
       }
       
       const stayTime = getGroupStayTime(group);
-      const totalTimePerSlide = els.reduce((sum, el) => {
-        const animDur = getAnimDuration(el);
-        return sum + animDur + stayTime;
-      }, 0);
-      
       let accumulatedTime = 0;
       let found = false;
       
@@ -1487,7 +1511,7 @@
   function evaluateExportAnimation(el, progress) {
     const anim = el.dataset.anim;
     if(!anim || anim === 'none') {
-      return { opacity: parseFloat(el.style.opacity) || 1, tx: 0, ty: 0, scale: 1 };
+      return { opacity: parseFloat(el.dataset.savedOpacity || el.style.opacity) || 1, tx: 0, ty: 0, scale: 1 };
     }
     
     const duration = parseFloat(el.dataset.animDur) || 0.8;
@@ -1779,20 +1803,20 @@
         renderElementToCanvas(ctx, el, scale, 0, slideState);
       }
       
-      const compressionQuality = getImportCompressionQuality();
-      const dataUrl = canvas.toDataURL('image/jpeg', compressionQuality);
+      // PNG format for better quality
+      const dataUrl = canvas.toDataURL('image/png');
       const response = await fetch(dataUrl);
       const blob = await response.blob();
       
       const sizeKB = (blob.size / 1024).toFixed(1);
       fileSizeDisplay.textContent = '📄 PNG: ' + sizeKB + ' KB';
       
-      triggerDownload(blob, `ad-${stageW}x${stageH}.jpg`);
+      triggerDownload(blob, `ad-${stageW}x${stageH}.png`);
     }catch(err){ console.error(err); }
     finally{ btn.disabled=false; btn.textContent=origText; }
   });
 
-  // ========== GIF EXPORT - FIXED WITH PROPER DOWNLOAD ==========
+  // ========== GIF EXPORT ==========
   document.getElementById('exportGifBtn').addEventListener('click', async function(){
     const btn=this; 
     const origText=btn.textContent;
@@ -1805,7 +1829,6 @@
       const scale = Math.min(1.5, getQualityScale());
       const compressionLevel = compressSelect.value;
       
-      // Capture frames
       const frames = await captureFramesWithAnimation(dur, fps, scale);
       
       if (!frames || frames.length === 0) {
@@ -1814,7 +1837,6 @@
       
       btn.textContent='⏳ Encoding GIF...';
       
-      // Load GIF library
       await ensureLib('GIF', 'https://cdnjs.cloudflare.com/ajax/libs/gif.js/0.2.0/gif.js');
       
       if (typeof GIF === 'undefined') {
@@ -1823,7 +1845,6 @@
       
       const workerBlobUrl = await getGifWorkerBlobURL();
       
-      // Compression settings
       let gifQuality, colorCount;
       switch(compressionLevel) {
         case 'low': 
@@ -1843,11 +1864,9 @@
           colorCount = 64;
       }
       
-      // Reduce resolution for smaller file
       const gifW = Math.max(100, Math.round(frames[0].width / 1.8));
       const gifH = Math.max(50, Math.round(frames[0].height / 1.8));
       
-      // Create optimized frames
       const optimizedFrames = [];
       for(let i = 0; i < frames.length; i++) {
         const canvas = document.createElement('canvas');
@@ -1858,7 +1877,6 @@
         ctx.imageSmoothingQuality = 'low';
         ctx.drawImage(frames[i], 0, 0, gifW, gifH);
         
-        // Color quantization
         if (compressionLevel === 'high' || compressionLevel === 'normal') {
           const imageData = ctx.getImageData(0, 0, gifW, gifH);
           const data = imageData.data;
@@ -1873,7 +1891,6 @@
         optimizedFrames.push(canvas);
       }
       
-      // Create GIF
       const gif = new GIF({
         workers: 2, 
         quality: gifQuality,
@@ -1891,7 +1908,6 @@
         gif.addFrame(optimizedFrames[i], {delay: delay, copy: true});
       }
       
-      // Handle completion
       let gifFinished = false;
       let gifBlob = null;
       
@@ -1904,10 +1920,8 @@
         btn.textContent = `⏳ ${Math.round(p * 100)}%`;
       });
       
-      // Start rendering
       gif.render();
       
-      // Wait for completion with timeout
       let attempts = 0;
       while (!gifFinished && attempts < 100) {
         await new Promise(r => setTimeout(r, 100));
@@ -2056,13 +2070,11 @@
       const s=document.createElement('script'); 
       s.src=src;
       s.onload=()=>{
-        // Check again after load
         if(window[varName]) resolve();
         else reject(new Error('Library not loaded'));
       };
       s.onerror=()=>reject(new Error('Failed to load library'));
       document.head.appendChild(s);
-      // Timeout fallback
       setTimeout(() => {
         if(window[varName]) resolve();
         else reject(new Error('Library load timeout'));
