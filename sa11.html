@@ -1,0 +1,779 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Ad Studio — GIF & HTML Export Fix</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Libraries -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gifshot/0.4.5/gifshot.min.js"></script>
+    <style>
+        :root {
+            --ink: #0F1115;
+            --panel: #181B21;
+            --panel-2: #1F232B;
+            --border: #262B33;
+            --text: #E7E9ED;
+            --muted: #8B929E;
+            --accent: #5B8CFF;
+            --accent-2: #FFB020;
+            --danger: #FF5C6C;
+            --radius: 10px;
+            font-size: 14px;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        html, body { height: 100%; overflow: hidden; background: var(--ink); color: var(--text); font-family: 'Inter', sans-serif; }
+        .brand { font-family: 'Space Grotesk', sans-serif; }
+        #app { display: flex; flex-direction: column; height: 100vh; width: 100vw; overflow: hidden; }
+
+        #topbar {
+            display: flex; align-items: center; gap: 12px; padding: 8px 12px;
+            background: linear-gradient(180deg, #1B1F26, #171A20);
+            border-bottom: 1px solid var(--border);
+            flex-shrink: 0;
+            overflow-x: auto; white-space: nowrap; -webkit-overflow-scrolling: touch;
+        }
+        #topbar::-webkit-scrollbar { display: none; }
+        .brand { font-weight: 700; font-size: 16px; display: flex; align-items: center; gap: 8px; }
+        .brand .dot { width: 9px; height: 9px; border-radius: 50%; background: var(--accent-2); box-shadow: 0 0 10px var(--accent-2); }
+        .sep { width: 1px; height: 26px; background: var(--border); flex-shrink: 0; }
+
+        select, input[type=text], input[type=number] {
+            background: var(--panel-2); border: 1px solid var(--border); color: var(--text);
+            border-radius: 8px; padding: 6px 8px; font-family: inherit; font-size: 13px;
+        }
+        select:focus, input:focus { outline: 1px solid var(--accent); }
+        .btn {
+            background: var(--panel-2); border: 1px solid var(--border); color: var(--text);
+            padding: 6px 12px; border-radius: 8px; font-size: 13px; font-weight: 500;
+            cursor: pointer; display: inline-flex; align-items: center; gap: 6px;
+            transition: .15s ease; flex-shrink: 0;
+        }
+        .btn:hover { background: #262B33; border-color: #333a45; }
+        .btn.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+        .btn.accent { background: var(--accent-2); border-color: var(--accent-2); color: #221600; }
+        .btn.small { padding: 4px 9px; font-size: 12px; }
+        .btn.danger { background: var(--danger); border-color: var(--danger); color: #fff; }
+        .right-group { display: inline-flex; gap: 8px; align-items: center; }
+
+        #mobile-tabs {
+            display: none; background: var(--panel); border-top: 1px solid var(--border);
+            height: 50px; flex-shrink: 0;
+        }
+        #mobile-tabs button {
+            flex: 1; background: transparent; border: none; color: var(--muted);
+            font-weight: 600; font-size: 12px; cursor: pointer;
+        }
+        #mobile-tabs button.active { color: var(--accent); background: var(--panel-2); }
+
+        #workspace {
+            display: grid; grid-template-columns: 220px 1fr 280px;
+            flex: 1; overflow: hidden; height: calc(100vh - 52px);
+        }
+        .rail { background: var(--panel); border-right: 1px solid var(--border); overflow-y: auto; padding: 14px; }
+        #inspector { background: var(--panel); border-left: 1px solid var(--border); overflow-y: auto; padding: 14px; }
+        .section-title {
+            font-size: 11px; text-transform: uppercase; letter-spacing: .08em;
+            color: var(--muted); margin: 18px 0 8px; font-weight: 600;
+        }
+        .section-title:first-child { margin-top: 0; }
+        .tool-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+        .tool-btn {
+            background: var(--panel-2); border: 1px solid var(--border); border-radius: 10px;
+            padding: 12px 6px; display: flex; flex-direction: column; align-items: center; gap: 6px;
+            cursor: pointer; color: var(--text); font-size: 11px; transition: .15s ease;
+        }
+        .tool-btn:hover { border-color: var(--accent); background: #20242c; }
+        .tool-btn svg { width: 20px; height: 20px; stroke: var(--accent); }
+
+        #layerList { display: flex; flex-direction: column; gap: 6px; overflow-y: auto; flex: 1; }
+        .layer-row {
+            display: flex; align-items: center; gap: 8px;
+            background: var(--panel-2); border: 1px solid var(--border);
+            border-radius: 8px; padding: 6px 8px; font-size: 12px; cursor: pointer;
+        }
+        .layer-row.active { border-color: var(--accent); background: #1c2433; }
+        .layer-row .lname { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .layer-row button { background: none; border: none; color: var(--muted); cursor: pointer; padding: 2px; }
+
+        #stageArea {
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            background: radial-gradient(circle at 1px 1px, #23272f 1px, transparent 0) 0 0/22px 22px, var(--ink);
+            position: relative; overflow: hidden; padding: 16px;
+        }
+        #sizeLabel {
+            color: var(--muted); font-size: 12px; margin-bottom: 12px;
+            background: var(--panel); border: 1px solid var(--border);
+            padding: 4px 10px; border-radius: 20px; z-index: 5;
+        }
+        #phoneWrap { display: none; }
+        #phoneWrap.on {
+            display: block; padding: 26px 12px;
+            background: #0b0c10; border: 2px solid #2b2f38;
+            border-radius: 40px; position: relative;
+        }
+        #stage {
+            position: relative; background: #ffffff; background-size: cover; background-position: center;
+            overflow: hidden; box-shadow: 0 20px 45px -15px rgba(0,0,0,.6); border-radius: 4px;
+        }
+        .element {
+            position: absolute; cursor: grab; display: flex;
+            outline: none; user-select: none; transform-origin: center center;
+            touch-action: none; box-sizing: border-box;
+        }
+        .element.selected { box-shadow: 0 0 0 2px var(--accent); }
+        .element.el-text, .element.el-button { align-items: center; justify-content: center; padding: 2px; word-break: break-word; }
+        .element .resize-handle {
+            position: absolute; right: -6px; bottom: -6px;
+            width: 12px; height: 12px; border-radius: 50%;
+            background: var(--accent); border: 2px solid #fff;
+            cursor: nwse-resize; display: none;
+        }
+        .element.selected .resize-handle { display: block; }
+        .element.el-image img { width: 100%; height: 100%; object-fit: cover; display: block; }
+
+        .field { margin-bottom: 10px; }
+        .field label { display: block; font-size: 11px; color: var(--muted); margin-bottom: 4px; }
+        .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+        .row4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
+        input[type=color] { width: 100%; height: 30px; border: 1px solid var(--border); border-radius: 8px; background: var(--panel-2); padding: 2px; }
+        .seg { display: flex; border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
+        .seg button { flex: 1; background: var(--panel-2); border: none; color: var(--muted); padding: 6px 0; font-size: 12px; }
+        .seg button.active { background: var(--accent); color: #fff; }
+        .empty-hint { color: var(--muted); font-size: 12px; line-height: 1.6; padding: 20px 4px; text-align: center; }
+        .custom-size-group { display: flex; align-items: center; gap: 4px; font-size: 12px; color: var(--muted); }
+        .custom-size-group input { width: 50px !important; }
+        #stageHolderOuter { display: flex; align-items: center; justify-content: center; overflow: auto; width: 100%; height: 100%; }
+
+        @media (max-width: 768px) {
+            #mobile-tabs { display: flex; }
+            #workspace { grid-template-columns: 1fr; height: calc(100vh - 102px); }
+            .rail, #inspector, #stageArea { display: none; }
+            #workspace.show-tools .rail { display: flex; }
+            #workspace.show-canvas #stageArea { display: flex; }
+            #workspace.show-inspector #inspector { display: block; }
+        }
+
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes slideInLeft { from { opacity: 0; transform: translateX(-60px); } to { opacity: 1; transform: translateX(0); } }
+        @keyframes slideInRight { from { opacity: 0; transform: translateX(60px); } to { opacity: 1; transform: translateX(0); } }
+        @keyframes slideInUp { from { opacity: 0; transform: translateY(40px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes slideInDown { from { opacity: 0; transform: translateY(-40px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes zoomIn { from { opacity: 0; transform: scale(0.5); } to { opacity: 1; transform: scale(1); } }
+        @keyframes bounceIn { 0% { opacity: 0; transform: scale(0.3); } 50% { opacity: 1; transform: scale(1.05); } 70% { transform: scale(0.95); } 100% { opacity: 1; transform: scale(1); } }
+        @keyframes pulse { 0%,100% { transform: scale(1); } 50% { transform: scale(1.05); } }
+        @keyframes shake { 0%,100% { transform: translateX(0); } 20%,60% { transform: translateX(-5px); } 40%,80% { transform: translateX(5px); } }
+    </style>
+</head>
+<body>
+<div id="app">
+    <div id="topbar">
+        <div class="brand"><span class="dot"></span>Ad Studio</div>
+        <div class="sep"></div>
+        <select id="sizePreset"></select>
+        <div class="custom-size-group">
+            <span>W:</span><input type="number" id="canvasCustomWidth" value="320">
+            <span>H:</span><input type="number" id="canvasCustomHeight" value="90">
+        </div>
+        <div class="sep"></div>
+        <label class="btn ghost small">🖼️ BG<input type="file" id="bgUpload" accept="image/*" style="display:none;"></label>
+        <input type="color" id="bgColor" value="#ffffff">
+        <label class="btn ghost small"><input type="checkbox" id="phoneToggle"> Mock</label>
+        <div class="sep"></div>
+        <div class="right-group">
+            <button class="btn small" id="playBtn">▶ Play</button>
+            <input type="number" id="recDuration" value="3" min="0.5" style="width:45px;">
+            <select id="qualitySelect"><option value="1">1x</option><option value="2" selected>2x</option><option value="3">3x</option></select>
+            <button class="btn primary small" id="exportHtmlBtn">⬇ HTML</button>
+            <button class="btn accent small" id="exportPngBtn">🖼 PNG</button>
+            <button class="btn danger small" id="exportGifBtn">🎞 GIF</button>
+        </div>
+    </div>
+
+    <div id="workspace" class="show-canvas">
+        <div class="rail">
+            <div class="section-title">Add element</div>
+            <div class="tool-grid">
+                <div class="tool-btn" id="addText"><svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M4 6h16M4 12h10M4 18h7"/></svg>Text</div>
+                <div class="tool-btn" id="addButton"><svg viewBox="0 0 24 24" fill="none" stroke-width="2"><rect x="3" y="8" width="18" height="8" rx="4"/></svg>Button</div>
+                <div class="tool-btn" id="addImageTool"><svg viewBox="0 0 24 24" fill="none" stroke-width="2"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="8.5" cy="9.5" r="1.5"/><path d="M21 16l-5-5-4 4-3-3-5 5"/></svg>Image<input type="file" id="imageUpload" accept="image/*" style="display:none;"></div>
+                <div class="tool-btn" id="addShapeRect"><svg viewBox="0 0 24 24" fill="none" stroke-width="2"><rect x="4" y="4" width="16" height="16" rx="2"/></svg>Square</div>
+                <div class="tool-btn" id="addShapeCircle"><svg viewBox="0 0 24 24" fill="none" stroke-width="2"><circle cx="12" cy="12" r="9"/></svg>Circle</div>
+                <div class="tool-btn" id="addBadge"><svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M12 2l2.4 5.1L20 8l-4 4 1 5.6L12 15l-5 2.6L8 12 4 8l5.6-.9z"/></svg>Badge</div>
+            </div>
+            <div class="section-title">Layers</div>
+            <div id="layerList"><div class="empty-hint">Empty</div></div>
+        </div>
+
+        <div id="stageArea">
+            <div id="sizeLabel">320 × 90 px</div>
+            <div id="phoneWrap"><div id="stageHolder"></div></div>
+            <div id="stageHolderOuter"></div>
+        </div>
+
+        <div id="inspector">
+            <div id="inspectorEmpty" class="empty-hint">Select an element to edit properties.</div>
+            <div id="inspectorBody" style="display:none;"></div>
+        </div>
+    </div>
+
+    <div id="mobile-tabs">
+        <button id="tab-tools">🛠️ Tools</button>
+        <button id="tab-canvas" class="active">🖼️ Canvas</button>
+        <button id="tab-inspector">🎨 Inspector</button>
+    </div>
+</div>
+
+<script>
+    (function() {
+        "use strict";
+
+        // Mobile tabs
+        const ws = document.getElementById('workspace');
+        const tabs = { 'tab-tools': 'show-tools', 'tab-canvas': 'show-canvas', 'tab-inspector': 'show-inspector' };
+        Object.keys(tabs).forEach(id => {
+            document.getElementById(id).addEventListener('click', function() {
+                document.querySelectorAll('#mobile-tabs button').forEach(b => b.classList.remove('active'));
+                this.classList.add('active');
+                ws.className = tabs[id];
+            });
+        });
+
+        const SIZES = [
+            { label: "Banner — 320×50", w: 320, h: 50 },
+            { label: "Large Banner — 320×100", w: 320, h: 100 },
+            { label: "Medium Rectangle — 300×250", w: 300, h: 250 },
+            { label: "Full Banner — 468×60", w: 468, h: 60 },
+            { label: "Leaderboard — 728×90", w: 728, h: 90 },
+            { label: "Square — 250×250", w: 250, h: 250 },
+            { label: "Interstitial — 320×480", w: 320, h: 480 },
+            { label: "Skyscraper — 160×600", w: 160, h: 600 },
+            { label: "Custom Size", w: 400, h: 400 },
+        ];
+        const sizePreset = document.getElementById('sizePreset');
+        SIZES.forEach((s, i) => {
+            const o = document.createElement('option');
+            o.value = i;
+            o.textContent = s.label;
+            sizePreset.appendChild(o);
+        });
+
+        const stageHolderOuter = document.getElementById('stageHolderOuter');
+        const stageHolder = document.getElementById('stageHolder');
+        const phoneWrap = document.getElementById('phoneWrap');
+        const sizeLabel = document.getElementById('sizeLabel');
+        const canvasCustomWidth = document.getElementById('canvasCustomWidth');
+        const canvasCustomHeight = document.getElementById('canvasCustomHeight');
+
+        let stage = document.createElement('div');
+        stage.id = 'stage';
+        stageHolderOuter.appendChild(stage);
+
+        function applySize(w, h) {
+            stage.style.width = w + 'px';
+            stage.style.height = h + 'px';
+            sizeLabel.textContent = w + ' × ' + h + ' px';
+            canvasCustomWidth.value = w;
+            canvasCustomHeight.value = h;
+        }
+        sizePreset.addEventListener('change', () => {
+            const s = SIZES[sizePreset.value];
+            applySize(s.w, s.h);
+        });
+
+        function handleCustomSizeInput() {
+            let w = parseInt(canvasCustomWidth.value) || 320;
+            let h = parseInt(canvasCustomHeight.value) || 90;
+            stage.style.width = w + 'px';
+            stage.style.height = h + 'px';
+            sizeLabel.textContent = w + ' × ' + h + ' px';
+            sizePreset.value = 8;
+        }
+        canvasCustomWidth.addEventListener('input', handleCustomSizeInput);
+        canvasCustomHeight.addEventListener('input', handleCustomSizeInput);
+        applySize(320, 90);
+
+        document.getElementById('phoneToggle').addEventListener('change', function() {
+            if (this.checked) {
+                phoneWrap.classList.add('on');
+                stageHolder.appendChild(stage);
+                stageHolderOuter.style.display = 'none';
+            } else {
+                phoneWrap.classList.remove('on');
+                stageHolderOuter.appendChild(stage);
+                stageHolderOuter.style.display = '';
+            }
+        });
+
+        document.getElementById('bgColor').addEventListener('input', function() {
+            stage.style.backgroundImage = 'none';
+            stage.style.backgroundColor = this.value;
+        });
+
+        function compressImage(file, callback) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const img = new Image();
+                img.onload = function() {
+                    const canvas = document.createElement('canvas');
+                    let width = img.width,
+                        height = img.height;
+                    const maxCoord = 1200;
+                    if (width > maxCoord || height > maxCoord) {
+                        if (width > height) {
+                            height = Math.round((height * maxCoord) / width);
+                            width = maxCoord;
+                        } else {
+                            width = Math.round((width * maxCoord) / height);
+                            height = maxCoord;
+                        }
+                    }
+                    canvas.width = width;
+                    canvas.height = height;
+                    const ctx = canvas.getContext('2d');
+                    ctx.imageSmoothingEnabled = true;
+                    ctx.imageSmoothingQuality = 'high';
+                    ctx.drawImage(img, 0, 0, width, height);
+                    callback(canvas.toDataURL('image/jpeg', 0.85));
+                };
+                img.src = e.target.result;
+            };
+            reader.readAsDataURL(file);
+        }
+
+        document.getElementById('bgUpload').addEventListener('change', function(e) {
+            const f = e.target.files[0];
+            if (!f) return;
+            compressImage(f, url => { stage.style.backgroundImage = `url(${url})`; });
+        });
+
+        let elCounter = 0,
+            selected = null;
+
+        function makeBaseEl(type, w, h) {
+            if (!w || !h) { w = 80;
+                h = 80; }
+            const el = document.createElement('div');
+            el.className = 'element el-' + type;
+            el.dataset.type = type;
+            el.dataset.id = 'el' + (++elCounter);
+            el.dataset.anim = 'none';
+            el.dataset.animDur = '0.8';
+            el.style.left = ((stage.clientWidth - w) / 2) + 'px';
+            el.style.top = ((stage.clientHeight - h) / 2) + 'px';
+            el.style.width = w + 'px';
+            el.style.height = h + 'px';
+            el.style.transform = 'rotate(0deg) scale(1)';
+            el.style.opacity = '1';
+            const handle = document.createElement('span');
+            handle.className = 'resize-handle';
+            el.appendChild(handle);
+            attachDrag(el, handle);
+            stage.appendChild(el);
+            refreshLayers();
+            selectElement(el);
+            document.getElementById('tab-canvas').click();
+            return el;
+        }
+
+        function addText() {
+            const el = makeBaseEl('text', 140, 30);
+            el.innerText = 'Your headline';
+            el.style.fontFamily = "'Space Grotesk',sans-serif";
+            el.style.fontSize = '16px';
+            el.style.fontWeight = '700';
+            el.style.color = '#1a1a1a';
+            el.style.textAlign = 'center';
+            setupTextEditing(el);
+        }
+
+        function addButton() {
+            const el = makeBaseEl('button', 110, 34);
+            el.innerText = 'Install Now';
+            el.style.fontFamily = "'Inter',sans-serif";
+            el.style.fontSize = '13px';
+            el.style.fontWeight = '700';
+            el.style.color = '#ffffff';
+            el.style.background = '#5B8CFF';
+            el.style.borderRadius = '17px';
+            el.style.textAlign = 'center';
+            setupTextEditing(el);
+        }
+
+        function addShape(kind) {
+            const el = makeBaseEl('shape', 80, 80);
+            el.style.background = '#5B8CFF';
+            el.style.borderRadius = kind === 'circle' ? '50%' : '6px';
+            el.dataset.shape = kind;
+        }
+
+        function addBadge() {
+            const el = makeBaseEl('button', 90, 26);
+            el.innerText = 'AD';
+            el.style.fontFamily = "'Inter',sans-serif";
+            el.style.fontSize = '11px';
+            el.style.fontWeight = '700';
+            el.style.color = '#221600';
+            el.style.background = '#FFB020';
+            el.style.borderRadius = '5px';
+            setupTextEditing(el);
+        }
+
+        function addImageFromFile(file) {
+            compressImage(file, url => {
+                const el = makeBaseEl('image', 100, 100);
+                const img = document.createElement('img');
+                img.src = url;
+                img.style.objectFit = 'cover';
+                img.style.width = '100%';
+                img.style.height = '100%';
+                el.insertBefore(img, el.firstChild);
+                selectElement(el);
+                renderInspector();
+            });
+        }
+
+        function setupTextEditing(el) {
+            el.setAttribute('contenteditable', 'false');
+            el.addEventListener('dblclick', function(e) {
+                e.stopPropagation();
+                el.setAttribute('contenteditable', 'true');
+                el.classList.add('editing');
+                el.focus();
+            });
+            el.addEventListener('blur', function() {
+                el.setAttribute('contenteditable', 'false');
+                el.classList.remove('editing');
+            });
+        }
+
+        document.getElementById('addText').onclick = addText;
+        document.getElementById('addButton').onclick = addButton;
+        document.getElementById('addShapeRect').onclick = () => addShape('rect');
+        document.getElementById('addShapeCircle').onclick = () => addShape('circle');
+        document.getElementById('addBadge').onclick = addBadge;
+        document.getElementById('addImageTool').onclick = () => document.getElementById('imageUpload').click();
+        document.getElementById('imageUpload').addEventListener('change', function(e) {
+            const f = e.target.files[0];
+            if (!f) return;
+            addImageFromFile(f);
+            e.target.value = '';
+        });
+
+        let dragState = null;
+
+        function attachDrag(el, handle) {
+            el.addEventListener('pointerdown', function(e) {
+                if (e.target === handle || el.getAttribute('contenteditable') === 'true') return;
+                e.preventDefault();
+                selectElement(el);
+                dragState = {
+                    el,
+                    mode: 'move',
+                    startX: e.clientX,
+                    startY: e.clientY,
+                    origLeft: parseFloat(el.style.left) || 0,
+                    origTop: parseFloat(el.style.top) || 0,
+                    pointerId: e.pointerId
+                };
+                try { el.setPointerCapture(e.pointerId); } catch (err) {}
+            });
+            handle.addEventListener('pointerdown', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                dragState = {
+                    el,
+                    mode: 'resize',
+                    startX: e.clientX,
+                    startY: e.clientY,
+                    origW: parseFloat(el.style.width) || el.offsetWidth,
+                    origH: parseFloat(el.style.height) || el.offsetHeight,
+                    pointerId: e.pointerId
+                };
+                try { handle.setPointerCapture(e.pointerId); } catch (err) {}
+            });
+        }
+        document.addEventListener('pointermove', function(e) {
+            if (!dragState) return;
+            const dx = e.clientX - dragState.startX,
+                dy = e.clientY - dragState.startY;
+            if (dragState.mode === 'move') {
+                dragState.el.style.left = (dragState.origLeft + dx) + 'px';
+                dragState.el.style.top = (dragState.origTop + dy) + 'px';
+            } else {
+                dragState.el.style.width = Math.max(16, dragState.origW + dx) + 'px';
+                dragState.el.style.height = Math.max(16, dragState.origH + dy) + 'px';
+            }
+            if (selected === dragState.el) syncInspectorPosition();
+        });
+        document.addEventListener('pointerup', function(e) { if (dragState) dragState = null; });
+
+        function selectElement(el) {
+            if (selected) selected.classList.remove('selected');
+            selected = el;
+            if (el) el.classList.add('selected');
+            refreshLayers();
+            renderInspector();
+        }
+
+        function refreshLayers() {
+            const list = document.getElementById('layerList');
+            const els = Array.from(stage.children).filter(c => c.classList.contains('element'));
+            if (els.length === 0) { list.innerHTML = '<div class="empty-hint">Empty</div>'; return; }
+            list.innerHTML = '';
+            els.slice().reverse().forEach(el => {
+                const row = document.createElement('div');
+                row.className = 'layer-row' + (el === selected ? ' active' : '');
+                row.innerHTML =
+                    `<span class="lname">${el.dataset.type} — ${el.dataset.id}</span>
+                <button data-act="up">⬆</button><button data-act="down">⬇</button><button data-act="del">✕</button>`;
+                row.addEventListener('click', (e) => { if (e.target.tagName !== 'BUTTON') selectElement(el); });
+                row.querySelector('[data-act="up"]').onclick = () => { moveLayer(el, 1); };
+                row.querySelector('[data-act="down"]').onclick = () => { moveLayer(el, -1); };
+                row.querySelector('[data-act="del"]').onclick = () => { deleteEl(el); };
+                list.appendChild(row);
+            });
+        }
+
+        function moveLayer(el, dir) {
+            if (dir > 0 && el.nextElementSibling) stage.insertBefore(el.nextElementSibling, el);
+            else if (dir < 0 && el.previousElementSibling) stage.insertBefore(el, el.previousElementSibling);
+            refreshLayers();
+        }
+
+        function deleteEl(el) { if (selected === el) selectElement(null);
+            el.remove();
+            refreshLayers(); }
+
+        function renderInspector() {
+            if (!selected) { inspectorEmpty.style.display = 'block';
+                inspectorBody.style.display = 'none'; return; }
+            inspectorEmpty.style.display = 'none';
+            inspectorBody.style.display = 'block';
+            let html = `
+            <div class="section-title">Transform</div>
+            <div class="row4">
+                <div class="field"><label>X</label><input type="number" id="propX"></div>
+                <div class="field"><label>Y</label><input type="number" id="propY"></div>
+                <div class="field"><label>W</label><input type="number" id="propW"></div>
+                <div class="field"><label>H</label><input type="number" id="propH"></div>
+            </div>
+            <div class="row2">
+                <div class="field"><label>Rot</label><input type="number" id="propRot"></div>
+                <div class="field"><label>Opac</label><input type="number" id="propOpacity" min="0" max="1" step="0.1"></div>
+            </div>
+            <div class="section-title">Animation</div>
+            <div class="field"><label>Effect</label><select id="propAnim">
+                <option value="none">None</option>
+                <option value="fadeIn">Fade In</option>
+                <option value="slideInLeft">Slide Left</option>
+                <option value="slideInRight">Slide Right</option>
+                <option value="slideInUp">Slide Up</option>
+                <option value="slideInDown">Slide Down</option>
+                <option value="zoomIn">Zoom In</option>
+                <option value="bounceIn">Bounce In</option>
+                <option value="pulse">Pulse Loop</option>
+                <option value="shake">Shake</option>
+            </select></div>
+            <div class="row2">
+                <div class="field"><label>Duration (s)</label><input type="number" id="propAnimDur" step="0.1"></div>
+                <div class="field"><label>Delay (s)</label><input type="number" id="propAnimDelay" step="0.1"></div>
+            </div>
+          `;
+            if (selected.dataset.type === 'text' || selected.dataset.type === 'button') {
+                html += `
+                <div class="section-title">Text Content & Styling</div>
+                <div class="field"><label>Content</label><input type="text" id="propTextContent"></div>
+                <div class="row2">
+                    <div class="field"><label>Size</label><input type="number" id="propFontSize"></div>
+                    <div class="field"><label>Color</label><input type="color" id="propColor"></div>
+                </div>
+                <div class="field"><label>Align</label><div class="seg" id="propTextAlign">
+                    <button data-val="left">Left</button>
+                    <button data-val="center">Center</button>
+                    <button data-val="right">Right</button>
+                </div></div>
+              `;
+            }
+            if (selected.dataset.type === 'shape' || selected.dataset.type === 'button') {
+                html += `
+                <div class="section-title">Appearance</div>
+                <div class="field"><label>Background</label><input type="color" id="propBg"></div>
+                <div class="field"><label>Border Radius (px)</label><input type="number" id="propRadius"></div>
+              `;
+            }
+            inspectorBody.innerHTML = html;
+            bindInspector();
+            syncInspectorPosition();
+        }
+
+        function syncInspectorPosition() {
+            if (!selected) return;
+            setVal('propX', parseFloat(selected.style.left) || 0);
+            setVal('propY', parseFloat(selected.style.top) || 0);
+            setVal('propW', parseFloat(selected.style.width) || 0);
+            setVal('propH', parseFloat(selected.style.height) || 0);
+            setVal('propRot', selected.dataset.rot || 0);
+            setVal('propOpacity', selected.style.opacity || 1);
+            setVal('propAnim', selected.dataset.anim || 'none');
+            setVal('propAnimDur', selected.dataset.animDur || 0.8);
+            setVal('propAnimDelay', selected.dataset.animDelay || 0);
+            if (document.getElementById('propTextContent')) document.getElementById('propTextContent').value = selected
+            .innerText;
+            if (document.getElementById('propFontSize')) setVal('propFontSize', parseFloat(selected.style.fontSize) || 16);
+            if (document.getElementById('propRadius')) setVal('propRadius', parseFloat(selected.style.borderRadius) || 0);
+        }
+
+        function setVal(id, val) { const e = document.getElementById(id); if (e) e.value = val; }
+
+        function bindInspector() {
+            const on = (id, evt, fn) => { const e = document.getElementById(id); if (e) e.addEventListener(evt, fn); };
+            on('propX', 'input', e => { selected.style.left = e.target.value + 'px'; });
+            on('propY', 'input', e => { selected.style.top = e.target.value + 'px'; });
+            on('propW', 'input', e => { selected.style.width = e.target.value + 'px'; });
+            on('propH', 'input', e => { selected.style.height = e.target.value + 'px'; });
+            on('propOpacity', 'input', e => { selected.style.opacity = e.target.value; });
+            on('propRot', 'input', e => { selected.dataset.rot = e.target.value;
+                selected.style.transform = `rotate(${e.target.value}deg)`; });
+            on('propAnim', 'change', e => { selected.dataset.anim = e.target.value; });
+            on('propAnimDur', 'input', e => { selected.dataset.animDur = e.target.value; });
+            on('propAnimDelay', 'input', e => { selected.dataset.animDelay = e.target.value; });
+            on('propTextContent', 'input', e => { if (!selected.classList.contains('editing')) selected.innerText = e.target
+                    .value; });
+            on('propFontSize', 'input', e => { selected.style.fontSize = e.target.value + 'px'; });
+            on('propColor', 'input', e => { selected.style.color = e.target.value; });
+            on('propBg', 'input', e => { selected.style.background = e.target.value; });
+            on('propRadius', 'input', e => { selected.style.borderRadius = e.target.value + 'px'; });
+            const alignDiv = document.getElementById('propTextAlign');
+            if (alignDiv) {
+                const btns = alignDiv.querySelectorAll('button');
+                btns.forEach(b => {
+                    if (selected.style.textAlign === b.dataset.val) b.classList.add('active');
+                    b.onclick = () => {
+                        btns.forEach(x => x.classList.remove('active'));
+                        b.classList.add('active');
+                        selected.style.textAlign = b.dataset.val;
+                    };
+                });
+            }
+        }
+
+        document.getElementById('playBtn').addEventListener('click', function() {
+            stage.querySelectorAll('.element').forEach(el => {
+                if (el.dataset.anim !== 'none') {
+                    el.style.animation = 'none';
+                    void el.offsetWidth;
+                    el.style.animation = `${el.dataset.anim} ${el.dataset.animDur}s ease both`;
+                }
+            });
+        });
+
+        function triggerDownload(blob, filename) {
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            setTimeout(() => a.remove(), 1000);
+        }
+
+        // PNG export
+        document.getElementById('exportPngBtn').onclick = function() {
+            const scale = parseFloat(document.getElementById('qualitySelect').value) || 2;
+            if (selected) selected.classList.remove('selected');
+            html2canvas(stage, { scale: scale, useCORS: true, backgroundColor: null }).then(canvas => {
+                canvas.toBlob(blob => triggerDownload(blob, 'ad-creative.png'), 'image/png');
+                if (selected) selected.classList.add('selected');
+            });
+        };
+
+        // HTML export - FIXED
+        document.getElementById('exportHtmlBtn').onclick = function() {
+            if (selected) selected.classList.remove('selected');
+            // Get all element styles inline
+            let inlineStyles = '';
+            stage.querySelectorAll('.element').forEach(el => {
+                const computed = window.getComputedStyle(el);
+                let styleStr = '';
+                for (let i = 0; i < computed.length; i++) {
+                    const prop = computed[i];
+                    const val = computed.getPropertyValue(prop);
+                    if (val && val !== 'none' && val !== 'normal' && !prop.startsWith('animation')) {
+                        styleStr += `${prop}:${val};`;
+                    }
+                }
+                // add animation
+                if (el.dataset.anim !== 'none') {
+                    styleStr += `animation:${el.dataset.anim} ${el.dataset.animDur}s ease both;`;
+                }
+                // position
+                const rect = el.getBoundingClientRect();
+                const stageRect = stage.getBoundingClientRect();
+                const left = rect.left - stageRect.left;
+                const top = rect.top - stageRect.top;
+                styleStr += `left:${left}px;top:${top}px;width:${el.offsetWidth}px;height:${el.offsetHeight}px;`;
+                el.setAttribute('style', styleStr);
+            });
+
+            const htmlContent = `<!DOCTYPE html>
+        <html>
+        <head><meta charset="utf-8"><title>Ad Creative</title>
+        <style>
+          body{margin:0;padding:0;overflow:hidden;background:#fff;}
+          #stage-render{position:relative;width:${stage.style.width};height:${stage.style.height};background:${stage.style.backgroundColor||'#fff'};background-image:${stage.style.backgroundImage||'none'};background-size:cover;overflow:hidden;}
+          .element{position:absolute;display:flex;box-sizing:border-box;}
+          .el-text,.el-button{align-items:center;justify-content:center;}
+          .el-image img{width:100%;height:100%;object-fit:cover;display:block;}
+          ${inlineStyles}
+        </style>
+        </head>
+        <body><div id="stage-render">${stage.innerHTML}</div></body>
+        </html>`;
+
+            const blob = new Blob([htmlContent], { type: 'text/html' });
+            triggerDownload(blob, 'creative-bundle.html');
+            if (selected) selected.classList.add('selected');
+        };
+
+        // GIF export - FIXED
+        document.getElementById('exportGifBtn').onclick = function() {
+            const duration = parseFloat(document.getElementById('recDuration').value) || 3;
+            const totalFrames = Math.max(4, Math.floor(duration * 8));
+            const images = [];
+            let captured = 0;
+
+            function captureFrame() {
+                if (captured >= totalFrames) {
+                    gifshot.createGIF({
+                        images: images,
+                        interval: 0.1,
+                        numFrames: images.length,
+                        gifWidth: parseInt(stage.style.width) || 320,
+                        gifHeight: parseInt(stage.style.height) || 90
+                    }, function(obj) {
+                        if (!obj.error) {
+                            const a = document.createElement('a');
+                            a.href = obj.image;
+                            a.download = 'creative.gif';
+                            a.click();
+                        } else {
+                            alert('GIF Error: ' + obj.error);
+                        }
+                    });
+                    return;
+                }
+                html2canvas(stage, { scale: 1.5, useCORS: true, backgroundColor: null }).then(canvas => {
+                    images.push(canvas.toDataURL('image/jpeg', 0.8));
+                    captured++;
+                    setTimeout(captureFrame, 120);
+                }).catch(err => { alert('Capture error: ' + err); });
+            }
+            captureFrame();
+        };
+    })();
+</script>
+</body>
+</html>
