@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-    <title>Professional Satellite Finder AR Pro</title>
+    <title>AR Satellite Finder Pro - Fixed</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -26,60 +26,104 @@
             z-index: 1;
         }
 
-        /* Overlay Canvas & Darkening */
         .ar-overlay {
             position: fixed;
             top: 0; left: 0;
             width: 100%; height: 100%;
             z-index: 2;
-            background: rgba(5, 10, 20, 0.35);
+            background: rgba(0, 0, 0, 0.25);
             pointer-events: none;
         }
 
-        /* HUD Header Top */
+        /* HUD Header Top - Bada Text & High Contrast */
         .hud-header {
             position: fixed;
             top: 15px; left: 0; right: 0;
             z-index: 10;
             display: flex;
-            justify-content: space-between;
-            padding: 0 12px;
+            justify-content: space-around;
+            padding: 0 10px;
             pointer-events: none;
         }
 
         .hud-card {
-            background: rgba(10, 16, 30, 0.75);
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.15);
-            border-radius: 12px;
-            padding: 8px 12px;
-            min-width: 90px;
+            background: rgba(15, 23, 42, 0.88);
+            backdrop-filter: blur(12px);
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            border-radius: 14px;
+            padding: 10px 14px;
+            min-width: 105px;
             text-align: center;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.6);
         }
 
         .hud-card .title {
-            font-size: 9px;
+            font-size: 11px;
+            font-weight: 700;
             text-transform: uppercase;
             color: #94a3b8;
-            letter-spacing: 0.5px;
+            letter-spacing: 0.6px;
         }
 
         .hud-card .val {
-            font-size: 16px;
-            font-weight: 700;
+            font-size: 20px;
+            font-weight: 800;
             color: #38bdf8;
             margin-top: 2px;
         }
 
-        .hud-card .val.target { color: #f59e0b; }
-        .hud-card .val.success { color: #4ade80; }
+        .hud-card .sub-target {
+            font-size: 11px;
+            font-weight: 700;
+            color: #f59e0b;
+            margin-top: 2px;
+        }
 
-        /* Center Target Reticle / Level Indicator */
+        /* AR Target Marker - Bada Icon & Label */
+        .sat-target-marker {
+            position: absolute;
+            transform: translate(-50%, -50%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            z-index: 6;
+            pointer-events: none;
+            transition: transform 0.05s linear;
+        }
+
+        .sat-icon-box {
+            width: 65px; height: 65px;
+            background: rgba(239, 68, 68, 0.25);
+            border: 3px solid #ef4444;
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: #ef4444;
+            font-size: 28px;
+            box-shadow: 0 0 25px rgba(239, 68, 68, 0.8);
+            animation: pulseRed 1.2s infinite;
+        }
+
+        .sat-tag {
+            background: rgba(15, 23, 42, 0.95);
+            border: 2px solid #ef4444;
+            color: #fff;
+            font-size: 13px;
+            font-weight: 700;
+            padding: 5px 12px;
+            border-radius: 12px;
+            margin-top: 8px;
+            white-space: nowrap;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+        }
+
+        /* Target Reticle (Center Screen) */
         .crosshair-container {
             position: fixed;
             top: 50%; left: 50%;
             transform: translate(-50%, -50%);
-            width: 240px; height: 240px;
+            width: 260px; height: 260px;
             z-index: 5;
             pointer-events: none;
             display: flex;
@@ -90,70 +134,34 @@
         .reticle-ring {
             position: absolute;
             width: 100%; height: 100%;
-            border: 2px dashed rgba(255, 255, 255, 0.3);
+            border: 3px dashed rgba(255, 255, 255, 0.4);
             border-radius: 50%;
             transition: all 0.2s ease;
         }
 
         .reticle-center {
-            width: 16px; height: 16px;
-            border: 2px solid #ef4444;
+            width: 20px; height: 20px;
+            border: 3px solid #ef4444;
             border-radius: 50%;
-            background: rgba(239, 68, 68, 0.3);
+            background: rgba(239, 68, 68, 0.4);
             transition: all 0.2s;
         }
 
-        /* Floating Satellite Marker in AR Space */
-        .sat-target-marker {
-            position: absolute;
-            transform: translate(-50%, -50%);
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            transition: opacity 0.2s ease;
-            z-index: 6;
-        }
-
-        .sat-icon-box {
-            width: 48px; height: 48px;
-            background: rgba(239, 68, 68, 0.2);
-            border: 2px solid #ef4444;
-            border-radius: 50%;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            color: #ef4444;
-            font-size: 20px;
-            box-shadow: 0 0 15px rgba(239, 68, 68, 0.5);
-            animation: pulseRed 1.5s infinite;
-        }
-
-        .sat-tag {
-            background: rgba(0, 0, 0, 0.8);
-            border: 1px solid #ef4444;
-            color: #fff;
-            font-size: 10px;
-            padding: 3px 8px;
-            border-radius: 10px;
-            margin-top: 5px;
-            white-space: nowrap;
-        }
-
-        /* LOCKED STATE */
+        /* LOCKED STATE (Green Signal) */
         .is-aligned .reticle-ring {
-            border: 2px solid #4ade80;
-            box-shadow: 0 0 25px rgba(74, 222, 128, 0.6);
+            border: 4px solid #4ade80;
+            box-shadow: 0 0 35px rgba(74, 222, 128, 0.8);
         }
         .is-aligned .reticle-center {
             background: #4ade80;
             border-color: #4ade80;
         }
         .is-aligned .sat-icon-box {
-            background: rgba(74, 222, 128, 0.3);
+            background: rgba(74, 222, 128, 0.35);
             border-color: #4ade80;
             color: #4ade80;
-            box-shadow: 0 0 25px rgba(74, 222, 128, 0.8);
-            animation: pulseGreen 1s infinite;
+            box-shadow: 0 0 35px rgba(74, 222, 128, 0.9);
+            animation: pulseGreen 0.8s infinite;
         }
         .is-aligned .sat-tag {
             border-color: #4ade80;
@@ -162,69 +170,71 @@
 
         @keyframes pulseRed {
             0%, 100% { transform: scale(1); }
-            50% { transform: scale(1.1); }
+            50% { transform: scale(1.12); }
         }
         @keyframes pulseGreen {
             0%, 100% { transform: scale(1); }
-            50% { transform: scale(1.15); }
+            50% { transform: scale(1.18); }
         }
 
-        /* Bottom Control Panel */
+        /* Bottom Controls */
         .hud-bottom {
             position: fixed;
-            bottom: 20px; left: 0; right: 0;
+            bottom: 25px; left: 0; right: 0;
             z-index: 10;
             display: flex;
             flex-direction: column;
             align-items: center;
-            gap: 10px;
+            gap: 12px;
             padding: 0 15px;
         }
 
         .status-pill {
-            background: rgba(15, 23, 42, 0.85);
-            backdrop-filter: blur(8px);
-            border: 1px solid rgba(255,255,255,0.1);
-            padding: 8px 18px;
-            border-radius: 20px;
-            font-size: 12px;
-            font-weight: 600;
+            background: rgba(15, 23, 42, 0.92);
+            backdrop-filter: blur(10px);
+            border: 2px solid rgba(255, 255, 255, 0.15);
+            padding: 10px 22px;
+            border-radius: 30px;
+            font-size: 14px;
+            font-weight: 700;
             color: #cbd5e1;
             display: flex;
             align-items: center;
-            gap: 8px;
+            gap: 10px;
+            box-shadow: 0 6px 18px rgba(0,0,0,0.6);
         }
 
         .status-pill.locked {
             border-color: #4ade80;
             color: #4ade80;
-            background: rgba(20, 83, 45, 0.85);
+            background: rgba(20, 83, 45, 0.95);
         }
 
         .btn-group {
             display: flex;
-            gap: 10px;
+            gap: 12px;
             pointer-events: auto;
         }
 
         .btn {
-            background: rgba(30, 41, 59, 0.8);
-            backdrop-filter: blur(8px);
-            border: 1px solid rgba(255, 255, 255, 0.2);
+            background: rgba(30, 41, 59, 0.92);
+            backdrop-filter: blur(10px);
+            border: 2px solid rgba(255, 255, 255, 0.2);
             color: #fff;
-            padding: 10px 16px;
-            border-radius: 25px;
-            font-size: 12px;
-            font-weight: 500;
+            padding: 12px 20px;
+            border-radius: 30px;
+            font-size: 13px;
+            font-weight: 700;
             cursor: pointer;
             display: flex;
             align-items: center;
-            gap: 6px;
+            gap: 8px;
+            box-shadow: 0 4px 14px rgba(0,0,0,0.4);
         }
 
-        .btn:active { transform: scale(0.95); }
+        .btn:active { transform: scale(0.94); }
 
-        /* Start Overlay */
+        /* Start Overlay Screen */
         .start-screen {
             position: fixed;
             top: 0; left: 0;
@@ -238,113 +248,114 @@
             padding: 25px;
             text-align: center;
         }
-
-        .start-screen i { font-size: 50px; color: #38bdf8; margin-bottom: 15px; }
-        .start-screen h1 { font-size: 20px; font-weight: 600; margin-bottom: 8px; }
-        .start-screen p { font-size: 12px; color: #94a3b8; max-width: 280px; margin-bottom: 25px; line-height: 1.5; }
+        .start-screen i { font-size: 60px; color: #38bdf8; margin-bottom: 20px; }
+        .start-screen h1 { font-size: 22px; font-weight: 700; margin-bottom: 10px; }
+        .start-screen p { font-size: 13px; color: #94a3b8; max-width: 300px; margin-bottom: 30px; line-height: 1.6; }
         .btn-start {
             background: linear-gradient(135deg, #0284c7, #2563eb);
             border: none;
             color: #fff;
-            padding: 12px 30px;
-            font-size: 14px;
-            font-weight: 600;
+            padding: 14px 36px;
+            font-size: 15px;
+            font-weight: 700;
             border-radius: 30px;
             cursor: pointer;
-            box-shadow: 0 4px 15px rgba(2, 132, 199, 0.4);
+            box-shadow: 0 6px 20px rgba(2, 132, 199, 0.5);
         }
 
-        /* Selector Modal */
+        /* Satellite Selector Sheet */
         .select-modal {
             position: fixed;
-            bottom: -100%;
-            left: 0; right: 0;
+            bottom: -100%; left: 0; right: 0;
             background: #0f172a;
-            border-top-left-radius: 20px;
-            border-top-right-radius: 20px;
-            padding: 20px;
+            border-top: 2px solid rgba(255,255,255,0.2);
+            border-top-left-radius: 24px;
+            border-top-right-radius: 24px;
+            padding: 24px 20px;
             z-index: 50;
-            transition: bottom 0.3s ease;
-            max-height: 50vh;
+            transition: bottom 0.3s ease-out;
+            max-height: 60vh;
             overflow-y: auto;
         }
         .select-modal.open { bottom: 0; }
-        .select-modal h3 { font-size: 14px; margin-bottom: 12px; color: #94a3b8; text-transform: uppercase; }
+        .select-modal h3 { font-size: 14px; margin-bottom: 16px; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.8px; }
         .sat-item {
-            padding: 12px;
-            border-bottom: 1px solid rgba(255,255,255,0.05);
+            padding: 14px 12px;
+            border-bottom: 1px solid rgba(255,255,255,0.08);
             display: flex;
             justify-content: space-between;
-            font-size: 13px;
+            font-size: 15px;
+            font-weight: 600;
+            color: #e2e8f0;
         }
-        .sat-item:active { background: rgba(255,255,255,0.05); }
+        .sat-item:active { background: rgba(56, 189, 248, 0.15); border-radius: 10px; }
     </style>
 </head>
 <body>
 
-    <!-- Camera Background -->
+    <!-- Video Camera Feed -->
     <video id="cameraVideo" autoplay playsinline muted></video>
     <div class="ar-overlay"></div>
 
-    <!-- Start Overlay -->
+    <!-- Start Overlay Screen -->
     <div class="start-screen" id="startScreen">
         <i class="fas fa-satellite-dish"></i>
         <h1>AR Satellite Finder Pro</h1>
-        <p>Real-time AR tracking system to align your dish antenna accurately using camera & motion sensors.</p>
-        <button class="btn-start" id="startBtn">Launch AR Finder</button>
+        <p>Real-time camera tracking with precision Azimuth & Elevation logic.</p>
+        <button class="btn-start" id="startBtn"><i class="fas fa-play" style="margin-right:8px;"></i> Start AR Camera</button>
     </div>
 
-    <!-- Top HUD Data -->
+    <!-- Top Dashboard (HUD) -->
     <div class="hud-header">
         <div class="hud-card">
-            <div class="title">AZIMUTH (DIR)</div>
+            <div class="title">Azimuth (Dir)</div>
             <div class="val" id="hudAz">--°</div>
-            <div class="title" style="margin-top:2px;" id="hudTargetAz">Target: --°</div>
+            <div class="sub-target" id="hudTargetAz">Target: --°</div>
         </div>
         <div class="hud-card">
-            <div class="title">ELEVATION (TILT)</div>
+            <div class="title">Elevation (Tilt)</div>
             <div class="val" id="hudEl">--°</div>
-            <div class="title" style="margin-top:2px;" id="hudTargetEl">Target: --°</div>
+            <div class="sub-target" id="hudTargetEl">Target: --°</div>
         </div>
         <div class="hud-card">
-            <div class="title">GPS STATUS</div>
-            <div class="val" id="hudGps" style="font-size: 11px; color:#4ade80;">Acquiring...</div>
+            <div class="title">GPS Location</div>
+            <div class="val" id="hudGps" style="font-size: 12px; color:#4ade80;">Locating...</div>
         </div>
     </div>
 
-    <!-- AR Target Marker -->
+    <!-- Target AR Marker -->
     <div class="sat-target-marker" id="satMarker">
         <div class="sat-icon-box"><i class="fas fa-satellite"></i></div>
         <div class="sat-tag" id="satTag">SES 8 (95.0°E)</div>
     </div>
 
-    <!-- Center Reticle Indicator -->
+    <!-- Center Reticle Alignment Target -->
     <div class="crosshair-container" id="crosshair">
         <div class="reticle-ring"></div>
         <div class="reticle-center"></div>
     </div>
 
-    <!-- Bottom HUD Controls -->
+    <!-- Bottom Controls & Status -->
     <div class="hud-bottom">
         <div class="status-pill" id="statusPill">
-            <i class="fas fa-compass fa-spin"></i>
-            <span id="statusText">Point phone towards sky...</span>
+            <i class="fas fa-compass fa-spin" id="statusIcon"></i>
+            <span id="statusText">Point camera towards sky...</span>
         </div>
         <div class="btn-group">
-            <button class="btn" id="satSelectBtn"><i class="fas fa-list"></i> Select Sat</button>
-            <button class="btn" id="reGpsBtn"><i class="fas fa-location-crosshairs"></i> GPS Sync</button>
+            <button class="btn" id="satSelectBtn"><i class="fas fa-list-ul"></i> Sat Select</button>
+            <button class="btn" id="reGpsBtn"><i class="fas fa-crosshairs"></i> GPS Sync</button>
         </div>
     </div>
 
-    <!-- Satellite Selection List Modal -->
+    <!-- Satellite Selection Sheet -->
     <div class="select-modal" id="satModal">
-        <h3>Choose Target Satellite</h3>
+        <h3>Select Satellite Target</h3>
         <div id="satList"></div>
     </div>
 
     <script>
         const SATELLITES = [
-            { name: 'SES 8 / NNS 6 (Dish TV)', long: 95.0 },
+            { name: 'SES 8 (Dish TV India)', long: 95.0 },
             { name: 'GSAT 15 (DD Free Dish)', long: 93.5 },
             { name: 'GSAT 10 / 17 (Tata Play)', long: 83.0 },
             { name: 'ST 2 (Videocon d2h)', long: 88.0 },
@@ -360,8 +371,8 @@
             selectedSat: SATELLITES[0],
             targetAzimuth: 0,
             targetElevation: 0,
-            phoneAzimuth: 0,
-            phoneElevation: 0,
+            phoneHeading: 0,
+            phonePitch: 0,
             isLocked: false
         };
 
@@ -373,36 +384,39 @@
         const statusPill = document.getElementById('statusPill');
         const statusText = document.getElementById('statusText');
 
-        // Calculate Azimuth & Elevation
-        function calculateAngles() {
+        // Geostationary Satellite Angle Calculator
+        function calculateSatelliteAngles() {
             const latRad = state.lat * Math.PI / 180;
             const lonRad = state.lon * Math.PI / 180;
             const satLonRad = state.selectedSat.long * Math.PI / 180;
 
             const dLon = satLonRad - lonRad;
 
-            // Azimuth Calculation
-            const y = Math.sin(dLon);
-            const x = Math.cos(latRad) * Math.tan(0) - Math.sin(latRad) * Math.cos(dLon); 
-            let az = Math.atan2(y, -x) * 180 / Math.PI;
-            if (az < 0) az += 360;
+            // Accurate Geostationary Azimuth Formula
+            const East = Math.sin(dLon);
+            const North = -Math.sin(latRad) * Math.cos(dLon);
+            let azRad = Math.atan2(East, North);
+            let azDeg = (azRad * 180 / Math.PI + 360) % 360;
 
-            // Elevation Calculation
-            const R = 6378; // Earth Radius (km)
-            const H = 35786; // Geostationary Orbit Height (km)
-            const r = R + H;
-            const cosG = Math.cos(latRad) * Math.cos(dLon);
-            const el = Math.atan((Math.cos(cosG) - (R / r)) / Math.sin(Math.acos(cosG))) * 180 / Math.PI;
+            // Accurate Geostationary Elevation Formula
+            const R_earth = 6371;
+            const R_sat = 42164; // Earth center to Geostationary Orbit radius
+            const cosGamma = Math.cos(latRad) * Math.cos(dLon);
+            const sinGamma = Math.sqrt(Math.max(0, 1 - cosGamma * cosGamma));
+            const elRad = Math.atan((cosGamma - (R_earth / R_sat)) / (sinGamma || 0.00001));
+            let elDeg = elRad * 180 / Math.PI;
 
-            state.targetAzimuth = az;
-            state.targetElevation = el;
+            state.targetAzimuth = azDeg;
+            state.targetElevation = elDeg;
 
-            document.getElementById('hudTargetAz').textContent = `Target: ${az.toFixed(1)}°`;
-            document.getElementById('hudTargetEl').textContent = `Target: ${el.toFixed(1)}°`;
-            document.getElementById('satTag').textContent = `${state.selectedSat.name}`;
+            document.getElementById('hudTargetAz').textContent = `Target: ${azDeg.toFixed(1)}°`;
+            document.getElementById('hudTargetEl').textContent = `Target: ${elDeg.toFixed(1)}°`;
+            document.getElementById('satTag').textContent = `${state.selectedSat.name} (${state.selectedSat.long}°E)`;
+            
+            renderAR();
         }
 
-        // Start Camera Feed
+        // Camera Feed Initialization
         async function initCamera() {
             try {
                 const stream = await navigator.mediaDevices.getUserMedia({
@@ -411,65 +425,75 @@
                 });
                 video.srcObject = stream;
             } catch (e) {
-                // Fallback to default user camera if environment fails
                 const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
                 video.srcObject = stream;
             }
         }
 
-        // Fetch Live Location (GPS)
+        // GPS Tracker
         function initGPS() {
             if ("geolocation" in navigator) {
                 navigator.geolocation.watchPosition(pos => {
                     state.lat = pos.coords.latitude;
                     state.lon = pos.coords.longitude;
                     document.getElementById('hudGps').textContent = `${state.lat.toFixed(2)}°, ${state.lon.toFixed(2)}°`;
-                    calculateAngles();
+                    calculateSatelliteAngles();
                 }, err => {
                     document.getElementById('hudGps').textContent = "Default GPS";
+                    calculateSatelliteAngles();
                 }, { enableHighAccuracy: true });
             }
         }
 
-        // Handle Orientation / Motion Sensors
+        // Mobile Sensor Listener (Android & iOS Absolute Heading)
         function handleOrientation(e) {
-            let heading = e.alpha;
-            if (e.webkitCompassHeading) {
-                heading = e.webkitCompassHeading; // iOS Fix
+            let heading = 0;
+
+            if (e.webkitCompassHeading !== undefined && e.webkitCompassHeading !== null) {
+                // iOS Compass
+                heading = e.webkitCompassHeading;
+            } else if (e.alpha !== null) {
+                // Android Absolute Heading
+                heading = (360 - e.alpha) % 360;
             }
 
-            // Normalize Heading
-            state.phoneAzimuth = heading || 0;
-            state.phoneElevation = e.beta || 0; // Device Tilt Pitch
+            // Phone Pitch Angle (Tilt towards sky)
+            let pitch = e.beta || 0;
 
-            document.getElementById('hudAz').textContent = `${state.phoneAzimuth.toFixed(1)}°`;
-            document.getElementById('hudEl').textContent = `${state.phoneElevation.toFixed(1)}°`;
+            state.phoneHeading = heading;
+            state.phonePitch = pitch;
+
+            document.getElementById('hudAz').textContent = `${heading.toFixed(1)}°`;
+            document.getElementById('hudEl').textContent = `${pitch.toFixed(1)}°`;
 
             renderAR();
         }
 
-        // Position Satellite Target in Screen Canvas Space (AR Tracking Projection)
+        // AR Canvas Coordinate Mapping
         function renderAR() {
-            const azDiff = state.targetAzimuth - state.phoneAzimuth;
-            const elDiff = state.targetElevation - state.phoneElevation;
+            let azDiff = state.targetAzimuth - state.phoneHeading;
+            // Normalize angular difference (-180 to +180)
+            azDiff = ((azDiff + 540) % 360) - 180;
 
-            // Map Angular Difference to Screen Pixels
-            const pxPerDeg = window.innerWidth / 60; // 60 degree FOV scale
-            const xPos = (window.innerWidth / 2) + (azDiff * pxPerDeg);
-            const yPos = (window.innerHeight / 2) - (elDiff * pxPerDeg);
+            let elDiff = state.targetElevation - state.phonePitch;
+
+            // Scale factor to convert angular diff to screen pixels
+            const fovScale = window.innerWidth / 50; 
+            const xPos = (window.innerWidth / 2) + (azDiff * fovScale);
+            const yPos = (window.innerHeight / 2) - (elDiff * fovScale);
 
             satMarker.style.left = `${xPos}px`;
             satMarker.style.top = `${yPos}px`;
 
-            // Lock Condition check (Within +-3 degree threshold)
+            // Signal Locking Mechanism (within +-3.5 degree radius)
             if (Math.abs(azDiff) < 3.5 && Math.abs(elDiff) < 3.5) {
                 if (!state.isLocked) {
                     state.isLocked = true;
                     crosshair.classList.add('is-aligned');
                     satMarker.classList.add('is-aligned');
                     statusPill.classList.add('locked');
-                    statusText.textContent = "SATELLITE LOCKED! POINT DISH HERE";
-                    if (navigator.vibrate) navigator.vibrate([100, 50, 100]);
+                    statusText.textContent = "✅ SATELLITE MATCHED & LOCKED!";
+                    if (navigator.vibrate) navigator.vibrate([120, 60, 120]);
                 }
             } else {
                 if (state.isLocked) {
@@ -477,12 +501,12 @@
                     crosshair.classList.remove('is-aligned');
                     satMarker.classList.remove('is-aligned');
                     statusPill.classList.remove('locked');
-                    statusText.textContent = "Align Camera with Satellite Target...";
+                    statusText.textContent = "Point camera towards target marker...";
                 }
             }
         }
 
-        // Render Satellite Modal Options
+        // Render Satellite Selection Options
         function renderSatList() {
             const container = document.getElementById('satList');
             container.innerHTML = '';
@@ -492,26 +516,27 @@
                 item.innerHTML = `<span>${sat.name}</span><strong>${sat.long}°E</strong>`;
                 item.onclick = () => {
                     state.selectedSat = sat;
-                    calculateAngles();
+                    calculateSatelliteAngles();
                     document.getElementById('satModal').classList.remove('open');
                 };
                 container.appendChild(item);
             });
         }
 
-        // Initialize Launch Button Event
+        // App Launch Handler
         startBtn.onclick = async () => {
             startScreen.style.display = 'none';
             await initCamera();
             initGPS();
-            calculateAngles();
+            calculateSatelliteAngles();
 
-            if (window.DeviceOrientationEvent) {
+            // Android absolute deviceorientation vs iOS orientation binding
+            if ('ondeviceorientationabsolute' in window) {
+                window.addEventListener('deviceorientationabsolute', handleOrientation);
+            } else if (window.DeviceOrientationEvent) {
                 if (typeof DeviceOrientationEvent.requestPermission === 'function') {
-                    DeviceOrientationEvent.requestPermission().then(permissionState => {
-                        if (permissionState === 'granted') {
-                            window.addEventListener('deviceorientation', handleOrientation);
-                        }
+                    DeviceOrientationEvent.requestPermission().then(res => {
+                        if (res === 'granted') window.addEventListener('deviceorientation', handleOrientation);
                     });
                 } else {
                     window.addEventListener('deviceorientation', handleOrientation);
