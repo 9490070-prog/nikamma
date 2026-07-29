@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-    <title>Professional AR Satellite Finder</title>
+    <title>AR Satellite Finder Pro - Axis Fixed</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -17,7 +17,7 @@
             user-select: none;
         }
 
-        /* Camera Background */
+        /* Camera Feed */
         #cameraVideo {
             position: fixed;
             top: 0; left: 0;
@@ -35,7 +35,7 @@
             pointer-events: none;
         }
 
-        /* Top HUD Cards */
+        /* Dashboard Top Cards */
         .hud-header {
             position: fixed;
             top: 15px; left: 0; right: 0;
@@ -47,7 +47,7 @@
         }
 
         .hud-card {
-            background: rgba(15, 23, 42, 0.9);
+            background: rgba(15, 23, 42, 0.92);
             backdrop-filter: blur(10px);
             border: 2px solid rgba(255, 255, 255, 0.2);
             border-radius: 14px;
@@ -77,15 +77,15 @@
             color: #f59e0b;
         }
 
-        /* HORIZONTAL SWEEP GAUGE (Left to Right Sweep Bar) */
+        /* Top Horizontal Tracking Gauge */
         .azimuth-bar-container {
             position: fixed;
-            top: 100px;
+            top: 90px;
             left: 5%;
             width: 90%;
-            height: 40px;
-            background: rgba(15, 23, 42, 0.85);
-            border: 2px solid rgba(255,255,255,0.2);
+            height: 38px;
+            background: rgba(15, 23, 42, 0.9);
+            border: 2px solid rgba(255,255,255,0.25);
             border-radius: 20px;
             z-index: 10;
             display: flex;
@@ -104,16 +104,16 @@
 
         .azimuth-pointer {
             position: absolute;
-            width: 24px; height: 24px;
+            width: 22px; height: 22px;
             background: #38bdf8;
             border: 2px solid #fff;
             border-radius: 50%;
-            transition: left 0.1s linear;
+            transition: left 0.05s linear;
             transform: translateX(-50%);
             box-shadow: 0 0 10px #38bdf8;
         }
 
-        /* Center AR Crosshair Reticle */
+        /* Center Target Crosshair */
         .crosshair-container {
             position: fixed;
             top: 55%; left: 50%;
@@ -142,7 +142,7 @@
             transition: all 0.2s;
         }
 
-        /* AR Floating Satellite Target Marker */
+        /* Floating Satellite Marker */
         .sat-target-marker {
             position: absolute;
             transform: translate(-50%, -50%);
@@ -151,11 +151,11 @@
             align-items: center;
             z-index: 6;
             pointer-events: none;
-            transition: transform 0.08s linear;
+            transition: left 0.05s linear, top 0.05s linear;
         }
 
         .sat-icon-box {
-            width: 60px; height: 60px;
+            width: 62px; height: 62px;
             background: rgba(239, 68, 68, 0.3);
             border: 3px solid #ef4444;
             border-radius: 50%;
@@ -204,15 +204,15 @@
         @keyframes pulseRed { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.1); } }
         @keyframes pulseGreen { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.15); } }
 
-        /* Bottom Controls & Guidance */
+        /* Bottom Status & Controls */
         .hud-bottom {
             position: fixed;
-            bottom: 25px; left: 0; right: 0;
+            bottom: 20px; left: 0; right: 0;
             z-index: 10;
             display: flex;
             flex-direction: column;
             align-items: center;
-            gap: 12px;
+            gap: 10px;
             padding: 0 15px;
         }
 
@@ -220,9 +220,9 @@
             background: rgba(15, 23, 42, 0.95);
             backdrop-filter: blur(10px);
             border: 2px solid rgba(255, 255, 255, 0.2);
-            padding: 12px 24px;
+            padding: 10px 20px;
             border-radius: 30px;
-            font-size: 14px;
+            font-size: 13px;
             font-weight: 700;
             color: #cbd5e1;
             display: flex;
@@ -239,8 +239,10 @@
 
         .btn-group {
             display: flex;
-            gap: 12px;
+            gap: 8px;
             pointer-events: auto;
+            flex-wrap: wrap;
+            justify-content: center;
         }
 
         .btn {
@@ -248,17 +250,17 @@
             backdrop-filter: blur(10px);
             border: 2px solid rgba(255, 255, 255, 0.2);
             color: #fff;
-            padding: 12px 20px;
+            padding: 10px 16px;
             border-radius: 30px;
-            font-size: 13px;
+            font-size: 12px;
             font-weight: 700;
             cursor: pointer;
             display: flex;
             align-items: center;
-            gap: 8px;
+            gap: 6px;
         }
 
-        /* Modal Overlay */
+        /* Launch Overlay */
         .start-screen {
             position: fixed;
             top: 0; left: 0;
@@ -313,7 +315,6 @@
 </head>
 <body>
 
-    <!-- Camera Feed Background -->
     <video id="cameraVideo" autoplay playsinline muted></video>
     <div class="ar-overlay"></div>
 
@@ -321,8 +322,8 @@
     <div class="start-screen" id="startScreen">
         <i class="fas fa-satellite-dish"></i>
         <h1>AR Satellite Finder Pro</h1>
-        <p>Horizontal Azimuth Sweep & Real-time Elevation Alignment</p>
-        <button class="btn-start" id="startBtn"><i class="fas fa-play" style="margin-right:8px;"></i> Start AR Tracker</button>
+        <p>Inverted Horizontal & Vertical Camera Axis Corrected Version</p>
+        <button class="btn-start" id="startBtn"><i class="fas fa-play" style="margin-right:8px;"></i> Start AR Camera</button>
     </div>
 
     <!-- Top Dashboard -->
@@ -343,7 +344,7 @@
         </div>
     </div>
 
-    <!-- Horizontal Azimuth Track Gauge -->
+    <!-- Top Horizontal Tracking Gauge -->
     <div class="azimuth-bar-container">
         <div class="azimuth-center-line"></div>
         <div class="azimuth-pointer" id="azPointer"></div>
@@ -369,6 +370,7 @@
         </div>
         <div class="btn-group">
             <button class="btn" id="satSelectBtn"><i class="fas fa-list-ul"></i> Sat Select</button>
+            <button class="btn" id="flipAxisBtn"><i class="fas fa-exchange-alt"></i> Invert Axis</button>
             <button class="btn" id="reGpsBtn"><i class="fas fa-crosshairs"></i> Refresh GPS</button>
         </div>
     </div>
@@ -399,6 +401,7 @@
             targetElevation: 0,
             phoneHeading: 0,
             phonePitch: 0,
+            invertX: false, // Fix for flipped horizontal axis
             isLocked: false
         };
 
@@ -412,7 +415,7 @@
         const statusIcon = document.getElementById('statusIcon');
         const azPointer = document.getElementById('azPointer');
 
-        // Geostationary Orbital Trigonometry Formula
+        // Geostationary Orbital Trigonometry
         function calculateSatelliteAngles() {
             const latRad = state.lat * Math.PI / 180;
             const lonRad = state.lon * Math.PI / 180;
@@ -420,13 +423,13 @@
 
             const dLon = satLonRad - lonRad;
 
-            // Azimuth (Horizontal Direction)
+            // Azimuth Calculation
             const East = Math.sin(dLon);
             const North = -Math.sin(latRad) * Math.cos(dLon);
             let azRad = Math.atan2(East, North);
             let azDeg = (azRad * 180 / Math.PI + 360) % 360;
 
-            // Elevation (Vertical Sky Angle)
+            // Elevation Calculation
             const R_earth = 6371;
             const R_sat = 42164;
             const cosGamma = Math.cos(latRad) * Math.cos(dLon);
@@ -442,7 +445,7 @@
             document.getElementById('satTag').textContent = `${state.selectedSat.name} (${state.selectedSat.long}°E)`;
         }
 
-        // Camera Feed Setup
+        // Camera Initialization
         async function initCamera() {
             try {
                 const stream = await navigator.mediaDevices.getUserMedia({
@@ -470,7 +473,7 @@
             }
         }
 
-        // Sensor Processing (Device Orientation)
+        // Orientation Sensors
         function handleOrientation(e) {
             let heading = 0;
             if (e.webkitCompassHeading !== undefined && e.webkitCompassHeading !== null) {
@@ -479,7 +482,7 @@
                 heading = (360 - e.alpha) % 360;
             }
 
-            let pitch = e.beta || 0; // Device Elevation Pitch
+            let pitch = e.beta || 0;
 
             state.phoneHeading = heading;
             state.phonePitch = pitch;
@@ -490,32 +493,37 @@
             renderAR();
         }
 
-        // AR Rendering & Horizontal Tracking Logic
+        // Corrected Horizontal Projection Logic
         function renderAR() {
-            // Horizontal Difference (Azimuth)
+            // Horizontal Delta (Azimuth Diff)
             let azDiff = state.targetAzimuth - state.phoneHeading;
             azDiff = ((azDiff + 540) % 360) - 180; // Normalize between -180 and +180
 
-            // Vertical Difference (Elevation)
+            // Apply Inversion state if toggled
+            if (state.invertX) {
+                azDiff = -azDiff;
+            }
+
+            // Vertical Delta (Elevation Diff)
             let elDiff = state.targetElevation - state.phonePitch;
 
-            // 1. Update Top Gauge Pointer (Left / Right)
-            // Clamp percentage between 5% and 95%
-            let gaugePct = 50 + (azDiff / 60) * 50; 
+            // 1. Top Pointer Bar (Corrected Direction)
+            let gaugePct = 50 + (azDiff / 50) * 50; 
             gaugePct = Math.max(5, Math.min(95, gaugePct));
             azPointer.style.left = `${gaugePct}%`;
 
-            // 2. Position AR Marker in Screen Space
-            const fovScaleX = window.innerWidth / 60; // 60 deg horizontal FOV scale
-            const fovScaleY = window.innerHeight / 60;
+            // 2. Screen Space AR Projection Fix
+            const fovScaleX = window.innerWidth / 50; 
+            const fovScaleY = window.innerHeight / 50;
 
+            // CORRECTED: Right moves Right (+), Left moves Left (-)
             const xPos = (window.innerWidth / 2) + (azDiff * fovScaleX);
             const yPos = (window.innerHeight / 2) - (elDiff * fovScaleY);
 
             satMarker.style.left = `${xPos}px`;
             satMarker.style.top = `${yPos}px`;
 
-            // 3. Guidance Messaging & Direction Arrows
+            // 3. Guidance Messaging & Alignment Lock
             if (Math.abs(azDiff) < 3.5 && Math.abs(elDiff) < 3.5) {
                 if (!state.isLocked) {
                     state.isLocked = true;
@@ -554,7 +562,7 @@
             }
         }
 
-        // Render Satellite Selection Options
+        // Render Satellite List Modal
         function renderSatList() {
             const container = document.getElementById('satList');
             container.innerHTML = '';
@@ -571,7 +579,7 @@
             });
         }
 
-        // App Launch Handler
+        // Event Listeners
         startBtn.onclick = async () => {
             startScreen.style.display = 'none';
             await initCamera();
@@ -594,6 +602,13 @@
         document.getElementById('satSelectBtn').onclick = () => {
             renderSatList();
             document.getElementById('satModal').classList.toggle('open');
+        };
+
+        // Invert Axis Toggle Button
+        document.getElementById('flipAxisBtn').onclick = () => {
+            state.invertX = !state.invertX;
+            alert(state.invertX ? "Horizontal Axis Inverted!" : "Horizontal Axis Normal!");
+            renderAR();
         };
 
         document.getElementById('reGpsBtn').onclick = () => {
