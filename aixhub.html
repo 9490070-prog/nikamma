@@ -26,14 +26,20 @@
 </head>
 <body class="flex h-screen overflow-hidden text-gray-700">
 
-    <!-- Sidebar -->
-    <aside class="w-64 bg-white shadow-xl flex flex-col z-20 border-r border-gray-100">
-        <div class="h-20 flex items-center justify-center border-b border-gray-50">
+    <!-- Mobile Sidebar Overlay -->
+    <div id="sidebar-overlay" onclick="toggleSidebar()" class="fixed inset-0 bg-gray-900 bg-opacity-50 z-20 hidden md:hidden transition-opacity"></div>
+
+    <!-- Sidebar (Responsive: Fixed off-screen on mobile, relative on desktop) -->
+    <aside id="sidebar" class="w-64 bg-white shadow-xl flex flex-col z-30 fixed inset-y-0 left-0 transform -translate-x-full md:relative md:translate-x-0 transition-transform duration-300 ease-in-out border-r border-gray-100">
+        <div class="h-20 flex items-center justify-between px-6 border-b border-gray-50">
             <h1 class="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-[#4318FF] to-[#868CFF]">
                 <i class="fa-solid fa-bolt text-[#4318FF] mr-2"></i>AdminPro
             </h1>
+            <button onclick="toggleSidebar()" class="md:hidden text-gray-400 hover:text-red-500 text-xl">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
         </div>
-        <nav class="flex-1 p-5 space-y-3 mt-4">
+        <nav class="flex-1 p-4 space-y-3 mt-4 overflow-y-auto custom-scrollbar">
             <button onclick="switchView('dashboard')" id="nav-dashboard" class="sidebar-item active w-full flex items-center p-3.5 rounded-xl text-gray-500 font-semibold tracking-wide">
                 <i class="fa-solid fa-chart-pie w-6 text-lg"></i> Dashboard
             </button>
@@ -47,38 +53,45 @@
     </aside>
 
     <!-- Main Content -->
-    <div class="flex-1 flex flex-col h-screen overflow-hidden">
-        
+    <div class="flex-1 flex flex-col h-screen overflow-hidden w-full">
+
         <!-- Top Bar -->
-        <header class="h-20 bg-white/80 backdrop-blur-md flex items-center justify-between px-8 z-10 sticky top-0">
-            <div id="top-search-container" class="flex-1 max-w-2xl">
-                <div class="relative group">
-                    <span class="absolute inset-y-0 left-0 flex items-center pl-4 text-gray-400 group-focus-within:text-[#4318FF] transition">
-                        <i class="fa-solid fa-magnifying-glass"></i>
-                    </span>
-                    <input type="text" id="searchInput" onkeyup="filterTable()" class="w-full pl-12 pr-4 py-3 border-none rounded-full bg-[#f4f7fe] focus:bg-white focus:ring-2 focus:ring-[#4318FF] shadow-inner transition font-medium" placeholder="Search by name, ID, or author...">
+        <header class="h-20 bg-white/80 backdrop-blur-md flex items-center justify-between px-4 md:px-8 z-10 sticky top-0 border-b md:border-none border-gray-100">
+            <div class="flex items-center flex-1 max-w-2xl">
+                <!-- Hamburger Menu for Mobile -->
+                <button onclick="toggleSidebar()" class="md:hidden mr-4 text-gray-600 focus:outline-none hover:text-[#4318FF] transition">
+                    <i class="fa-solid fa-bars text-xl"></i>
+                </button>
+                
+                <div id="top-search-container" class="flex-1 w-full">
+                    <div class="relative group">
+                        <span class="absolute inset-y-0 left-0 flex items-center pl-4 text-gray-400 group-focus-within:text-[#4318FF] transition">
+                            <i class="fa-solid fa-magnifying-glass"></i>
+                        </span>
+                        <input type="text" id="searchInput" onkeyup="filterTable()" class="w-full pl-10 md:pl-12 pr-4 py-2.5 md:py-3 border-none rounded-full bg-[#f4f7fe] focus:bg-white focus:ring-2 focus:ring-[#4318FF] shadow-inner transition font-medium text-sm md:text-base" placeholder="Search apps...">
+                    </div>
                 </div>
             </div>
-            
-            <div class="flex items-center ml-4 space-x-4">
-                <button onclick="fetchData()" id="refreshBtn" class="bg-white hover:bg-gray-50 text-gray-600 shadow-sm border border-gray-100 p-3 rounded-full transition" title="Refresh Data">
+
+            <div class="flex items-center ml-2 md:ml-4 space-x-2 md:space-x-4">
+                <button onclick="fetchData()" id="refreshBtn" class="bg-white hover:bg-gray-50 text-gray-600 shadow-sm border border-gray-100 p-2.5 md:p-3 rounded-full transition" title="Refresh Data">
                     <i class="fa-solid fa-rotate-right"></i>
                 </button>
-                <button onclick="openAddForm()" id="topAddBtn" class="bg-gradient-to-r from-[#4318FF] to-[#868CFF] hover:opacity-90 text-white px-6 py-3 rounded-full font-bold shadow-lg shadow-indigo-200 transition transform hover:scale-105 flex items-center">
-                    <i class="fa-solid fa-plus mr-2"></i> Add Item
+                <button onclick="openAddForm()" id="topAddBtn" class="bg-gradient-to-r from-[#4318FF] to-[#868CFF] hover:opacity-90 text-white px-4 py-2.5 md:px-6 md:py-3 rounded-full font-bold shadow-lg shadow-indigo-200 transition transform hover:scale-105 flex items-center text-sm md:text-base">
+                    <i class="fa-solid fa-plus md:mr-2"></i> <span class="hidden md:inline">Add Item</span>
                 </button>
             </div>
         </header>
 
         <!-- Dynamic Views Area -->
-        <main class="flex-1 overflow-x-hidden overflow-y-auto p-8 custom-scrollbar">
-            
+        <main class="flex-1 overflow-x-hidden overflow-y-auto p-4 md:p-8 custom-scrollbar">
+
             <!-- VIEW 1: SETTINGS -->
             <div id="view-settings" class="hidden max-w-2xl mx-auto glass-card overflow-hidden">
                 <div class="bg-gradient-to-r from-gray-800 to-gray-900 text-white p-6">
-                    <h2 class="text-2xl font-bold"><i class="fa-solid fa-shield-halved mr-2"></i> System Configuration</h2>
+                    <h2 class="text-xl md:text-2xl font-bold"><i class="fa-solid fa-shield-halved mr-2"></i> System Configuration</h2>
                 </div>
-                <div class="p-8 space-y-6">
+                <div class="p-6 md:p-8 space-y-6">
                     <div>
                         <label class="block text-sm font-bold text-gray-700 mb-2">Apps Script URL</label>
                         <input type="url" id="conf-scriptUrl" class="w-full p-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#4318FF] bg-[#f4f7fe] transition" placeholder="https://script.google.com/macros/s/.../exec">
@@ -93,7 +106,7 @@
                         <input type="text" id="conf-sheetName" class="w-full p-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#4318FF] bg-[#f4f7fe] transition" placeholder="Sheet1">
                     </div>
                     <div class="pt-4">
-                        <button onclick="saveSettings()" class="bg-[#4318FF] hover:bg-[#3311cc] text-white font-bold py-3 px-6 rounded-xl shadow-lg w-full transition transform hover:-translate-y-1">
+                        <button onclick="saveSettings()" class="bg-[#4318FF] hover:bg-[#3311cc] text-white font-bold py-3 px-6 rounded-xl shadow-lg w-full transition transform hover:-translate-y-1 text-sm md:text-base">
                             Save Configuration <i class="fa-solid fa-arrow-right ml-2"></i>
                         </button>
                     </div>
@@ -102,45 +115,45 @@
 
             <!-- VIEW 2: DASHBOARD (DATA TABLE) -->
             <div id="view-dashboard" class="hidden">
-                
+
                 <!-- STATS CARDS -->
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-                    <div class="glass-card p-6 flex items-center justify-between border-l-4 border-[#4318FF]">
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 md:gap-6 mb-6 md:mb-8">
+                    <div class="glass-card p-5 md:p-6 flex items-center justify-between border-l-4 border-[#4318FF]">
                         <div>
-                            <p class="text-sm font-bold text-gray-400 uppercase tracking-wider">Total Apps</p>
-                            <h3 class="text-3xl font-black text-[#2B3674] mt-1" id="stat-total">0</h3>
+                            <p class="text-xs md:text-sm font-bold text-gray-400 uppercase tracking-wider">Total Apps</p>
+                            <h3 class="text-2xl md:text-3xl font-black text-[#2B3674] mt-1" id="stat-total">0</h3>
                         </div>
-                        <div class="bg-[#f4f7fe] p-4 rounded-full text-[#4318FF]"><i class="fa-solid fa-box-open text-2xl"></i></div>
+                        <div class="bg-[#f4f7fe] p-3 md:p-4 rounded-full text-[#4318FF]"><i class="fa-solid fa-box-open text-xl md:text-2xl"></i></div>
                     </div>
-                    <div class="glass-card p-6 flex items-center justify-between border-l-4 border-green-400">
+                    <div class="glass-card p-5 md:p-6 flex items-center justify-between border-l-4 border-green-400">
                         <div>
-                            <p class="text-sm font-bold text-gray-400 uppercase tracking-wider">Free Apps</p>
-                            <h3 class="text-3xl font-black text-[#2B3674] mt-1" id="stat-free">0</h3>
+                            <p class="text-xs md:text-sm font-bold text-gray-400 uppercase tracking-wider">Free Apps</p>
+                            <h3 class="text-2xl md:text-3xl font-black text-[#2B3674] mt-1" id="stat-free">0</h3>
                         </div>
-                        <div class="bg-green-50 p-4 rounded-full text-green-500"><i class="fa-solid fa-gift text-2xl"></i></div>
+                        <div class="bg-green-50 p-3 md:p-4 rounded-full text-green-500"><i class="fa-solid fa-gift text-xl md:text-2xl"></i></div>
                     </div>
-                    <div class="glass-card p-6 flex items-center justify-between border-l-4 border-orange-400">
+                    <div class="glass-card p-5 md:p-6 flex items-center justify-between border-l-4 border-orange-400">
                         <div>
-                            <p class="text-sm font-bold text-gray-400 uppercase tracking-wider">Paid Apps</p>
-                            <h3 class="text-3xl font-black text-[#2B3674] mt-1" id="stat-paid">0</h3>
+                            <p class="text-xs md:text-sm font-bold text-gray-400 uppercase tracking-wider">Paid Apps</p>
+                            <h3 class="text-2xl md:text-3xl font-black text-[#2B3674] mt-1" id="stat-paid">0</h3>
                         </div>
-                        <div class="bg-orange-50 p-4 rounded-full text-orange-500"><i class="fa-solid fa-gem text-2xl"></i></div>
+                        <div class="bg-orange-50 p-3 md:p-4 rounded-full text-orange-500"><i class="fa-solid fa-gem text-xl md:text-2xl"></i></div>
                     </div>
                 </div>
 
                 <!-- TABLE AREA -->
                 <div class="glass-card overflow-hidden flex flex-col">
-                    <div class="p-6 border-b border-gray-100 flex justify-between items-center">
-                        <h2 class="text-xl font-black text-[#2B3674]">Application Inventory</h2>
-                    </div>
-                    
-                    <div id="tableLoader" class="py-16 text-center text-gray-400 hidden">
-                        <div class="loader mb-4 border-[#4318FF]"></div>
-                        <p class="font-medium animate-pulse">Fast Syncing with Google Sheets...</p>
+                    <div class="p-4 md:p-6 border-b border-gray-100 flex justify-between items-center">
+                        <h2 class="text-lg md:text-xl font-black text-[#2B3674]">Application Inventory</h2>
                     </div>
 
-                    <div class="overflow-x-auto custom-scrollbar pb-4">
-                        <table class="w-full text-sm text-left whitespace-nowrap">
+                    <div id="tableLoader" class="py-16 text-center text-gray-400 hidden">
+                        <div class="loader mb-4 border-[#4318FF]"></div>
+                        <p class="font-medium animate-pulse text-sm md:text-base">Fast Syncing with Google Sheets...</p>
+                    </div>
+
+                    <div class="overflow-x-auto custom-scrollbar pb-4 w-full">
+                        <table class="w-full text-sm text-left whitespace-nowrap min-w-max">
                             <thead class="text-xs text-gray-400 uppercase bg-[#f4f7fe]" id="tableHeader">
                                 <!-- Headers -->
                             </thead>
@@ -154,50 +167,50 @@
 
             <!-- VIEW 3: ADD / EDIT ITEM FORM -->
             <div id="view-addForm" class="hidden">
-                <div class="glass-card p-8 max-w-6xl mx-auto">
-                    <div class="border-b border-gray-100 pb-5 mb-8 flex justify-between items-center">
+                <div class="glass-card p-5 md:p-8 max-w-6xl mx-auto">
+                    <div class="border-b border-gray-100 pb-4 md:pb-5 mb-6 md:mb-8 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                         <div>
-                            <h2 id="formTitle" class="text-2xl font-black text-[#2B3674]">Publish New Application</h2>
+                            <h2 id="formTitle" class="text-xl md:text-2xl font-black text-[#2B3674]">Publish New Application</h2>
                         </div>
-                        <button onclick="switchView('dashboard')" class="bg-gray-100 hover:bg-gray-200 text-gray-600 px-4 py-2 rounded-lg font-bold transition">
+                        <button onclick="switchView('dashboard')" class="bg-gray-100 hover:bg-gray-200 text-gray-600 px-4 py-2 rounded-lg font-bold transition text-sm md:text-base w-full sm:w-auto">
                             <i class="fa-solid fa-xmark mr-2"></i> Cancel
                         </button>
                     </div>
 
-                    <form id="adminForm" class="space-y-8">
+                    <form id="adminForm" class="space-y-6 md:space-y-8">
                         <input type="hidden" id="editRowId" value="">
 
                         <!-- Section 1: Exact Match to Sheet Headers -->
                         <div>
-                            <h3 class="text-xs uppercase font-bold text-[#4318FF] tracking-widest mb-4">Basic Info</h3>
-                            <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
-                                <div><label class="block text-xs font-bold text-gray-500 mb-2">ID</label><input type="text" id="f_id" class="w-full p-3 border border-gray-200 rounded-xl bg-[#f4f7fe]" required></div>
-                                <div><label class="block text-xs font-bold text-gray-500 mb-2">Name</label><input type="text" id="f_name" class="w-full p-3 border border-gray-200 rounded-xl bg-[#f4f7fe]" required></div>
-                                <div><label class="block text-xs font-bold text-gray-500 mb-2">Author</label><input type="text" id="f_author" class="w-full p-3 border border-gray-200 rounded-xl bg-[#f4f7fe]" required></div>
-                                <div><label class="block text-xs font-bold text-gray-500 mb-2">Version</label><input type="text" id="f_version" class="w-full p-3 border border-gray-200 rounded-xl bg-[#f4f7fe]" required></div>
-                                
-                                <div><label class="block text-xs font-bold text-gray-500 mb-2">Category</label><input type="text" id="f_category" class="w-full p-3 border border-gray-200 rounded-xl bg-[#f4f7fe]" required></div>
-                                <div><label class="block text-xs font-bold text-gray-500 mb-2">Platforms</label><input type="text" id="f_platforms" class="w-full p-3 border border-gray-200 rounded-xl bg-[#f4f7fe]"></div>
-                                <div><label class="block text-xs font-bold text-gray-500 mb-2">Tags</label><input type="text" id="f_tags" class="w-full p-3 border border-gray-200 rounded-xl bg-[#f4f7fe]"></div>
+                            <h3 class="text-xs uppercase font-bold text-[#4318FF] tracking-widest mb-3 md:mb-4">Basic Info</h3>
+                            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
+                                <div><label class="block text-xs font-bold text-gray-500 mb-1 md:mb-2">ID</label><input type="text" id="f_id" class="w-full p-2.5 md:p-3 border border-gray-200 rounded-xl bg-[#f4f7fe]" required></div>
+                                <div><label class="block text-xs font-bold text-gray-500 mb-1 md:mb-2">Name</label><input type="text" id="f_name" class="w-full p-2.5 md:p-3 border border-gray-200 rounded-xl bg-[#f4f7fe]" required></div>
+                                <div><label class="block text-xs font-bold text-gray-500 mb-1 md:mb-2">Author</label><input type="text" id="f_author" class="w-full p-2.5 md:p-3 border border-gray-200 rounded-xl bg-[#f4f7fe]" required></div>
+                                <div><label class="block text-xs font-bold text-gray-500 mb-1 md:mb-2">Version</label><input type="text" id="f_version" class="w-full p-2.5 md:p-3 border border-gray-200 rounded-xl bg-[#f4f7fe]" required></div>
+
+                                <div><label class="block text-xs font-bold text-gray-500 mb-1 md:mb-2">Category</label><input type="text" id="f_category" class="w-full p-2.5 md:p-3 border border-gray-200 rounded-xl bg-[#f4f7fe]" required></div>
+                                <div><label class="block text-xs font-bold text-gray-500 mb-1 md:mb-2">Platforms</label><input type="text" id="f_platforms" class="w-full p-2.5 md:p-3 border border-gray-200 rounded-xl bg-[#f4f7fe]"></div>
+                                <div class="sm:col-span-2 md:col-span-2"><label class="block text-xs font-bold text-gray-500 mb-1 md:mb-2">Tags</label><input type="text" id="f_tags" class="w-full p-2.5 md:p-3 border border-gray-200 rounded-xl bg-[#f4f7fe]"></div>
                             </div>
                         </div>
 
                         <!-- Section 2 -->
-                        <div class="bg-[#f4f7fe]/50 p-6 rounded-2xl border border-gray-100">
-                            <h3 class="text-xs uppercase font-bold text-[#4318FF] tracking-widest mb-4">Pricing & Stats</h3>
-                            <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
-                                <div class="flex items-center space-x-3 pt-6 bg-white p-3 rounded-xl border border-gray-200">
+                        <div class="bg-[#f4f7fe]/50 p-4 md:p-6 rounded-2xl border border-gray-100">
+                            <h3 class="text-xs uppercase font-bold text-[#4318FF] tracking-widest mb-3 md:mb-4">Pricing & Stats</h3>
+                            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
+                                <div class="flex items-center space-x-3 pt-2 sm:pt-6 bg-white p-3 rounded-xl border border-gray-200">
                                     <input type="checkbox" id="f_isFree" class="w-5 h-5 text-[#4318FF] rounded">
                                     <label class="text-sm font-black text-gray-700" for="f_isFree">Is Free App?</label>
                                 </div>
-                                <div><label class="block text-xs font-bold text-gray-500 mb-2">Price</label><input type="number" step="0.01" id="f_price" value="0" class="w-full p-3 border rounded-xl bg-white"></div>
-                                <div><label class="block text-xs font-bold text-gray-500 mb-2">Currency</label><input type="text" id="f_currency" value="USD" class="w-full p-3 border rounded-xl bg-white"></div>
-                                <div><label class="block text-xs font-bold text-gray-500 mb-2">Discount (%)</label><input type="number" id="f_discount" value="0" class="w-full p-3 border rounded-xl bg-white"></div>
-                                
-                                <div><label class="block text-xs font-bold text-gray-500 mb-2">Downloads</label><input type="number" id="f_downloadCount" value="0" class="w-full p-3 border rounded-xl bg-white"></div>
-                                <div><label class="block text-xs font-bold text-gray-500 mb-2">Rating (1-5)</label><input type="number" step="0.1" id="f_rating" value="5.0" class="w-full p-3 border rounded-xl bg-white"></div>
-                                <div><label class="block text-xs font-bold text-gray-500 mb-2">Reviews</label><input type="number" id="f_reviewCount" value="0" class="w-full p-3 border rounded-xl bg-white"></div>
-                                <div class="flex flex-col space-y-3 pt-2">
+                                <div><label class="block text-xs font-bold text-gray-500 mb-1 md:mb-2">Price</label><input type="number" step="0.01" id="f_price" value="0" class="w-full p-2.5 md:p-3 border rounded-xl bg-white"></div>
+                                <div><label class="block text-xs font-bold text-gray-500 mb-1 md:mb-2">Currency</label><input type="text" id="f_currency" value="USD" class="w-full p-2.5 md:p-3 border rounded-xl bg-white"></div>
+                                <div><label class="block text-xs font-bold text-gray-500 mb-1 md:mb-2">Discount (%)</label><input type="number" id="f_discount" value="0" class="w-full p-2.5 md:p-3 border rounded-xl bg-white"></div>
+
+                                <div><label class="block text-xs font-bold text-gray-500 mb-1 md:mb-2">Downloads</label><input type="number" id="f_downloadCount" value="0" class="w-full p-2.5 md:p-3 border rounded-xl bg-white"></div>
+                                <div><label class="block text-xs font-bold text-gray-500 mb-1 md:mb-2">Rating (1-5)</label><input type="number" step="0.1" id="f_rating" value="5.0" class="w-full p-2.5 md:p-3 border rounded-xl bg-white"></div>
+                                <div><label class="block text-xs font-bold text-gray-500 mb-1 md:mb-2">Reviews</label><input type="number" id="f_reviewCount" value="0" class="w-full p-2.5 md:p-3 border rounded-xl bg-white"></div>
+                                <div class="flex flex-col space-y-2 pt-2">
                                     <div class="flex items-center space-x-3 bg-white p-2 rounded-lg border">
                                         <input type="checkbox" id="f_isNew" class="w-4 h-4 text-green-500"><label class="text-xs font-bold">Mark as New</label>
                                     </div>
@@ -210,47 +223,63 @@
 
                         <!-- Section 3 -->
                         <div>
-                            <h3 class="text-xs uppercase font-bold text-[#4318FF] tracking-widest mb-4">URLs & Media</h3>
-                            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 items-start">
-                                <div><label class="block text-xs font-bold text-gray-500 mb-2">AIA / Test URL</label><input type="url" id="f_aiaTestFileUrl" class="w-full p-3 border rounded-xl bg-[#f4f7fe]"></div>
-                                <div><label class="block text-xs font-bold text-gray-500 mb-2">Download URL</label><input type="url" id="f_downloadUrl" class="w-full p-3 border rounded-xl bg-[#f4f7fe]" required></div>
-                                <div><label class="block text-xs font-bold text-gray-500 mb-2">Buy URL</label><input type="url" id="f_buyUrl" class="w-full p-3 border rounded-xl bg-[#f4f7fe]"></div>
-                                
+                            <h3 class="text-xs uppercase font-bold text-[#4318FF] tracking-widest mb-3 md:mb-4">URLs & Media</h3>
+                            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6 items-start">
+                                <div><label class="block text-xs font-bold text-gray-500 mb-1 md:mb-2">AIA / Test URL (Optional)</label><input type="url" id="f_aiaTestFileUrl" class="w-full p-2.5 md:p-3 border rounded-xl bg-[#f4f7fe]"></div>
+                                <div><label class="block text-xs font-bold text-gray-500 mb-1 md:mb-2">Download URL (Optional)</label><input type="url" id="f_downloadUrl" class="w-full p-2.5 md:p-3 border rounded-xl bg-[#f4f7fe]"></div>
+                                <div><label class="block text-xs font-bold text-gray-500 mb-1 md:mb-2">Buy URL (Optional)</label><input type="url" id="f_buyUrl" class="w-full p-2.5 md:p-3 border rounded-xl bg-[#f4f7fe]"></div>
+
                                 <div class="col-span-1 md:col-span-2">
-                                    <label class="block text-xs font-bold text-gray-500 mb-2">iconEmoji (Upload Image OR enter Emoji)</label>
-                                    <div class="flex space-x-4 items-center">
-                                        <div class="border-2 border-dashed border-[#4318FF]/30 rounded-xl p-4 text-center hover:bg-[#4318FF]/5 transition cursor-pointer relative bg-white flex-1">
+                                    <label class="block text-xs font-bold text-gray-500 mb-1 md:mb-2">iconEmoji (Upload Image OR Select/Enter Emoji)</label>
+                                    <div class="flex flex-col sm:flex-row space-y-3 sm:space-y-0 sm:space-x-4 items-center">
+                                        <div class="border-2 border-dashed border-[#4318FF]/30 rounded-xl p-4 text-center hover:bg-[#4318FF]/5 transition cursor-pointer relative bg-white w-full flex-1">
                                             <input type="file" id="iconFile" accept="image/*" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer" onchange="compressImage(event)">
-                                            <i class="fa-solid fa-cloud-arrow-up text-2xl text-[#4318FF]/40 mb-1"></i>
+                                            <i class="fa-solid fa-cloud-arrow-up text-2xl md:text-3xl text-[#4318FF]/40 mb-1"></i>
                                             <p class="text-xs font-bold text-gray-500">Image Base64 Compress</p>
                                         </div>
                                         <span class="font-bold text-gray-400">OR</span>
-                                        <div class="flex-1">
-                                            <input type="text" id="f_Emoji" class="w-full p-4 border rounded-xl text-center text-xl bg-white" placeholder="🎨">
+                                        <div class="w-full flex-1 flex flex-col space-y-2">
+                                            <input type="text" id="f_Emoji" class="w-full p-2.5 md:p-3 border rounded-xl text-center text-xl bg-white" placeholder="🎨">
+                                            
+                                            <!-- Emoji Quick Selection Palette -->
+                                            <div class="flex flex-wrap gap-1.5 justify-center bg-white p-2 border border-gray-100 rounded-xl shadow-sm" id="emojiPalette">
+                                                <button type="button" onclick="selectEmoji('🎨')" class="hover:bg-gray-100 p-1 rounded text-lg transition transform hover:scale-125">🎨</button>
+                                                <button type="button" onclick="selectEmoji('🔥')" class="hover:bg-gray-100 p-1 rounded text-lg transition transform hover:scale-125">🔥</button>
+                                                <button type="button" onclick="selectEmoji('⭐')" class="hover:bg-gray-100 p-1 rounded text-lg transition transform hover:scale-125">⭐</button>
+                                                <button type="button" onclick="selectEmoji('🚀')" class="hover:bg-gray-100 p-1 rounded text-lg transition transform hover:scale-125">🚀</button>
+                                                <button type="button" onclick="selectEmoji('📱')" class="hover:bg-gray-100 p-1 rounded text-lg transition transform hover:scale-125">📱</button>
+                                                <button type="button" onclick="selectEmoji('🎮')" class="hover:bg-gray-100 p-1 rounded text-lg transition transform hover:scale-125">🎮</button>
+                                                <button type="button" onclick="selectEmoji('💎')" class="hover:bg-gray-100 p-1 rounded text-lg transition transform hover:scale-125">💎</button>
+                                                <button type="button" onclick="selectEmoji('💡')" class="hover:bg-gray-100 p-1 rounded text-lg transition transform hover:scale-125">💡</button>
+                                                <button type="button" onclick="selectEmoji('⚡')" class="hover:bg-gray-100 p-1 rounded text-lg transition transform hover:scale-125">⚡</button>
+                                                <button type="button" onclick="selectEmoji('🔴')" class="hover:bg-gray-100 p-1 rounded text-lg transition transform hover:scale-125">🔴</button>
+                                                <button type="button" onclick="selectEmoji('⚽')" class="hover:bg-gray-100 p-1 rounded text-lg transition transform hover:scale-125">⚽</button>
+                                                <button type="button" onclick="selectEmoji('🏏')" class="hover:bg-gray-100 p-1 rounded text-lg transition transform hover:scale-125">🏏</button>
+                                            </div>
                                         </div>
                                     </div>
                                     <input type="hidden" id="f_imageBase64">
                                     <p id="compressLog" class="text-xs font-bold mt-2"></p>
                                 </div>
-                                <div class="grid grid-cols-1 gap-4">
-                                    <div><label class="block text-xs font-bold text-gray-500 mb-2">Publish Date</label><input type="date" id="f_publishDate" class="w-full p-3 border rounded-xl bg-white"></div>
-                                    <div><label class="block text-xs font-bold text-gray-500 mb-2">Update Date</label><input type="date" id="f_updateDate" class="w-full p-3 border rounded-xl bg-white"></div>
+                                <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-1 gap-4">
+                                    <div><label class="block text-xs font-bold text-gray-500 mb-1 md:mb-2">Publish Date</label><input type="date" id="f_publishDate" class="w-full p-2.5 md:p-3 border rounded-xl bg-white"></div>
+                                    <div><label class="block text-xs font-bold text-gray-500 mb-1 md:mb-2">Update Date</label><input type="date" id="f_updateDate" class="w-full p-2.5 md:p-3 border rounded-xl bg-white"></div>
                                 </div>
                             </div>
                         </div>
 
                         <!-- Section 4 -->
                         <div>
-                            <h3 class="text-xs uppercase font-bold text-[#4318FF] tracking-widest mb-4">Descriptions</h3>
+                            <h3 class="text-xs uppercase font-bold text-[#4318FF] tracking-widest mb-3 md:mb-4">Descriptions</h3>
                             <div class="space-y-4">
-                                <div><label class="block text-xs font-bold text-gray-500 mb-2">Short Description</label><textarea id="f_description" rows="2" class="w-full p-3 border rounded-xl bg-[#f4f7fe]" required></textarea></div>
-                                <div><label class="block text-xs font-bold text-gray-500 mb-2">Long Description</label><textarea id="f_longDescription" rows="4" class="w-full p-3 border rounded-xl bg-[#f4f7fe]"></textarea></div>
+                                <div><label class="block text-xs font-bold text-gray-500 mb-1 md:mb-2">Short Description</label><textarea id="f_description" rows="2" class="w-full p-2.5 md:p-3 border rounded-xl bg-[#f4f7fe]" required></textarea></div>
+                                <div><label class="block text-xs font-bold text-gray-500 mb-1 md:mb-2">Long Description</label><textarea id="f_longDescription" rows="4" class="w-full p-2.5 md:p-3 border rounded-xl bg-[#f4f7fe]"></textarea></div>
                             </div>
                         </div>
 
                         <div class="pt-6 flex justify-end items-center border-t border-gray-100">
                             <div id="formLoader" class="loader mr-4 border-[#4318FF] hidden"></div>
-                            <button type="submit" id="submitFormBtn" class="bg-gradient-to-r from-[#4318FF] to-[#868CFF] hover:opacity-90 text-white font-bold py-4 px-10 rounded-xl shadow-xl transition">
+                            <button type="submit" id="submitFormBtn" class="w-full md:w-auto bg-gradient-to-r from-[#4318FF] to-[#868CFF] hover:opacity-90 text-white font-bold py-3 md:py-4 px-6 md:px-10 rounded-xl shadow-xl transition text-sm md:text-base">
                                 <i class="fa-solid fa-paper-plane mr-2"></i> Sync Row
                             </button>
                         </div>
@@ -277,11 +306,26 @@
             else { switchView('dashboard'); }
         };
 
+        // Quick Emoji Selector Helper Function
+        function selectEmoji(emojiChar) {
+            document.getElementById("f_Emoji").value = emojiChar;
+            document.getElementById("f_imageBase64").value = "";
+            document.getElementById("compressLog").innerHTML = `<span class="text-[#4318FF] font-bold">Selected: ${emojiChar}</span>`;
+        }
+
+        // Added Mobile Sidebar Toggle Function safely
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('sidebar-overlay');
+            sidebar.classList.toggle('-translate-x-full');
+            overlay.classList.toggle('hidden');
+        }
+
         function switchView(viewName) {
             document.getElementById('view-settings').classList.add('hidden');
             document.getElementById('view-dashboard').classList.add('hidden');
             document.getElementById('view-addForm').classList.add('hidden');
-            
+
             document.querySelectorAll('.sidebar-item').forEach(el => el.classList.remove('active'));
 
             document.getElementById('view-' + viewName).classList.remove('hidden');
@@ -301,6 +345,12 @@
                 topAddBtn.classList.add('hidden');
                 refreshBtn.classList.add('hidden');
             }
+
+            // Close sidebar on mobile after clicking a link
+            if(window.innerWidth < 768) {
+                document.getElementById('sidebar').classList.add('-translate-x-full');
+                document.getElementById('sidebar-overlay').classList.add('hidden');
+            }
         }
 
         function openAddForm() {
@@ -318,7 +368,6 @@
             let rawId = document.getElementById('conf-sheetId').value.trim();
             const name = document.getElementById('conf-sheetName').value.trim();
 
-            // Auto-extract ID if full URL is pasted
             let id = rawId;
             if (rawId.includes("/d/")) {
                 const match = rawId.match(/\/d\/([a-zA-Z0-9-_]+)/);
@@ -327,33 +376,30 @@
 
             if (!url || !id || !name) { Swal.fire('Error', 'Required fields missing!', 'error'); return; }
 
-            // Update Input box to show clean ID
             document.getElementById('conf-sheetId').value = id;
 
             localStorage.setItem('gs_scriptUrl', url);
             localStorage.setItem('gs_sheetId', id);
             localStorage.setItem('gs_sheetName', name);
             CONFIG = { scriptUrl: url, sheetId: id, sheetName: name };
-            
+
             Swal.fire({title: 'Saved', icon: 'success', timer: 1000, showConfirmButton: false}).then(() => {
                 switchView('dashboard');
-                // Optional: refresh page to clear any cache
-                // location.reload(); 
             });
         }
 
         async function callAppScript(action, actionData) {
             if (!CONFIG.scriptUrl) throw new Error("Script URL not set");
             if (!CONFIG.sheetId) throw new Error("Spreadsheet ID is missing or invalid");
-            
+
             const payload = { spreadsheetId: CONFIG.sheetId, sheetName: CONFIG.sheetName, ...actionData };
             const params = new URLSearchParams();
             params.append('action', action);
             params.append('data', JSON.stringify(payload));
-            
+
             const response = await fetch(CONFIG.scriptUrl, { method: 'POST', body: params });
             const result = await response.json();
-            
+
             if(result.success === false && result.message.includes("Invalid argument: id")) {
                 throw new Error("Invalid Spreadsheet ID! Please go to Settings and enter a valid ID, not a full link.");
             }
@@ -379,8 +425,7 @@
             } catch (error) {
                 document.getElementById('tableLoader').style.display = 'none';
                 Swal.fire('Error', error.message, 'error');
-                
-                // If it's an ID error, redirect to settings
+
                 if(error.message.includes("Invalid Spreadsheet ID")) {
                     switchView('settings');
                 }
@@ -390,7 +435,7 @@
         function renderTable(dataArray) {
             const thead = document.getElementById('tableHeader');
             const tbody = document.getElementById('tableBody');
-            
+
             let freeCount = 0; let paidCount = 0;
 
             if (!dataArray || dataArray.length <= 1) {
@@ -400,36 +445,35 @@
             }
 
             const headers = dataArray[0];
-            let headerHTML = '<tr><th class="px-6 py-4">Row</th>'; 
-            
+            let headerHTML = '<tr><th class="px-4 md:px-6 py-4">Row</th>'; 
+
             for (let i = 0; i < Math.min(headers.length, 6); i++) {
-                headerHTML += `<th class="px-6 py-4">${headers[i]}</th>`;
+                headerHTML += `<th class="px-4 md:px-6 py-4">${headers[i]}</th>`;
             }
-            headerHTML += `<th class="px-6 py-4 text-right">Actions</th></tr>`;
+            headerHTML += `<th class="px-4 md:px-6 py-4 text-right">Actions</th></tr>`;
             thead.innerHTML = headerHTML;
 
             let rowsHTML = [];
             for (let i = 1; i < dataArray.length; i++) {
                 const row = dataArray[i];
                 if (row.every(cell => cell.trim() === '')) continue; 
-                
-                // Index 8 is isFree (I column)
+
                 let isFreeVal = (row[8] || '').toString().trim().toUpperCase();
                 if (isFreeVal === 'TRUE') { freeCount++; } else { paidCount++; }
 
                 let tr = `<tr class="hover:bg-[#f4f7fe] bg-white group border-b border-gray-50">`;
-                tr += `<td class="px-6 py-4 text-gray-400 font-bold">#${i + 1}</td>`; 
-                
+                tr += `<td class="px-4 md:px-6 py-4 text-gray-400 font-bold">#${i + 1}</td>`; 
+
                 for (let j = 0; j < Math.min(row.length, 6); j++) {
                     let cellVal = row[j] || '';
                     if(cellVal.length > 25 && !cellVal.startsWith('data:image')) cellVal = cellVal.substring(0, 25) + '...';
                     if(cellVal.startsWith('data:image')) cellVal = `<img src="${cellVal}" class="h-8 w-8 rounded">`;
-                    tr += `<td class="px-6 py-4 text-gray-600">${cellVal}</td>`;
+                    tr += `<td class="px-4 md:px-6 py-4 text-gray-600">${cellVal}</td>`;
                 }
-                
-                tr += `<td class="px-6 py-4 text-right opacity-0 group-hover:opacity-100 transition">
-                        <button onclick="editRow(${i + 1}, ${i})" class="text-blue-500 bg-blue-50 px-3 py-2 rounded mr-2"><i class="fa-solid fa-pen"></i></button>
-                        <button onclick="deleteRow(${i + 1})" class="text-red-500 bg-red-50 px-3 py-2 rounded"><i class="fa-solid fa-trash"></i></button>
+
+                tr += `<td class="px-4 md:px-6 py-4 text-right md:opacity-0 md:group-hover:opacity-100 transition">
+                        <button onclick="editRow(${i + 1}, ${i})" class="text-blue-500 bg-blue-50 px-3 py-2 rounded mr-2 mb-2 md:mb-0 inline-block"><i class="fa-solid fa-pen"></i></button>
+                        <button onclick="deleteRow(${i + 1})" class="text-red-500 bg-red-50 px-3 py-2 rounded inline-block"><i class="fa-solid fa-trash"></i></button>
                        </td></tr>`;
                 rowsHTML.push(tr);
             }
@@ -451,12 +495,9 @@
             }
         }
 
-        // ==========================
-        // Exact 24 Columns Mapping
-        // ==========================
         function editRow(sheetRowNumber, arrayIndex) {
             const row = tableDataCache[arrayIndex];
-            
+
             document.getElementById("f_id").value = row[0] || '';
             document.getElementById("f_name").value = row[1] || '';
             document.getElementById("f_author").value = row[2] || '';
@@ -474,8 +515,7 @@
             document.getElementById("f_aiaTestFileUrl").value = row[14] || '';
             document.getElementById("f_downloadUrl").value = row[15] || '';
             document.getElementById("f_buyUrl").value = row[16] || '';
-            
-            // Combined Icon/Emoji handling (Index 17)
+
             let iconData = row[17] || '';
             if(iconData.startsWith('data:image')) {
                 document.getElementById("f_imageBase64").value = iconData;
@@ -488,18 +528,17 @@
             }
 
             document.getElementById("f_tags").value = row[18] || '';
-            document.getElementById("f_discount").value = row[19] || 0; // Discount Fixed
-            document.getElementById("f_isNew").checked = (String(row[20]).toUpperCase() === 'TRUE'); // isNew Fixed
-            document.getElementById("f_isFeatured").checked = (String(row[21]).toUpperCase() === 'TRUE'); // isFeatured Fixed
-            
-            // Format dates simply
+            document.getElementById("f_discount").value = row[19] || 0; 
+            document.getElementById("f_isNew").checked = (String(row[20]).toUpperCase() === 'TRUE'); 
+            document.getElementById("f_isFeatured").checked = (String(row[21]).toUpperCase() === 'TRUE'); 
+
             document.getElementById("f_publishDate").value = row[22] || '';
             document.getElementById("f_updateDate").value = row[23] || '';
 
             document.getElementById("editRowId").value = sheetRowNumber; 
             document.getElementById("formTitle").innerText = "Update Application Info";
             document.getElementById("submitFormBtn").innerHTML = `<i class="fa-solid fa-arrows-rotate mr-2"></i> Save Changes`;
-            
+
             switchView('addForm');
         }
 
@@ -532,9 +571,9 @@
                     canvas.width = img.width; canvas.height = img.height; 
                     const ctx = canvas.getContext("2d");
                     ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-                    
+
                     document.getElementById("f_imageBase64").value = canvas.toDataURL("image/jpeg", 0.6);
-                    document.getElementById("f_Emoji").value = ''; // clear emoji if image selected
+                    document.getElementById("f_Emoji").value = ''; 
                     document.getElementById("compressLog").innerHTML = `<span class="text-green-500"><i class="fa-solid fa-check"></i> Compressed</span>`;
                 };
             };
@@ -542,34 +581,34 @@
 
         document.getElementById("adminForm").addEventListener("submit", async function(e) {
             e.preventDefault();
-            
+
             const finalIcon = document.getElementById("f_imageBase64").value || document.getElementById("f_Emoji").value;
-            
+
             const rowArray = [
-                document.getElementById("f_id").value,             // 0. A
-                document.getElementById("f_name").value,           // 1. B
-                document.getElementById("f_author").value,         // 2. C
-                document.getElementById("f_version").value,        // 3. D
-                document.getElementById("f_description").value,    // 4. E
-                document.getElementById("f_longDescription").value,// 5. F
-                document.getElementById("f_platforms").value,      // 6. G
-                document.getElementById("f_category").value,       // 7. H
-                document.getElementById("f_isFree").checked.toString().toUpperCase(), // 8. I
-                document.getElementById("f_price").value,          // 9. J
-                document.getElementById("f_currency").value,       // 10. K
-                document.getElementById("f_downloadCount").value,  // 11. L
-                document.getElementById("f_rating").value,         // 12. M
-                document.getElementById("f_reviewCount").value,    // 13. N
-                document.getElementById("f_aiaTestFileUrl").value, // 14. O
-                document.getElementById("f_downloadUrl").value,    // 15. P
-                document.getElementById("f_buyUrl").value,         // 16. Q
-                finalIcon,                                         // 17. R (iconEmoji)
-                document.getElementById("f_tags").value,           // 18. S
-                document.getElementById("f_discount").value,       // 19. T (discount)
-                document.getElementById("f_isNew").checked.toString().toUpperCase(), // 20. U (isNew)
-                document.getElementById("f_isFeatured").checked.toString().toUpperCase(), // 21. V (isFeatured)
-                document.getElementById("f_publishDate").value,    // 22. W
-                document.getElementById("f_updateDate").value      // 23. X
+                document.getElementById("f_id").value,             
+                document.getElementById("f_name").value,           
+                document.getElementById("f_author").value,         
+                document.getElementById("f_version").value,        
+                document.getElementById("f_description").value,    
+                document.getElementById("f_longDescription").value,
+                document.getElementById("f_platforms").value,      
+                document.getElementById("f_category").value,       
+                document.getElementById("f_isFree").checked.toString().toUpperCase(), 
+                document.getElementById("f_price").value,          
+                document.getElementById("f_currency").value,       
+                document.getElementById("f_downloadCount").value,  
+                document.getElementById("f_rating").value,         
+                document.getElementById("f_reviewCount").value,    
+                document.getElementById("f_aiaTestFileUrl").value, 
+                document.getElementById("f_downloadUrl").value,    
+                document.getElementById("f_buyUrl").value,         
+                finalIcon,                                         
+                document.getElementById("f_tags").value,           
+                document.getElementById("f_discount").value,       
+                document.getElementById("f_isNew").checked.toString().toUpperCase(), 
+                document.getElementById("f_isFeatured").checked.toString().toUpperCase(), 
+                document.getElementById("f_publishDate").value,    
+                document.getElementById("f_updateDate").value      
             ];
 
             const loader = document.getElementById("formLoader");
@@ -583,7 +622,7 @@
                 } else {
                     res = await callAppScript('appendData', { data: [rowArray] });
                 }
-                
+
                 loader.style.display = "none";
                 if (res.success) {
                     Swal.fire({title: 'Synced!', icon: 'success', timer: 1500, showConfirmButton: false}).then(() => switchView('dashboard'));
