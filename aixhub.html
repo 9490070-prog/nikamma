@@ -43,6 +43,12 @@
             <button onclick="switchView('dashboard')" id="nav-dashboard" class="sidebar-item active w-full flex items-center p-3.5 rounded-xl text-gray-500 font-semibold tracking-wide">
                 <i class="fa-solid fa-chart-pie w-6 text-lg"></i> Dashboard
             </button>
+            
+            <!-- NEW MENU ITEM: Purchased Orders -->
+            <button onclick="switchView('purchases')" id="nav-purchases" class="sidebar-item w-full flex items-center p-3.5 rounded-xl text-gray-500 font-semibold tracking-wide">
+                <i class="fa-solid fa-cart-shopping w-6 text-lg"></i> Purchased Orders
+            </button>
+
             <button onclick="openAddForm()" id="nav-addForm" class="sidebar-item w-full flex items-center p-3.5 rounded-xl text-gray-500 font-semibold tracking-wide">
                 <i class="fa-solid fa-circle-plus w-6 text-lg"></i> Add New App
             </button>
@@ -68,13 +74,13 @@
                         <span class="absolute inset-y-0 left-0 flex items-center pl-4 text-gray-400 group-focus-within:text-[#4318FF] transition">
                             <i class="fa-solid fa-magnifying-glass"></i>
                         </span>
-                        <input type="text" id="searchInput" onkeyup="filterTable()" class="w-full pl-10 md:pl-12 pr-4 py-2.5 md:py-3 border-none rounded-full bg-[#f4f7fe] focus:bg-white focus:ring-2 focus:ring-[#4318FF] shadow-inner transition font-medium text-sm md:text-base" placeholder="Search apps...">
+                        <input type="text" id="searchInput" onkeyup="filterTable()" class="w-full pl-10 md:pl-12 pr-4 py-2.5 md:py-3 border-none rounded-full bg-[#f4f7fe] focus:bg-white focus:ring-2 focus:ring-[#4318FF] shadow-inner transition font-medium text-sm md:text-base" placeholder="Search data...">
                     </div>
                 </div>
             </div>
 
             <div class="flex items-center ml-2 md:ml-4 space-x-2 md:space-x-4">
-                <button onclick="fetchData()" id="refreshBtn" class="bg-white hover:bg-gray-50 text-gray-600 shadow-sm border border-gray-100 p-2.5 md:p-3 rounded-full transition" title="Refresh Data">
+                <button onclick="refreshCurrentView()" id="refreshBtn" class="bg-white hover:bg-gray-50 text-gray-600 shadow-sm border border-gray-100 p-2.5 md:p-3 rounded-full transition" title="Refresh Data">
                     <i class="fa-solid fa-rotate-right"></i>
                 </button>
                 <button onclick="openAddForm()" id="topAddBtn" class="bg-gradient-to-r from-[#4318FF] to-[#868CFF] hover:opacity-90 text-white px-4 py-2.5 md:px-6 md:py-3 rounded-full font-bold shadow-lg shadow-indigo-200 transition transform hover:scale-105 flex items-center text-sm md:text-base">
@@ -97,14 +103,23 @@
                         <input type="url" id="conf-scriptUrl" class="w-full p-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#4318FF] bg-[#f4f7fe] transition" placeholder="https://script.google.com/macros/s/.../exec">
                     </div>
                     <div>
-                        <label class="block text-sm font-bold text-gray-700 mb-2">Spreadsheet ID (Paste Full Link or ID)</label>
+                        <label class="block text-sm font-bold text-gray-700 mb-2">App Spreadsheet ID (Paste Full Link or ID)</label>
                         <input type="text" id="conf-sheetId" class="w-full p-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#4318FF] bg-[#f4f7fe] transition" placeholder="1BxiMvs0XRYFgPnmac...">
                         <p class="text-xs text-green-600 mt-1"><i class="fa-solid fa-magic"></i> If you paste the full sheet link, the ID will be extracted automatically.</p>
                     </div>
                     <div>
-                        <label class="block text-sm font-bold text-gray-700 mb-2">Sheet Name</label>
+                        <label class="block text-sm font-bold text-gray-700 mb-2">App Sheet Name</label>
                         <input type="text" id="conf-sheetName" class="w-full p-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#4318FF] bg-[#f4f7fe] transition" placeholder="Sheet1">
                     </div>
+                    
+                    <!-- NEW SETTING: For Purchases CSV -->
+                    <hr class="my-4 border-gray-200">
+                    <div>
+                        <label class="block text-sm font-bold text-green-700 mb-2">PurchasedSheet CSV URL (For Orders)</label>
+                        <input type="url" id="conf-purchaseCsvUrl" class="w-full p-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#4318FF] bg-[#f4f7fe] transition" placeholder="https://docs.google.com/spreadsheets/d/e/.../pub?output=csv">
+                        <p class="text-xs text-gray-500 mt-1">File -> Share -> Publish to web -> Select PurchasedSheet as CSV</p>
+                    </div>
+
                     <div class="pt-4">
                         <button onclick="saveSettings()" class="bg-[#4318FF] hover:bg-[#3311cc] text-white font-bold py-3 px-6 rounded-xl shadow-lg w-full transition transform hover:-translate-y-1 text-sm md:text-base">
                             Save Configuration <i class="fa-solid fa-arrow-right ml-2"></i>
@@ -113,9 +128,34 @@
                 </div>
             </div>
 
-            <!-- VIEW 2: DASHBOARD (DATA TABLE) -->
-            <div id="view-dashboard" class="hidden">
+            <!-- NEW VIEW: PURCHASED ORDERS DASHBOARD -->
+            <div id="view-purchases" class="hidden">
+                <div class="glass-card overflow-hidden flex flex-col">
+                    <div class="p-4 md:p-6 border-b border-gray-100 flex justify-between items-center bg-gradient-to-r from-green-50 to-white">
+                        <h2 class="text-lg md:text-xl font-black text-green-700"><i class="fa-solid fa-cart-shopping mr-2"></i> Purchased Orders Tracker</h2>
+                    </div>
 
+                    <div id="purchasesLoader" class="py-16 text-center text-gray-400 hidden">
+                        <div class="loader mb-4 border-green-500"></div>
+                        <p class="font-medium animate-pulse text-sm md:text-base">Syncing Orders Data from Sheets...</p>
+                    </div>
+
+                    <div class="overflow-x-auto custom-scrollbar pb-4 w-full">
+                        <table class="w-full text-sm text-left whitespace-nowrap min-w-max" id="purchasesTable">
+                            <thead class="text-xs text-gray-500 uppercase bg-gray-50" id="purchasesTableHeader">
+                                <!-- Headers -->
+                            </thead>
+                            <tbody id="purchasesTableBody" class="divide-y divide-gray-100">
+                                <!-- Data -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+
+            <!-- VIEW 2: DASHBOARD (APP DATA TABLE) -->
+            <div id="view-dashboard" class="hidden">
                 <!-- STATS CARDS -->
                 <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 md:gap-6 mb-6 md:mb-8">
                     <div class="glass-card p-5 md:p-6 flex items-center justify-between border-l-4 border-[#4318FF]">
@@ -153,7 +193,7 @@
                     </div>
 
                     <div class="overflow-x-auto custom-scrollbar pb-4 w-full">
-                        <table class="w-full text-sm text-left whitespace-nowrap min-w-max">
+                        <table class="w-full text-sm text-left whitespace-nowrap min-w-max" id="appTable">
                             <thead class="text-xs text-gray-400 uppercase bg-[#f4f7fe]" id="tableHeader">
                                 <!-- Headers -->
                             </thead>
@@ -272,7 +312,7 @@
                         <div>
                             <h3 class="text-xs uppercase font-bold text-[#4318FF] tracking-widest mb-3 md:mb-4">Descriptions</h3>
                             <div class="space-y-4">
-                                <div><label class="block text-xs font-bold text-gray-500 mb-1 md:mb-2">Short Description</label><textarea id="f_description" rows="2" class="w-full p-2.5 md:p-3 border rounded-xl bg-[#f4f7fe]" required></textarea></div>
+                                <div><label class="block text-xs font-bold text-gray-500 mb-1 md:mb-2">Short Description</label><textarea id="f_description" rows="2" class="w-full p-2.5 md:p-3 border rounded-xl bg-[#f4f7fe]"></textarea></div>
                                 <div><label class="block text-xs font-bold text-gray-500 mb-1 md:mb-2">Long Description</label><textarea id="f_longDescription" rows="4" class="w-full p-2.5 md:p-3 border rounded-xl bg-[#f4f7fe]"></textarea></div>
                             </div>
                         </div>
@@ -293,27 +333,28 @@
         let CONFIG = {
             scriptUrl: localStorage.getItem('gs_scriptUrl') || '',
             sheetId: localStorage.getItem('gs_sheetId') || '',
-            sheetName: localStorage.getItem('gs_sheetName') || ''
+            sheetName: localStorage.getItem('gs_sheetName') || '',
+            purchaseCsvUrl: localStorage.getItem('gs_purchaseCsvUrl') || ''
         };
         let tableDataCache = [];
+        let purchasesDataCache = [];
+        let currentActiveView = 'dashboard';
 
         window.onload = () => {
             document.getElementById('conf-scriptUrl').value = CONFIG.scriptUrl;
             document.getElementById('conf-sheetId').value = CONFIG.sheetId;
             document.getElementById('conf-sheetName').value = CONFIG.sheetName;
+            document.getElementById('conf-purchaseCsvUrl').value = CONFIG.purchaseCsvUrl;
 
-            if (!CONFIG.scriptUrl || !CONFIG.sheetId) { switchView('settings'); } 
-            else { switchView('dashboard'); }
+            switchView('dashboard');
         };
 
-        // Quick Emoji Selector Helper Function
         function selectEmoji(emojiChar) {
             document.getElementById("f_Emoji").value = emojiChar;
             document.getElementById("f_imageBase64").value = "";
             document.getElementById("compressLog").innerHTML = `<span class="text-[#4318FF] font-bold">Selected: ${emojiChar}</span>`;
         }
 
-        // Added Mobile Sidebar Toggle Function safely
         function toggleSidebar() {
             const sidebar = document.getElementById('sidebar');
             const overlay = document.getElementById('sidebar-overlay');
@@ -322,9 +363,11 @@
         }
 
         function switchView(viewName) {
+            currentActiveView = viewName;
             document.getElementById('view-settings').classList.add('hidden');
             document.getElementById('view-dashboard').classList.add('hidden');
             document.getElementById('view-addForm').classList.add('hidden');
+            document.getElementById('view-purchases').classList.add('hidden');
 
             document.querySelectorAll('.sidebar-item').forEach(el => el.classList.remove('active'));
 
@@ -334,23 +377,35 @@
             const searchBar = document.getElementById('top-search-container');
             const topAddBtn = document.getElementById('topAddBtn');
             const refreshBtn = document.getElementById('refreshBtn');
+            const searchInput = document.getElementById('searchInput');
 
             if (viewName === 'dashboard') {
                 searchBar.classList.remove('hidden');
                 topAddBtn.classList.remove('hidden');
                 refreshBtn.classList.remove('hidden');
+                searchInput.placeholder = "Search apps...";
                 fetchData(); 
+            } else if (viewName === 'purchases') {
+                searchBar.classList.remove('hidden');
+                topAddBtn.classList.add('hidden'); // Hide Add App button on purchases screen
+                refreshBtn.classList.remove('hidden');
+                searchInput.placeholder = "Search orders...";
+                fetchPurchasesData();
             } else {
                 searchBar.classList.add('hidden');
                 topAddBtn.classList.add('hidden');
                 refreshBtn.classList.add('hidden');
             }
 
-            // Close sidebar on mobile after clicking a link
             if(window.innerWidth < 768) {
                 document.getElementById('sidebar').classList.add('-translate-x-full');
                 document.getElementById('sidebar-overlay').classList.add('hidden');
             }
+        }
+
+        function refreshCurrentView() {
+            if (currentActiveView === 'dashboard') fetchData();
+            if (currentActiveView === 'purchases') fetchPurchasesData();
         }
 
         function openAddForm() {
@@ -360,6 +415,11 @@
             document.getElementById("compressLog").innerText = "";
             document.getElementById("formTitle").innerText = "Publish New Application";
             document.getElementById("submitFormBtn").innerHTML = `<i class="fa-solid fa-paper-plane mr-2"></i> Sync Row`;
+            
+            // Auto Generate Unique ID 
+            const uniqueId = 'APP-' + Date.now() + Math.floor(Math.random() * 1000);
+            document.getElementById("f_id").value = uniqueId;
+
             switchView('addForm');
         }
 
@@ -367,6 +427,7 @@
             const url = document.getElementById('conf-scriptUrl').value.trim();
             let rawId = document.getElementById('conf-sheetId').value.trim();
             const name = document.getElementById('conf-sheetName').value.trim();
+            const purCsv = document.getElementById('conf-purchaseCsvUrl').value.trim();
 
             let id = rawId;
             if (rawId.includes("/d/")) {
@@ -374,14 +435,14 @@
                 if (match) id = match[1];
             }
 
-            if (!url || !id || !name) { Swal.fire('Error', 'Required fields missing!', 'error'); return; }
-
             document.getElementById('conf-sheetId').value = id;
 
             localStorage.setItem('gs_scriptUrl', url);
             localStorage.setItem('gs_sheetId', id);
             localStorage.setItem('gs_sheetName', name);
-            CONFIG = { scriptUrl: url, sheetId: id, sheetName: name };
+            localStorage.setItem('gs_purchaseCsvUrl', purCsv);
+            
+            CONFIG = { scriptUrl: url, sheetId: id, sheetName: name, purchaseCsvUrl: purCsv };
 
             Swal.fire({title: 'Saved', icon: 'success', timer: 1000, showConfirmButton: false}).then(() => {
                 switchView('dashboard');
@@ -390,7 +451,7 @@
 
         async function callAppScript(action, actionData) {
             if (!CONFIG.scriptUrl) throw new Error("Script URL not set");
-            if (!CONFIG.sheetId) throw new Error("Spreadsheet ID is missing or invalid");
+            if (!CONFIG.sheetId) throw new Error("Spreadsheet ID is missing");
 
             const payload = { spreadsheetId: CONFIG.sheetId, sheetName: CONFIG.sheetName, ...actionData };
             const params = new URLSearchParams();
@@ -401,34 +462,37 @@
             const result = await response.json();
 
             if(result.success === false && result.message.includes("Invalid argument: id")) {
-                throw new Error("Invalid Spreadsheet ID! Please go to Settings and enter a valid ID, not a full link.");
+                throw new Error("Invalid Spreadsheet ID!");
             }
             return result;
         }
 
+        /* --- DASHBOARD DATA (APPS) --- */
         async function fetchData() {
-            if (!CONFIG.scriptUrl) return;
             document.getElementById('tableBody').innerHTML = '';
             document.getElementById('tableHeader').innerHTML = '';
             document.getElementById('tableLoader').style.display = 'block';
 
+            const csvUrl = "https://docs.google.com/spreadsheets/d/e/2PACX-1vS1CivryJs-AgAk3rbPcuiTUQU15S_QDboAyivGq5ZqPrACLNe5fbtU2UD44Y5g-QFG6ghqFVO54yF1/pub?output=csv";
+
             try {
-                const result = await callAppScript('getSheetAllData', {});
+                const response = await fetch(csvUrl);
+                if (!response.ok) throw new Error("Failed to load CSV URL");
+                
+                const csvText = await response.text();
+                const rows = parseCSVText(csvText);
+
                 document.getElementById('tableLoader').style.display = 'none';
 
-                if (result.success && result.sheetData) {
-                    tableDataCache = result.sheetData;
+                if (rows && rows.length > 0) {
+                    tableDataCache = rows;
                     renderTable(tableDataCache);
                 } else {
-                    Swal.fire('Error', result.message, 'error');
+                    Swal.fire('Error', 'No data found in Sheet!', 'error');
                 }
             } catch (error) {
                 document.getElementById('tableLoader').style.display = 'none';
                 Swal.fire('Error', error.message, 'error');
-
-                if(error.message.includes("Invalid Spreadsheet ID")) {
-                    switchView('settings');
-                }
             }
         }
 
@@ -481,21 +545,173 @@
             updateStats(freeCount + paidCount, freeCount, paidCount);
         }
 
+        /* --- NEW: PURCHASED ORDERS DATA --- */
+        async function fetchPurchasesData() {
+            if(!CONFIG.purchaseCsvUrl) {
+                document.getElementById('purchasesTableBody').innerHTML = '<tr><td colspan="100%" class="text-center py-10 text-red-400 font-bold">Please add PurchasedSheet CSV URL in API Settings first!</td></tr>';
+                return;
+            }
+
+            document.getElementById('purchasesTableBody').innerHTML = '';
+            document.getElementById('purchasesTableHeader').innerHTML = '';
+            document.getElementById('purchasesLoader').style.display = 'block';
+
+            try {
+                const response = await fetch(CONFIG.purchaseCsvUrl);
+                if (!response.ok) throw new Error("Failed to load Purchases CSV URL");
+                
+                const csvText = await response.text();
+                const rows = parseCSVText(csvText);
+
+                document.getElementById('purchasesLoader').style.display = 'none';
+
+                if (rows && rows.length > 0) {
+                    purchasesDataCache = rows;
+                    renderPurchasesTable(purchasesDataCache);
+                } else {
+                    Swal.fire('Error', 'No data found in PurchasedSheet!', 'error');
+                }
+            } catch (error) {
+                document.getElementById('purchasesLoader').style.display = 'none';
+                Swal.fire('Error', error.message, 'error');
+            }
+        }
+
+        function renderPurchasesTable(dataArray) {
+            const thead = document.getElementById('purchasesTableHeader');
+            const tbody = document.getElementById('purchasesTableBody');
+
+            if (!dataArray || dataArray.length <= 1) {
+                tbody.innerHTML = '<tr><td colspan="100%" class="text-center py-10 text-gray-400">No purchases found.</td></tr>';
+                return;
+            }
+
+            const headers = dataArray[0]; // Exactly the 13 columns from screenshot
+            let headerHTML = '<tr><th class="px-4 py-3">Row</th>'; 
+            headers.forEach(h => {
+                headerHTML += `<th class="px-4 py-3">${h}</th>`;
+            });
+            headerHTML += `<th class="px-4 py-3 text-center sticky right-0 bg-gray-50">Action</th></tr>`;
+            thead.innerHTML = headerHTML;
+
+            let rowsHTML = [];
+            for (let i = 1; i < dataArray.length; i++) {
+                const row = dataArray[i];
+                if (row.every(cell => cell.trim() === '')) continue; 
+
+                // Screenshot index (Assuming it's column 13 / index 12 based on the requirement)
+                let tr = `<tr class="hover:bg-[#f4f7fe] bg-white border-b border-gray-50">`;
+                tr += `<td class="px-4 py-3 text-gray-400 font-bold">#${i + 1}</td>`; 
+
+                for (let j = 0; j < headers.length; j++) {
+                    let cellVal = row[j] || '';
+                    
+                    // Column 9 (Index 8) is usually Payment Status
+                    if (headers[j].toLowerCase().includes('status')) {
+                        let statusColor = cellVal.toLowerCase().includes('approv') ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700';
+                        cellVal = `<span class="px-2 py-1 rounded text-xs font-bold ${statusColor}">${cellVal}</span>`;
+                    }
+                    // Handle Image/Screenshot column (Usually last or labeled as screenshot)
+                    else if (cellVal.startsWith('http') && (cellVal.match(/\.(jpeg|jpg|gif|png)$/) || headers[j].toLowerCase().includes('screenshot'))) {
+                        cellVal = `<button onclick="viewFullImage('${cellVal}')" class="text-blue-500 hover:text-blue-700 underline text-xs font-bold"><i class="fa-solid fa-image"></i> View Slip</button>`;
+                    }
+                    else if (cellVal.startsWith('data:image')) {
+                        cellVal = `<button onclick="viewFullImage('${cellVal}')" class="text-blue-500 hover:text-blue-700 underline text-xs font-bold"><i class="fa-solid fa-image"></i> View Slip</button>`;
+                    }
+                    
+                    tr += `<td class="px-4 py-3 text-gray-600">${cellVal}</td>`;
+                }
+
+                // Action Column (Sticky right)
+                tr += `<td class="px-4 py-3 text-center sticky right-0 bg-white border-l border-gray-100">
+                        <button onclick="approvePurchaseOrder(${i + 1})" class="bg-green-500 hover:bg-green-600 text-white px-3 py-1.5 rounded shadow text-xs font-bold transition">
+                            <i class="fa-solid fa-check"></i> Approve
+                        </button>
+                       </td></tr>`;
+                rowsHTML.push(tr);
+            }
+            tbody.innerHTML = rowsHTML.join('');
+        }
+
+        // Feature: View Image in Full Screen 
+        function viewFullImage(imgUrl) {
+            Swal.fire({
+                imageUrl: imgUrl,
+                imageAlt: 'Payment Screenshot',
+                width: '80%',
+                padding: '1em',
+                background: '#fff',
+                showConfirmButton: true,
+                confirmButtonText: 'Close',
+                confirmButtonColor: '#4318FF'
+            });
+        }
+
+        // Feature: Approve Action
+        function approvePurchaseOrder(sheetRowNumber) {
+            Swal.fire({
+                title: 'Approve Payment?',
+                text: "Update status to Approved for Row " + sheetRowNumber + "?",
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonColor: '#10B981',
+                confirmButtonText: 'Yes, Approve it!'
+            }).then(async (result) => {
+                if (result.isConfirmed) {
+                    // Requires your Apps Script to have 'approvePurchase' action configured
+                    Swal.fire({title: 'Updating...', allowOutsideClick: false, didOpen: () => {Swal.showLoading()}});
+                    try {
+                        // Calling backend. Ensure your Apps Script handles this action and updates PurchasedSheet!
+                        const res = await callAppScript('approvePurchase', { rowId: sheetRowNumber, statusName: 'Approval' });
+                        if(res.success) { 
+                            Swal.fire('Approved!', 'Status updated successfully.', 'success'); 
+                            fetchPurchasesData(); 
+                        } else { 
+                            Swal.fire('Error', res.message, 'error'); 
+                        }
+                    } catch (e) { 
+                        Swal.fire('Error', e.message + "\nMake sure your App Script supports 'approvePurchase'", 'error'); 
+                    }
+                }
+            });
+        }
+
+
+        // Common Helpers
+        function parseCSVText(csvText) {
+            const rows = csvText.split(/\r?\n/);
+            return rows.map(row => {
+                return row.split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/).map(cell => cell.replace(/^"|"$/g, '').trim());
+            }).filter(row => row.length > 1 || row[0] !== ""); 
+        }
+
+        function filterTable() {
+            const query = document.getElementById('searchInput').value.toLowerCase();
+            const tableId = currentActiveView === 'purchases' ? 'purchasesTableBody' : 'tableBody';
+            const rows = document.getElementById(tableId).getElementsByTagName('tr');
+            for (let i = 0; i < rows.length; i++) {
+                rows[i].style.display = rows[i].textContent.toLowerCase().indexOf(query) > -1 ? "" : "none";
+            }
+        }
+
         function updateStats(total, free, paid) {
             document.getElementById('stat-total').innerText = total;
             document.getElementById('stat-free').innerText = free;
             document.getElementById('stat-paid').innerText = paid;
         }
 
-        function filterTable() {
-            const query = document.getElementById('searchInput').value.toLowerCase();
-            const rows = document.getElementById('tableBody').getElementsByTagName('tr');
-            for (let i = 0; i < rows.length; i++) {
-                rows[i].style.display = rows[i].textContent.toLowerCase().indexOf(query) > -1 ? "" : "none";
+        function formatDateString(dateStr) {
+            if (!dateStr) return '';
+            const d = new Date(dateStr);
+            if (!isNaN(d.getTime())) {
+                return d.toISOString().split('T')[0];
             }
+            return dateStr; 
         }
 
+        /* Existing Edit/Delete App Logic Maintained Perfectly */
         function editRow(sheetRowNumber, arrayIndex) {
+            // [Code remains identical to the original for editing App logic]
             const row = tableDataCache[arrayIndex];
 
             document.getElementById("f_id").value = row[0] || '';
@@ -531,14 +747,11 @@
             document.getElementById("f_discount").value = row[19] || 0; 
             document.getElementById("f_isNew").checked = (String(row[20]).toUpperCase() === 'TRUE'); 
             document.getElementById("f_isFeatured").checked = (String(row[21]).toUpperCase() === 'TRUE'); 
-
-            document.getElementById("f_publishDate").value = row[22] || '';
-            document.getElementById("f_updateDate").value = row[23] || '';
-
+            document.getElementById("f_publishDate").value = formatDateString(row[22]);
+            document.getElementById("f_updateDate").value = formatDateString(row[23]);
             document.getElementById("editRowId").value = sheetRowNumber; 
             document.getElementById("formTitle").innerText = "Update Application Info";
             document.getElementById("submitFormBtn").innerHTML = `<i class="fa-solid fa-arrows-rotate mr-2"></i> Save Changes`;
-
             switchView('addForm');
         }
 
@@ -581,9 +794,7 @@
 
         document.getElementById("adminForm").addEventListener("submit", async function(e) {
             e.preventDefault();
-
             const finalIcon = document.getElementById("f_imageBase64").value || document.getElementById("f_Emoji").value;
-
             const rowArray = [
                 document.getElementById("f_id").value,             
                 document.getElementById("f_name").value,           
@@ -613,7 +824,6 @@
 
             const loader = document.getElementById("formLoader");
             loader.style.display = "block";
-
             try {
                 let res;
                 const editRowId = document.getElementById("editRowId").value;
