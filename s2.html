@@ -272,7 +272,8 @@
                         <div>
                             <h3 class="text-xs uppercase font-bold text-[#4318FF] tracking-widest mb-3 md:mb-4">Descriptions</h3>
                             <div class="space-y-4">
-                                <div><label class="block text-xs font-bold text-gray-500 mb-1 md:mb-2">Short Description</label><textarea id="f_description" rows="2" class="w-full p-2.5 md:p-3 border rounded-xl bg-[#f4f7fe]" required></textarea></div>
+                                <!-- Descriptions are now Optional (Removed 'required' tag) -->
+                                <div><label class="block text-xs font-bold text-gray-500 mb-1 md:mb-2">Short Description</label><textarea id="f_description" rows="2" class="w-full p-2.5 md:p-3 border rounded-xl bg-[#f4f7fe]"></textarea></div>
                                 <div><label class="block text-xs font-bold text-gray-500 mb-1 md:mb-2">Long Description</label><textarea id="f_longDescription" rows="4" class="w-full p-2.5 md:p-3 border rounded-xl bg-[#f4f7fe]"></textarea></div>
                             </div>
                         </div>
@@ -302,18 +303,15 @@
             document.getElementById('conf-sheetId').value = CONFIG.sheetId;
             document.getElementById('conf-sheetName').value = CONFIG.sheetName;
 
-            // Removed the strict check to switch to settings if script URL is missing so dashboard always loads.
             switchView('dashboard');
         };
 
-        // Quick Emoji Selector Helper Function
         function selectEmoji(emojiChar) {
             document.getElementById("f_Emoji").value = emojiChar;
             document.getElementById("f_imageBase64").value = "";
             document.getElementById("compressLog").innerHTML = `<span class="text-[#4318FF] font-bold">Selected: ${emojiChar}</span>`;
         }
 
-        // Added Mobile Sidebar Toggle Function safely
         function toggleSidebar() {
             const sidebar = document.getElementById('sidebar');
             const overlay = document.getElementById('sidebar-overlay');
@@ -346,7 +344,6 @@
                 refreshBtn.classList.add('hidden');
             }
 
-            // Close sidebar on mobile after clicking a link
             if(window.innerWidth < 768) {
                 document.getElementById('sidebar').classList.add('-translate-x-full');
                 document.getElementById('sidebar-overlay').classList.add('hidden');
@@ -360,6 +357,11 @@
             document.getElementById("compressLog").innerText = "";
             document.getElementById("formTitle").innerText = "Publish New Application";
             document.getElementById("submitFormBtn").innerHTML = `<i class="fa-solid fa-paper-plane mr-2"></i> Sync Row`;
+            
+            // Auto Generate Unique ID (e.g. APP-1698302194)
+            const uniqueId = 'APP-' + Date.now() + Math.floor(Math.random() * 1000);
+            document.getElementById("f_id").value = uniqueId;
+
             switchView('addForm');
         }
 
@@ -407,7 +409,6 @@
         }
 
         async function fetchData() {
-            // Updated to get data very fast from CSV URL directly
             document.getElementById('tableBody').innerHTML = '';
             document.getElementById('tableHeader').innerHTML = '';
             document.getElementById('tableLoader').style.display = 'block';
@@ -415,18 +416,15 @@
             const csvUrl = "https://docs.google.com/spreadsheets/d/e/2PACX-1vS1CivryJs-AgAk3rbPcuiTUQU15S_QDboAyivGq5ZqPrACLNe5fbtU2UD44Y5g-QFG6ghqFVO54yF1/pub?output=csv";
 
             try {
-                // Using Fetch API to get CSV data 
                 const response = await fetch(csvUrl);
                 if (!response.ok) throw new Error("Failed to load CSV URL");
                 
                 const csvText = await response.text();
                 
-                // Parsing CSV into 2D Array
                 const rows = csvText.split(/\r?\n/);
                 const dataArray = rows.map(row => {
-                    // Regex handles commas safely inside double quotes
                     return row.split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/).map(cell => cell.replace(/^"|"$/g, '').trim());
-                }).filter(row => row.length > 1 || row[0] !== ""); // Skip empty lines
+                }).filter(row => row.length > 1 || row[0] !== ""); 
 
                 document.getElementById('tableLoader').style.display = 'none';
 
@@ -505,6 +503,16 @@
             }
         }
 
+        // Helper function for Date formatting in edit mode
+        function formatDateString(dateStr) {
+            if (!dateStr) return '';
+            const d = new Date(dateStr);
+            if (!isNaN(d.getTime())) {
+                return d.toISOString().split('T')[0]; // Format to YYYY-MM-DD
+            }
+            return dateStr; 
+        }
+
         function editRow(sheetRowNumber, arrayIndex) {
             const row = tableDataCache[arrayIndex];
 
@@ -525,7 +533,7 @@
             document.getElementById("f_aiaTestFileUrl").value = row[14] || '';
             document.getElementById("f_downloadUrl").value = row[15] || '';
             document.getElementById("f_buyUrl").value = row[16] || '';
-  
+
             let iconData = row[17] || '';
             if(iconData.startsWith('data:image')) {
                 document.getElementById("f_imageBase64").value = iconData;
@@ -542,8 +550,9 @@
             document.getElementById("f_isNew").checked = (String(row[20]).toUpperCase() === 'TRUE'); 
             document.getElementById("f_isFeatured").checked = (String(row[21]).toUpperCase() === 'TRUE'); 
 
-            document.getElementById("f_publishDate").value = row[22] || '';
-            document.getElementById("f_updateDate").value = row[23] || '';
+            // Date fix applied here
+            document.getElementById("f_publishDate").value = formatDateString(row[22]);
+            document.getElementById("f_updateDate").value = formatDateString(row[23]);
 
             document.getElementById("editRowId").value = sheetRowNumber; 
             document.getElementById("formTitle").innerText = "Update Application Info";
