@@ -29,7 +29,7 @@
     <!-- Mobile Sidebar Overlay -->
     <div id="sidebar-overlay" onclick="toggleSidebar()" class="fixed inset-0 bg-gray-900 bg-opacity-50 z-20 hidden md:hidden transition-opacity"></div>
 
-    <!-- Sidebar (Responsive: Fixed off-screen on mobile, relative on desktop) -->
+    <!-- Sidebar -->
     <aside id="sidebar" class="w-64 bg-white shadow-xl flex flex-col z-30 fixed inset-y-0 left-0 transform -translate-x-full md:relative md:translate-x-0 transition-transform duration-300 ease-in-out border-r border-gray-100">
         <div class="h-20 flex items-center justify-between px-6 border-b border-gray-50">
             <h1 class="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-[#4318FF] to-[#868CFF]">
@@ -44,7 +44,7 @@
                 <i class="fa-solid fa-chart-pie w-6 text-lg"></i> Dashboard
             </button>
             
-            <!-- NEW MENU ITEM: Purchased Orders -->
+            <!-- Purchased Orders Menu -->
             <button onclick="switchView('purchases')" id="nav-purchases" class="sidebar-item w-full flex items-center p-3.5 rounded-xl text-gray-500 font-semibold tracking-wide">
                 <i class="fa-solid fa-cart-shopping w-6 text-lg"></i> Purchased Orders
             </button>
@@ -64,7 +64,6 @@
         <!-- Top Bar -->
         <header class="h-20 bg-white/80 backdrop-blur-md flex items-center justify-between px-4 md:px-8 z-10 sticky top-0 border-b md:border-none border-gray-100">
             <div class="flex items-center flex-1 max-w-2xl">
-                <!-- Hamburger Menu for Mobile -->
                 <button onclick="toggleSidebar()" class="md:hidden mr-4 text-gray-600 focus:outline-none hover:text-[#4318FF] transition">
                     <i class="fa-solid fa-bars text-xl"></i>
                 </button>
@@ -112,7 +111,6 @@
                         <input type="text" id="conf-sheetName" class="w-full p-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#4318FF] bg-[#f4f7fe] transition" placeholder="Sheet1">
                     </div>
                     
-                    <!-- NEW SETTING: For Purchases CSV -->
                     <hr class="my-4 border-gray-200">
                     <div>
                         <label class="block text-sm font-bold text-green-700 mb-2">PurchasedSheet CSV URL (For Orders)</label>
@@ -128,7 +126,7 @@
                 </div>
             </div>
 
-            <!-- NEW VIEW: PURCHASED ORDERS DASHBOARD -->
+            <!-- VIEW 2: PURCHASED ORDERS DASHBOARD -->
             <div id="view-purchases" class="hidden">
                 <div class="glass-card overflow-hidden flex flex-col">
                     <div class="p-4 md:p-6 border-b border-gray-100 flex justify-between items-center bg-gradient-to-r from-green-50 to-white">
@@ -153,8 +151,7 @@
                 </div>
             </div>
 
-
-            <!-- VIEW 2: DASHBOARD (APP DATA TABLE) -->
+            <!-- VIEW 3: DASHBOARD (APP DATA TABLE) -->
             <div id="view-dashboard" class="hidden">
                 <!-- STATS CARDS -->
                 <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 md:gap-6 mb-6 md:mb-8">
@@ -205,7 +202,7 @@
                 </div>
             </div>
 
-            <!-- VIEW 3: ADD / EDIT ITEM FORM -->
+            <!-- VIEW 4: ADD / EDIT ITEM FORM -->
             <div id="view-addForm" class="hidden">
                 <div class="glass-card p-5 md:p-8 max-w-6xl mx-auto">
                     <div class="border-b border-gray-100 pb-4 md:pb-5 mb-6 md:mb-8 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
@@ -545,7 +542,7 @@
             updateStats(freeCount + paidCount, freeCount, paidCount);
         }
 
-        /* --- NEW: PURCHASED ORDERS DATA --- */
+        /* --- PURCHASED ORDERS DATA (FIXED) --- */
         async function fetchPurchasesData() {
             if(!CONFIG.purchaseCsvUrl) {
                 document.getElementById('purchasesTableBody').innerHTML = '<tr><td colspan="100%" class="text-center py-10 text-red-400 font-bold">Please add PurchasedSheet CSV URL in API Settings first!</td></tr>';
@@ -595,28 +592,32 @@
             thead.innerHTML = headerHTML;
 
             let rowsHTML = [];
-            for (let i = 1; i < dataArray.length; i++) {
+            // **FIX: REVERSE LOOP TO SHOW NEWEST FIRST**
+            for (let i = dataArray.length - 1; i >= 1; i--) {
                 const row = dataArray[i];
                 if (row.every(cell => cell.trim() === '')) continue; 
 
-                // Screenshot index (Assuming it's column 13 / index 12 based on the requirement)
                 let tr = `<tr class="hover:bg-[#f4f7fe] bg-white border-b border-gray-50">`;
-                tr += `<td class="px-4 py-3 text-gray-400 font-bold">#${i + 1}</td>`; 
+                // Since we are reverse looping, the actual sheet row number is i + 1 (because index 0 is header)
+                let originalRowNumber = i + 1;
+                tr += `<td class="px-4 py-3 text-gray-400 font-bold">#${originalRowNumber}</td>`; 
 
                 for (let j = 0; j < headers.length; j++) {
                     let cellVal = row[j] || '';
                     
-                    // Column 9 (Index 8) is usually Payment Status
+                    // Status Column Handling
                     if (headers[j].toLowerCase().includes('status')) {
-                        let statusColor = cellVal.toLowerCase().includes('approv') ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700';
+                        let status = cellVal.toLowerCase().trim();
+                        let statusColor = 'bg-yellow-100 text-yellow-700';
+                        if (status.includes('approv')) statusColor = 'bg-green-100 text-green-700';
+                        if (status.includes('reject')) statusColor = 'bg-red-100 text-red-700';
                         cellVal = `<span class="px-2 py-1 rounded text-xs font-bold ${statusColor}">${cellVal}</span>`;
                     }
-                    // Handle Image/Screenshot column (Usually last or labeled as screenshot)
-                    else if (cellVal.startsWith('http') && (cellVal.match(/\.(jpeg|jpg|gif|png)$/) || headers[j].toLowerCase().includes('screenshot'))) {
-                        cellVal = `<button onclick="viewFullImage('${cellVal}')" class="text-blue-500 hover:text-blue-700 underline text-xs font-bold"><i class="fa-solid fa-image"></i> View Slip</button>`;
-                    }
-                    else if (cellVal.startsWith('data:image')) {
-                        cellVal = `<button onclick="viewFullImage('${cellVal}')" class="text-blue-500 hover:text-blue-700 underline text-xs font-bold"><i class="fa-solid fa-image"></i> View Slip</button>`;
+                    // Screenshot Column Handling
+                    else if (headers[j].toLowerCase().includes('screenshot') || (cellVal.startsWith('http') && (cellVal.match(/\.(jpeg|jpg|gif|png)$/) ))) {
+                        if(cellVal) {
+                            cellVal = `<button onclick="viewFullImage('${cellVal}')" class="text-blue-500 hover:text-blue-700 underline text-xs font-bold"><i class="fa-solid fa-image"></i> View Slip</button>`;
+                        }
                     }
                     
                     tr += `<td class="px-4 py-3 text-gray-600">${cellVal}</td>`;
@@ -624,7 +625,7 @@
 
                 // Action Column (Sticky right)
                 tr += `<td class="px-4 py-3 text-center sticky right-0 bg-white border-l border-gray-100">
-                        <button onclick="approvePurchaseOrder(${i + 1})" class="bg-green-500 hover:bg-green-600 text-white px-3 py-1.5 rounded shadow text-xs font-bold transition">
+                        <button onclick="approvePurchaseOrder(${originalRowNumber})" class="bg-green-500 hover:bg-green-600 text-white px-3 py-1.5 rounded shadow text-xs font-bold transition">
                             <i class="fa-solid fa-check"></i> Approve
                         </button>
                        </td></tr>`;
@@ -658,19 +659,25 @@
                 confirmButtonText: 'Yes, Approve it!'
             }).then(async (result) => {
                 if (result.isConfirmed) {
-                    // Requires your Apps Script to have 'approvePurchase' action configured
                     Swal.fire({title: 'Updating...', allowOutsideClick: false, didOpen: () => {Swal.showLoading()}});
                     try {
-                        // Calling backend. Ensure your Apps Script handles this action and updates PurchasedSheet!
-                        const res = await callAppScript('approvePurchase', { rowId: sheetRowNumber, statusName: 'Approval' });
+                        // IMPORTANT: Aapke Apps Script mein 'approvePurchase' action hona chahiye
+                        // Jo ki PurchasedSheet ke us row ke PaymentStatus ko 'Approved' kar de.
+                        // Example Apps Script function: 
+                        // if(action === 'approvePurchase') {
+                        //    var sheet = SpreadsheetApp.openById(id).getSheetByName('PurchasedSheet');
+                        //    sheet.getRange(rowId, 9).setValue('Approved'); // Assuming Status is Column 9 (I)
+                        //    return {success: true};
+                        // }
+                        const res = await callAppScript('approvePurchase', { rowId: sheetRowNumber, statusName: 'Approved' });
                         if(res.success) { 
                             Swal.fire('Approved!', 'Status updated successfully.', 'success'); 
                             fetchPurchasesData(); 
                         } else { 
-                            Swal.fire('Error', res.message, 'error'); 
+                            Swal.fire('Error', res.message || "Sheet update failed", 'error'); 
                         }
                     } catch (e) { 
-                        Swal.fire('Error', e.message + "\nMake sure your App Script supports 'approvePurchase'", 'error'); 
+                        Swal.fire('Error', e.message + "\nMake sure your Apps Script supports 'approvePurchase' action and updates the PurchasedSheet.", 'error'); 
                     }
                 }
             });
@@ -709,9 +716,8 @@
             return dateStr; 
         }
 
-        /* Existing Edit/Delete App Logic Maintained Perfectly */
+        /* Existing Edit/Delete App Logic Maintained */
         function editRow(sheetRowNumber, arrayIndex) {
-            // [Code remains identical to the original for editing App logic]
             const row = tableDataCache[arrayIndex];
 
             document.getElementById("f_id").value = row[0] || '';
