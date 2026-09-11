@@ -1,667 +1,649 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-    <title>AR Satellite Finder Ultimate Pro</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+<head> 
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pro App Admin Dashboard</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- SweetAlert2 -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body {
-            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-            background: #000;
-            color: #fff;
-            overflow: hidden;
-            height: 100vh;
-            width: 100vw;
-            user-select: none;
-        }
-
-        #cameraVideo {
-            position: fixed;
-            top: 0; left: 0;
-            width: 100%; height: 100%;
-            object-fit: cover;
-            z-index: 1;
-        }
-
-        .ar-overlay {
-            position: fixed;
-            top: 0; left: 0;
-            width: 100%; height: 100%;
-            z-index: 2;
-            background: rgba(0, 0, 0, 0.25);
-            pointer-events: none;
-        }
-
-        /* Top HUD Header Dashboard */
-        .hud-header {
-            position: fixed;
-            top: 12px; left: 0; right: 0;
-            z-index: 10;
-            display: flex;
-            justify-content: space-around;
-            padding: 0 8px;
-            pointer-events: none;
-        }
-
-        .hud-card {
-            background: rgba(15, 23, 42, 0.88);
-            backdrop-filter: blur(12px);
-            border: 1.5px solid rgba(255, 255, 255, 0.2);
-            border-radius: 12px;
-            padding: 6px 10px;
-            min-width: 95px;
-            text-align: center;
-            box-shadow: 0 8px 24px rgba(0,0,0,0.7);
-        }
-
-        .hud-card .title { font-size: 10px; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px; }
-        .hud-card .val { font-size: 17px; font-weight: 800; color: #38bdf8; margin-top: 1px; }
-        .hud-card .sub-target { font-size: 10px; font-weight: 700; color: #f59e0b; }
-
-        /* Top Horizontal Azimuth Track Gauge */
-        .azimuth-bar-container {
-            position: fixed;
-            top: 76px; left: 5%; width: 90%; height: 32px;
-            background: rgba(15, 23, 42, 0.9);
-            border: 1.5px solid rgba(255,255,255,0.25);
-            border-radius: 20px;
-            z-index: 10;
-            display: flex; align-items: center; justify-content: center;
-            overflow: hidden;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
-        }
-
-        .azimuth-center-line { position: absolute; width: 3px; height: 100%; background: #ef4444; z-index: 2; }
-        .azimuth-pointer {
-            position: absolute; width: 18px; height: 18px;
-            background: #38bdf8; border: 2px solid #fff; border-radius: 50%;
-            transition: left 0.04s linear; transform: translateX(-50%);
-            box-shadow: 0 0 12px #38bdf8;
-        }
-
-        /* Center Target Crosshair Reticle */
-        .crosshair-container {
-            position: fixed;
-            top: 50%; left: 50%;
-            transform: translate(-50%, -50%);
-            width: 220px; height: 220px;
-            z-index: 5;
-            pointer-events: none;
-            display: flex; justify-content: center; align-items: center;
-        }
-
-        .reticle-ring {
-            position: absolute; width: 100%; height: 100%;
-            border: 3px dashed rgba(255, 255, 255, 0.45); border-radius: 50%;
-            transition: all 0.2s ease;
-        }
-
-        .reticle-center {
-            width: 18px; height: 18px;
-            border: 3px solid #ef4444; border-radius: 50%;
-            background: rgba(239, 68, 68, 0.4); transition: all 0.2s;
-        }
-
-        /* AR Floating Target Marker */
-        .sat-target-marker {
-            position: absolute;
-            transform: translate(-50%, -50%);
-            display: flex; flex-direction: column; align-items: center;
-            z-index: 6; pointer-events: none;
-            transition: left 0.04s linear, top 0.04s linear;
-        }
-
-        .sat-icon-box {
-            width: 58px; height: 58px;
-            background: rgba(239, 68, 68, 0.3); border: 3px solid #ef4444; border-radius: 50%;
-            display: flex; justify-content: center; align-items: center;
-            color: #ef4444; font-size: 24px;
-            box-shadow: 0 0 22px rgba(239, 68, 68, 0.8);
-            animation: pulseRed 1.2s infinite;
-        }
-
-        .sat-tag {
-            background: rgba(15, 23, 42, 0.95); border: 2px solid #ef4444;
-            color: #fff; font-size: 12px; font-weight: 700;
-            padding: 4px 10px; border-radius: 12px; margin-top: 5px; white-space: nowrap;
-        }
-
-        /* SIGNAL MATCHED / LOCKED STATE */
-        .is-aligned .reticle-ring { border: 4px solid #4ade80; box-shadow: 0 0 35px rgba(74, 222, 128, 0.85); }
-        .is-aligned .reticle-center { background: #4ade80; border-color: #4ade80; }
-        .is-aligned .sat-icon-box {
-            background: rgba(74, 222, 128, 0.35); border-color: #4ade80; color: #4ade80;
-            box-shadow: 0 0 35px rgba(74, 222, 128, 0.9); animation: pulseGreen 0.8s infinite;
-        }
-        .is-aligned .sat-tag { border-color: #4ade80; color: #4ade80; }
-
-        @keyframes pulseRed { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.1); } }
-        @keyframes pulseGreen { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.15); } }
-
-        /* Manual Calibration Panel */
-        .calib-panel {
-            position: fixed;
-            bottom: 80px; left: 5%; right: 5%;
-            z-index: 12;
-            background: rgba(15, 23, 42, 0.92);
-            backdrop-filter: blur(12px);
-            border: 1px solid rgba(255,255,255,0.2);
-            border-radius: 16px;
-            padding: 6px 12px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 6px;
-        }
-
-        .calib-title { font-size: 11px; font-weight: 700; color: #94a3b8; }
-        .calib-btn {
-            background: #1e293b; border: 1px solid #38bdf8; color: #38bdf8;
-            padding: 5px 10px; border-radius: 10px; font-size: 11px; font-weight: 700;
-            cursor: pointer;
-        }
-        .calib-btn:active { background: #38bdf8; color: #000; }
-
-        /* Bottom Status & Control Buttons */
-        .hud-bottom {
-            position: fixed; bottom: 15px; left: 0; right: 0;
-            z-index: 10; display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 0 12px;
-        }
-
-        .status-pill {
-            background: rgba(15, 23, 42, 0.95); backdrop-filter: blur(10px);
-            border: 2px solid rgba(255, 255, 255, 0.2); padding: 8px 18px; border-radius: 30px;
-            font-size: 13px; font-weight: 700; color: #cbd5e1; display: flex; align-items: center; gap: 8px;
-            box-shadow: 0 6px 18px rgba(0,0,0,0.6);
-        }
-
-        .status-pill.locked { border-color: #4ade80; color: #4ade80; background: rgba(20, 83, 45, 0.95); }
-
-        .btn-group { display: flex; gap: 8px; pointer-events: auto; }
-
-        .btn {
-            background: rgba(30, 41, 59, 0.92); backdrop-filter: blur(10px);
-            border: 1.5px solid rgba(255, 255, 255, 0.2); color: #fff;
-            padding: 8px 14px; border-radius: 20px; font-size: 12px; font-weight: 700;
-            cursor: pointer; display: flex; align-items: center; gap: 6px;
-        }
-
-        /* Satellite Selector Modal Sheet */
-        .select-modal {
-            position: fixed; bottom: -100%; left: 0; right: 0;
-            background: #0f172a; border-top: 2px solid rgba(255,255,255,0.2);
-            border-top-left-radius: 22px; border-top-right-radius: 22px;
-            padding: 18px 16px; z-index: 50; transition: bottom 0.3s ease-out;
-            max-height: 75vh; display: flex; flex-direction: column;
-        }
-        .select-modal.open { bottom: 0; }
-        .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
-        .modal-header h3 { font-size: 14px; color: #38bdf8; text-transform: uppercase; font-weight: 800; }
-        .search-box {
-            width: 100%; padding: 10px 14px; background: #1e293b;
-            border: 1px solid rgba(255,255,255,0.2); border-radius: 12px;
-            color: #fff; font-size: 13px; margin-bottom: 12px; outline: none;
-        }
-        .sat-list-container { overflow-y: auto; flex-grow: 1; max-height: 55vh; }
-        .sat-item {
-            padding: 12px 10px; border-bottom: 1px solid rgba(255,255,255,0.08);
-            display: flex; justify-content: space-between; font-size: 14px; font-weight: 600; cursor: pointer;
-        }
-        .sat-item:active { background: rgba(56, 189, 248, 0.2); border-radius: 8px; }
-
-        /* Splash Screen */
-        .start-screen {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: #090d16; z-index: 100; display: flex; flex-direction: column;
-            justify-content: center; align-items: center; padding: 25px; text-align: center;
-        }
-        .start-screen i { font-size: 55px; color: #38bdf8; margin-bottom: 18px; }
-        .start-screen h1 { font-size: 20px; font-weight: 700; margin-bottom: 8px; }
-        .start-screen p { font-size: 12px; color: #94a3b8; max-width: 290px; margin-bottom: 25px; line-height: 1.5; }
-        .btn-start {
-            background: linear-gradient(135deg, #0284c7, #2563eb); border: none; color: #fff;
-            padding: 12px 32px; font-size: 14px; font-weight: 700; border-radius: 30px; cursor: pointer;
-        }
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        body { font-family: 'Inter', sans-serif; background-color: #f4f7fe; }
+        .sidebar-item { transition: all 0.3s ease; }
+        .sidebar-item:hover, .sidebar-item.active { background-color: #4318FF; color: white; box-shadow: 0 4px 15px rgba(67, 24, 255, 0.4); }
+        .custom-scrollbar::-webkit-scrollbar { height: 6px; width: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+        .loader { border: 4px solid #f3f3f3; border-top: 4px solid #4318FF; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin: 0 auto; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        .glass-card { background: white; border-radius: 20px; box-shadow: 0px 10px 30px rgba(0,0,0,0.03); border: 1px solid rgba(255,255,255,0.8); }
     </style>
 </head>
-<body>
+<body class="flex h-screen overflow-hidden text-gray-700">
 
-    <video id="cameraVideo" autoplay playsinline muted></video>
-    <div class="ar-overlay"></div>
+    <!-- Mobile Sidebar Overlay -->
+    <div id="sidebar-overlay" onclick="toggleSidebar()" class="fixed inset-0 bg-gray-900 bg-opacity-50 z-20 hidden md:hidden transition-opacity"></div>
 
-    <div class="start-screen" id="startScreen">
-        <i class="fas fa-satellite-dish"></i>
-        <h1>AR Satellite Finder Ultimate Pro</h1>
-        <p>100+ Global Satellites Database with Audio Beep Lock & Precision AR Tracker</p>
-        <button class="btn-start" id="startBtn"><i class="fas fa-play" style="margin-right:6px;"></i> Start Camera</button>
-    </div>
-
-    <!-- Top Dashboard -->
-    <div class="hud-header">
-        <div class="hud-card">
-            <div class="title">Azimuth (Dir)</div>
-            <div class="val" id="hudAz">--°</div>
-            <div class="sub-target" id="hudTargetAz">Target: --°</div>
+    <!-- Sidebar (Responsive: Fixed off-screen on mobile, relative on desktop) -->
+    <aside id="sidebar" class="w-64 bg-white shadow-xl flex flex-col z-30 fixed inset-y-0 left-0 transform -translate-x-full md:relative md:translate-x-0 transition-transform duration-300 ease-in-out border-r border-gray-100">
+        <div class="h-20 flex items-center justify-between px-6 border-b border-gray-50">
+            <h1 class="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-[#4318FF] to-[#868CFF]">
+                <i class="fa-solid fa-bolt text-[#4318FF] mr-2"></i>AdminPro
+            </h1>
+            <button onclick="toggleSidebar()" class="md:hidden text-gray-400 hover:text-red-500 text-xl">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
         </div>
-        <div class="hud-card">
-            <div class="title">Elevation (Tilt)</div>
-            <div class="val" id="hudEl">--°</div>
-            <div class="sub-target" id="hudTargetEl">Target: --°</div>
-        </div>
-        <div class="hud-card">
-            <div class="title">GPS Status</div>
-            <div class="val" id="hudGps" style="font-size: 10px; color:#4ade80;">Locating...</div>
-        </div>
-    </div>
+        <nav class="flex-1 p-4 space-y-3 mt-4 overflow-y-auto custom-scrollbar">
+            <button onclick="switchView('dashboard')" id="nav-dashboard" class="sidebar-item active w-full flex items-center p-3.5 rounded-xl text-gray-500 font-semibold tracking-wide">
+                <i class="fa-solid fa-chart-pie w-6 text-lg"></i> Dashboard
+            </button>
+            <button onclick="openAddForm()" id="nav-addForm" class="sidebar-item w-full flex items-center p-3.5 rounded-xl text-gray-500 font-semibold tracking-wide">
+                <i class="fa-solid fa-circle-plus w-6 text-lg"></i> Add New App
+            </button>
+            <button onclick="switchView('settings')" id="nav-settings" class="sidebar-item w-full flex items-center p-3.5 rounded-xl text-gray-500 font-semibold tracking-wide">
+                <i class="fa-solid fa-gear w-6 text-lg"></i> API Settings
+            </button>
+        </nav>
+    </aside>
 
-    <!-- Azimuth Bar -->
-    <div class="azimuth-bar-container">
-        <div class="azimuth-center-line"></div>
-        <div class="azimuth-pointer" id="azPointer"></div>
-    </div>
+    <!-- Main Content -->
+    <div class="flex-1 flex flex-col h-screen overflow-hidden w-full">
 
-    <!-- Target Marker -->
-    <div class="sat-target-marker" id="satMarker">
-        <div class="sat-icon-box"><i class="fas fa-satellite"></i></div>
-        <div class="sat-tag" id="satTag">SES 8 (95.0°E)</div>
-    </div>
+        <!-- Top Bar -->
+        <header class="h-20 bg-white/80 backdrop-blur-md flex items-center justify-between px-4 md:px-8 z-10 sticky top-0 border-b md:border-none border-gray-100">
+            <div class="flex items-center flex-1 max-w-2xl">
+                <!-- Hamburger Menu for Mobile -->
+                <button onclick="toggleSidebar()" class="md:hidden mr-4 text-gray-600 focus:outline-none hover:text-[#4318FF] transition">
+                    <i class="fa-solid fa-bars text-xl"></i>
+                </button>
+                
+                <div id="top-search-container" class="flex-1 w-full">
+                    <div class="relative group">
+                        <span class="absolute inset-y-0 left-0 flex items-center pl-4 text-gray-400 group-focus-within:text-[#4318FF] transition">
+                            <i class="fa-solid fa-magnifying-glass"></i>
+                        </span>
+                        <input type="text" id="searchInput" onkeyup="filterTable()" class="w-full pl-10 md:pl-12 pr-4 py-2.5 md:py-3 border-none rounded-full bg-[#f4f7fe] focus:bg-white focus:ring-2 focus:ring-[#4318FF] shadow-inner transition font-medium text-sm md:text-base" placeholder="Search apps...">
+                    </div>
+                </div>
+            </div>
 
-    <!-- Center Reticle -->
-    <div class="crosshair-container" id="crosshair">
-        <div class="reticle-ring"></div>
-        <div class="reticle-center"></div>
-    </div>
+            <div class="flex items-center ml-2 md:ml-4 space-x-2 md:space-x-4">
+                <button onclick="fetchData()" id="refreshBtn" class="bg-white hover:bg-gray-50 text-gray-600 shadow-sm border border-gray-100 p-2.5 md:p-3 rounded-full transition" title="Refresh Data">
+                    <i class="fa-solid fa-rotate-right"></i>
+                </button>
+                <button onclick="openAddForm()" id="topAddBtn" class="bg-gradient-to-r from-[#4318FF] to-[#868CFF] hover:opacity-90 text-white px-4 py-2.5 md:px-6 md:py-3 rounded-full font-bold shadow-lg shadow-indigo-200 transition transform hover:scale-105 flex items-center text-sm md:text-base">
+                    <i class="fa-solid fa-plus md:mr-2"></i> <span class="hidden md:inline">Add Item</span>
+                </button>
+            </div>
+        </header>
 
-    <!-- Calibration Adjuster Panel -->
-    <div class="calib-panel">
-        <span class="calib-title">Offset: <strong id="offsetVal" style="color:#38bdf8;">0.0°</strong></span>
-        <button class="calib-btn" id="calibLeft"><i class="fas fa-minus"></i> 1° Left</button>
-        <button class="calib-btn" id="calibRight"><i class="fas fa-plus"></i> 1° Right</button>
-        <button class="calib-btn" id="calibReset" style="border-color:#ef4444; color:#ef4444;">Reset</button>
-    </div>
+        <!-- Dynamic Views Area -->
+        <main class="flex-1 overflow-x-hidden overflow-y-auto p-4 md:p-8 custom-scrollbar">
 
-    <!-- Bottom Controls -->
-    <div class="hud-bottom">
-        <div class="status-pill" id="statusPill">
-            <i class="fas fa-arrow-left" id="statusIcon"></i>
-            <span id="statusText">Rotate phone toward satellite...</span>
-        </div>
-        <div class="btn-group">
-            <button class="btn" id="satSelectBtn"><i class="fas fa-list-ul"></i> Satellites (100+)</button>
-            <button class="btn" id="reGpsBtn"><i class="fas fa-crosshairs"></i> Refresh GPS</button>
-        </div>
-    </div>
+            <!-- VIEW 1: SETTINGS -->
+            <div id="view-settings" class="hidden max-w-2xl mx-auto glass-card overflow-hidden">
+                <div class="bg-gradient-to-r from-gray-800 to-gray-900 text-white p-6">
+                    <h2 class="text-xl md:text-2xl font-bold"><i class="fa-solid fa-shield-halved mr-2"></i> System Configuration</h2>
+                </div>
+                <div class="p-6 md:p-8 space-y-6">
+                    <div>
+                        <label class="block text-sm font-bold text-gray-700 mb-2">Apps Script URL</label>
+                        <input type="url" id="conf-scriptUrl" class="w-full p-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#4318FF] bg-[#f4f7fe] transition" placeholder="https://script.google.com/macros/s/.../exec">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-bold text-gray-700 mb-2">Spreadsheet ID (Paste Full Link or ID)</label>
+                        <input type="text" id="conf-sheetId" class="w-full p-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#4318FF] bg-[#f4f7fe] transition" placeholder="1BxiMvs0XRYFgPnmac...">
+                        <p class="text-xs text-green-600 mt-1"><i class="fa-solid fa-magic"></i> If you paste the full sheet link, the ID will be extracted automatically.</p>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-bold text-gray-700 mb-2">Sheet Name</label>
+                        <input type="text" id="conf-sheetName" class="w-full p-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#4318FF] bg-[#f4f7fe] transition" placeholder="Sheet1">
+                    </div>
+                    <div class="pt-4">
+                        <button onclick="saveSettings()" class="bg-[#4318FF] hover:bg-[#3311cc] text-white font-bold py-3 px-6 rounded-xl shadow-lg w-full transition transform hover:-translate-y-1 text-sm md:text-base">
+                            Save Configuration <i class="fa-solid fa-arrow-right ml-2"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
 
-    <!-- Satellite Selection Modal Sheet -->
-    <div class="select-modal" id="satModal">
-        <div class="modal-header">
-            <h3>Select Target Satellite</h3>
-            <i class="fas fa-times" id="closeModal" style="font-size:18px; cursor:pointer;"></i>
-        </div>
-        <input type="text" id="satSearch" class="search-box" placeholder="Search satellite name or degree..." />
-        <div class="sat-list-container" id="satList"></div>
+            <!-- VIEW 2: DASHBOARD (DATA TABLE) -->
+            <div id="view-dashboard" class="hidden">
+
+                <!-- STATS CARDS -->
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 md:gap-6 mb-6 md:mb-8">
+                    <div class="glass-card p-5 md:p-6 flex items-center justify-between border-l-4 border-[#4318FF]">
+                        <div>
+                            <p class="text-xs md:text-sm font-bold text-gray-400 uppercase tracking-wider">Total Apps</p>
+                            <h3 class="text-2xl md:text-3xl font-black text-[#2B3674] mt-1" id="stat-total">0</h3>
+                        </div>
+                        <div class="bg-[#f4f7fe] p-3 md:p-4 rounded-full text-[#4318FF]"><i class="fa-solid fa-box-open text-xl md:text-2xl"></i></div>
+                    </div>
+                    <div class="glass-card p-5 md:p-6 flex items-center justify-between border-l-4 border-green-400">
+                        <div>
+                            <p class="text-xs md:text-sm font-bold text-gray-400 uppercase tracking-wider">Free Apps</p>
+                            <h3 class="text-2xl md:text-3xl font-black text-[#2B3674] mt-1" id="stat-free">0</h3>
+                        </div>
+                        <div class="bg-green-50 p-3 md:p-4 rounded-full text-green-500"><i class="fa-solid fa-gift text-xl md:text-2xl"></i></div>
+                    </div>
+                    <div class="glass-card p-5 md:p-6 flex items-center justify-between border-l-4 border-orange-400">
+                        <div>
+                            <p class="text-xs md:text-sm font-bold text-gray-400 uppercase tracking-wider">Paid Apps</p>
+                            <h3 class="text-2xl md:text-3xl font-black text-[#2B3674] mt-1" id="stat-paid">0</h3>
+                        </div>
+                        <div class="bg-orange-50 p-3 md:p-4 rounded-full text-orange-500"><i class="fa-solid fa-gem text-xl md:text-2xl"></i></div>
+                    </div>
+                </div>
+
+                <!-- TABLE AREA -->
+                <div class="glass-card overflow-hidden flex flex-col">
+                    <div class="p-4 md:p-6 border-b border-gray-100 flex justify-between items-center">
+                        <h2 class="text-lg md:text-xl font-black text-[#2B3674]">Application Inventory</h2>
+                    </div>
+
+                    <div id="tableLoader" class="py-16 text-center text-gray-400 hidden">
+                        <div class="loader mb-4 border-[#4318FF]"></div>
+                        <p class="font-medium animate-pulse text-sm md:text-base">Fast Syncing with Google Sheets...</p>
+                    </div>
+
+                    <div class="overflow-x-auto custom-scrollbar pb-4 w-full">
+                        <table class="w-full text-sm text-left whitespace-nowrap min-w-max">
+                            <thead class="text-xs text-gray-400 uppercase bg-[#f4f7fe]" id="tableHeader">
+                                <!-- Headers -->
+                            </thead>
+                            <tbody id="tableBody" class="divide-y divide-gray-100">
+                                <!-- Data -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- VIEW 3: ADD / EDIT ITEM FORM -->
+            <div id="view-addForm" class="hidden">
+                <div class="glass-card p-5 md:p-8 max-w-6xl mx-auto">
+                    <div class="border-b border-gray-100 pb-4 md:pb-5 mb-6 md:mb-8 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                        <div>
+                            <h2 id="formTitle" class="text-xl md:text-2xl font-black text-[#2B3674]">Publish New Application</h2>
+                        </div>
+                        <button onclick="switchView('dashboard')" class="bg-gray-100 hover:bg-gray-200 text-gray-600 px-4 py-2 rounded-lg font-bold transition text-sm md:text-base w-full sm:w-auto">
+                            <i class="fa-solid fa-xmark mr-2"></i> Cancel
+                        </button>
+                    </div>
+
+                    <form id="adminForm" class="space-y-6 md:space-y-8">
+                        <input type="hidden" id="editRowId" value="">
+
+                        <!-- Section 1: Exact Match to Sheet Headers -->
+                        <div>
+                            <h3 class="text-xs uppercase font-bold text-[#4318FF] tracking-widest mb-3 md:mb-4">Basic Info</h3>
+                            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
+                                <div><label class="block text-xs font-bold text-gray-500 mb-1 md:mb-2">ID</label><input type="text" id="f_id" class="w-full p-2.5 md:p-3 border border-gray-200 rounded-xl bg-[#f4f7fe]" required></div>
+                                <div><label class="block text-xs font-bold text-gray-500 mb-1 md:mb-2">Name</label><input type="text" id="f_name" class="w-full p-2.5 md:p-3 border border-gray-200 rounded-xl bg-[#f4f7fe]" required></div>
+                                <div><label class="block text-xs font-bold text-gray-500 mb-1 md:mb-2">Author</label><input type="text" id="f_author" class="w-full p-2.5 md:p-3 border border-gray-200 rounded-xl bg-[#f4f7fe]" required></div>
+                                <div><label class="block text-xs font-bold text-gray-500 mb-1 md:mb-2">Version</label><input type="text" id="f_version" class="w-full p-2.5 md:p-3 border border-gray-200 rounded-xl bg-[#f4f7fe]" required></div>
+
+                                <div><label class="block text-xs font-bold text-gray-500 mb-1 md:mb-2">Category</label><input type="text" id="f_category" class="w-full p-2.5 md:p-3 border border-gray-200 rounded-xl bg-[#f4f7fe]" required></div>
+                                <div><label class="block text-xs font-bold text-gray-500 mb-1 md:mb-2">Platforms</label><input type="text" id="f_platforms" class="w-full p-2.5 md:p-3 border border-gray-200 rounded-xl bg-[#f4f7fe]"></div>
+                                <div class="sm:col-span-2 md:col-span-2"><label class="block text-xs font-bold text-gray-500 mb-1 md:mb-2">Tags</label><input type="text" id="f_tags" class="w-full p-2.5 md:p-3 border border-gray-200 rounded-xl bg-[#f4f7fe]"></div>
+                            </div>
+                        </div>
+
+                        <!-- Section 2 -->
+                        <div class="bg-[#f4f7fe]/50 p-4 md:p-6 rounded-2xl border border-gray-100">
+                            <h3 class="text-xs uppercase font-bold text-[#4318FF] tracking-widest mb-3 md:mb-4">Pricing & Stats</h3>
+                            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
+                                <div class="flex items-center space-x-3 pt-2 sm:pt-6 bg-white p-3 rounded-xl border border-gray-200">
+                                    <input type="checkbox" id="f_isFree" class="w-5 h-5 text-[#4318FF] rounded">
+                                    <label class="text-sm font-black text-gray-700" for="f_isFree">Is Free App?</label>
+                                </div>
+                                <div><label class="block text-xs font-bold text-gray-500 mb-1 md:mb-2">Price</label><input type="number" step="0.01" id="f_price" value="0" class="w-full p-2.5 md:p-3 border rounded-xl bg-white"></div>
+                                <div><label class="block text-xs font-bold text-gray-500 mb-1 md:mb-2">Currency</label><input type="text" id="f_currency" value="USD" class="w-full p-2.5 md:p-3 border rounded-xl bg-white"></div>
+                                <div><label class="block text-xs font-bold text-gray-500 mb-1 md:mb-2">Discount (%)</label><input type="number" id="f_discount" value="0" class="w-full p-2.5 md:p-3 border rounded-xl bg-white"></div>
+
+                                <div><label class="block text-xs font-bold text-gray-500 mb-1 md:mb-2">Downloads</label><input type="number" id="f_downloadCount" value="0" class="w-full p-2.5 md:p-3 border rounded-xl bg-white"></div>
+                                <div><label class="block text-xs font-bold text-gray-500 mb-1 md:mb-2">Rating (1-5)</label><input type="number" step="0.1" id="f_rating" value="5.0" class="w-full p-2.5 md:p-3 border rounded-xl bg-white"></div>
+                                <div><label class="block text-xs font-bold text-gray-500 mb-1 md:mb-2">Reviews</label><input type="number" id="f_reviewCount" value="0" class="w-full p-2.5 md:p-3 border rounded-xl bg-white"></div>
+                                <div class="flex flex-col space-y-2 pt-2">
+                                    <div class="flex items-center space-x-3 bg-white p-2 rounded-lg border">
+                                        <input type="checkbox" id="f_isNew" class="w-4 h-4 text-green-500"><label class="text-xs font-bold">Mark as New</label>
+                                    </div>
+                                    <div class="flex items-center space-x-3 bg-white p-2 rounded-lg border">
+                                        <input type="checkbox" id="f_isFeatured" class="w-4 h-4 text-yellow-500"><label class="text-xs font-bold">Mark as Featured</label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Section 3 -->
+                        <div>
+                            <h3 class="text-xs uppercase font-bold text-[#4318FF] tracking-widest mb-3 md:mb-4">URLs & Media</h3>
+                            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6 items-start">
+                                <div><label class="block text-xs font-bold text-gray-500 mb-1 md:mb-2">AIA / Test URL (Optional)</label><input type="url" id="f_aiaTestFileUrl" class="w-full p-2.5 md:p-3 border rounded-xl bg-[#f4f7fe]"></div>
+                                <div><label class="block text-xs font-bold text-gray-500 mb-1 md:mb-2">Download URL (Optional)</label><input type="url" id="f_downloadUrl" class="w-full p-2.5 md:p-3 border rounded-xl bg-[#f4f7fe]"></div>
+                                <div><label class="block text-xs font-bold text-gray-500 mb-1 md:mb-2">Buy URL (Optional)</label><input type="url" id="f_buyUrl" class="w-full p-2.5 md:p-3 border rounded-xl bg-[#f4f7fe]"></div>
+
+                                <div class="col-span-1 md:col-span-2">
+                                    <label class="block text-xs font-bold text-gray-500 mb-1 md:mb-2">iconEmoji (Upload Image OR Select/Enter Emoji)</label>
+                                    <div class="flex flex-col sm:flex-row space-y-3 sm:space-y-0 sm:space-x-4 items-center">
+                                        <div class="border-2 border-dashed border-[#4318FF]/30 rounded-xl p-4 text-center hover:bg-[#4318FF]/5 transition cursor-pointer relative bg-white w-full flex-1">
+                                            <input type="file" id="iconFile" accept="image/*" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer" onchange="compressImage(event)">
+                                            <i class="fa-solid fa-cloud-arrow-up text-2xl md:text-3xl text-[#4318FF]/40 mb-1"></i>
+                                            <p class="text-xs font-bold text-gray-500">Image Base64 Compress</p>
+                                        </div>
+                                        <span class="font-bold text-gray-400">OR</span>
+                                        <div class="w-full flex-1 flex flex-col space-y-2">
+                                            <input type="text" id="f_Emoji" class="w-full p-2.5 md:p-3 border rounded-xl text-center text-xl bg-white" placeholder="🎨">
+                                            
+                                            <!-- Emoji Quick Selection Palette -->
+                                            <div class="flex flex-wrap gap-1.5 justify-center bg-white p-2 border border-gray-100 rounded-xl shadow-sm" id="emojiPalette">
+                                                <button type="button" onclick="selectEmoji('🎨')" class="hover:bg-gray-100 p-1 rounded text-lg transition transform hover:scale-125">🎨</button>
+                                                <button type="button" onclick="selectEmoji('🔥')" class="hover:bg-gray-100 p-1 rounded text-lg transition transform hover:scale-125">🔥</button>
+                                                <button type="button" onclick="selectEmoji('⭐')" class="hover:bg-gray-100 p-1 rounded text-lg transition transform hover:scale-125">⭐</button>
+                                                <button type="button" onclick="selectEmoji('🚀')" class="hover:bg-gray-100 p-1 rounded text-lg transition transform hover:scale-125">🚀</button>
+                                                <button type="button" onclick="selectEmoji('📱')" class="hover:bg-gray-100 p-1 rounded text-lg transition transform hover:scale-125">📱</button>
+                                                <button type="button" onclick="selectEmoji('🎮')" class="hover:bg-gray-100 p-1 rounded text-lg transition transform hover:scale-125">🎮</button>
+                                                <button type="button" onclick="selectEmoji('💎')" class="hover:bg-gray-100 p-1 rounded text-lg transition transform hover:scale-125">💎</button>
+                                                <button type="button" onclick="selectEmoji('💡')" class="hover:bg-gray-100 p-1 rounded text-lg transition transform hover:scale-125">💡</button>
+                                                <button type="button" onclick="selectEmoji('⚡')" class="hover:bg-gray-100 p-1 rounded text-lg transition transform hover:scale-125">⚡</button>
+                                                <button type="button" onclick="selectEmoji('🔴')" class="hover:bg-gray-100 p-1 rounded text-lg transition transform hover:scale-125">🔴</button>
+                                                <button type="button" onclick="selectEmoji('⚽')" class="hover:bg-gray-100 p-1 rounded text-lg transition transform hover:scale-125">⚽</button>
+                                                <button type="button" onclick="selectEmoji('🏏')" class="hover:bg-gray-100 p-1 rounded text-lg transition transform hover:scale-125">🏏</button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <input type="hidden" id="f_imageBase64">
+                                    <p id="compressLog" class="text-xs font-bold mt-2"></p>
+                                </div>
+                                <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-1 gap-4">
+                                    <div><label class="block text-xs font-bold text-gray-500 mb-1 md:mb-2">Publish Date</label><input type="date" id="f_publishDate" class="w-full p-2.5 md:p-3 border rounded-xl bg-white"></div>
+                                    <div><label class="block text-xs font-bold text-gray-500 mb-1 md:mb-2">Update Date</label><input type="date" id="f_updateDate" class="w-full p-2.5 md:p-3 border rounded-xl bg-white"></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Section 4 -->
+                        <div>
+                            <h3 class="text-xs uppercase font-bold text-[#4318FF] tracking-widest mb-3 md:mb-4">Descriptions</h3>
+                            <div class="space-y-4">
+                                <div><label class="block text-xs font-bold text-gray-500 mb-1 md:mb-2">Short Description</label><textarea id="f_description" rows="2" class="w-full p-2.5 md:p-3 border rounded-xl bg-[#f4f7fe]" required></textarea></div>
+                                <div><label class="block text-xs font-bold text-gray-500 mb-1 md:mb-2">Long Description</label><textarea id="f_longDescription" rows="4" class="w-full p-2.5 md:p-3 border rounded-xl bg-[#f4f7fe]"></textarea></div>
+                            </div>
+                        </div>
+
+                        <div class="pt-6 flex justify-end items-center border-t border-gray-100">
+                            <div id="formLoader" class="loader mr-4 border-[#4318FF] hidden"></div>
+                            <button type="submit" id="submitFormBtn" class="w-full md:w-auto bg-gradient-to-r from-[#4318FF] to-[#868CFF] hover:opacity-90 text-white font-bold py-3 md:py-4 px-6 md:px-10 rounded-xl shadow-xl transition text-sm md:text-base">
+                                <i class="fa-solid fa-paper-plane mr-2"></i> Sync Row
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </main>
     </div>
 
     <script>
-        // Comprehensive 100+ Geostationary Satellites List (West to East)
-        const SATELLITES = [
-            { name: 'Intelsat 34 / AMC 11', long: -55.5 },
-            { name: 'SES 6', long: -40.5 },
-            { name: 'Hispasat 30W-5/30W-6', long: -30.0 },
-            { name: 'Intelsat 901/37e', long: -18.0 },
-            { name: 'Express AM8', long: -14.0 },
-            { name: 'Eutelsat 8 West B', long: -8.0 },
-            { name: 'Nilesat 201 / 301', long: -7.0 },
-            { name: 'Amos 3 / Amos 7', long: -4.0 },
-            { name: 'Thor 5 / Thor 6 / Thor 7', long: -0.8 },
-            { name: 'Eutelsat 3B', long: 3.0 },
-            { name: 'Astra 4A / SES 5', long: 4.8 },
-            { name: 'Eutelsat 7B / 7C', long: 7.0 },
-            { name: 'Eutelsat 9B', long: 9.0 },
-            { name: 'Eutelsat 10A', long: 10.0 },
-            { name: 'Hotbird 13B / 13C / 13E', long: 13.0 },
-            { name: 'Eutelsat 16A', long: 16.0 },
-            { name: 'Astra 1KR / 1L / 1M / 1N', long: 19.2 },
-            { name: 'Eutelsat 21B', long: 21.5 },
-            { name: 'Astra 3B', long: 23.5 },
-            { name: 'Eutelsat 25B / Es\'hail 1', long: 25.5 },
-            { name: 'Badr 4 / Badr 5 / Badr 6 / Badr 7', long: 26.0 },
-            { name: 'Astra 2E / 2F / 2G', long: 28.2 },
-            { name: 'Arabsat 5A', long: 30.5 },
-            { name: 'Eutelsat 33E / 33F', long: 33.0 },
-            { name: 'Eutelsat 36B / Express AMU1', long: 36.0 },
-            { name: 'Paksat 1R / MM1', long: 38.0 },
-            { name: 'Hellas Sat 3', long: 39.0 },
-            { name: 'Express AM7', long: 40.0 },
-            { name: 'Turksat 3A / 4A / 5A / 5B', long: 42.0 },
-            { name: 'AzerSpace 1 / Africasat 1A', long: 46.0 },
-            { name: 'AfghanSat 1 / Eutelsat 48E', long: 48.0 },
-            { name: 'Yamal 601', long: 49.0 },
-            { name: 'Belintersat 1', long: 51.5 },
-            { name: 'Express AM6', long: 53.0 },
-            { name: 'Yamal 402', long: 55.0 },
-            { name: 'MonacoSAT / TurkmenAlem', long: 52.0 },
-            { name: 'NSS 12', long: 57.0 },
-            { name: 'KazSat 3', long: 58.5 },
-            { name: 'Intelsat 33e', long: 60.0 },
-            { name: 'Intelsat 39', long: 62.0 },
-            { name: 'Intelsat 906', long: 64.2 },
-            { name: 'Intelsat 17', long: 66.0 },
-            { name: 'Intelsat 20 (Airtel Digital TV)', long: 68.5 },
-            { name: 'Eutelsat 70B', long: 70.5 },
-            { name: 'ABS 2 / ABS 2A', long: 75.0 },
-            { name: 'Eutelsat 172B', long: 76.5 },
-            { name: 'Thaicom 6 / Thaicom 8', long: 78.5 },
-            { name: 'Express 80', long: 80.0 },
-            { name: 'GSAT 10 / GSAT 17 / GSAT 30 (Tata Play)', long: 83.0 },
-            { name: 'KazSat 2', long: 86.5 },
-            { name: 'ST 2 (Videocon d2h)', long: 88.0 },
-            { name: 'Yamal 401', long: 90.0 },
-            { name: 'GSAT 15 / GSAT 18 (DD Free Dish)', long: 93.5 },
-            { name: 'SES 8 / NSS 6 (Dish TV India)', long: 95.0 },
-            { name: 'Express AM33', long: 96.5 },
-            { name: 'Chinasat 11', long: 98.0 },
-            { name: 'AsiaSat 5', long: 100.5 },
-            { name: 'Express AM5', long: 103.0 },
-            { name: 'Asiasat 7', long: 105.5 },
-            { name: 'SES 7 / SES 9 / NSS 11', long: 108.2 },
-            { name: 'ChinaSat 10', long: 110.5 },
-            { name: 'Palapa D / Nusantara Satu', long: 113.0 },
-            { name: 'Koreasat 6 / Koreasat 7', long: 116.0 },
-            { name: 'Telkom 4 (Merah Putih)', long: 108.0 },
-            { name: 'AsiaSat 6 / ChinaSat 12', long: 120.0 },
-            { name: 'AsiaSat 4', long: 122.2 },
-            { name: 'ChinaSat 6C', long: 130.0 },
-            { name: 'VINASAT 1 / VINASAT 2', long: 132.0 },
-            { name: 'Apstar 6D', long: 134.0 },
-            { name: 'Telstar 18 VANTAGE / Apstar 5C', long: 138.0 },
-            { name: 'Express AM5 / AM65', long: 140.0 },
-            { name: 'Superbird C2', long: 144.0 },
-            { name: 'Optus D2 / Optus 10', long: 156.0 },
-            { name: 'Optus D1', long: 160.0 },
-            { name: 'Intelsat 18', long: 180.0 }
-        ];
+        let CONFIG = {
+            scriptUrl: localStorage.getItem('gs_scriptUrl') || '',
+            sheetId: localStorage.getItem('gs_sheetId') || '',
+            sheetName: localStorage.getItem('gs_sheetName') || ''
+        };
+        let tableDataCache = [];
 
-        let state = {
-            lat: 28.6139,
-            lon: 77.2090,
-            selectedSat: SATELLITES[53], // Default: GSAT 15 / DD Free Dish (93.5°E)
-            targetAzimuth: 0,
-            targetElevation: 0,
-            phoneHeading: 0,
-            phonePitch: 0,
-            manualOffset: 0.0,
-            isLocked: false
+        window.onload = () => {
+            document.getElementById('conf-scriptUrl').value = CONFIG.scriptUrl;
+            document.getElementById('conf-sheetId').value = CONFIG.sheetId;
+            document.getElementById('conf-sheetName').value = CONFIG.sheetName;
+
+            // Removed the strict check to switch to settings if script URL is missing so dashboard always loads.
+            switchView('dashboard');
         };
 
-        // Low-Pass Smoothing Filter
-        let smoothHeading = 0;
-        let smoothPitch = 0;
-        const alpha = 0.25;
-
-        // Web Audio API Synthesizer (Beep Sound)
-        let audioCtx = null;
-        function playBeepSound() {
-            try {
-                if (!audioCtx) {
-                    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-                }
-                if (audioCtx.state === 'suspended') {
-                    audioCtx.resume();
-                }
-
-                const osc = audioCtx.createOscillator();
-                const gain = audioCtx.createGain();
-
-                osc.type = 'sine';
-                osc.frequency.setValueAtTime(1050, audioCtx.currentTime); // High pitched lock tone
-                osc.frequency.exponentialRampToValueAtTime(1400, audioCtx.currentTime + 0.12);
-
-                gain.gain.setValueAtTime(0.25, audioCtx.currentTime);
-                gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.18);
-
-                osc.connect(gain);
-                gain.connect(audioCtx.destination);
-
-                osc.start();
-                osc.stop(audioCtx.currentTime + 0.18);
-            } catch (e) {
-                console.log("Audio not allowed yet", e);
-            }
+        // Quick Emoji Selector Helper Function
+        function selectEmoji(emojiChar) {
+            document.getElementById("f_Emoji").value = emojiChar;
+            document.getElementById("f_imageBase64").value = "";
+            document.getElementById("compressLog").innerHTML = `<span class="text-[#4318FF] font-bold">Selected: ${emojiChar}</span>`;
         }
 
-        const video = document.getElementById('cameraVideo');
-        const startScreen = document.getElementById('startScreen');
-        const startBtn = document.getElementById('startBtn');
-        const satMarker = document.getElementById('satMarker');
-        const crosshair = document.getElementById('crosshair');
-        const statusPill = document.getElementById('statusPill');
-        const statusText = document.getElementById('statusText');
-        const statusIcon = document.getElementById('statusIcon');
-        const azPointer = document.getElementById('azPointer');
-
-        // Geostationary Orbital Trigonometry
-        function calculateSatelliteAngles() {
-            const latRad = state.lat * Math.PI / 180;
-            const lonRad = state.lon * Math.PI / 180;
-            const satLonRad = state.selectedSat.long * Math.PI / 180;
-
-            const dLon = satLonRad - lonRad;
-
-            // Azimuth Calculation
-            const East = Math.sin(dLon);
-            const North = -Math.sin(latRad) * Math.cos(dLon);
-            let azRad = Math.atan2(East, North);
-            let azDeg = (azRad * 180 / Math.PI + 360) % 360;
-
-            // Elevation Calculation
-            const R_earth = 6371;
-            const R_sat = 42164;
-            const cosGamma = Math.cos(latRad) * Math.cos(dLon);
-            const sinGamma = Math.sqrt(Math.max(0, 1 - cosGamma * cosGamma));
-            const elRad = Math.atan((cosGamma - (R_earth / R_sat)) / (sinGamma || 0.00001));
-            let elDeg = elRad * 180 / Math.PI;
-
-            state.targetAzimuth = azDeg;
-            state.targetElevation = elDeg;
-
-            document.getElementById('hudTargetAz').textContent = `Target: ${azDeg.toFixed(1)}°`;
-            document.getElementById('hudTargetEl').textContent = `Target: ${elDeg.toFixed(1)}°`;
-            document.getElementById('satTag').textContent = `${state.selectedSat.name} (${state.selectedSat.long}°E)`;
+        // Added Mobile Sidebar Toggle Function safely
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('sidebar-overlay');
+            sidebar.classList.toggle('-translate-x-full');
+            overlay.classList.toggle('hidden');
         }
 
-        async function initCamera() {
-            try {
-                const stream = await navigator.mediaDevices.getUserMedia({
-                    video: { facingMode: { exact: "environment" } },
-                    audio: false
-                });
-                video.srcObject = stream;
-            } catch (e) {
-                const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
-                video.srcObject = stream;
-            }
-        }
+        function switchView(viewName) {
+            document.getElementById('view-settings').classList.add('hidden');
+            document.getElementById('view-dashboard').classList.add('hidden');
+            document.getElementById('view-addForm').classList.add('hidden');
 
-        function initGPS() {
-            if ("geolocation" in navigator) {
-                navigator.geolocation.watchPosition(pos => {
-                    state.lat = pos.coords.latitude;
-                    state.lon = pos.coords.longitude;
-                    document.getElementById('hudGps').textContent = `${state.lat.toFixed(1)}°, ${state.lon.toFixed(1)}°`;
-                    calculateSatelliteAngles();
-                }, err => {
-                    calculateSatelliteAngles();
-                }, { enableHighAccuracy: true });
-            }
-        }
+            document.querySelectorAll('.sidebar-item').forEach(el => el.classList.remove('active'));
 
-        function handleOrientation(e) {
-            let rawHeading = 0;
-            if (e.webkitCompassHeading !== undefined && e.webkitCompassHeading !== null) {
-                rawHeading = e.webkitCompassHeading;
-            } else if (e.alpha !== null) {
-                rawHeading = (360 - e.alpha) % 360;
-            }
+            document.getElementById('view-' + viewName).classList.remove('hidden');
+            if(document.getElementById('nav-' + viewName)) document.getElementById('nav-' + viewName).classList.add('active');
 
-            let rawPitch = e.beta || 0;
+            const searchBar = document.getElementById('top-search-container');
+            const topAddBtn = document.getElementById('topAddBtn');
+            const refreshBtn = document.getElementById('refreshBtn');
 
-            smoothHeading = smoothHeading + alpha * (rawHeading - smoothHeading);
-            smoothPitch = smoothPitch + alpha * (rawPitch - smoothPitch);
-
-            state.phoneHeading = smoothHeading;
-            state.phonePitch = smoothPitch;
-
-            document.getElementById('hudAz').textContent = `${smoothHeading.toFixed(1)}°`;
-            document.getElementById('hudEl').textContent = `${smoothPitch.toFixed(1)}°`;
-
-            renderAR();
-        }
-
-        function renderAR() {
-            let effectiveHeading = state.phoneHeading + state.manualOffset;
-
-            let azDiff = state.targetAzimuth - effectiveHeading;
-            azDiff = ((azDiff + 540) % 360) - 180;
-
-            let elDiff = state.targetElevation - state.phonePitch;
-
-            // Top Gauge
-            let gaugePct = 50 + (azDiff / 45) * 50; 
-            gaugePct = Math.max(5, Math.min(95, gaugePct));
-            azPointer.style.left = `${gaugePct}%`;
-
-            // Screen Mapping
-            const fovScaleX = window.innerWidth / 45; 
-            const fovScaleY = window.innerHeight / 45;
-
-            const xPos = (window.innerWidth / 2) + (azDiff * fovScaleX);
-            const yPos = (window.innerHeight / 2) - (elDiff * fovScaleY);
-
-            satMarker.style.left = `${xPos}px`;
-            satMarker.style.top = `${yPos}px`;
-
-            // Lock Condition & Audio Cue Trigger
-            if (Math.abs(azDiff) < 2.8 && Math.abs(elDiff) < 2.8) {
-                if (!state.isLocked) {
-                    state.isLocked = true;
-                    crosshair.classList.add('is-aligned');
-                    satMarker.classList.add('is-aligned');
-                    statusPill.classList.add('locked');
-                    statusText.textContent = "SATELLITE MATCHED & LOCKED!";
-                    statusIcon.className = "fas fa-check-circle";
-                    
-                    // Audio Beep & Haptic Vibration
-                    playBeepSound();
-                    if (navigator.vibrate) navigator.vibrate([120, 60, 120]);
-                }
+            if (viewName === 'dashboard') {
+                searchBar.classList.remove('hidden');
+                topAddBtn.classList.remove('hidden');
+                refreshBtn.classList.remove('hidden');
+                fetchData(); 
             } else {
-                if (state.isLocked) {
-                    state.isLocked = false;
-                    crosshair.classList.remove('is-aligned');
-                    satMarker.classList.remove('is-aligned');
-                    statusPill.classList.remove('locked');
-                }
+                searchBar.classList.add('hidden');
+                topAddBtn.classList.add('hidden');
+                refreshBtn.classList.add('hidden');
+            }
 
-                if (Math.abs(elDiff) > 4) {
-                    if (elDiff > 0) {
-                        statusText.textContent = `Tilt Up (${Math.abs(elDiff).toFixed(0)}°)`;
-                        statusIcon.className = "fas fa-arrow-up";
-                    } else {
-                        statusText.textContent = `Tilt Down (${Math.abs(elDiff).toFixed(0)}°)`;
-                        statusIcon.className = "fas fa-arrow-down";
-                    }
-                } else {
-                    if (azDiff > 0) {
-                        statusText.textContent = `Turn Right / East (${Math.abs(azDiff).toFixed(0)}°)`;
-                        statusIcon.className = "fas fa-arrow-right";
-                    } else {
-                        statusText.textContent = `Turn Left / West (${Math.abs(azDiff).toFixed(0)}°)`;
-                        statusIcon.className = "fas fa-arrow-left";
-                    }
-                }
+            // Close sidebar on mobile after clicking a link
+            if(window.innerWidth < 768) {
+                document.getElementById('sidebar').classList.add('-translate-x-full');
+                document.getElementById('sidebar-overlay').classList.add('hidden');
             }
         }
 
-        // Manual Calibration Button Handlers
-        document.getElementById('calibLeft').onclick = () => {
-            state.manualOffset -= 1.0;
-            document.getElementById('offsetVal').textContent = `${state.manualOffset.toFixed(1)}°`;
-            renderAR();
-        };
+        function openAddForm() {
+            document.getElementById("adminForm").reset();
+            document.getElementById("editRowId").value = "";
+            document.getElementById("f_imageBase64").value = "";
+            document.getElementById("compressLog").innerText = "";
+            document.getElementById("formTitle").innerText = "Publish New Application";
+            document.getElementById("submitFormBtn").innerHTML = `<i class="fa-solid fa-paper-plane mr-2"></i> Sync Row`;
+            switchView('addForm');
+        }
 
-        document.getElementById('calibRight').onclick = () => {
-            state.manualOffset += 1.0;
-            document.getElementById('offsetVal').textContent = `${state.manualOffset.toFixed(1)}°`;
-            renderAR();
-        };
+        function saveSettings() {
+            const url = document.getElementById('conf-scriptUrl').value.trim();
+            let rawId = document.getElementById('conf-sheetId').value.trim();
+            const name = document.getElementById('conf-sheetName').value.trim();
 
-        document.getElementById('calibReset').onclick = () => {
-            state.manualOffset = 0.0;
-            document.getElementById('offsetVal').textContent = `0.0°`;
-            renderAR();
-        };
+            let id = rawId;
+            if (rawId.includes("/d/")) {
+                const match = rawId.match(/\/d\/([a-zA-Z0-9-_]+)/);
+                if (match) id = match[1];
+            }
 
-        // Satellite List Generator & Filter Search
-        function renderSatList(filter = '') {
-            const container = document.getElementById('satList');
-            container.innerHTML = '';
-            
-            const filtered = SATELLITES.filter(s => 
-                s.name.toLowerCase().includes(filter.toLowerCase()) || 
-                s.long.toString().includes(filter)
-            );
+            if (!url || !id || !name) { Swal.fire('Error', 'Required fields missing!', 'error'); return; }
 
-            filtered.forEach(sat => {
-                const item = document.createElement('div');
-                item.className = 'sat-item';
-                item.innerHTML = `<span>${sat.name}</span><strong>${sat.long >= 0 ? sat.long + '°E' : Math.abs(sat.long) + '°W'}</strong>`;
-                item.onclick = () => {
-                    state.selectedSat = sat;
-                    calculateSatelliteAngles();
-                    document.getElementById('satModal').classList.remove('open');
-                };
-                container.appendChild(item);
+            document.getElementById('conf-sheetId').value = id;
+
+            localStorage.setItem('gs_scriptUrl', url);
+            localStorage.setItem('gs_sheetId', id);
+            localStorage.setItem('gs_sheetName', name);
+            CONFIG = { scriptUrl: url, sheetId: id, sheetName: name };
+
+            Swal.fire({title: 'Saved', icon: 'success', timer: 1000, showConfirmButton: false}).then(() => {
+                switchView('dashboard');
             });
         }
 
-        document.getElementById('satSearch').oninput = (e) => {
-            renderSatList(e.target.value);
-        };
+        async function callAppScript(action, actionData) {
+            if (!CONFIG.scriptUrl) throw new Error("Script URL not set");
+            if (!CONFIG.sheetId) throw new Error("Spreadsheet ID is missing or invalid");
 
-        startBtn.onclick = async () => {
-            startScreen.style.display = 'none';
-            await initCamera();
-            initGPS();
-            calculateSatelliteAngles();
+            const payload = { spreadsheetId: CONFIG.sheetId, sheetName: CONFIG.sheetName, ...actionData };
+            const params = new URLSearchParams();
+            params.append('action', action);
+            params.append('data', JSON.stringify(payload));
 
-            if ('ondeviceorientationabsolute' in window) {
-                window.addEventListener('deviceorientationabsolute', handleOrientation);
-            } else if (window.DeviceOrientationEvent) {
-                if (typeof DeviceOrientationEvent.requestPermission === 'function') {
-                    DeviceOrientationEvent.requestPermission().then(res => {
-                        if (res === 'granted') window.addEventListener('deviceorientation', handleOrientation);
-                    });
-                } else {
-                    window.addEventListener('deviceorientation', handleOrientation);
-                }
+            const response = await fetch(CONFIG.scriptUrl, { method: 'POST', body: params });
+            const result = await response.json();
+
+            if(result.success === false && result.message.includes("Invalid argument: id")) {
+                throw new Error("Invalid Spreadsheet ID! Please go to Settings and enter a valid ID, not a full link.");
             }
-        };
+            return result;
+        }
 
-        document.getElementById('satSelectBtn').onclick = () => {
-            renderSatList();
-            document.getElementById('satModal').classList.add('open');
-        };
+        async function fetchData() {
+            // Updated to get data very fast from CSV URL directly
+            document.getElementById('tableBody').innerHTML = '';
+            document.getElementById('tableHeader').innerHTML = '';
+            document.getElementById('tableLoader').style.display = 'block';
 
-        document.getElementById('closeModal').onclick = () => {
-            document.getElementById('satModal').classList.remove('open');
-        };
+            const csvUrl = "https://docs.google.com/spreadsheets/d/e/2PACX-1vS1CivryJs-AgAk3rbPcuiTUQU15S_QDboAyivGq5ZqPrACLNe5fbtU2UD44Y5g-QFG6ghqFVO54yF1/pub?output=csv";
 
-        document.getElementById('reGpsBtn').onclick = () => {
-            initGPS();
-        };
+            try {
+                // Using Fetch API to get CSV data 
+                const response = await fetch(csvUrl);
+                if (!response.ok) throw new Error("Failed to load CSV URL");
+                
+                const csvText = await response.text();
+                
+                // Parsing CSV into 2D Array
+                const rows = csvText.split(/\r?\n/);
+                const dataArray = rows.map(row => {
+                    // Regex handles commas safely inside double quotes
+                    return row.split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/).map(cell => cell.replace(/^"|"$/g, '').trim());
+                }).filter(row => row.length > 1 || row[0] !== ""); // Skip empty lines
+
+                document.getElementById('tableLoader').style.display = 'none';
+
+                if (dataArray && dataArray.length > 0) {
+                    tableDataCache = dataArray;
+                    renderTable(tableDataCache);
+                } else {
+                    Swal.fire('Error', 'No data found in Sheet!', 'error');
+                }
+            } catch (error) {
+                document.getElementById('tableLoader').style.display = 'none';
+                Swal.fire('Error', error.message, 'error');
+            }
+        }
+
+        function renderTable(dataArray) {
+            const thead = document.getElementById('tableHeader');
+            const tbody = document.getElementById('tableBody');
+
+            let freeCount = 0; let paidCount = 0;
+
+            if (!dataArray || dataArray.length <= 1) {
+                updateStats(0, 0, 0);
+                tbody.innerHTML = '<tr><td colspan="100%" class="text-center py-10 text-gray-400">No data found.</td></tr>';
+                return;
+            }
+
+            const headers = dataArray[0];
+            let headerHTML = '<tr><th class="px-4 md:px-6 py-4">Row</th>'; 
+
+            for (let i = 0; i < Math.min(headers.length, 6); i++) {
+                headerHTML += `<th class="px-4 md:px-6 py-4">${headers[i]}</th>`;
+            }
+            headerHTML += `<th class="px-4 md:px-6 py-4 text-right">Actions</th></tr>`;
+            thead.innerHTML = headerHTML;
+
+            let rowsHTML = [];
+            for (let i = 1; i < dataArray.length; i++) {
+                const row = dataArray[i];
+                if (row.every(cell => cell.trim() === '')) continue; 
+
+                let isFreeVal = (row[8] || '').toString().trim().toUpperCase();
+                if (isFreeVal === 'TRUE') { freeCount++; } else { paidCount++; }
+
+                let tr = `<tr class="hover:bg-[#f4f7fe] bg-white group border-b border-gray-50">`;
+                tr += `<td class="px-4 md:px-6 py-4 text-gray-400 font-bold">#${i + 1}</td>`; 
+
+                for (let j = 0; j < Math.min(row.length, 6); j++) {
+                    let cellVal = row[j] || '';
+                    if(cellVal.length > 25 && !cellVal.startsWith('data:image')) cellVal = cellVal.substring(0, 25) + '...';
+                    if(cellVal.startsWith('data:image')) cellVal = `<img src="${cellVal}" class="h-8 w-8 rounded">`;
+                    tr += `<td class="px-4 md:px-6 py-4 text-gray-600">${cellVal}</td>`;
+                }
+
+                tr += `<td class="px-4 md:px-6 py-4 text-right md:opacity-0 md:group-hover:opacity-100 transition">
+                        <button onclick="editRow(${i + 1}, ${i})" class="text-blue-500 bg-blue-50 px-3 py-2 rounded mr-2 mb-2 md:mb-0 inline-block"><i class="fa-solid fa-pen"></i></button>
+                        <button onclick="deleteRow(${i + 1})" class="text-red-500 bg-red-50 px-3 py-2 rounded inline-block"><i class="fa-solid fa-trash"></i></button>
+                       </td></tr>`;
+                rowsHTML.push(tr);
+            }
+            tbody.innerHTML = rowsHTML.join('');
+            updateStats(freeCount + paidCount, freeCount, paidCount);
+        }
+
+        function updateStats(total, free, paid) {
+            document.getElementById('stat-total').innerText = total;
+            document.getElementById('stat-free').innerText = free;
+            document.getElementById('stat-paid').innerText = paid;
+        }
+
+        function filterTable() {
+            const query = document.getElementById('searchInput').value.toLowerCase();
+            const rows = document.getElementById('tableBody').getElementsByTagName('tr');
+            for (let i = 0; i < rows.length; i++) {
+                rows[i].style.display = rows[i].textContent.toLowerCase().indexOf(query) > -1 ? "" : "none";
+            }
+        }
+
+        function editRow(sheetRowNumber, arrayIndex) {
+            const row = tableDataCache[arrayIndex];
+
+            document.getElementById("f_id").value = row[0] || '';
+            document.getElementById("f_name").value = row[1] || '';
+            document.getElementById("f_author").value = row[2] || '';
+            document.getElementById("f_version").value = row[3] || '';
+            document.getElementById("f_description").value = row[4] || '';
+            document.getElementById("f_longDescription").value = row[5] || '';
+            document.getElementById("f_platforms").value = row[6] || '';
+            document.getElementById("f_category").value = row[7] || '';
+            document.getElementById("f_isFree").checked = (String(row[8]).toUpperCase() === 'TRUE');
+            document.getElementById("f_price").value = row[9] || 0;
+            document.getElementById("f_currency").value = row[10] || 'USD';
+            document.getElementById("f_downloadCount").value = row[11] || 0;
+            document.getElementById("f_rating").value = row[12] || 5.0;
+            document.getElementById("f_reviewCount").value = row[13] || 0;
+            document.getElementById("f_aiaTestFileUrl").value = row[14] || '';
+            document.getElementById("f_downloadUrl").value = row[15] || '';
+            document.getElementById("f_buyUrl").value = row[16] || '';
+  
+            let iconData = row[17] || '';
+            if(iconData.startsWith('data:image')) {
+                document.getElementById("f_imageBase64").value = iconData;
+                document.getElementById("f_Emoji").value = '';
+                document.getElementById("compressLog").innerHTML = '<span class="text-green-500">Image Loaded</span>';
+            } else {
+                document.getElementById("f_imageBase64").value = '';
+                document.getElementById("f_Emoji").value = iconData;
+                document.getElementById("compressLog").innerHTML = '';
+            }
+
+            document.getElementById("f_tags").value = row[18] || '';
+            document.getElementById("f_discount").value = row[19] || 0; 
+            document.getElementById("f_isNew").checked = (String(row[20]).toUpperCase() === 'TRUE'); 
+            document.getElementById("f_isFeatured").checked = (String(row[21]).toUpperCase() === 'TRUE'); 
+
+            document.getElementById("f_publishDate").value = row[22] || '';
+            document.getElementById("f_updateDate").value = row[23] || '';
+
+            document.getElementById("editRowId").value = sheetRowNumber; 
+            document.getElementById("formTitle").innerText = "Update Application Info";
+            document.getElementById("submitFormBtn").innerHTML = `<i class="fa-solid fa-arrows-rotate mr-2"></i> Save Changes`;
+
+            switchView('addForm');
+        }
+
+        function deleteRow(rowNum) {
+            Swal.fire({
+                title: 'Delete this App?', icon: 'error', showCancelButton: true, confirmButtonText: 'Delete'
+            }).then(async (result) => {
+                if (result.isConfirmed) {
+                    try {
+                        const res = await callAppScript('deleteRowById', { rowId: rowNum });
+                        if(res.success) { Swal.fire('Deleted!', '', 'success'); fetchData(); }
+                        else { Swal.fire('Error', res.message, 'error'); }
+                    } catch (e) { Swal.fire('Error', e.message, 'error'); }
+                }
+            });
+        }
+
+        function compressImage(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            document.getElementById("compressLog").innerHTML = `<span class="text-orange-500">Compressing...</span>`;
+
+            const reader = new FileReader();
+            reader.readAsDataURL(file);
+            reader.onload = (e) => {
+                const img = new Image();
+                img.src = e.target.result;
+                img.onload = () => {
+                    const canvas = document.createElement("canvas");
+                    canvas.width = img.width; canvas.height = img.height; 
+                    const ctx = canvas.getContext("2d");
+                    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+
+                    document.getElementById("f_imageBase64").value = canvas.toDataURL("image/jpeg", 0.6);
+                    document.getElementById("f_Emoji").value = ''; 
+                    document.getElementById("compressLog").innerHTML = `<span class="text-green-500"><i class="fa-solid fa-check"></i> Compressed</span>`;
+                };
+            };
+        }
+
+        document.getElementById("adminForm").addEventListener("submit", async function(e) {
+            e.preventDefault();
+
+            const finalIcon = document.getElementById("f_imageBase64").value || document.getElementById("f_Emoji").value;
+
+            const rowArray = [
+                document.getElementById("f_id").value,             
+                document.getElementById("f_name").value,           
+                document.getElementById("f_author").value,         
+                document.getElementById("f_version").value,        
+                document.getElementById("f_description").value,    
+                document.getElementById("f_longDescription").value,
+                document.getElementById("f_platforms").value,      
+                document.getElementById("f_category").value,       
+                document.getElementById("f_isFree").checked.toString().toUpperCase(), 
+                document.getElementById("f_price").value,          
+                document.getElementById("f_currency").value,       
+                document.getElementById("f_downloadCount").value,  
+                document.getElementById("f_rating").value,         
+                document.getElementById("f_reviewCount").value,    
+                document.getElementById("f_aiaTestFileUrl").value, 
+                document.getElementById("f_downloadUrl").value,    
+                document.getElementById("f_buyUrl").value,         
+                finalIcon,                                         
+                document.getElementById("f_tags").value,           
+                document.getElementById("f_discount").value,       
+                document.getElementById("f_isNew").checked.toString().toUpperCase(), 
+                document.getElementById("f_isFeatured").checked.toString().toUpperCase(), 
+                document.getElementById("f_publishDate").value,    
+                document.getElementById("f_updateDate").value      
+            ];
+
+            const loader = document.getElementById("formLoader");
+            loader.style.display = "block";
+
+            try {
+                let res;
+                const editRowId = document.getElementById("editRowId").value;
+                if (editRowId) {
+                    res = await callAppScript('updateRowById', { rowId: parseInt(editRowId), newValues: rowArray });
+                } else {
+                    res = await callAppScript('appendData', { data: [rowArray] });
+                }
+
+                loader.style.display = "none";
+                if (res.success) {
+                    Swal.fire({title: 'Synced!', icon: 'success', timer: 1500, showConfirmButton: false}).then(() => switchView('dashboard'));
+                } else {
+                    Swal.fire('Error', res.message, 'error');
+                }
+            } catch (error) {
+                loader.style.display = "none";
+                Swal.fire('Failed', error.message, 'error');
+            }
+        });
     </script>
 </body>
 </html>
