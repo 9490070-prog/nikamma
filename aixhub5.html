@@ -40,8 +40,37 @@
     <div class="absolute bottom-[-10%] right-[-10%] w-96 h-96 bg-indigo-400 rounded-full mix-blend-multiply filter blur-[128px] opacity-20 pointer-events-none"></div>
 
     
+    
+    <!-- PRE-LOGIN SETTINGS MODAL -->
+    <div id="preLoginSettingsModal" class="hidden fixed inset-0 flex items-center justify-center bg-black/60 z-[200] backdrop-blur-sm">
+        <div class="glass-card p-8 max-w-md w-full mx-4 shadow-2xl relative">
+            <h3 class="text-xl font-black text-gray-800 mb-4"><i class="fa-solid fa-gear text-[#4318FF] mr-2"></i>API Configuration</h3>
+            <p class="text-xs text-gray-500 mb-6">Configure this if you are running the external HTML file. If running in Apps Script, leave this as is.</p>
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-xs font-bold text-gray-700 mb-1">Apps Script Web App URL</label>
+                    <input type="text" id="preConf-scriptUrl" class="w-full p-3 border border-gray-200 rounded-lg bg-gray-50 text-sm focus:ring-2 focus:ring-[#4318FF]">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-gray-700 mb-1">Spreadsheet ID</label>
+                    <input type="text" id="preConf-sheetId" class="w-full p-3 border border-gray-200 rounded-lg bg-gray-50 text-sm focus:ring-2 focus:ring-[#4318FF]">
+                </div>
+                <div class="flex justify-end space-x-3 pt-4">
+                    <button onclick="closePreLoginSettings()" class="px-5 py-2.5 text-sm text-gray-600 font-bold hover:bg-gray-100 rounded-lg transition">Cancel</button>
+                    <button onclick="savePreLoginSettings()" class="px-5 py-2.5 text-sm text-white font-bold bg-[#4318FF] hover:bg-[#3311cc] shadow-lg rounded-lg transition">Save</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- LOGIN SCREEN -->
     <div id="login-container" class="fixed inset-0 flex items-center justify-center bg-gradient-to-br from-[#0f172a] via-[#1e1b4b] to-[#312e81] z-[100] backdrop-blur-3xl">
+        <div class="absolute top-4 right-4 z-50">
+            <button onclick="openPreLoginSettings()" class="text-white/70 hover:text-white transition p-3 bg-white/10 rounded-full hover:bg-white/20 backdrop-blur-md" title="API Settings">
+                <i class="fa-solid fa-gear text-xl"></i>
+            </button>
+        </div>
+
         <div class="absolute inset-0 opacity-20" style="background-image: radial-gradient(#4318FF 1px, transparent 1px); background-size: 30px 30px;"></div>
         <div class="absolute top-1/4 left-1/4 w-96 h-96 bg-purple-500 rounded-full mix-blend-screen filter blur-[128px] opacity-30 pointer-events-none"></div>
         <div class="absolute bottom-1/4 right-1/4 w-96 h-96 bg-indigo-500 rounded-full mix-blend-screen filter blur-[128px] opacity-30 pointer-events-none"></div>
@@ -425,6 +454,26 @@
             }
         };
 
+        
+        function openPreLoginSettings() {
+            document.getElementById('preConf-scriptUrl').value = CONFIG.scriptUrl || '';
+            document.getElementById('preConf-sheetId').value = CONFIG.sheetId || '';
+            document.getElementById('preLoginSettingsModal').classList.remove('hidden');
+        }
+        function closePreLoginSettings() {
+            document.getElementById('preLoginSettingsModal').classList.add('hidden');
+        }
+        function savePreLoginSettings() {
+            const url = document.getElementById('preConf-scriptUrl').value.trim();
+            const id = document.getElementById('preConf-sheetId').value.trim();
+            localStorage.setItem('gs_scriptUrl', url);
+            localStorage.setItem('gs_sheetId', id);
+            CONFIG.scriptUrl = url;
+            CONFIG.sheetId = id;
+            closePreLoginSettings();
+            Swal.fire({title: 'Saved', icon: 'success', timer: 1000, showConfirmButton: false});
+        }
+
         function initApp() {
             document.getElementById('conf-scriptUrl').value = CONFIG.scriptUrl;
             document.getElementById('conf-sheetId').value = CONFIG.sheetId;
@@ -447,32 +496,34 @@
             loader.classList.remove('hidden');
             loader.classList.add('flex');
 
-            if (typeof google === 'undefined' || typeof google.script === 'undefined') {
-                // If running locally (like in adminhub.html) without GAS backend
-                // Fallback dummy check for demonstration
-                setTimeout(() => {
-                    if (user === 'admin' && pass === 'admin123') {
-                        loginSuccess();
-                    } else {
-                        loginError('Invalid credentials (Local Test Mode: use admin / admin123)');
-                    }
-                }, 1000);
-                return;
-            }
+            if (typeof google !== 'undefined' && typeof google.script !== 'undefined') {
+                // Google Apps Script Native Call
+                google.script.run
+                    .withSuccessHandler((res) => {
+                        if(res.success) { loginSuccess(); } else { loginError(res.message); }
+                    })
+                    .withFailureHandler((err) => { loginError(err.message || 'Network error'); })
+                    .validateLogin(user, pass);
+            } else {
+                // External HTML Call via Fetch API
+                if (!CONFIG.scriptUrl) {
+                    loginError('Apps Script URL is missing! Click the Gear icon on the top right to configure API Settings first.');
+                    return;
+                }
+                const payload = { spreadsheetId: CONFIG.sheetId, sheetName: CONFIG.sheetName || 'AdminUsers', username: user, password: pass };
+                const params = new URLSearchParams();
+                params.append('action', 'validateLogin');
+                params.append('data', JSON.stringify(payload));
 
-            // Google Apps Script Call
-            google.script.run
-                .withSuccessHandler((res) => {
-                    if(res.success) {
-                        loginSuccess();
-                    } else {
-                        loginError(res.message);
-                    }
-                })
-                .withFailureHandler((err) => {
-                    loginError(err.message || 'Network error');
-                })
-                .validateLogin(user, pass);
+                fetch(CONFIG.scriptUrl, { method: 'POST', body: params })
+                    .then(r => r.json())
+                    .then(res => {
+                        if (res.success) { loginSuccess(); } else { loginError(res.message || 'Invalid credentials'); }
+                    })
+                    .catch(err => {
+                        loginError('Network error. Check your Apps Script URL or ensure your Web App allows anonymous access.');
+                    });
+            }
         }
 
         function loginSuccess() {
@@ -499,7 +550,14 @@
             }).then((result) => {
                 if (result.isConfirmed) {
                     localStorage.removeItem('adminSession');
-                    window.location.reload();
+                    document.getElementById('app-container').classList.add('hidden');
+                    document.getElementById('app-container').classList.remove('flex');
+                    document.getElementById('login-container').classList.remove('hidden');
+                    document.getElementById('loginUsername').value = '';
+                    document.getElementById('loginPassword').value = '';
+                    document.getElementById('loginBtn').classList.remove('hidden');
+                    document.getElementById('loginLoader').classList.add('hidden');
+                    document.getElementById('loginLoader').classList.remove('flex');
                 }
             });
         }
