@@ -481,66 +481,104 @@
             switchView('dashboard');
         }
 
-        function handleLogin() {
-            const user = document.getElementById('loginUsername').value.trim();
-            const pass = document.getElementById('loginPassword').value.trim();
-            
-            if (!user || !pass) {
-                Swal.fire('Error', 'Please enter both Username and Password', 'error');
-                return;
-            }
-
-            const btn = document.getElementById('loginBtn');
-            const loader = document.getElementById('loginLoader');
-            btn.classList.add('hidden');
-            loader.classList.remove('hidden');
-            loader.classList.add('flex');
-
-            if (typeof google !== 'undefined' && typeof google.script !== 'undefined') {
-                // Google Apps Script Native Call
-                google.script.run
-                    .withSuccessHandler((res) => {
-                        if(res.success) { loginSuccess(); } else { loginError(res.message); }
-                    })
-                    .withFailureHandler((err) => { loginError(err.message || 'Network error'); })
-                    .validateLogin(user, pass);
-            } else {
-                // External HTML Call via Fetch API
-                if (!CONFIG.scriptUrl) {
-                    loginError('Apps Script URL is missing! Click the Gear icon on the top right to configure API Settings first.');
+        async function handleLogin() {
+            try {
+                const user = document.getElementById('loginUsername').value.trim();
+                const pass = document.getElementById('loginPassword').value.trim();
+                
+                if (!user || !pass) {
+                    showError('Please enter both Username and Password');
                     return;
                 }
-                const payload = { spreadsheetId: CONFIG.sheetId, sheetName: CONFIG.sheetName || 'AdminUsers', username: user, password: pass };
-                const params = new URLSearchParams();
-                params.append('action', 'validateLogin');
-                params.append('data', JSON.stringify(payload));
 
-                fetch(CONFIG.scriptUrl, { method: 'POST', body: params })
-                    .then(r => r.json())
-                    .then(res => {
-                        if (res.success) { loginSuccess(); } else { loginError(res.message || 'Invalid credentials'); }
-                    })
-                    .catch(err => {
-                        loginError('Network error. Check your Apps Script URL or ensure your Web App allows anonymous access.');
-                    });
+                const btn = document.getElementById('loginBtn');
+                const loader = document.getElementById('loginLoader');
+                if (btn) btn.classList.add('hidden');
+                if (loader) {
+                    loader.classList.remove('hidden');
+                    loader.classList.add('flex');
+                }
+
+                if (typeof google !== 'undefined' && typeof google.script !== 'undefined') {
+                    // Google Apps Script Native Call
+                    google.script.run
+                        .withSuccessHandler((res) => {
+                            if(res && res.success) { loginSuccess(); } else { loginError(res ? res.message : 'Invalid credentials'); }
+                        })
+                        .withFailureHandler((err) => { loginError(err.message || 'Network error'); })
+                        .validateLogin(user, pass);
+                } else {
+                    // External HTML Call via Fetch API
+                    if (!CONFIG.scriptUrl) {
+                        loginError('Apps Script URL is missing! Click the Gear icon on the top right to configure API Settings first.');
+                        return;
+                    }
+
+                    const payload = { spreadsheetId: CONFIG.sheetId, sheetName: CONFIG.sheetName || 'AdminUsers', username: user, password: pass };
+                    const params = new URLSearchParams();
+                    params.append('action', 'validateLogin');
+                    params.append('data', JSON.stringify(payload));
+
+                    try {
+                        const response = await fetch(CONFIG.scriptUrl, { method: 'POST', body: params });
+                        const res = await response.json();
+                        
+                        if (res && res.success) {
+                            loginSuccess();
+                        } else {
+                            loginError(res ? res.message : 'Invalid credentials');
+                        }
+                    } catch (fetchErr) {
+                        console.error("Fetch Error details:", fetchErr);
+                        loginError('Network or CORS error. Ensure your Google Apps Script is deployed as "Execute as: Me" and "Who has access: Anyone".');
+                    }
+                }
+            } catch (err) {
+                console.error("Login System Error:", err);
+                loginError("An unexpected error occurred during login.");
             }
         }
 
         function loginSuccess() {
             localStorage.setItem('adminSession', 'active');
-            Swal.fire({title: 'Access Granted', icon: 'success', timer: 1000, showConfirmButton: false}).then(() => {
-                document.getElementById('login-container').classList.add('hidden');
-                document.getElementById('app-container').classList.remove('hidden');
-                document.getElementById('app-container').classList.add('flex');
-                initApp();
-            });
+            if (typeof Swal !== 'undefined') {
+                Swal.fire({title: 'Access Granted', icon: 'success', timer: 1000, showConfirmButton: false}).then(() => {
+                    showApp();
+                });
+            } else {
+                alert('Access Granted');
+                showApp();
+            }
+        }
+
+        function showError(msg) {
+            if (typeof Swal !== 'undefined') {
+                Swal.fire('Error', msg, 'error');
+            } else {
+                alert('Error: ' + msg);
+            }
         }
 
         function loginError(msg) {
-            document.getElementById('loginBtn').classList.remove('hidden');
-            document.getElementById('loginLoader').classList.add('hidden');
-            document.getElementById('loginLoader').classList.remove('flex');
-            Swal.fire('Access Denied', msg, 'error');
+            const btn = document.getElementById('loginBtn');
+            const loader = document.getElementById('loginLoader');
+            if (btn) btn.classList.remove('hidden');
+            if (loader) {
+                loader.classList.add('hidden');
+                loader.classList.remove('flex');
+            }
+            if (typeof Swal !== 'undefined') {
+                Swal.fire('Access Denied', msg, 'error');
+            } else {
+                alert('Access Denied: ' + msg);
+            }
+        }
+
+        function showApp() {
+            document.getElementById('login-container').classList.add('hidden');
+            document.getElementById('app-container').classList.remove('hidden');
+            document.getElementById('app-container').classList.add('flex');
+            initApp();
         }
 
         function handleLogout() {
