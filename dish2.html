@@ -277,7 +277,7 @@
         // Column D: APK Download URL
         // =========================================================================
 
-        const query = encodeURIComponent(`SELECT A, B, C, D LIMIT 1`);
+        const query = encodeURIComponent(`SELECT A, B, C, D`);
         const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&sheet=${SHEET_NAME}&tq=${query}`;
 
         const appTitle = document.getElementById('appTitle');
@@ -304,7 +304,9 @@
                 const data = JSON.parse(jsonString);
 
                 if (data.table.rows.length > 0) {
-                    const row = data.table.rows[0].c;
+                    // If there are multiple rows, assume the first row is headers and get the last row
+                    const rowIndex = data.table.rows.length > 1 ? data.table.rows.length - 1 : 0;
+                    const row = data.table.rows[rowIndex].c;
                     
                     const name = row[0] ? row[0].v : 'Awesome App';
                     const desc = row[1] ? row[1].v : 'Download the latest version now.';
