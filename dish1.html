@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Download App</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #6C5CE7;
+            --secondary: #a29bfe;
+            --bg-color: #0f0c29;
+            --bg-grad-1: #302b63;
+            --bg-grad-2: #24243e;
+            --text-light: #ffffff;
+            --text-muted: #b2bec3;
+            --glass-bg: rgba(255, 255, 255, 0.05);
+            --glass-border: rgba(255, 255, 255, 0.1);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Outfit', sans-serif;
+        }
+
+        body {
+            background: linear-gradient(135deg, var(--bg-color), var(--bg-grad-1), var(--bg-grad-2));
+            background-size: 400% 400%;
+            animation: gradientBG 15s ease infinite;
+            color: var(--text-light);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+        }
+
+        @keyframes gradientBG {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        .blob {
+            position: absolute;
+            width: 500px;
+            height: 500px;
+            background: linear-gradient(180deg, rgba(108, 92, 231, 0.4) 0%, rgba(162, 155, 254, 0.4) 100%);
+            border-radius: 50%;
+            filter: blur(80px);
+            animation: float 10s ease-in-out infinite;
+            z-index: 1;
+        }
+
+        .blob-1 { top: -100px; left: -100px; }
+        .blob-2 { bottom: -100px; right: -100px; animation-delay: -5s; }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0) scale(1); }
+            50% { transform: translateY(-20px) scale(1.05); }
+        }
+
+        .container {
+            position: relative;
+            z-index: 10;
+            width: 90%;
+            max-width: 450px;
+            padding: 40px;
+            background: var(--glass-bg);
+            border-radius: 30px;
+            border: 1px solid var(--glass-border);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            box-shadow: 0 25px 45px rgba(0, 0, 0, 0.2);
+            text-align: center;
+            transform: translateY(30px);
+            opacity: 0;
+            animation: slideUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+
+        @keyframes slideUp {
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        .app-icon {
+            width: 120px;
+            height: 120px;
+            border-radius: 25px;
+            margin: 0 auto 25px;
+            background: var(--glass-bg);
+            border: 2px solid var(--glass-border);
+            padding: 10px;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+            position: relative;
+            transition: transform 0.3s ease;
+        }
+
+        .app-icon:hover {
+            transform: scale(1.05) rotate(2deg);
+        }
+
+        .app-icon img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            border-radius: 15px;
+            opacity: 0;
+            transition: opacity 0.5s ease;
+        }
+
+        .app-icon img.loaded {
+            opacity: 1;
+        }
+        
+        .skeleton {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent);
+            background-size: 200% 100%;
+            animation: skeletonLoading 1.5s infinite;
+        }
+        
+        @keyframes skeletonLoading {
+            0% { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
+        }
+
+        .app-title {
+            font-size: 28px;
+            font-weight: 800;
+            margin-bottom: 10px;
+            background: linear-gradient(to right, #fff, #a29bfe);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            letter-spacing: 1px;
+        }
+
+        .app-desc {
+            font-size: 15px;
+            color: var(--text-muted);
+            margin-bottom: 35px;
+            line-height: 1.5;
+        }
+
+        .download-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            background: linear-gradient(45deg, var(--primary), #8e44ad);
+            color: white;
+            text-decoration: none;
+            padding: 16px 32px;
+            border-radius: 50px;
+            font-size: 18px;
+            font-weight: 600;
+            width: 100%;
+            transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+            position: relative;
+            overflow: hidden;
+            border: none;
+            cursor: pointer;
+        }
+
+        .download-btn::before {
+            content: '';
+            position: absolute;
+            top: 0; left: -100%; width: 100%; height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+            transition: all 0.5s ease;
+        }
+
+        .download-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 25px rgba(108, 92, 231, 0.4);
+        }
+
+        .download-btn:hover::before {
+            left: 100%;
+        }
+
+        .download-btn:active {
+            transform: translateY(1px);
+        }
+
+        .download-icon {
+            width: 24px;
+            height: 24px;
+            fill: none;
+            stroke: currentColor;
+            stroke-width: 2;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+            animation: bounce 2s infinite;
+        }
+
+        @keyframes bounce {
+            0%, 20%, 50%, 80%, 100% { transform: translateY(0); }
+            40% { transform: translateY(-5px); }
+            60% { transform: translateY(-3px); }
+        }
+
+        .status-message {
+            margin-top: 20px;
+            font-size: 13px;
+            color: #ff7675;
+            min-height: 20px;
+        }
+        
+        .loader-dots {
+            display: inline-block;
+        }
+        .loader-dots span {
+            display: inline-block;
+            width: 4px;
+            height: 4px;
+            border-radius: 50%;
+            background-color: var(--text-light);
+            margin: 0 2px;
+            animation: dots 1.4s infinite ease-in-out both;
+        }
+        .loader-dots span:nth-child(1) { animation-delay: -0.32s; }
+        .loader-dots span:nth-child(2) { animation-delay: -0.16s; }
+        @keyframes dots {
+            0%, 80%, 100% { transform: scale(0); }
+            40% { transform: scale(1); }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="blob blob-1"></div>
+    <div class="blob blob-2"></div>
+
+    <div class="container">
+        <div class="app-icon" id="iconContainer">
+            <div class="skeleton" id="iconSkeleton"></div>
+            <img src="" alt="App Icon" id="appIcon">
+        </div>
+        
+        <h1 class="app-title" id="appTitle">Loading<div class="loader-dots"><span></span><span></span><span></span></div></h1>
+        <p class="app-desc" id="appDesc">Fetching latest release from secure servers...</p>
+        
+        <a href="#" class="download-btn" id="downloadBtn" style="pointer-events: none; opacity: 0.7;">
+            <svg class="download-icon" viewBox="0 0 24 24">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                <polyline points="7 10 12 15 17 10"></polyline>
+                <line x1="12" y1="15" x2="12" y2="3"></line>
+            </svg>
+            Download APK
+        </a>
+        
+        <div class="status-message" id="statusMessage"></div>
+    </div>
+
+    <script>
+        // =========================================================================
+        // CONFIGURATION
+        // =========================================================================
+        // 1. Ensure your Google Sheet is set to "Anyone with the link can view".
+        // 2. Put your Google Sheet ID here (found in the URL between /d/ and /edit):
+        const SHEET_ID = '1jvADVpGSmClA6-_3gZFPsTIiM9kGkGDmhAPkF3TyOJo'; 
+        
+        // 3. Optional: Specify the sheet name if it's not the first sheet (e.g., 'Sheet1')
+        const SHEET_NAME = 'Sheet1';
+        
+        // Ensure your Sheet has these columns in order: 
+        // Column A: App Name
+        // Column B: App Description
+        // Column C: Image URL (Icon)
+        // Column D: APK Download URL
+        // =========================================================================
+
+        const query = encodeURIComponent(`SELECT A, B, C, D LIMIT 1`);
+        const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&sheet=${SHEET_NAME}&tq=${query}`;
+
+        const appTitle = document.getElementById('appTitle');
+        const appDesc = document.getElementById('appDesc');
+        const appIcon = document.getElementById('appIcon');
+        const iconSkeleton = document.getElementById('iconSkeleton');
+        const downloadBtn = document.getElementById('downloadBtn');
+        const statusMessage = document.getElementById('statusMessage');
+
+        async function fetchAppDetails() {
+            if (SHEET_ID === 'YOUR_GOOGLE_SHEET_ID_HERE') {
+                showError("Please set your Google Sheet ID in the HTML file.");
+                return;
+            }
+
+            try {
+                const response = await fetch(url);
+                if (!response.ok) throw new Error('Network response was not ok');
+                
+                const text = await response.text();
+                
+                // The Google Sheets API response is wrapped in a function call, we need to extract the JSON
+                const jsonString = text.substring(text.indexOf('{'), text.lastIndexOf('}') + 1);
+                const data = JSON.parse(jsonString);
+
+                if (data.table.rows.length > 0) {
+                    const row = data.table.rows[0].c;
+                    
+                    const name = row[0] ? row[0].v : 'Awesome App';
+                    const desc = row[1] ? row[1].v : 'Download the latest version now.';
+                    const iconUrl = row[2] ? row[2].v : '';
+                    const apkUrl = row[3] ? row[3].v : '#';
+
+                    appTitle.textContent = name;
+                    appDesc.textContent = desc;
+
+                    if (iconUrl) {
+                        appIcon.src = iconUrl;
+                        appIcon.onload = () => {
+                            appIcon.classList.add('loaded');
+                            iconSkeleton.style.display = 'none';
+                        };
+                        appIcon.onerror = () => {
+                            iconSkeleton.style.display = 'none';
+                        }
+                    } else {
+                        iconSkeleton.style.display = 'none';
+                    }
+
+                    if (apkUrl && apkUrl !== '#') {
+                        downloadBtn.href = apkUrl;
+                        downloadBtn.style.pointerEvents = 'auto';
+                        downloadBtn.style.opacity = '1';
+                        // Add target blank if you want to open in new tab
+                        // downloadBtn.target = '_blank';
+                    } else {
+                        showError("APK URL not found in the sheet.");
+                    }
+
+                } else {
+                    showError("No data found in the Google Sheet.");
+                }
+            } catch (error) {
+                console.error("Error fetching data:", error);
+                showError("Failed to load app data. Is the Sheet public?");
+            }
+        }
+
+        // Initialize fetch
+        fetchAppDetails();
+    </script>
+</body>
+</html>
