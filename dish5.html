@@ -7,8 +7,6 @@
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
     <style>
         :root {
-            --primary: #6C5CE7;
-            --secondary: #a29bfe;
             --bg-color: #0f0c29;
             --bg-grad-1: #302b63;
             --bg-grad-2: #24243e;
@@ -34,7 +32,8 @@
             display: flex;
             justify-content: center;
             align-items: center;
-            overflow: hidden;
+            overflow-x: hidden;
+            padding: 20px 0;
         }
 
         @keyframes gradientBG {
@@ -44,7 +43,7 @@
         }
 
         .blob {
-            position: absolute;
+            position: fixed;
             width: 500px;
             height: 500px;
             background: linear-gradient(180deg, rgba(108, 92, 231, 0.4) 0%, rgba(162, 155, 254, 0.4) 100%);
@@ -52,6 +51,7 @@
             filter: blur(80px);
             animation: float 10s ease-in-out infinite;
             z-index: 1;
+            pointer-events: none;
         }
 
         .blob-1 { top: -100px; left: -100px; }
@@ -66,7 +66,7 @@
             position: relative;
             z-index: 10;
             width: 90%;
-            max-width: 450px;
+            max-width: 500px;
             padding: 40px;
             background: var(--glass-bg);
             border-radius: 30px;
@@ -78,17 +78,24 @@
             transform: translateY(30px);
             opacity: 0;
             animation: slideUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+            margin: auto;
         }
 
         @keyframes slideUp {
             to { transform: translateY(0); opacity: 1; }
         }
 
+        .app-header {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
         .app-icon {
             width: 120px;
             height: 120px;
             border-radius: 25px;
-            margin: 0 auto 25px;
+            margin: 0 auto 20px;
             background: var(--glass-bg);
             border: 2px solid var(--glass-border);
             padding: 10px;
@@ -144,8 +151,66 @@
         .app-desc {
             font-size: 15px;
             color: var(--text-muted);
-            margin-bottom: 35px;
+            margin-bottom: 25px;
             line-height: 1.5;
+            padding: 0 10px;
+        }
+
+        /* Slider Styles */
+        .slider-container {
+            margin-bottom: 30px;
+            display: none; /* hidden until loaded */
+            flex-direction: column;
+        }
+        
+        .slider-title {
+            font-size: 14px;
+            font-weight: 600;
+            text-align: left;
+            margin-bottom: 10px;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .screenshots-wrapper {
+            display: flex;
+            overflow-x: auto;
+            gap: 15px;
+            padding-bottom: 15px;
+            scroll-snap-type: x mandatory;
+            scrollbar-width: thin;
+            scrollbar-color: rgba(255,255,255,0.2) transparent;
+            -webkit-overflow-scrolling: touch;
+        }
+        
+        .screenshots-wrapper::-webkit-scrollbar {
+            height: 6px;
+        }
+        .screenshots-wrapper::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        .screenshots-wrapper::-webkit-scrollbar-thumb {
+            background-color: rgba(255,255,255,0.2);
+            border-radius: 10px;
+        }
+
+        .screenshot-item {
+            flex: 0 0 160px; /* Width of screenshot */
+            height: 280px;
+            border-radius: 15px;
+            scroll-snap-align: start;
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.1);
+            overflow: hidden;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+            position: relative;
+        }
+
+        .screenshot-item img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
         }
 
         .download-btn {
@@ -180,30 +245,6 @@
         .download-btn:hover {
             transform: translateY(-3px);
             box-shadow: 0 10px 25px rgba(0, 176, 155, 0.5);
-        }
-
-        /* Responsive Design */
-        @media (max-width: 480px) {
-            .container {
-                padding: 30px 20px;
-                width: 95%;
-            }
-            .app-title {
-                font-size: 24px;
-            }
-            .app-desc {
-                font-size: 14px;
-                margin-bottom: 25px;
-            }
-            .app-icon {
-                width: 100px;
-                height: 100px;
-                margin-bottom: 20px;
-            }
-            .download-btn {
-                padding: 14px 24px;
-                font-size: 16px;
-            }
         }
 
         .download-btn:hover::before {
@@ -256,6 +297,34 @@
             0%, 80%, 100% { transform: scale(0); }
             40% { transform: scale(1); }
         }
+
+        /* Responsive Design */
+        @media (max-width: 480px) {
+            .container {
+                padding: 30px 20px;
+                width: 95%;
+            }
+            .app-title {
+                font-size: 24px;
+            }
+            .app-desc {
+                font-size: 14px;
+                margin-bottom: 20px;
+            }
+            .app-icon {
+                width: 100px;
+                height: 100px;
+                margin-bottom: 20px;
+            }
+            .download-btn {
+                padding: 14px 24px;
+                font-size: 16px;
+            }
+            .screenshot-item {
+                flex: 0 0 130px;
+                height: 230px;
+            }
+        }
     </style>
 </head>
 <body>
@@ -264,13 +333,23 @@
     <div class="blob blob-2"></div>
 
     <div class="container">
-        <div class="app-icon" id="iconContainer">
-            <div class="skeleton" id="iconSkeleton"></div>
-            <img src="" alt="App Icon" id="appIcon">
+        <div class="app-header">
+            <div class="app-icon" id="iconContainer">
+                <div class="skeleton" id="iconSkeleton"></div>
+                <img src="" alt="App Icon" id="appIcon">
+            </div>
+            
+            <h1 class="app-title" id="appTitle">Loading<div class="loader-dots"><span></span><span></span><span></span></div></h1>
+            <p class="app-desc" id="appDesc">Fetching latest release from secure servers...</p>
         </div>
         
-        <h1 class="app-title" id="appTitle">Loading<div class="loader-dots"><span></span><span></span><span></span></div></h1>
-        <p class="app-desc" id="appDesc">Fetching latest release from secure servers...</p>
+        <!-- Screenshots Slider -->
+        <div class="slider-container" id="sliderContainer">
+            <div class="slider-title">Screenshots</div>
+            <div class="screenshots-wrapper" id="screenshotsWrapper">
+                <!-- Screenshots injected here -->
+            </div>
+        </div>
         
         <a href="#" class="download-btn" id="downloadBtn" style="pointer-events: none; opacity: 0.7;">
             <svg class="download-icon" viewBox="0 0 24 24">
@@ -288,21 +367,20 @@
         // =========================================================================
         // CONFIGURATION
         // =========================================================================
-        // 1. Ensure your Google Sheet is set to "Anyone with the link can view".
-        // 2. Put your Google Sheet ID here (found in the URL between /d/ and /edit):
         const SHEET_ID = '1jvADVpGSmClA6-_3gZFPsTIiM9kGkGDmhAPkF3TyOJo'; 
-        
-        // 3. Optional: Specify the sheet name if it's not the first sheet (e.g., 'Sheet1')
         const SHEET_NAME = 'Sheet1';
         
-        // Ensure your Sheet has these columns in order: 
-        // Column A: App Name
-        // Column B: App Description
-        // Column C: Image URL (Icon)
-        // Column D: APK Download URL
+        // Expected Columns in your Google Sheet:
+        // A: App Name
+        // B: App Description
+        // C: Logo / Image Icon URL
+        // D: APK Download URL
+        // E: Screenshot 1 URL (Optional)
+        // F: Screenshot 2 URL (Optional)
+        // G: Screenshot 3 URL (Optional)
         // =========================================================================
 
-        const query = encodeURIComponent(`SELECT A, B, C, D`);
+        const query = encodeURIComponent(`SELECT A, B, C, D, E, F, G`);
         const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&sheet=${SHEET_NAME}&tq=${query}`;
 
         const appTitle = document.getElementById('appTitle');
@@ -311,36 +389,49 @@
         const iconSkeleton = document.getElementById('iconSkeleton');
         const downloadBtn = document.getElementById('downloadBtn');
         const statusMessage = document.getElementById('statusMessage');
+        const sliderContainer = document.getElementById('sliderContainer');
+        const screenshotsWrapper = document.getElementById('screenshotsWrapper');
+
+        // Helper function to extract file ID and build a proper direct view link for images
+        function fixGoogleDriveImageUrl(url) {
+            if (!url) return '';
+            if (url.includes('drive.google.com') && url.includes('id=')) {
+                try {
+                    const urlObj = new URL(url);
+                    const fileId = urlObj.searchParams.get('id');
+                    if (fileId) {
+                        return `https://drive.google.com/uc?export=view&id=${fileId}`;
+                    }
+                } catch(e) {}
+            }
+            return url;
+        }
 
         async function fetchAppDetails() {
-            if (SHEET_ID === 'YOUR_GOOGLE_SHEET_ID_HERE') {
-                showError("Please set your Google Sheet ID in the HTML file.");
-                return;
-            }
-
             try {
                 const response = await fetch(url);
                 if (!response.ok) throw new Error('Network response was not ok');
                 
                 const text = await response.text();
-                
-                // The Google Sheets API response is wrapped in a function call, we need to extract the JSON
                 const jsonString = text.substring(text.indexOf('{'), text.lastIndexOf('}') + 1);
                 const data = JSON.parse(jsonString);
 
                 if (data.table.rows.length > 0) {
-                    // If there are multiple rows, assume the first row is headers and get the last row
                     const rowIndex = data.table.rows.length > 1 ? data.table.rows.length - 1 : 0;
                     const row = data.table.rows[rowIndex].c;
                     
                     const name = row[0] ? row[0].v : 'Awesome App';
                     const desc = row[1] ? row[1].v : 'Download the latest version now.';
-                    const iconUrl = row[2] ? row[2].v : '';
+                    let iconUrl = row[2] ? row[2].v : '';
                     const apkUrl = row[3] ? row[3].v : '#';
+                    
+                    // Fix Google Drive Logo URL
+                    iconUrl = fixGoogleDriveImageUrl(iconUrl);
 
                     appTitle.textContent = name;
                     appDesc.textContent = desc;
 
+                    // Load Logo
                     if (iconUrl) {
                         appIcon.src = iconUrl;
                         appIcon.onload = () => {
@@ -353,18 +444,33 @@
                     } else {
                         iconSkeleton.style.display = 'none';
                     }
-
-                    let finalApkUrl = apkUrl;
                     
-                    // Fix for Google Drive: Bypass the "Virus scan warning" interstitial page 
-                    // and prevent Android from intercepting the link by using a direct usercontent URL.
+                    // Load Screenshots (Columns E, F, G)
+                    const screenshots = [];
+                    if (row[4] && row[4].v) screenshots.push(fixGoogleDriveImageUrl(row[4].v)); // Col E
+                    if (row[5] && row[5].v) screenshots.push(fixGoogleDriveImageUrl(row[5].v)); // Col F
+                    if (row[6] && row[6].v) screenshots.push(fixGoogleDriveImageUrl(row[6].v)); // Col G
+                    
+                    if (screenshots.length > 0) {
+                        screenshots.forEach(src => {
+                            const div = document.createElement('div');
+                            div.className = 'screenshot-item';
+                            const img = document.createElement('img');
+                            img.src = src;
+                            img.alt = "App Screenshot";
+                            div.appendChild(img);
+                            screenshotsWrapper.appendChild(div);
+                        });
+                        sliderContainer.style.display = 'flex';
+                    }
+
+                    // Handle APK Download Link
+                    let finalApkUrl = apkUrl;
                     if (finalApkUrl && finalApkUrl.includes('id=')) {
                         try {
-                            // Extract the File ID from the original Google Drive link
                             const urlObj = new URL(finalApkUrl);
                             const fileId = urlObj.searchParams.get('id');
                             if (fileId) {
-                                // Construct the ultimate direct download URL that skips the warning page
                                 finalApkUrl = `https://drive.usercontent.google.com/download?id=${fileId}&export=download&confirm=t`;
                             }
                         } catch (e) {
@@ -376,7 +482,6 @@
                         downloadBtn.href = finalApkUrl;
                         downloadBtn.style.pointerEvents = 'auto';
                         downloadBtn.style.opacity = '1';
-                        // Force the browser to download rather than navigate
                         downloadBtn.setAttribute('target', '_blank');
                         downloadBtn.setAttribute('download', 'app.apk');
                     } else {
@@ -388,11 +493,17 @@
                 }
             } catch (error) {
                 console.error("Error fetching data:", error);
-                showError("Failed to load app data. Is the Sheet public?");
+                showError("Failed to load app data.");
             }
         }
 
-        // Initialize fetch
+        function showError(msg) {
+            appTitle.textContent = 'Oops!';
+            appDesc.textContent = 'Something went wrong.';
+            statusMessage.textContent = msg;
+            iconSkeleton.style.display = 'none';
+        }
+
         fetchAppDetails();
     </script>
 </body>
