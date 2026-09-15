@@ -356,10 +356,20 @@
 
                     let finalApkUrl = apkUrl;
                     
-                    // Fix for mobile: Android intercepts 'drive.google.com' links and opens the Drive app (or account picker).
-                    // Changing it to 'docs.google.com' forces the browser to handle the direct download.
-                    if (finalApkUrl && finalApkUrl.includes('drive.google.com/uc')) {
-                        finalApkUrl = finalApkUrl.replace('drive.google.com/uc', 'docs.google.com/uc');
+                    // Fix for Google Drive: Bypass the "Virus scan warning" interstitial page 
+                    // and prevent Android from intercepting the link by using a direct usercontent URL.
+                    if (finalApkUrl && finalApkUrl.includes('id=')) {
+                        try {
+                            // Extract the File ID from the original Google Drive link
+                            const urlObj = new URL(finalApkUrl);
+                            const fileId = urlObj.searchParams.get('id');
+                            if (fileId) {
+                                // Construct the ultimate direct download URL that skips the warning page
+                                finalApkUrl = `https://drive.usercontent.google.com/download?id=${fileId}&export=download&confirm=t`;
+                            }
+                        } catch (e) {
+                            console.log("Could not parse URL, using original.");
+                        }
                     }
 
                     if (finalApkUrl && finalApkUrl !== '#') {
