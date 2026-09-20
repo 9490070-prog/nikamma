@@ -1,5 +1,4 @@
-function doGet() {
-  var html = `<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head> 
     <meta charset="UTF-8">
@@ -43,7 +42,7 @@ function doGet() {
     <div id="preLoginSettingsModal" class="hidden fixed inset-0 flex items-center justify-center bg-black/60 z-[200] backdrop-blur-sm">
         <div class="glass-card p-8 max-w-md w-full mx-4 shadow-2xl relative">
             <h3 class="text-xl font-black text-gray-800 mb-4"><i class="fa-solid fa-gear text-[#4318FF] mr-2"></i>API Configuration</h3>
-            <p class="text-xs text-gray-500 mb-6">Configure this if you are running the external HTML file. If running in Apps Script, leave this as is.</p>
+            <p class="text-xs text-gray-500 mb-6">Connect your Google Apps Script to this frontend.</p>
             <div class="space-y-4">
                 <div>
                     <label class="block text-xs font-bold text-gray-700 mb-1">Apps Script Web App URL</label>
@@ -253,7 +252,7 @@ function doGet() {
                     <form id="adminForm" class="space-y-6 md:space-y-8">
                         <input type="hidden" id="editRowId" value="">
 
-                        <!-- Section 1: Basic Info (A-I) -->
+                        <!-- Section 1: Basic Info -->
                         <div>
                             <h3 class="text-xs uppercase font-bold text-[#4318FF] tracking-widest mb-3 md:mb-4">Basic Info</h3>
                             <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
@@ -268,7 +267,7 @@ function doGet() {
                             </div>
                         </div>
 
-                        <!-- NEW Section: Dynamic Lists & Colors -->
+                        <!-- Dynamic Lists -->
                         <div class="bg-[#4318FF]/5 p-4 md:p-6 rounded-2xl border border-[#4318FF]/20">
                             <h3 class="text-xs uppercase font-bold text-[#4318FF] tracking-widest mb-3 md:mb-4"><i class="fa-solid fa-list mr-1"></i> Dynamic Lists & Links</h3>
                             <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 md:gap-6">
@@ -298,7 +297,7 @@ function doGet() {
                             </div>
                         </div>
 
-                        <!-- Section 2: Pricing & Stats -->
+                        <!-- Pricing & Stats -->
                         <div class="bg-[#f4f7fe]/50 p-4 md:p-6 rounded-2xl border border-gray-100">
                             <h3 class="text-xs uppercase font-bold text-[#4318FF] tracking-widest mb-3 md:mb-4">Pricing & Stats</h3>
                             <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
@@ -320,7 +319,7 @@ function doGet() {
                             </div>
                         </div>
 
-                        <!-- Section 3: URLs & Media -->
+                        <!-- URLs & Media -->
                         <div>
                             <h3 class="text-xs uppercase font-bold text-[#4318FF] tracking-widest mb-3 md:mb-4">URLs, Dates & Media</h3>
                             <div class="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6 items-start">
@@ -399,7 +398,6 @@ function doGet() {
                                 </tr>
                             </thead>
                             <tbody id="paymentsTableBody" class="divide-y divide-gray-100">
-                                <!-- Data -->
                             </tbody>
                         </table>
                     </div>
@@ -409,7 +407,6 @@ function doGet() {
         </div>
         </main>
     </div>
-
     </div>
 
     <script>
@@ -419,7 +416,7 @@ function doGet() {
             sheetName: localStorage.getItem('gs_sheetName') || ''
         };
         let tableDataCache = [];
-        let isSubmitting = false; // FLAG ADDED TO PREVENT DOUBLE CLICK
+        let isSubmitting = false; 
 
         window.onload = () => {
             if (localStorage.getItem('adminSession') === 'active') {
@@ -445,14 +442,11 @@ function doGet() {
         function savePreLoginSettings() {
             const url = document.getElementById('preConf-scriptUrl').value.trim();
             const id = document.getElementById('preConf-sheetId').value.trim();
-
             localStorage.setItem('gs_scriptUrl', url);
             localStorage.setItem('gs_sheetId', id);
             CONFIG.scriptUrl = url;
             CONFIG.sheetId = id;
-            
             document.getElementById('preConf-sheetId').value = id;
-            
             closePreLoginSettings();
             Swal.fire({title: 'Saved', icon: 'success', timer: 1000, showConfirmButton: false});
         }
@@ -479,37 +473,28 @@ function doGet() {
             loader.classList.remove('hidden');
             loader.classList.add('flex');
 
-            if (typeof google !== 'undefined' && typeof google.script !== 'undefined') {
-                google.script.run
-                    .withSuccessHandler((res) => {
-                        if(res.success) { loginSuccess(); } else { loginError(res.message); }
-                    })
-                    .withFailureHandler((err) => { loginError(err.message || 'Network error'); })
-                    .validateLogin(user, pass);
-            } else {
-                if (!CONFIG.scriptUrl) {
-                    loginError('Apps Script URL is missing! Click the Gear icon on the top right to configure API Settings first.');
-                    return;
-                }
-                let actualSheetId = CONFIG.sheetId;
-                if (actualSheetId && actualSheetId.includes("/d/")) {
-                    const match = actualSheetId.match(/\\/d\\/([a-zA-Z0-9-_]+)/);
-                    if (match) actualSheetId = match[1];
-                }
-                const payload = { spreadsheetId: actualSheetId, sheetName: CONFIG.sheetName || 'AdminUsers', username: user, password: pass };
-                const params = new URLSearchParams();
-                params.append('action', 'validateLogin');
-                params.append('data', JSON.stringify(payload));
-
-                fetch(CONFIG.scriptUrl, { method: 'POST', body: params })
-                    .then(r => r.json())
-                    .then(res => {
-                        if (res.success) { loginSuccess(); } else { loginError(res.message || 'Invalid credentials'); }
-                    })
-                    .catch(err => {
-                        loginError('Network error. Check your Apps Script URL or ensure your Web App allows anonymous access.');
-                    });
+            if (!CONFIG.scriptUrl) {
+                loginError('Apps Script URL is missing! Click the Gear icon on the top right to configure API Settings first.');
+                return;
             }
+            let actualSheetId = CONFIG.sheetId;
+            if (actualSheetId && actualSheetId.includes("/d/")) {
+                const match = actualSheetId.match(/\/d\/([a-zA-Z0-9-_]+)/);
+                if (match) actualSheetId = match[1];
+            }
+            const payload = { spreadsheetId: actualSheetId, sheetName: CONFIG.sheetName || 'AdminUsers', username: user, password: pass };
+            const params = new URLSearchParams();
+            params.append('action', 'validateLogin');
+            params.append('data', JSON.stringify(payload));
+
+            fetch(CONFIG.scriptUrl, { method: 'POST', body: params })
+                .then(r => r.json())
+                .then(res => {
+                    if (res.success) { loginSuccess(); } else { loginError(res.message || 'Invalid credentials'); }
+                })
+                .catch(err => {
+                    loginError('Network error. Check your Apps Script URL or ensure your Web App allows anonymous access.');
+                });
         }
 
         function loginSuccess() {
@@ -551,7 +536,7 @@ function doGet() {
         function selectEmoji(emojiChar) {
             document.getElementById("f_iconEmojiSlider").value = emojiChar;
             document.getElementById("f_imageBase64").value = "";
-            document.getElementById("compressLog").innerHTML = \`<span class="text-[#4318FF] font-bold">Selected: \${emojiChar}</span>\`;
+            document.getElementById("compressLog").innerHTML = `<span class="text-[#4318FF] font-bold">Selected: ${emojiChar}</span>`;
         }
 
         function toggleSidebar() {
@@ -617,7 +602,7 @@ function doGet() {
             document.getElementById("formTitle").innerText = "Publish New Application";
             
             const submitBtn = document.getElementById("submitFormBtn");
-            submitBtn.innerHTML = \`<i class="fa-solid fa-paper-plane mr-2"></i> Sync Row\`;
+            submitBtn.innerHTML = `<i class="fa-solid fa-paper-plane mr-2"></i> Sync Row`;
             submitBtn.disabled = false;
             submitBtn.classList.remove('opacity-50', 'cursor-not-allowed');
             isSubmitting = false;
@@ -653,7 +638,7 @@ function doGet() {
 
             let actualSheetId = CONFIG.sheetId;
             if (actualSheetId && actualSheetId.includes("/d/")) {
-                const match = actualSheetId.match(/\\/d\\/([a-zA-Z0-9-_]+)/);
+                const match = actualSheetId.match(/\/d\/([a-zA-Z0-9-_]+)/);
                 if (match) actualSheetId = match[1];
             }
             const payload = { spreadsheetId: actualSheetId, sheetName: CONFIG.sheetName, ...actionData };
@@ -664,7 +649,7 @@ function doGet() {
             const response = await fetch(CONFIG.scriptUrl, { method: 'POST', body: params });
             const result = await response.json();
 
-            if(result.success === false && result.message.includes("Invalid argument: id")) {
+            if(result.success === false && result.message && result.message.includes("Invalid argument: id")) {
                 throw new Error("Invalid Spreadsheet ID! Please go to Settings and enter a valid ID, not a full link.");
             }
             return result;
@@ -683,9 +668,9 @@ function doGet() {
                 
                 const csvText = await response.text();
                 
-                const rows = csvText.split(/\\r?\\n/);
+                const rows = csvText.split(/\r?\n/);
                 const dataArray = rows.map(row => {
-                    return row.split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/).map(cell => cell.replace(/^"|"$/g, '').trim());
+                    return row.split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/).map(cell => cell.replace(/^"\vert{}"$/g, '').trim());
                 }).filter(row => row.length > 1 || row[0] !== ""); 
 
                 document.getElementById('tableLoader').style.display = 'none';
@@ -718,9 +703,9 @@ function doGet() {
             let headerHTML = '<tr><th class="px-4 md:px-6 py-4">Row</th>'; 
 
             for (let i = 0; i < Math.min(headers.length, 6); i++) {
-                headerHTML += \`<th class="px-4 md:px-6 py-4">\${headers[i]}</th>\`;
+                headerHTML += `<th class="px-4 md:px-6 py-4">${headers[i]}</th>`;
             }
-            headerHTML += \`<th class="px-4 md:px-6 py-4 text-right sticky right-0 bg-indigo-50/90 shadow-[-5px_0_10px_rgba(0,0,0,0.05)] z-10 backdrop-blur-md">Actions</th></tr>\`;
+            headerHTML += `<th class="px-4 md:px-6 py-4 text-right sticky right-0 bg-indigo-50/90 shadow-[-5px_0_10px_rgba(0,0,0,0.05)] z-10 backdrop-blur-md">Actions</th></tr>`;
             thead.innerHTML = headerHTML;
 
             let rowsHTML = [];
@@ -731,20 +716,20 @@ function doGet() {
                 let isFreeVal = (row[8] || '').toString().trim().toUpperCase();
                 if (isFreeVal === 'TRUE') { freeCount++; } else { paidCount++; }
 
-                let tr = \`<tr class="hover:bg-indigo-50/60 bg-white group border-b border-gray-100 transition duration-300 animate-fade-in">\`;
-                tr += \`<td class="px-4 md:px-6 py-4 text-gray-400 font-bold">#\${i + 1}</td>\`; 
+                let tr = `<tr class="hover:bg-indigo-50/60 bg-white group border-b border-gray-100 transition duration-300 animate-fade-in">`;
+                tr += `<td class="px-4 md:px-6 py-4 text-gray-400 font-bold">#${i + 1}</td>`; 
 
                 for (let j = 0; j < Math.min(row.length, 6); j++) {
                     let cellVal = row[j] || '';
                     if(cellVal.length > 25 && !cellVal.startsWith('data:image')) cellVal = cellVal.substring(0, 25) + '...';
-                    if(cellVal.startsWith('data:image')) cellVal = \`<img src="\${cellVal}" class="h-8 w-8 rounded">\`;
-                    tr += \`<td class="px-4 md:px-6 py-4 text-gray-600">\${cellVal}</td>\`;
+                    if(cellVal.startsWith('data:image')) cellVal = `<img src="${cellVal}" class="h-8 w-8 rounded">`;
+                    tr += `<td class="px-4 md:px-6 py-4 text-gray-600">${cellVal}</td>`;
                 }
 
-                tr += \`<td class="px-4 md:px-6 py-4 text-right md:opacity-0 md:group-hover:opacity-100 transition sticky right-0 bg-white shadow-[-5px_0_10px_rgba(0,0,0,0.05)] z-10">
-                        <button onclick="editRow(\${i + 1}, \${i})" class="text-blue-600 hover:text-white border border-blue-200 hover:bg-blue-500 px-3 py-2 rounded-lg mr-2 mb-2 md:mb-0 inline-flex items-center text-xs font-bold transition-all shadow-sm"><i class="fa-solid fa-pen mr-1.5"></i> Edit</button>
-                        <button onclick="deleteRow(\${i + 1}, \${i})" class="text-red-600 hover:text-white border border-red-200 hover:bg-red-500 px-3 py-2 rounded-lg inline-flex items-center text-xs font-bold transition-all shadow-sm"><i class="fa-solid fa-trash mr-1.5"></i> Delete</button>
-                       </td></tr>\`;
+                tr += `<td class="px-4 md:px-6 py-4 text-right md:opacity-0 md:group-hover:opacity-100 transition sticky right-0 bg-white shadow-[-5px_0_10px_rgba(0,0,0,0.05)] z-10">
+                        <button onclick="editRow(${i + 1}, ${i})" class="text-blue-600 hover:text-white border border-blue-200 hover:bg-blue-500 px-3 py-2 rounded-lg mr-2 mb-2 md:mb-0 inline-flex items-center text-xs font-bold transition-all shadow-sm"><i class="fa-solid fa-pen mr-1.5"></i> Edit</button>
+                        <button onclick="deleteRow(${i + 1}, ${i})" class="text-red-600 hover:text-white border border-red-200 hover:bg-red-500 px-3 py-2 rounded-lg inline-flex items-center text-xs font-bold transition-all shadow-sm"><i class="fa-solid fa-trash mr-1.5"></i> Delete</button>
+                       </td></tr>`;
                 rowsHTML.push(tr);
             }
             tbody.innerHTML = rowsHTML.join('');
@@ -819,7 +804,7 @@ function doGet() {
             document.getElementById("formTitle").innerText = "Update Application Info";
             
             const submitBtn = document.getElementById("submitFormBtn");
-            submitBtn.innerHTML = \`<i class="fa-solid fa-arrows-rotate mr-2"></i> Save Changes\`;
+            submitBtn.innerHTML = `<i class="fa-solid fa-arrows-rotate mr-2"></i> Save Changes`;
             submitBtn.disabled = false;
             submitBtn.classList.remove('opacity-50', 'cursor-not-allowed');
             isSubmitting = false;
@@ -853,7 +838,7 @@ function doGet() {
         function compressImage(event) {
             const file = event.target.files[0];
             if (!file) return;
-            document.getElementById("compressLog").innerHTML = \`<span class="text-orange-500">Compressing...</span>\`;
+            document.getElementById("compressLog").innerHTML = `<span class="text-orange-500">Compressing...</span>`;
 
             const reader = new FileReader();
             reader.readAsDataURL(file);
@@ -868,7 +853,7 @@ function doGet() {
 
                     document.getElementById("f_imageBase64").value = canvas.toDataURL("image/jpeg", 0.6);
                     document.getElementById("f_iconEmojiSlider").value = ''; 
-                    document.getElementById("compressLog").innerHTML = \`<span class="text-green-500"><i class="fa-solid fa-check"></i> Compressed</span>\`;
+                    document.getElementById("compressLog").innerHTML = `<span class="text-green-500"><i class="fa-solid fa-check"></i> Compressed</span>`;
                 };
             };
         }
@@ -915,7 +900,7 @@ function doGet() {
             const submitBtn = document.getElementById("submitFormBtn");
             const originalBtnText = submitBtn.innerHTML;
             
-            submitBtn.innerHTML = \`<i class="fa-solid fa-circle-notch fa-spin mr-2"></i> Syncing...\`;
+            submitBtn.innerHTML = `<i class="fa-solid fa-circle-notch fa-spin mr-2"></i> Syncing...`;
             submitBtn.disabled = true;
             submitBtn.classList.add('opacity-50', 'cursor-not-allowed');
 
@@ -951,35 +936,29 @@ function doGet() {
             }
         });
         
-        function loadPaymentsData() {
+        async function loadPaymentsData() {
             document.getElementById('paymentsTableBody').innerHTML = '';
             document.getElementById('paymentsLoader').style.display = 'block';
             
-            if (typeof google === 'undefined' || typeof google.script === 'undefined') {
-                document.getElementById('paymentsLoader').style.display = 'none';
-                Swal.fire('Error', 'Google Apps Script not connected (Deploy as Web App to test).', 'error');
-                return;
-            }
-
-            google.script.run
-                .withSuccessHandler(displayPaymentsData)
-                .withFailureHandler((err) => {
+            try {
+                const response = await callAppScript('getPurchases', {});
+                if (response && response.success !== false && !response.error) {
+                    displayPaymentsData(response.data || response);
+                } else {
                     document.getElementById('paymentsLoader').style.display = 'none';
-                    Swal.fire('Error', err.message || err.toString(), 'error');
-                })
-                .getPurchases();
+                    Swal.fire('Error', response.error || response.message || 'Failed to load payments', 'error');
+                }
+            } catch (err) {
+                document.getElementById('paymentsLoader').style.display = 'none';
+                Swal.fire('Error', err.message || err.toString(), 'error');
+            }
         }
 
         function displayPaymentsData(data) {
             document.getElementById('paymentsLoader').style.display = 'none';
             const tbody = document.getElementById('paymentsTableBody');
             
-            if (data.error) {
-                Swal.fire('Error', data.error, 'error');
-                return;
-            }
-
-            if (data.length === 0) {
+            if (!data || data.length === 0) {
                 tbody.innerHTML = '<tr><td colspan="8" class="text-center py-10 text-gray-400">No records found.</td></tr>';
                 return;
             }
@@ -999,7 +978,7 @@ function doGet() {
                 const isProcessed = statusText === 'Approved' || statusText === 'Rejected';
                 
                 const screenshotHtml = row.SlipScreenShot ? 
-                    \`<a href="\${row.SlipScreenShot}" target="_blank" class="text-[#4318FF] hover:underline font-bold"><i class="fa-solid fa-image"></i> View</a>\` : 
+                    `<a href="${row.SlipScreenShot}" target="_blank" class="text-[#4318FF] hover:underline font-bold"><i class="fa-solid fa-image"></i> View</a>` : 
                     '<span class="text-gray-400">N/A</span>';
                     
                 function formatDate(dateStr) {
@@ -1015,186 +994,72 @@ function doGet() {
 
                 let actionHtml = '';
                 if (!isProcessed) {
-                    actionHtml = \`
-                        <div class="flex justify-end gap-2" id="p-actions-\${idx}">
-                            <button onclick="updatePaymentStatus('\${row.OrderID}', '\${row.UserEmail}', 'Approved', this, \${idx})" class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg text-xs font-bold transition transform hover:scale-105 shadow-sm inline-flex items-center"><i class="fa-solid fa-check mr-1.5"></i> Approve</button>
-                            <button onclick="updatePaymentStatus('\${row.OrderID}', '\${row.UserEmail}', 'Rejected', this, \${idx})" class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg text-xs font-bold transition transform hover:scale-105 shadow-sm inline-flex items-center"><i class="fa-solid fa-xmark mr-1.5"></i> Reject</button>
+                    actionHtml = `
+                        <div class="flex justify-end gap-2" id="p-actions-${idx}">
+                            <button onclick="updatePaymentStatus('${row.OrderID}', '${row.UserEmail}', 'Approved', this, ${idx})" class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg text-xs font-bold transition transform hover:scale-105 shadow-sm inline-flex items-center"><i class="fa-solid fa-check mr-1.5"></i> Approve</button>
+                            <button onclick="updatePaymentStatus('${row.OrderID}', '${row.UserEmail}', 'Rejected', this, ${idx})" class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg text-xs font-bold transition transform hover:scale-105 shadow-sm inline-flex items-center"><i class="fa-solid fa-xmark mr-1.5"></i> Reject</button>
                         </div>
-                    \`;
+                    `;
                 } else {
-                    actionHtml = \`<span class="text-gray-400 text-xs font-bold">Processed</span>\`;
+                    actionHtml = `<span class="text-gray-400 text-xs font-bold">Processed</span>`;
                 }
 
-                const rowHtml = \`
+                const rowHtml = `
                     <tr class="hover:bg-indigo-50/60 bg-white group border-b border-gray-100 transition duration-300 animate-fade-in">
-                        <td class="px-4 py-4 font-mono text-xs font-bold text-gray-600">\${row.OrderID}</td>
-                        <td class="px-4 py-4 text-gray-500">\${formatDate(row.PurchaseDate)}</td>
-                        <td class="px-4 py-4 text-gray-600 font-medium">\${row.UserEmail}<br><span class="text-xs text-gray-400">\${row.PhoneNumber || ''}</span></td>
-                        <td class="px-4 py-4 text-gray-600">\${row.ItemName} <br><span class="text-xs text-gray-400">\${row.ItemID}</span></td>
-                        <td class="px-4 py-4 font-bold text-[#2B3674]">\${row.AmountPaid} \${row.Currency}</td>
-                        <td class="px-4 py-4">\${screenshotHtml}</td>
+                        <td class="px-4 py-4 font-mono text-xs font-bold text-gray-600">${row.OrderID}</td>
+                        <td class="px-4 py-4 text-gray-500">${formatDate(row.PurchaseDate)}</td>
+                        <td class="px-4 py-4 text-gray-600 font-medium">${row.UserEmail}<br><span class="text-xs text-gray-400">${row.PhoneNumber || ''}</span></td>
+                        <td class="px-4 py-4 text-gray-600">${row.ItemName} <br><span class="text-xs text-gray-400">${row.ItemID}</span></td>
+                        <td class="px-4 py-4 font-bold text-[#2B3674]">${row.AmountPaid} ${row.Currency}</td>
+                        <td class="px-4 py-4">${screenshotHtml}</td>
                         <td class="px-4 py-4">
-                            <span class="px-3 py-1 rounded-full text-xs font-bold border \${statusClass}" id="p-status-\${idx}">\${statusText}</span>
+                            <span class="px-3 py-1 rounded-full text-xs font-bold border ${statusClass}" id="p-status-${idx}">${statusText}</span>
                         </td>
                         <td class="px-4 py-4 text-right sticky right-0 bg-white shadow-[-5px_0_10px_rgba(0,0,0,0.05)] z-10">
-                            \${actionHtml}
+                            ${actionHtml}
                         </td>
                     </tr>
-                \`;
+                `;
                 htmlString += rowHtml;
             });
             tbody.innerHTML = htmlString;
         }
 
-        function updatePaymentStatus(orderId, email, newStatus, btnElement, idx) {
-            const actionsDiv = document.getElementById(\`p-actions-\${idx}\`);
+        async function updatePaymentStatus(orderId, email, newStatus, btnElement, idx) {
+            const actionsDiv = document.getElementById(`p-actions-${idx}`);
             if(actionsDiv) actionsDiv.style.opacity = '0.5';
             
             const originalText = btnElement.innerHTML;
-            btnElement.innerHTML = \`<i class="fa-solid fa-circle-notch fa-spin mr-1.5"></i> Processing...\`;
+            btnElement.innerHTML = `<i class="fa-solid fa-circle-notch fa-spin mr-1.5"></i> Processing...`;
             btnElement.disabled = true;
 
-            google.script.run
-                .withSuccessHandler((response) => {
-                    if(response.success) {
-                        Swal.fire({
-                            title: 'Updated!',
-                            text: \`Order has been \${newStatus.toLowerCase()}\`,
-                            icon: 'success',
-                            timer: 1500,
-                            showConfirmButton: false
-                        });
-                        const badge = document.getElementById(\`p-status-\${idx}\`);
-                        if(badge) {
-                            badge.innerText = newStatus;
-                            badge.className = \`px-3 py-1 rounded-full text-xs font-bold border \${newStatus === 'Approved' ? 'bg-green-100 text-green-600 border-green-200' : 'bg-red-100 text-red-600 border-red-200'}\`;
-                        }
-                        
-                        if(actionsDiv) {
-                            actionsDiv.innerHTML = '<span class="text-gray-400 text-xs font-bold">Processed</span>';
-                            actionsDiv.style.opacity = '1';
-                        }
-                    } else {
-                        Swal.fire('Error', response.message || 'Update failed', 'error');
-                        if(actionsDiv) actionsDiv.style.opacity = '1';
-                        btnElement.innerHTML = originalText;
-                        btnElement.disabled = false;
+            try {
+                const response = await callAppScript('setStatus', { orderId: orderId, email: email, newStatus: newStatus });
+                
+                if (response && response.success !== false) {
+                    Swal.fire({ title: 'Updated!', text: `Order has been ${newStatus.toLowerCase()}`, icon: 'success', timer: 1500, showConfirmButton: false });
+                    const badge = document.getElementById(`p-status-${idx}`);
+                    if(badge) {
+                        badge.innerText = newStatus;
+                        badge.className = `px-3 py-1 rounded-full text-xs font-bold border ${newStatus === 'Approved' ? 'bg-green-100 text-green-600 border-green-200' : 'bg-red-100 text-red-600 border-red-200'}`;
                     }
-                })
-                .withFailureHandler((error) => {
-                    Swal.fire('Error', 'Network error, please try again.', 'error');
+                    if(actionsDiv) {
+                        actionsDiv.innerHTML = '<span class="text-gray-400 text-xs font-bold">Processed</span>';
+                        actionsDiv.style.opacity = '1';
+                    }
+                } else {
+                    Swal.fire('Error', response.message || 'Update failed', 'error');
                     if(actionsDiv) actionsDiv.style.opacity = '1';
                     btnElement.innerHTML = originalText;
                     btnElement.disabled = false;
-                })
-                .setStatus(orderId, email, newStatus);
+                }
+            } catch (error) {
+                Swal.fire('Error', 'Network error, please try again.', 'error');
+                if(actionsDiv) actionsDiv.style.opacity = '1';
+                btnElement.innerHTML = originalText;
+                btnElement.disabled = false;
+            }
         }
     </script>
 </body>
-</html>`;
-
-  return HtmlService.createHtmlOutput(html)
-      .setTitle('Pro App Admin Dashboard')
-      .addMetaTag('viewport', 'width=device-width, initial-scale=1');
-}
-
-function getPurchases() {
-  try {
-    var sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName("PurchasedSheet");
-    if(!sheet) return {error: "Sheet 'PurchasedSheet' not found in this spreadsheet."};
-    
-    var data = sheet.getDataRange().getDisplayValues();
-    if (data.length <= 1) return []; 
-    
-    var headers = data[0];
-    var rows = data.slice(1);
-    
-    var result = rows.map(function(row) {
-      var obj = {};
-      headers.forEach(function(header, i) {
-        var cleanHeader = header.trim();
-        obj[cleanHeader] = row[i];
-      });
-      return obj;
-    });
-    
-    return result;
-  } catch(e) {
-    return {error: e.toString()};
-  }
-}
-
-function setStatus(orderId, email, newStatus) {
-  try {
-    var sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName("PurchasedSheet");
-    if(!sheet) return {success: false, message: "Sheet not found"};
-    
-    var data = sheet.getDataRange().getValues();
-    var headers = data[0];
-    
-    var orderIdCol = 0; 
-    var emailCol = 1; 
-    var statusCol = -1;
-    
-    for (var j = 0; j < headers.length; j++) {
-      if (headers[j].toString().trim() === "OrderID") orderIdCol = j; 
-      if (headers[j].toString().trim() === "UserEmail") emailCol = j;
-      if (headers[j].toString().trim() === "PaymentStatus") statusCol = j;
-    }
-    
-    if (statusCol === -1) {
-      return {success: false, message: "Could not find PaymentStatus column."};
-    }
-    
-    for(var i = 1; i < data.length; i++) {
-      if(data[i][orderIdCol] == orderId && data[i][emailCol] == email) { 
-        sheet.getRange(i + 1, statusCol + 1).setValue(newStatus);
-        return {success: true, message: "Updated"};
-      }
-    }
-    return {success: false, message: "Order ID and Email match not found"};
-  } catch(e) {
-    return {success: false, message: e.toString()};
-  }
-}
-
-function initLoginSheet() {
-  try {
-    var ss = SpreadsheetApp.getActiveSpreadsheet();
-    var sheet = ss.getSheetByName("AdminUsers");
-    if (!sheet) {
-      sheet = ss.insertSheet("AdminUsers");
-      sheet.appendRow(["Username", "Password"]);
-      sheet.appendRow(["admin", "admin123"]);
-      
-      sheet.getRange("A1:B1").setFontWeight("bold").setBackground("#4318FF").setFontColor("white");
-      sheet.setColumnWidth(1, 200);
-      sheet.setColumnWidth(2, 200);
-    }
-  } catch(e) {}
-}
-
-function validateLogin(dataOrUser, pass) {
-  try {
-    var username, password;
-    if (typeof dataOrUser === 'object' && dataOrUser !== null) {
-       username = dataOrUser.username;
-       password = dataOrUser.password;
-    } else {
-       username = dataOrUser;
-       password = pass;
-    }
-    
-    initLoginSheet(); // Ensure it exists
-    var sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName("AdminUsers");
-    var data = sheet.getDataRange().getValues();
-    for (var i = 1; i < data.length; i++) {
-      if (data[i][0].toString() === username && data[i][1].toString() === password) {
-        return { success: true };
-      }
-    }
-    return { success: false, message: "Invalid Username or Password!" };
-  } catch (e) {
-    return { success: false, message: e.toString() };
-  }
-}
+</html>
