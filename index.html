@@ -14,9 +14,8 @@
         /* 🟢 Card Default Settings */
         .card {
             background-color: #ffffff;
-            border-radius: 12px; /* Default Corner Radius */
+            border-radius: 12px;
             overflow: hidden;
-            /* Default Elevation & Border (ताकि वाइट बैकग्राउंड में भी कार्ड अलग दिखे) */
             box-shadow: 0 4px 8px rgba(0,0,0,0.1); 
             border: 1px solid #e0e0e0; 
             cursor: pointer;
@@ -67,9 +66,22 @@
             }
         }
 
+        // 🟢 Google Drive Links ke liye aakhri working workaround
+        function fixGoogleDriveUrl(url) {
+            if (!url) return url;
+            
+            if (url.includes("drive.google.com") || url.includes("drive.usercontent.google.com")) {
+                let idMatch = url.match(/[?&]id=([a-zA-Z0-9_-]+)/) || url.match(/\/d\/([a-zA-Z0-9_-]+)/);
+                if (idMatch && idMatch[1]) {
+                    // Ye lh3 endpoint abhi sabse zyada reliable hai Google drive images ke liye
+                    return "https://lh3.googleusercontent.com/d/" + idMatch[1];
+                }
+            }
+            return url;
+        }
+
         let itemCount = 0; 
 
-        // 🟢 नए पैरामीटर्स ऐड किए गए हैं: elevation, cornerRadius, contentPadding
         function addToList(title, description, imageUrl, titleColor, titleSize, descColor, descSize, cardColor, elevation, cornerRadius, contentPadding) {
             itemCount++; 
             const currentIndex = itemCount; 
@@ -78,12 +90,10 @@
             const card = document.createElement('div');
             card.className = 'card';
             
-            // Custom Card Color
             if (cardColor && String(cardColor).trim() !== "") {
                 card.style.backgroundColor = cardColor;
             }
             
-            // 🟢 Custom Elevation (Shadow)
             if (elevation && String(elevation).trim() !== "") {
                 let e = parseFloat(elevation);
                 if (!isNaN(e)) {
@@ -91,13 +101,13 @@
                 }
             }
             
-            // 🟢 Custom Corner Radius
             if (cornerRadius && String(cornerRadius).trim() !== "") {
                 card.style.borderRadius = isNaN(cornerRadius) ? cornerRadius : cornerRadius + "px";
             }
             
-            // Image
             if (imageUrl && String(imageUrl).trim() !== "") {
+                imageUrl = fixGoogleDriveUrl(imageUrl);
+                
                 const img = document.createElement('img');
                 img.src = imageUrl;
                 img.alt = "Screenshot";
@@ -115,12 +125,10 @@
                 card.appendChild(img);
             }
 
-            // Text Content
             if ((title && String(title).trim() !== "") || (description && String(description).trim() !== "")) {
                 const contentDiv = document.createElement('div');
                 contentDiv.className = 'card-content';
                 
-                // 🟢 Custom Content Padding
                 if (contentPadding && String(contentPadding).trim() !== "") {
                     contentDiv.style.padding = isNaN(contentPadding) ? contentPadding : contentPadding + "px";
                 }
