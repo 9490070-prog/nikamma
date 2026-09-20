@@ -66,17 +66,13 @@
             }
         }
 
-        // 🟢 Google Drive Links ko nayi update ke hisaab se Fix karne ka function
+        // Google Drive link fixer
         function fixGoogleDriveUrl(url) {
             if (!url) return url;
-            
-            // Check agar url Google Drive ka hai
             if (url.includes("drive.google.com") || url.includes("drive.usercontent.google.com")) {
-                // Link me se ID nikalne ka logic
                 let idMatch = url.match(/[?&]id=([a-zA-Z0-9_-]+)/) || url.match(/\/d\/([a-zA-Z0-9_-]+)/);
                 if (idMatch && idMatch[1]) {
-                    // Yahan hum naya 'thumbnail' endpoint use kar rahe hain jo HTML tag me 100% work karega
-                    return "https://drive.google.com/thumbnail?id=" + idMatch[1] + "&sz=w1000";
+                    return "https://lh3.googleusercontent.com/d/" + idMatch[1];
                 }
             }
             return url;
@@ -84,7 +80,6 @@
 
         let itemCount = 0; 
 
-        // 🟢 नए पैरामीटर्स ऐड किए गए हैं: elevation, cornerRadius, contentPadding
         function addToList(title, description, imageUrl, titleColor, titleSize, descColor, descSize, cardColor, elevation, cornerRadius, contentPadding) {
             itemCount++; 
             const currentIndex = itemCount; 
@@ -93,12 +88,10 @@
             const card = document.createElement('div');
             card.className = 'card';
             
-            // Custom Card Color
             if (cardColor && String(cardColor).trim() !== "") {
                 card.style.backgroundColor = cardColor;
             }
             
-            // 🟢 Custom Elevation (Shadow)
             if (elevation && String(elevation).trim() !== "") {
                 let e = parseFloat(elevation);
                 if (!isNaN(e)) {
@@ -106,39 +99,47 @@
                 }
             }
             
-            // 🟢 Custom Corner Radius
             if (cornerRadius && String(cornerRadius).trim() !== "") {
                 card.style.borderRadius = isNaN(cornerRadius) ? cornerRadius : cornerRadius + "px";
             }
             
-            // Image
             if (imageUrl && String(imageUrl).trim() !== "") {
-                // Yahan image url ko nayi update ke mutabiq theek kiya ja raha hai
                 imageUrl = fixGoogleDriveUrl(imageUrl);
                 
                 const img = document.createElement('img');
                 img.src = imageUrl;
                 img.alt = "Screenshot";
                 
-                let lastTap = 0;
+                // 🟢 Single vs Double Click Logic
+                let clickTimer = null;
                 img.onclick = function(e) {
-                    let currentTime = new Date().getTime();
-                    let tapLength = currentTime - lastTap;
-                    if (tapLength < 500 && tapLength > 0) {
-                        e.stopPropagation(); 
-                        openFullscreen(imageUrl);
+                    e.stopPropagation(); // Card ke event ko fauran chalne se roko
+                    
+                    if (clickTimer === null) {
+                        // Agar single click hai, to thoda wait karo (300ms) taaki pata chale dusri baar tap hota hai ya nahi
+                        clickTimer = setTimeout(function() {
+                            clickTimer = null;
+                            // 300ms guzar gaye aur double click nahi hua, matlab single click tha
+                            if (window.AppInventor) {
+                                window.AppInventor.setWebViewString(currentIndex.toString());
+                            } else {
+                                alert("Card Clicked! Index: " + currentIndex);
+                            }
+                        }, 300); 
+                    } else {
+                        // Agar 300ms se pehle dubara click ho gaya, iska matlab DOUBLE CLICK hai
+                        clearTimeout(clickTimer); // Single click wale event ko cancel kar do
+                        clickTimer = null;
+                        openFullscreen(imageUrl); // Fullscreen open karo
                     }
-                    lastTap = currentTime;
                 };
                 card.appendChild(img);
             }
 
-            // Text Content
             if ((title && String(title).trim() !== "") || (description && String(description).trim() !== "")) {
                 const contentDiv = document.createElement('div');
                 contentDiv.className = 'card-content';
                 
-                // 🟢 Custom Content Padding
                 if (contentPadding && String(contentPadding).trim() !== "") {
                     contentDiv.style.padding = isNaN(contentPadding) ? contentPadding : contentPadding + "px";
                 }
@@ -162,6 +163,7 @@
                 card.appendChild(contentDiv);
             }
             
+            // 🟢 Baaki Card par Single Click (Text area, background etc.)
             card.onclick = function() {
                 if (window.AppInventor) {
                     window.AppInventor.setWebViewString(currentIndex.toString());
