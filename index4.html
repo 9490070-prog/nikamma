@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
-    <title>Ultimate Image Panel</title>
+    <title>Ultimate Image & Video Panel</title>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: sans-serif; }
         
@@ -23,13 +23,17 @@
             flex-direction: column;
         }
         
-        .card img {
+        .card img, .card video {
             width: 100%;
             height: auto; 
             max-height: 300px; 
             object-fit: contain; 
             display: block;
             border-bottom: 1px solid #e0e0e0;
+        }
+
+        .card video {
+            background-color: #000; /* Video ke peeche black background taake better look aaye */
         }
         
         /* 🟢 Default Padding */
@@ -78,6 +82,11 @@
             return url;
         }
 
+        // 🟢 Check if URL is a video
+        function isVideoUrl(url) {
+            return url.match(/\.(mp4|webm|ogg|mov|mkv)(\?.*)?$/i) !== null;
+        }
+
         let itemCount = 0; 
 
         function addToList(title, description, imageUrl, titleColor, titleSize, descColor, descSize, cardColor, elevation, cornerRadius, contentPadding) {
@@ -103,38 +112,50 @@
                 card.style.borderRadius = isNaN(cornerRadius) ? cornerRadius : cornerRadius + "px";
             }
             
-            // 🟢 Update: Yahan check add kiya gaya hai ke imageUrl blank na ho aur lazmi 'http' se start ho
+            // 🟢 Yahan check add kiya gaya hai ke link http se shuru ho
             if (imageUrl && String(imageUrl).trim() !== "" && String(imageUrl).trim().toLowerCase().startsWith("http")) {
                 imageUrl = fixGoogleDriveUrl(imageUrl);
                 
-                const img = document.createElement('img');
-                img.src = imageUrl;
-                img.alt = "Screenshot";
-                
-                // 🟢 Single vs Double Click Logic
-                let clickTimer = null;
-                img.onclick = function(e) {
-                    e.stopPropagation(); // Card ke event ko fauran chalne se roko
+                // 🟢 Agar URL video ka hai to Video Player banayein
+                if (isVideoUrl(imageUrl)) {
+                    const video = document.createElement('video');
+                    video.src = imageUrl;
+                    video.controls = true; // Play, pause, fullscreen buttons
                     
-                    if (clickTimer === null) {
-                        // Agar single click hai, to thoda wait karo (300ms) taaki pata chale dusri baar tap hota hai ya nahi
-                        clickTimer = setTimeout(function() {
+                    // Video par click karne se card ka click event na chale taake video aaram se play ho
+                    video.onclick = function(e) {
+                        e.stopPropagation(); 
+                    };
+                    
+                    card.appendChild(video);
+                } 
+                // 🟢 Agar URL video ka nahi hai to Image banayein (pehle wala logic)
+                else {
+                    const img = document.createElement('img');
+                    img.src = imageUrl;
+                    img.alt = "Media";
+                    
+                    let clickTimer = null;
+                    img.onclick = function(e) {
+                        e.stopPropagation(); 
+                        
+                        if (clickTimer === null) {
+                            clickTimer = setTimeout(function() {
+                                clickTimer = null;
+                                if (window.AppInventor) {
+                                    window.AppInventor.setWebViewString(currentIndex.toString());
+                                } else {
+                                    alert("Card Clicked! Index: " + currentIndex);
+                                }
+                            }, 300); 
+                        } else {
+                            clearTimeout(clickTimer); 
                             clickTimer = null;
-                            // 300ms guzar gaye aur double click nahi hua, matlab single click tha
-                            if (window.AppInventor) {
-                                window.AppInventor.setWebViewString(currentIndex.toString());
-                            } else {
-                                alert("Card Clicked! Index: " + currentIndex);
-                            }
-                        }, 300); 
-                    } else {
-                        // Agar 300ms se pehle dubara click ho gaya, iska matlab DOUBLE CLICK hai
-                        clearTimeout(clickTimer); // Single click wale event ko cancel kar do
-                        clickTimer = null;
-                        openFullscreen(imageUrl); // Fullscreen open karo
-                    }
-                };
-                card.appendChild(img);
+                            openFullscreen(imageUrl); 
+                        }
+                    };
+                    card.appendChild(img);
+                }
             }
 
             if ((title && String(title).trim() !== "") || (description && String(description).trim() !== "")) {
