@@ -23,17 +23,28 @@
             flex-direction: column;
         }
         
-        .card img, .card video {
+        .card img, .card video, .card iframe {
             width: 100%;
-            height: auto; 
-            max-height: 300px; 
-            object-fit: contain; 
             display: block;
+            border: none;
             border-bottom: 1px solid #e0e0e0;
         }
 
+        .card img {
+            height: auto; 
+            max-height: 300px; 
+            object-fit: contain; 
+        }
+
         .card video {
-            background-color: #000; /* Video ke peeche black background taake better look aaye */
+            height: auto; 
+            max-height: 300px; 
+            background-color: #000;
+        }
+
+        .card iframe {
+            height: 250px; /* Iframe ke liye fixed height */
+            background-color: #000;
         }
         
         /* 🟢 Default Padding */
@@ -70,7 +81,7 @@
             }
         }
 
-        // Google Drive link fixer
+        // Google Drive Image link fixer
         function fixGoogleDriveUrl(url) {
             if (!url) return url;
             if (url.includes("drive.google.com") || url.includes("drive.usercontent.google.com")) {
@@ -82,9 +93,22 @@
             return url;
         }
 
-        // 🟢 Check if URL is a video
-        function isVideoUrl(url) {
-            return url.match(/\.(mp4|webm|ogg|mov|mkv)(\?.*)?$/i) !== null;
+        // 🟢 Check URL Type (Image, Direct Video, GDrive Video, YouTube)
+        function getUrlType(url) {
+            let lowerUrl = String(url).toLowerCase();
+            
+            if (lowerUrl.match(/\.(mp4|webm|ogg|mov|mkv)(\?.*)?$/i)) {
+                return 'direct_video';
+            }
+            // Agar Drive link mein /preview hai, to ye video iframe k tor par treat hoga
+            if (lowerUrl.includes("drive.google.com") && lowerUrl.includes("/preview")) {
+                return 'gdrive_video';
+            }
+            if (lowerUrl.includes("youtube.com") || lowerUrl.includes("youtu.be")) {
+                return 'youtube_video';
+            }
+            
+            return 'image';
         }
 
         let itemCount = 0; 
@@ -100,37 +124,46 @@
             if (cardColor && String(cardColor).trim() !== "") {
                 card.style.backgroundColor = cardColor;
             }
-            
             if (elevation && String(elevation).trim() !== "") {
                 let e = parseFloat(elevation);
-                if (!isNaN(e)) {
-                    card.style.boxShadow = `0 ${e}px ${e*2}px rgba(0,0,0,0.15)`;
-                }
+                if (!isNaN(e)) card.style.boxShadow = `0 ${e}px ${e*2}px rgba(0,0,0,0.15)`;
             }
-            
             if (cornerRadius && String(cornerRadius).trim() !== "") {
                 card.style.borderRadius = isNaN(cornerRadius) ? cornerRadius : cornerRadius + "px";
             }
             
-            // 🟢 Yahan check add kiya gaya hai ke link http se shuru ho
+            // 🟢 Yahan check kiya ja raha hai ke link http se shuru ho
             if (imageUrl && String(imageUrl).trim() !== "" && String(imageUrl).trim().toLowerCase().startsWith("http")) {
-                imageUrl = fixGoogleDriveUrl(imageUrl);
-                
-                // 🟢 Agar URL video ka hai to Video Player banayein
-                if (isVideoUrl(imageUrl)) {
+                let urlType = getUrlType(imageUrl);
+
+                if (urlType === 'direct_video') {
                     const video = document.createElement('video');
                     video.src = imageUrl;
-                    video.controls = true; // Play, pause, fullscreen buttons
-                    
-                    // Video par click karne se card ka click event na chale taake video aaram se play ho
-                    video.onclick = function(e) {
-                        e.stopPropagation(); 
-                    };
-                    
+                    video.controls = true;
+                    video.onclick = function(e) { e.stopPropagation(); };
                     card.appendChild(video);
                 } 
-                // 🟢 Agar URL video ka nahi hai to Image banayein (pehle wala logic)
+                else if (urlType === 'gdrive_video') {
+                    let idMatch = imageUrl.match(/\/d\/([a-zA-Z0-9_-]+)/);
+                    if (idMatch && idMatch[1]) {
+                        const iframe = document.createElement('iframe');
+                        iframe.src = "https://drive.google.com/file/d/" + idMatch[1] + "/preview";
+                        iframe.allow = "autoplay; fullscreen";
+                        card.appendChild(iframe);
+                    }
+                }
+                else if (urlType === 'youtube_video') {
+                    let ytMatch = imageUrl.match(/(?:v=|youtu\.be\/|embed\/)([a-zA-Z0-9_-]{11})/);
+                    if (ytMatch && ytMatch[1]) {
+                        const iframe = document.createElement('iframe');
+                        iframe.src = "https://www.youtube.com/embed/" + ytMatch[1];
+                        iframe.allow = "accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture";
+                        iframe.allowFullscreen = true;
+                        card.appendChild(iframe);
+                    }
+                }
                 else {
+                    imageUrl = fixGoogleDriveUrl(imageUrl);
                     const img = document.createElement('img');
                     img.src = imageUrl;
                     img.alt = "Media";
@@ -138,7 +171,6 @@
                     let clickTimer = null;
                     img.onclick = function(e) {
                         e.stopPropagation(); 
-                        
                         if (clickTimer === null) {
                             clickTimer = setTimeout(function() {
                                 clickTimer = null;
