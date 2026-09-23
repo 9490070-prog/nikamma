@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
 <title>APK Hub Store - Download Premium Apps</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
@@ -28,9 +28,181 @@
     .modal-bg { background: rgba(0, 0, 0, 0.85); backdrop-filter: blur(8px); }
     .no-scrollbar::-webkit-scrollbar { display: none; }
     .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    
+    /* Responsive card fixes */
+    .app-card {
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+        min-height: 340px;
+    }
+    .app-card .card-body {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+    }
+    .app-card .card-footer {
+        margin-top: auto;
+    }
+    .line-clamp-2 {
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+    }
+    .line-clamp-3 {
+        display: -webkit-box;
+        -webkit-line-clamp: 3;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+    }
+    
+    /* Screenshot enhancements */
+    .screenshot-item {
+        position: relative;
+        flex-shrink: 0;
+        overflow: hidden;
+        border-radius: 12px;
+        border: 1px solid #334155;
+        transition: all 0.3s ease;
+        cursor: pointer;
+    }
+    .screenshot-item:hover {
+        border-color: #3b82f6;
+        box-shadow: 0 8px 24px rgba(59, 130, 246, 0.25);
+        transform: scale(1.02);
+    }
+    .screenshot-item img {
+        height: 180px;
+        width: auto;
+        object-fit: cover;
+        display: block;
+        transition: transform 0.3s ease;
+    }
+    .screenshot-item:hover img {
+        transform: scale(1.05);
+    }
+    
+    /* Lightbox */
+    .lightbox {
+        position: fixed;
+        inset: 0;
+        z-index: 200;
+        background: rgba(0, 0, 0, 0.95);
+        backdrop-filter: blur(12px);
+        display: none;
+        align-items: center;
+        justify-content: center;
+        padding: 1rem;
+    }
+    .lightbox.active {
+        display: flex;
+    }
+    .lightbox img {
+        max-width: 90vw;
+        max-height: 85vh;
+        object-fit: contain;
+        border-radius: 12px;
+        box-shadow: 0 0 60px rgba(59, 130, 246, 0.3);
+    }
+    .lightbox-nav {
+        position: absolute;
+        top: 50%;
+        transform: translateY(-50%);
+        width: 48px;
+        height: 48px;
+        border-radius: 50%;
+        background: rgba(30, 41, 59, 0.9);
+        border: 1px solid #334155;
+        color: #e2e8f0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        z-index: 210;
+    }
+    .lightbox-nav:hover {
+        background: #3b82f6;
+        border-color: #3b82f6;
+    }
+    .lightbox-nav.prev { left: 1rem; }
+    .lightbox-nav.next { right: 1rem; }
+    .lightbox-close {
+        position: absolute;
+        top: 1rem;
+        right: 1rem;
+        width: 44px;
+        height: 44px;
+        border-radius: 50%;
+        background: rgba(30, 41, 59, 0.9);
+        border: 1px solid #334155;
+        color: #e2e8f0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        z-index: 210;
+    }
+    .lightbox-close:hover {
+        background: #ef4444;
+        border-color: #ef4444;
+    }
+    .lightbox-counter {
+        position: absolute;
+        bottom: 1.5rem;
+        left: 50%;
+        transform: translateX(-50%);
+        padding: 0.5rem 1.25rem;
+        border-radius: 9999px;
+        background: rgba(30, 41, 59, 0.9);
+        border: 1px solid #334155;
+        color: #e2e8f0;
+        font-size: 0.875rem;
+        font-weight: 500;
+        z-index: 210;
+    }
+    
+    /* Responsive adjustments */
+    @media (max-width: 640px) {
+        .app-card { min-height: 300px; }
+        .screenshot-item img { height: 140px; }
+        .lightbox-nav { width: 40px; height: 40px; }
+        .lightbox-nav.prev { left: 0.5rem; }
+        .lightbox-nav.next { right: 0.5rem; }
+    }
+    @media (min-width: 1280px) {
+        .screenshot-item img { height: 200px; }
+    }
+    
+    /* Grid equal height fix */
+    .apps-grid {
+        display: grid;
+        grid-template-columns: repeat(1, minmax(0, 1fr));
+        gap: 1.25rem;
+    }
+    @media (min-width: 640px) {
+        .apps-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    }
+    @media (min-width: 1024px) {
+        .apps-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    }
+    @media (min-width: 1280px) {
+        .apps-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+    }
+    
+    /* Category bar scroll */
+    .category-scroll {
+        scrollbar-width: thin;
+        scrollbar-color: #334155 transparent;
+    }
+    .category-scroll::-webkit-scrollbar { height: 4px; }
+    .category-scroll::-webkit-scrollbar-track { background: transparent; }
+    .category-scroll::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
 </style>
 </head>
-<body class="min-h-screen">
+<body class="min-h-screen flex flex-col">
 
 <!-- ============== HEADER ============== -->
 <header class="sticky top-0 z-50 glass border-b border-slate-800">
@@ -42,7 +214,7 @@
                 </div>
                 <div>
                     <h1 class="text-lg font-bold text-white leading-none">APK <span class="gradient-text">Store</span></h1>
-                    <p class="text-xs text-slate-400 mt-0.5">Premium Apps Hub</p>
+                    <p class="text-xs text-slate-400 mt-0.5 hidden sm:block">Premium Apps Hub</p>
                 </div>
             </div>
             <div class="flex items-center gap-3">
@@ -56,61 +228,65 @@
 </header>
 
 <!-- ============== HERO ============== -->
-<section class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-10 pb-6 fade-in">
+<section class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8 sm:pt-10 pb-6 fade-in w-full">
     <div class="text-center max-w-3xl mx-auto">
-        <h2 class="text-4xl sm:text-5xl font-extrabold text-white mb-4 leading-tight">
+        <h2 class="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-white mb-4 leading-tight">
             Download <span class="gradient-text">Premium APKs</span><br>Safe & Fast
         </h2>
-        <p class="text-slate-400 text-base sm:text-lg mb-8">
+        <p class="text-slate-400 text-sm sm:text-base lg:text-lg mb-8 px-2">
             Latest Android applications, verified and ready to install. One click, instant download.
         </p>
         <!-- Search Bar -->
-        <div class="relative max-w-xl mx-auto">
-            <i class="fa-solid fa-magnifying-glass absolute left-4 top-1/2 -translate-y-1/2 text-slate-500"></i>
+        <div class="relative max-w-xl mx-auto px-2 sm:px-0">
+            <i class="fa-solid fa-magnifying-glass absolute left-6 sm:left-4 top-1/2 -translate-y-1/2 text-slate-500"></i>
             <input type="text" id="searchInput" placeholder="Search apps by name or category..."
-                   class="w-full pl-12 pr-4 py-3.5 rounded-2xl bg-slate-800/60 border border-slate-700 text-white placeholder-slate-500 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/30 transition-all">
+                   class="w-full pl-12 pr-4 py-3.5 rounded-2xl bg-slate-800/60 border border-slate-700 text-white placeholder-slate-500 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/30 transition-all text-sm sm:text-base">
         </div>
     </div>
 </section>
 
 <!-- ============== STATS BAR ============== -->
-<section class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mb-8">
+<section class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mb-8 w-full">
     <div class="grid grid-cols-3 gap-3 sm:gap-4">
-        <div class="glass rounded-2xl p-4 text-center">
-            <p class="text-2xl sm:text-3xl font-bold gradient-text" id="totalApps">0</p>
-            <p class="text-xs sm:text-sm text-slate-400 mt-1">Total Apps</p>
+        <div class="glass rounded-2xl p-3 sm:p-4 text-center">
+            <p class="text-xl sm:text-2xl lg:text-3xl font-bold gradient-text" id="totalApps">0</p>
+            <p class="text-[10px] sm:text-xs lg:text-sm text-slate-400 mt-1">Total Apps</p>
         </div>
-        <div class="glass rounded-2xl p-4 text-center">
-            <p class="text-2xl sm:text-3xl font-bold gradient-text" id="totalDownloads">0</p>
-            <p class="text-xs sm:text-sm text-slate-400 mt-1">Downloads</p>
+        <div class="glass rounded-2xl p-3 sm:p-4 text-center">
+            <p class="text-xl sm:text-2xl lg:text-3xl font-bold gradient-text" id="totalDownloads">0</p>
+            <p class="text-[10px] sm:text-xs lg:text-sm text-slate-400 mt-1">Downloads</p>
         </div>
-        <div class="glass rounded-2xl p-4 text-center">
-            <p class="text-2xl sm:text-3xl font-bold gradient-text">100%</p>
-            <p class="text-xs sm:text-sm text-slate-400 mt-1">Verified</p>
+        <div class="glass rounded-2xl p-3 sm:p-4 text-center">
+            <p class="text-xl sm:text-2xl lg:text-3xl font-bold gradient-text">100%</p>
+            <p class="text-[10px] sm:text-xs lg:text-sm text-slate-400 mt-1">Verified</p>
         </div>
     </div>
 </section>
 
 <!-- ============== CATEGORIES ============== -->
-<section class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mb-6">
-    <div class="flex gap-2 overflow-x-auto no-scrollbar pb-2" id="categoryBar">
-        <button onclick="filterCategory('all')" data-cat="all" class="category-btn active whitespace-nowrap px-5 py-2 rounded-full bg-blue-600 text-white text-sm font-medium transition-all">
+<section class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mb-6 w-full">
+    <div class="flex gap-2 overflow-x-auto no-scrollbar pb-2 category-scroll" id="categoryBar">
+        <button onclick="filterCategory('all')" data-cat="all" class="category-btn active whitespace-nowrap px-4 sm:px-5 py-2 rounded-full bg-blue-600 text-white text-xs sm:text-sm font-medium transition-all">
             <i class="fa-solid fa-border-all mr-1"></i> All
         </button>
     </div>
 </section>
 
 <!-- ============== APPS GRID ============== -->
-<section class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-20">
-    <div id="loadingSkeleton" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
+<section class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-20 w-full flex-1">
+    <div id="loadingSkeleton" class="apps-grid">
         <!-- Skeleton cards -->
-        <div class="glass rounded-2xl p-4"><div class="skeleton h-32 rounded-xl mb-4"></div><div class="skeleton h-4 w-3/4 rounded mb-2"></div><div class="skeleton h-3 w-1/2 rounded"></div></div>
-        <div class="glass rounded-2xl p-4"><div class="skeleton h-32 rounded-xl mb-4"></div><div class="skeleton h-4 w-3/4 rounded mb-2"></div><div class="skeleton h-3 w-1/2 rounded"></div></div>
-        <div class="glass rounded-2xl p-4"><div class="skeleton h-32 rounded-xl mb-4"></div><div class="skeleton h-4 w-3/4 rounded mb-2"></div><div class="skeleton h-3 w-1/2 rounded"></div></div>
-        <div class="glass rounded-2xl p-4"><div class="skeleton h-32 rounded-xl mb-4"></div><div class="skeleton h-4 w-3/4 rounded mb-2"></div><div class="skeleton h-3 w-1/2 rounded"></div></div>
+        <div class="glass rounded-2xl p-4 app-card"><div class="skeleton h-32 rounded-xl mb-4"></div><div class="skeleton h-4 w-3/4 rounded mb-2"></div><div class="skeleton h-3 w-1/2 rounded mb-3"></div><div class="skeleton h-3 w-full rounded mb-3"></div><div class="skeleton h-10 w-full rounded-xl mt-auto"></div></div>
+        <div class="glass rounded-2xl p-4 app-card"><div class="skeleton h-32 rounded-xl mb-4"></div><div class="skeleton h-4 w-3/4 rounded mb-2"></div><div class="skeleton h-3 w-1/2 rounded mb-3"></div><div class="skeleton h-3 w-full rounded mb-3"></div><div class="skeleton h-10 w-full rounded-xl mt-auto"></div></div>
+        <div class="glass rounded-2xl p-4 app-card"><div class="skeleton h-32 rounded-xl mb-4"></div><div class="skeleton h-4 w-3/4 rounded mb-2"></div><div class="skeleton h-3 w-1/2 rounded mb-3"></div><div class="skeleton h-3 w-full rounded mb-3"></div><div class="skeleton h-10 w-full rounded-xl mt-auto"></div></div>
+        <div class="glass rounded-2xl p-4 app-card"><div class="skeleton h-32 rounded-xl mb-4"></div><div class="skeleton h-4 w-3/4 rounded mb-2"></div><div class="skeleton h-3 w-1/2 rounded mb-3"></div><div class="skeleton h-3 w-full rounded mb-3"></div><div class="skeleton h-10 w-full rounded-xl mt-auto"></div></div>
+        <div class="glass rounded-2xl p-4 app-card"><div class="skeleton h-32 rounded-xl mb-4"></div><div class="skeleton h-4 w-3/4 rounded mb-2"></div><div class="skeleton h-3 w-1/2 rounded mb-3"></div><div class="skeleton h-3 w-full rounded mb-3"></div><div class="skeleton h-10 w-full rounded-xl mt-auto"></div></div>
+        <div class="glass rounded-2xl p-4 app-card"><div class="skeleton h-32 rounded-xl mb-4"></div><div class="skeleton h-4 w-3/4 rounded mb-2"></div><div class="skeleton h-3 w-1/2 rounded mb-3"></div><div class="skeleton h-3 w-full rounded mb-3"></div><div class="skeleton h-10 w-full rounded-xl mt-auto"></div></div>
+        <div class="glass rounded-2xl p-4 app-card"><div class="skeleton h-32 rounded-xl mb-4"></div><div class="skeleton h-4 w-3/4 rounded mb-2"></div><div class="skeleton h-3 w-1/2 rounded mb-3"></div><div class="skeleton h-3 w-full rounded mb-3"></div><div class="skeleton h-10 w-full rounded-xl mt-auto"></div></div>
+        <div class="glass rounded-2xl p-4 app-card"><div class="skeleton h-32 rounded-xl mb-4"></div><div class="skeleton h-4 w-3/4 rounded mb-2"></div><div class="skeleton h-3 w-1/2 rounded mb-3"></div><div class="skeleton h-3 w-full rounded mb-3"></div><div class="skeleton h-10 w-full rounded-xl mt-auto"></div></div>
     </div>
 
-    <div id="appsGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5 hidden"></div>
+    <div id="appsGrid" class="apps-grid hidden"></div>
 
     <div id="emptyState" class="hidden text-center py-20">
         <i class="fa-solid fa-box-open text-6xl text-slate-700 mb-4"></i>
@@ -126,8 +302,23 @@
 </section>
 
 <!-- ============== APP DETAIL MODAL ============== -->
-<div id="modal" class="fixed inset-0 modal-bg z-[100] hidden items-center justify-center p-4">
-    <div class="glass rounded-3xl max-w-2xl w-full max-h-[90vh] overflow-y-auto no-scrollbar fade-in" id="modalContent"></div>
+<div id="modal" class="fixed inset-0 modal-bg z-[100] hidden items-center justify-center p-2 sm:p-4">
+    <div class="glass rounded-2xl sm:rounded-3xl max-w-2xl w-full max-h-[95vh] sm:max-h-[90vh] overflow-y-auto no-scrollbar fade-in" id="modalContent"></div>
+</div>
+
+<!-- ============== LIGHTBOX ============== -->
+<div id="lightbox" class="lightbox">
+    <button class="lightbox-close" onclick="closeLightbox()">
+        <i class="fa-solid fa-xmark"></i>
+    </button>
+    <button class="lightbox-nav prev" onclick="navigateLightbox(-1)">
+        <i class="fa-solid fa-chevron-left"></i>
+    </button>
+    <img id="lightboxImage" src="" alt="Screenshot">
+    <button class="lightbox-nav next" onclick="navigateLightbox(1)">
+        <i class="fa-solid fa-chevron-right"></i>
+    </button>
+    <div class="lightbox-counter" id="lightboxCounter">1 / 1</div>
 </div>
 
 <!-- ============== FOOTER ============== -->
@@ -139,7 +330,7 @@
             </div>
             <span class="font-bold text-white">APK <span class="gradient-text">Store</span></span>
         </div>
-        <p class="text-slate-500 text-sm">© 2025 APK Hub Store. All rights reserved. Downloaded apps are property of their respective owners.</p>
+        <p class="text-slate-500 text-xs sm:text-sm px-4">© 2025 APK Hub Store. All rights reserved. Downloaded apps are property of their respective owners.</p>
     </div>
 </footer>
 
@@ -155,6 +346,8 @@ const CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vRXj5BzCuzHr_Gv
 let allApps = [];
 let filteredApps = [];
 let currentCategory = 'all';
+let lightboxImages = [];
+let lightboxIndex = 0;
 
 /* =========================================================
    🚀 INITIALIZE
@@ -164,6 +357,15 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('searchInput').addEventListener('input', (e) => {
         applyFilters(e.target.value);
     });
+    
+    // Lightbox keyboard navigation
+    document.addEventListener('keydown', (e) => {
+        if (document.getElementById('lightbox').classList.contains('active')) {
+            if (e.key === 'ArrowLeft') navigateLightbox(-1);
+            if (e.key === 'ArrowRight') navigateLightbox(1);
+            if (e.key === 'Escape') closeLightbox();
+        }
+    });
 });
 
 /* =========================================================
@@ -172,7 +374,6 @@ document.addEventListener('DOMContentLoaded', () => {
 async function fetchApps() {
     const startTime = performance.now();
     try {
-        // Cache-busting + fetch with timeout
         const url = CSV_URL + (CSV_URL.includes('?') ? '&' : '?') + 't=' + Date.now();
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 8000);
@@ -204,7 +405,6 @@ async function fetchApps() {
    🔄 PROCESS DATA
    ========================================================= */
 function processData(rows) {
-    // Column names normalize (case insensitive)
     allApps = rows.map((row, index) => {
         const clean = {};
         Object.keys(row).forEach(k => {
@@ -228,15 +428,11 @@ function processData(rows) {
         };
     }).filter(app => app.name && app.name !== 'Untitled App' || app.apk_url !== '#');
 
-    // Update stats
     document.getElementById('totalApps').textContent = allApps.length;
     const totalDl = allApps.reduce((sum, a) => sum + parseCount(a.downloads), 0);
     document.getElementById('totalDownloads').textContent = formatCount(totalDl);
 
-    // Build categories
     buildCategories();
-
-    // Render
     filteredApps = [...allApps];
     renderApps();
 }
@@ -261,14 +457,14 @@ function buildCategories() {
     const cats = [...new Set(allApps.map(a => a.category).filter(Boolean))];
     const bar = document.getElementById('categoryBar');
     bar.innerHTML = `
-        <button onclick="filterCategory('all')" data-cat="all" class="category-btn active whitespace-nowrap px-5 py-2 rounded-full bg-blue-600 text-white text-sm font-medium transition-all">
+        <button onclick="filterCategory('all')" data-cat="all" class="category-btn active whitespace-nowrap px-4 sm:px-5 py-2 rounded-full bg-blue-600 text-white text-xs sm:text-sm font-medium transition-all">
             <i class="fa-solid fa-border-all mr-1"></i> All
         </button>
     `;
     cats.forEach(cat => {
         const btn = document.createElement('button');
         btn.dataset.cat = cat;
-        btn.className = 'category-btn whitespace-nowrap px-5 py-2 rounded-full bg-slate-800 text-slate-300 text-sm font-medium hover:bg-slate-700 transition-all';
+        btn.className = 'category-btn whitespace-nowrap px-4 sm:px-5 py-2 rounded-full bg-slate-800 text-slate-300 text-xs sm:text-sm font-medium hover:bg-slate-700 transition-all';
         btn.innerHTML = `<i class="fa-solid fa-tag mr-1"></i> ${escapeHtml(cat)}`;
         btn.onclick = () => filterCategory(cat);
         bar.appendChild(btn);
@@ -282,9 +478,9 @@ function filterCategory(cat) {
     currentCategory = cat;
     document.querySelectorAll('.category-btn').forEach(btn => {
         if (btn.dataset.cat === cat) {
-            btn.className = 'category-btn active whitespace-nowrap px-5 py-2 rounded-full bg-blue-600 text-white text-sm font-medium transition-all';
+            btn.className = 'category-btn active whitespace-nowrap px-4 sm:px-5 py-2 rounded-full bg-blue-600 text-white text-xs sm:text-sm font-medium transition-all';
         } else {
-            btn.className = 'category-btn whitespace-nowrap px-5 py-2 rounded-full bg-slate-800 text-slate-300 text-sm font-medium hover:bg-slate-700 transition-all';
+            btn.className = 'category-btn whitespace-nowrap px-4 sm:px-5 py-2 rounded-full bg-slate-800 text-slate-300 text-xs sm:text-sm font-medium hover:bg-slate-700 transition-all';
         }
     });
     applyFilters(document.getElementById('searchInput').value);
@@ -304,7 +500,7 @@ function applyFilters(searchTerm) {
 }
 
 /* =========================================================
-   🎨 RENDER APPS
+   🎨 RENDER APPS - Equal height cards
    ========================================================= */
 function renderApps() {
     const grid = document.getElementById('appsGrid');
@@ -324,9 +520,9 @@ function renderApps() {
     empty.classList.add('hidden');
     grid.classList.remove('hidden');
     grid.innerHTML = filteredApps.map((app, i) => `
-        <div class="glass rounded-2xl p-4 card-hover cursor-pointer fade-in" style="animation-delay:${i * 30}ms" onclick="openModal(${app.id})">
+        <div class="glass rounded-2xl p-4 card-hover cursor-pointer fade-in app-card" style="animation-delay:${i * 30}ms" onclick="openModal(${app.id})">
             <div class="relative mb-4">
-                <div class="h-32 rounded-xl bg-gradient-to-br from-slate-800 to-slate-900 flex items-center justify-center overflow-hidden border border-slate-700">
+                <div class="h-32 sm:h-36 rounded-xl bg-gradient-to-br from-slate-800 to-slate-900 flex items-center justify-center overflow-hidden border border-slate-700">
                     ${app.icon 
                         ? `<img src="${escapeAttr(app.icon)}" alt="${escapeAttr(app.name)}" class="w-full h-full object-cover" onerror="this.style.display='none'; this.parentElement.innerHTML='<i class=\\'fa-solid fa-mobile-screen-button text-5xl text-slate-600\\'></i>'">`
                         : `<i class="fa-solid fa-mobile-screen-button text-5xl text-slate-600"></i>`}
@@ -335,21 +531,25 @@ function renderApps() {
                     <i class="fa-solid fa-star"></i> ${escapeHtml(app.rating)}
                 </div>
             </div>
-            <h3 class="font-semibold text-white text-base mb-1 truncate">${escapeHtml(app.name)}</h3>
-            <p class="text-slate-400 text-xs mb-3 line-clamp-2 h-8 overflow-hidden">${escapeHtml(app.description)}</p>
-            <div class="flex items-center justify-between text-xs text-slate-500 mb-3">
-                <span><i class="fa-solid fa-download mr-1"></i>${escapeHtml(app.downloads)}</span>
-                <span><i class="fa-solid fa-hard-drive mr-1"></i>${escapeHtml(app.size)}</span>
+            <div class="card-body">
+                <h3 class="font-semibold text-white text-base mb-1 truncate">${escapeHtml(app.name)}</h3>
+                <p class="text-slate-400 text-xs mb-3 line-clamp-2 h-8">${escapeHtml(app.description)}</p>
+                <div class="flex items-center justify-between text-xs text-slate-500 mb-3">
+                    <span><i class="fa-solid fa-download mr-1"></i>${escapeHtml(app.downloads)}</span>
+                    <span><i class="fa-solid fa-hard-drive mr-1"></i>${escapeHtml(app.size)}</span>
+                </div>
             </div>
-            <button class="w-full py-2.5 rounded-xl bg-gradient-to-r from-blue-600 to-purple-600 text-white text-sm font-medium hover:opacity-90 transition-all shadow-lg shadow-blue-500/20">
-                <i class="fa-solid fa-download mr-2"></i>Download APK
-            </button>
+            <div class="card-footer">
+                <button class="w-full py-2.5 rounded-xl bg-gradient-to-r from-blue-600 to-purple-600 text-white text-sm font-medium hover:opacity-90 transition-all shadow-lg shadow-blue-500/20">
+                    <i class="fa-solid fa-download mr-2"></i>Download APK
+                </button>
+            </div>
         </div>
     `).join('');
 }
 
 /* =========================================================
-   🪟 MODAL
+   🪟 MODAL - Enhanced with professional screenshots
    ========================================================= */
 function openModal(id) {
     const app = allApps.find(a => a.id === id);
@@ -358,33 +558,50 @@ function openModal(id) {
     const modal = document.getElementById('modal');
     const content = document.getElementById('modalContent');
 
+    // Store images for lightbox
+    lightboxImages = app.screenshots;
+    lightboxIndex = 0;
+
     const screenshotsHtml = app.screenshots.length > 0 
-        ? `<div class="mb-5">
-             <h4 class="text-sm font-semibold text-slate-300 mb-3"><i class="fa-solid fa-images mr-2 text-blue-400"></i>Screenshots</h4>
+        ? `<div class="mb-6">
+             <div class="flex items-center justify-between mb-3">
+                 <h4 class="text-sm font-semibold text-slate-300">
+                     <i class="fa-solid fa-images mr-2 text-blue-400"></i>Screenshots
+                 </h4>
+                 <span class="text-xs text-slate-500">${app.screenshots.length} image${app.screenshots.length > 1 ? 's' : ''}</span>
+             </div>
              <div class="flex gap-3 overflow-x-auto no-scrollbar pb-2">
-                ${app.screenshots.map(s => `
-                    <img src="${escapeAttr(s)}" class="h-48 rounded-xl border border-slate-700 flex-shrink-0 object-cover" 
-                         onerror="this.style.display='none'">
+                ${app.screenshots.map((s, idx) => `
+                    <div class="screenshot-item" onclick="openLightbox(${idx})">
+                        <img src="${escapeAttr(s)}" alt="Screenshot ${idx + 1}" 
+                             onerror="this.parentElement.style.display='none'"
+                             loading="lazy">
+                        <div class="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 hover:opacity-100 transition-opacity flex items-end justify-center pb-3">
+                            <span class="text-white text-xs font-medium bg-black/50 px-2 py-1 rounded-full">
+                                <i class="fa-solid fa-expand mr-1"></i>View
+                            </span>
+                        </div>
+                    </div>
                 `).join('')}
              </div>
            </div>` : '';
 
     content.innerHTML = `
-        <div class="relative p-6 sm:p-8">
-            <button onclick="closeModal()" class="absolute top-4 right-4 w-9 h-9 rounded-full bg-slate-800 hover:bg-slate-700 flex items-center justify-center text-slate-300 transition-all">
+        <div class="relative p-5 sm:p-6 lg:p-8">
+            <button onclick="closeModal()" class="absolute top-3 right-3 sm:top-4 sm:right-4 w-9 h-9 rounded-full bg-slate-800 hover:bg-slate-700 flex items-center justify-center text-slate-300 transition-all z-10">
                 <i class="fa-solid fa-xmark"></i>
             </button>
 
-            <div class="flex gap-5 mb-6">
-                <div class="w-24 h-24 rounded-2xl bg-gradient-to-br from-slate-800 to-slate-900 flex items-center justify-center overflow-hidden border border-slate-700 flex-shrink-0">
+            <div class="flex flex-col sm:flex-row gap-4 sm:gap-5 mb-6">
+                <div class="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl bg-gradient-to-br from-slate-800 to-slate-900 flex items-center justify-center overflow-hidden border border-slate-700 flex-shrink-0 mx-auto sm:mx-0">
                     ${app.icon 
                         ? `<img src="${escapeAttr(app.icon)}" class="w-full h-full object-cover" onerror="this.style.display='none'; this.parentElement.innerHTML='<i class=\\'fa-solid fa-mobile-screen-button text-4xl text-slate-600\\'></i>'">`
                         : `<i class="fa-solid fa-mobile-screen-button text-4xl text-slate-600"></i>`}
                 </div>
-                <div class="flex-1 min-w-0">
-                    <h3 class="text-2xl font-bold text-white mb-1">${escapeHtml(app.name)}</h3>
+                <div class="flex-1 min-w-0 text-center sm:text-left">
+                    <h3 class="text-xl sm:text-2xl font-bold text-white mb-1">${escapeHtml(app.name)}</h3>
                     <p class="text-blue-400 text-sm mb-2">${escapeHtml(app.category)}</p>
-                    <div class="flex flex-wrap gap-3 text-xs text-slate-400">
+                    <div class="flex flex-wrap justify-center sm:justify-start gap-x-4 gap-y-2 text-xs text-slate-400">
                         <span><i class="fa-solid fa-star text-yellow-400 mr-1"></i>${escapeHtml(app.rating)}</span>
                         <span><i class="fa-solid fa-download mr-1"></i>${escapeHtml(app.downloads)}</span>
                         <span><i class="fa-solid fa-hard-drive mr-1"></i>${escapeHtml(app.size)}</span>
@@ -396,7 +613,9 @@ function openModal(id) {
             ${screenshotsHtml}
 
             <div class="mb-6">
-                <h4 class="text-sm font-semibold text-slate-300 mb-2"><i class="fa-solid fa-circle-info mr-2 text-blue-400"></i>Description</h4>
+                <h4 class="text-sm font-semibold text-slate-300 mb-2">
+                    <i class="fa-solid fa-circle-info mr-2 text-blue-400"></i>Description
+                </h4>
                 <p class="text-slate-400 text-sm leading-relaxed">${escapeHtml(app.description)}</p>
             </div>
 
@@ -433,7 +652,42 @@ document.getElementById('modal').addEventListener('click', (e) => {
     if (e.target.id === 'modal') closeModal();
 });
 document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape') closeModal();
+    if (e.key === 'Escape' && !document.getElementById('lightbox').classList.contains('active')) closeModal();
+});
+
+/* =========================================================
+   🔍 LIGHTBOX FUNCTIONALITY
+   ========================================================= */
+function openLightbox(index) {
+    lightboxIndex = index;
+    updateLightbox();
+    document.getElementById('lightbox').classList.add('active');
+    document.body.style.overflow = 'hidden';
+}
+
+function closeLightbox() {
+    document.getElementById('lightbox').classList.remove('active');
+    if (document.getElementById('modal').classList.contains('hidden')) {
+        document.body.style.overflow = '';
+    }
+}
+
+function navigateLightbox(direction) {
+    if (lightboxImages.length === 0) return;
+    lightboxIndex = (lightboxIndex + direction + lightboxImages.length) % lightboxImages.length;
+    updateLightbox();
+}
+
+function updateLightbox() {
+    const img = document.getElementById('lightboxImage');
+    const counter = document.getElementById('lightboxCounter');
+    img.src = lightboxImages[lightboxIndex];
+    counter.textContent = `${lightboxIndex + 1} / ${lightboxImages.length}`;
+}
+
+// Lightbox click outside to close
+document.getElementById('lightbox').addEventListener('click', (e) => {
+    if (e.target.id === 'lightbox') closeLightbox();
 });
 
 /* =========================================================
