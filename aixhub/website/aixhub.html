@@ -28,36 +28,94 @@
     .modal-bg { background: rgba(0, 0, 0, 0.85); backdrop-filter: blur(8px); }
     .no-scrollbar::-webkit-scrollbar { display: none; }
     .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-    
-    /* Responsive card fixes */
+
+    /* ================================================
+       🎯 FIXED EQUAL-SIZE CARD GRID SYSTEM
+       ================================================ */
+    .apps-grid {
+        display: grid;
+        grid-template-columns: repeat(1, minmax(0, 1fr));
+        gap: 1.25rem;
+        align-items: stretch;
+    }
+    @media (min-width: 640px) {
+        .apps-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    }
+    @media (min-width: 1024px) {
+        .apps-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    }
+    @media (min-width: 1280px) {
+        .apps-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+    }
+
+    /* Every card has EXACTLY the same fixed height & width */
     .app-card {
         display: flex;
         flex-direction: column;
-        height: 100%;
-        min-height: 340px;
+        width: 100%;
+        height: 400px;              /* fixed equal height */
+        min-height: 400px;
+        max-height: 400px;
+        overflow: hidden;
     }
+
+    /* Icon area — fixed height, contains image WITHOUT zoom */
+    .app-card .icon-wrap {
+        width: 100%;
+        height: 160px;              /* fixed icon area */
+        flex-shrink: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        overflow: hidden;
+        border-radius: 12px;
+        border: 1px solid #334155;
+        background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+        padding: 12px;
+    }
+    /* KEY FIX: object-contain prevents zoom & cropping */
+    .app-card .icon-wrap img {
+        max-width: 100%;
+        max-height: 100%;
+        width: auto;
+        height: auto;
+        object-fit: contain;
+        object-position: center;
+        display: block;
+    }
+
     .app-card .card-body {
         flex: 1;
         display: flex;
         flex-direction: column;
+        min-height: 0;
+        padding-top: 14px;
     }
-    .app-card .card-footer {
-        margin-top: auto;
+    .app-card .card-title {
+        height: 24px;
+        overflow: hidden;
+        white-space: nowrap;
+        text-overflow: ellipsis;
     }
-    .line-clamp-2 {
+    .app-card .card-desc {
+        height: 32px;
+        overflow: hidden;
         display: -webkit-box;
         -webkit-line-clamp: 2;
         -webkit-box-orient: vertical;
-        overflow: hidden;
     }
-    .line-clamp-3 {
-        display: -webkit-box;
-        -webkit-line-clamp: 3;
-        -webkit-box-orient: vertical;
-        overflow: hidden;
+    .app-card .card-meta {
+        height: 20px;
+        flex-shrink: 0;
     }
-    
-    /* Screenshot enhancements */
+    .app-card .card-footer {
+        flex-shrink: 0;
+        margin-top: auto;
+    }
+
+    /* ================================================
+       📸 SCREENSHOT SECTION
+       ================================================ */
     .screenshot-item {
         position: relative;
         flex-shrink: 0;
@@ -79,124 +137,85 @@
         display: block;
         transition: transform 0.3s ease;
     }
-    .screenshot-item:hover img {
-        transform: scale(1.05);
-    }
-    
+    .screenshot-item:hover img { transform: scale(1.05); }
+
     /* Lightbox */
     .lightbox {
-        position: fixed;
-        inset: 0;
-        z-index: 200;
+        position: fixed; inset: 0; z-index: 200;
         background: rgba(0, 0, 0, 0.95);
         backdrop-filter: blur(12px);
-        display: none;
-        align-items: center;
-        justify-content: center;
-        padding: 1rem;
+        display: none; align-items: center; justify-content: center; padding: 1rem;
     }
-    .lightbox.active {
-        display: flex;
-    }
+    .lightbox.active { display: flex; }
     .lightbox img {
-        max-width: 90vw;
-        max-height: 85vh;
-        object-fit: contain;
-        border-radius: 12px;
+        max-width: 90vw; max-height: 85vh;
+        object-fit: contain; border-radius: 12px;
         box-shadow: 0 0 60px rgba(59, 130, 246, 0.3);
     }
     .lightbox-nav {
-        position: absolute;
-        top: 50%;
-        transform: translateY(-50%);
-        width: 48px;
-        height: 48px;
-        border-radius: 50%;
-        background: rgba(30, 41, 59, 0.9);
-        border: 1px solid #334155;
-        color: #e2e8f0;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        cursor: pointer;
-        transition: all 0.2s ease;
-        z-index: 210;
+        position: absolute; top: 50%; transform: translateY(-50%);
+        width: 48px; height: 48px; border-radius: 50%;
+        background: rgba(30, 41, 59, 0.9); border: 1px solid #334155;
+        color: #e2e8f0; display: flex; align-items: center; justify-content: center;
+        cursor: pointer; transition: all 0.2s ease; z-index: 210;
     }
-    .lightbox-nav:hover {
-        background: #3b82f6;
-        border-color: #3b82f6;
-    }
+    .lightbox-nav:hover { background: #3b82f6; border-color: #3b82f6; }
     .lightbox-nav.prev { left: 1rem; }
     .lightbox-nav.next { right: 1rem; }
     .lightbox-close {
-        position: absolute;
-        top: 1rem;
-        right: 1rem;
-        width: 44px;
-        height: 44px;
-        border-radius: 50%;
-        background: rgba(30, 41, 59, 0.9);
-        border: 1px solid #334155;
-        color: #e2e8f0;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        cursor: pointer;
-        transition: all 0.2s ease;
-        z-index: 210;
+        position: absolute; top: 1rem; right: 1rem;
+        width: 44px; height: 44px; border-radius: 50%;
+        background: rgba(30, 41, 59, 0.9); border: 1px solid #334155;
+        color: #e2e8f0; display: flex; align-items: center; justify-content: center;
+        cursor: pointer; transition: all 0.2s ease; z-index: 210;
     }
-    .lightbox-close:hover {
-        background: #ef4444;
-        border-color: #ef4444;
-    }
+    .lightbox-close:hover { background: #ef4444; border-color: #ef4444; }
     .lightbox-counter {
-        position: absolute;
-        bottom: 1.5rem;
-        left: 50%;
-        transform: translateX(-50%);
-        padding: 0.5rem 1.25rem;
-        border-radius: 9999px;
-        background: rgba(30, 41, 59, 0.9);
-        border: 1px solid #334155;
-        color: #e2e8f0;
-        font-size: 0.875rem;
-        font-weight: 500;
-        z-index: 210;
+        position: absolute; bottom: 1.5rem; left: 50%; transform: translateX(-50%);
+        padding: 0.5rem 1.25rem; border-radius: 9999px;
+        background: rgba(30, 41, 59, 0.9); border: 1px solid #334155;
+        color: #e2e8f0; font-size: 0.875rem; font-weight: 500; z-index: 210;
     }
-    
-    /* Responsive adjustments */
+
+    /* Modal icon — also object-contain, no zoom */
+    .modal-icon-wrap {
+        width: 96px; height: 96px;
+        flex-shrink: 0;
+        display: flex; align-items: center; justify-content: center;
+        overflow: hidden; border-radius: 16px;
+        border: 1px solid #334155;
+        background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+        padding: 10px;
+    }
+    .modal-icon-wrap img {
+        max-width: 100%; max-height: 100%;
+        width: auto; height: auto;
+        object-fit: contain; display: block;
+    }
+
+    /* ================================================
+       📱 RESPONSIVE CARD HEIGHTS
+       ================================================ */
     @media (max-width: 640px) {
-        .app-card { min-height: 300px; }
+        .app-card { height: 370px; min-height: 370px; max-height: 370px; }
+        .app-card .icon-wrap { height: 140px; }
         .screenshot-item img { height: 140px; }
         .lightbox-nav { width: 40px; height: 40px; }
         .lightbox-nav.prev { left: 0.5rem; }
         .lightbox-nav.next { right: 0.5rem; }
+        .modal-icon-wrap { width: 80px; height: 80px; }
+    }
+    @media (min-width: 641px) and (max-width: 1023px) {
+        .app-card { height: 390px; min-height: 390px; max-height: 390px; }
     }
     @media (min-width: 1280px) {
+        .app-card { height: 410px; min-height: 410px; max-height: 410px; }
+        .app-card .icon-wrap { height: 170px; }
         .screenshot-item img { height: 200px; }
     }
-    
-    /* Grid equal height fix */
-    .apps-grid {
-        display: grid;
-        grid-template-columns: repeat(1, minmax(0, 1fr));
-        gap: 1.25rem;
-    }
-    @media (min-width: 640px) {
-        .apps-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-    }
-    @media (min-width: 1024px) {
-        .apps-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-    }
-    @media (min-width: 1280px) {
-        .apps-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
-    }
-    
+
     /* Category bar scroll */
-    .category-scroll {
-        scrollbar-width: thin;
-        scrollbar-color: #334155 transparent;
-    }
+    .category-scroll { scrollbar-width: thin; scrollbar-color: #334155 transparent; }
     .category-scroll::-webkit-scrollbar { height: 4px; }
     .category-scroll::-webkit-scrollbar-track { background: transparent; }
     .category-scroll::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
@@ -236,7 +255,6 @@
         <p class="text-slate-400 text-sm sm:text-base lg:text-lg mb-8 px-2">
             Latest Android applications, verified and ready to install. One click, instant download.
         </p>
-        <!-- Search Bar -->
         <div class="relative max-w-xl mx-auto px-2 sm:px-0">
             <i class="fa-solid fa-magnifying-glass absolute left-6 sm:left-4 top-1/2 -translate-y-1/2 text-slate-500"></i>
             <input type="text" id="searchInput" placeholder="Search apps by name or category..."
@@ -275,15 +293,14 @@
 <!-- ============== APPS GRID ============== -->
 <section class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-20 w-full flex-1">
     <div id="loadingSkeleton" class="apps-grid">
-        <!-- Skeleton cards -->
-        <div class="glass rounded-2xl p-4 app-card"><div class="skeleton h-32 rounded-xl mb-4"></div><div class="skeleton h-4 w-3/4 rounded mb-2"></div><div class="skeleton h-3 w-1/2 rounded mb-3"></div><div class="skeleton h-3 w-full rounded mb-3"></div><div class="skeleton h-10 w-full rounded-xl mt-auto"></div></div>
-        <div class="glass rounded-2xl p-4 app-card"><div class="skeleton h-32 rounded-xl mb-4"></div><div class="skeleton h-4 w-3/4 rounded mb-2"></div><div class="skeleton h-3 w-1/2 rounded mb-3"></div><div class="skeleton h-3 w-full rounded mb-3"></div><div class="skeleton h-10 w-full rounded-xl mt-auto"></div></div>
-        <div class="glass rounded-2xl p-4 app-card"><div class="skeleton h-32 rounded-xl mb-4"></div><div class="skeleton h-4 w-3/4 rounded mb-2"></div><div class="skeleton h-3 w-1/2 rounded mb-3"></div><div class="skeleton h-3 w-full rounded mb-3"></div><div class="skeleton h-10 w-full rounded-xl mt-auto"></div></div>
-        <div class="glass rounded-2xl p-4 app-card"><div class="skeleton h-32 rounded-xl mb-4"></div><div class="skeleton h-4 w-3/4 rounded mb-2"></div><div class="skeleton h-3 w-1/2 rounded mb-3"></div><div class="skeleton h-3 w-full rounded mb-3"></div><div class="skeleton h-10 w-full rounded-xl mt-auto"></div></div>
-        <div class="glass rounded-2xl p-4 app-card"><div class="skeleton h-32 rounded-xl mb-4"></div><div class="skeleton h-4 w-3/4 rounded mb-2"></div><div class="skeleton h-3 w-1/2 rounded mb-3"></div><div class="skeleton h-3 w-full rounded mb-3"></div><div class="skeleton h-10 w-full rounded-xl mt-auto"></div></div>
-        <div class="glass rounded-2xl p-4 app-card"><div class="skeleton h-32 rounded-xl mb-4"></div><div class="skeleton h-4 w-3/4 rounded mb-2"></div><div class="skeleton h-3 w-1/2 rounded mb-3"></div><div class="skeleton h-3 w-full rounded mb-3"></div><div class="skeleton h-10 w-full rounded-xl mt-auto"></div></div>
-        <div class="glass rounded-2xl p-4 app-card"><div class="skeleton h-32 rounded-xl mb-4"></div><div class="skeleton h-4 w-3/4 rounded mb-2"></div><div class="skeleton h-3 w-1/2 rounded mb-3"></div><div class="skeleton h-3 w-full rounded mb-3"></div><div class="skeleton h-10 w-full rounded-xl mt-auto"></div></div>
-        <div class="glass rounded-2xl p-4 app-card"><div class="skeleton h-32 rounded-xl mb-4"></div><div class="skeleton h-4 w-3/4 rounded mb-2"></div><div class="skeleton h-3 w-1/2 rounded mb-3"></div><div class="skeleton h-3 w-full rounded mb-3"></div><div class="skeleton h-10 w-full rounded-xl mt-auto"></div></div>
+        <div class="glass rounded-2xl p-4 app-card"><div class="skeleton icon-wrap mb-0"></div><div class="skeleton h-4 w-3/4 rounded mt-4 mb-2"></div><div class="skeleton h-3 w-full rounded mb-2"></div><div class="skeleton h-3 w-1/2 rounded mb-3"></div><div class="skeleton h-10 w-full rounded-xl mt-auto"></div></div>
+        <div class="glass rounded-2xl p-4 app-card"><div class="skeleton icon-wrap mb-0"></div><div class="skeleton h-4 w-3/4 rounded mt-4 mb-2"></div><div class="skeleton h-3 w-full rounded mb-2"></div><div class="skeleton h-3 w-1/2 rounded mb-3"></div><div class="skeleton h-10 w-full rounded-xl mt-auto"></div></div>
+        <div class="glass rounded-2xl p-4 app-card"><div class="skeleton icon-wrap mb-0"></div><div class="skeleton h-4 w-3/4 rounded mt-4 mb-2"></div><div class="skeleton h-3 w-full rounded mb-2"></div><div class="skeleton h-3 w-1/2 rounded mb-3"></div><div class="skeleton h-10 w-full rounded-xl mt-auto"></div></div>
+        <div class="glass rounded-2xl p-4 app-card"><div class="skeleton icon-wrap mb-0"></div><div class="skeleton h-4 w-3/4 rounded mt-4 mb-2"></div><div class="skeleton h-3 w-full rounded mb-2"></div><div class="skeleton h-3 w-1/2 rounded mb-3"></div><div class="skeleton h-10 w-full rounded-xl mt-auto"></div></div>
+        <div class="glass rounded-2xl p-4 app-card"><div class="skeleton icon-wrap mb-0"></div><div class="skeleton h-4 w-3/4 rounded mt-4 mb-2"></div><div class="skeleton h-3 w-full rounded mb-2"></div><div class="skeleton h-3 w-1/2 rounded mb-3"></div><div class="skeleton h-10 w-full rounded-xl mt-auto"></div></div>
+        <div class="glass rounded-2xl p-4 app-card"><div class="skeleton icon-wrap mb-0"></div><div class="skeleton h-4 w-3/4 rounded mt-4 mb-2"></div><div class="skeleton h-3 w-full rounded mb-2"></div><div class="skeleton h-3 w-1/2 rounded mb-3"></div><div class="skeleton h-10 w-full rounded-xl mt-auto"></div></div>
+        <div class="glass rounded-2xl p-4 app-card"><div class="skeleton icon-wrap mb-0"></div><div class="skeleton h-4 w-3/4 rounded mt-4 mb-2"></div><div class="skeleton h-3 w-full rounded mb-2"></div><div class="skeleton h-3 w-1/2 rounded mb-3"></div><div class="skeleton h-10 w-full rounded-xl mt-auto"></div></div>
+        <div class="glass rounded-2xl p-4 app-card"><div class="skeleton icon-wrap mb-0"></div><div class="skeleton h-4 w-3/4 rounded mt-4 mb-2"></div><div class="skeleton h-3 w-full rounded mb-2"></div><div class="skeleton h-3 w-1/2 rounded mb-3"></div><div class="skeleton h-10 w-full rounded-xl mt-auto"></div></div>
     </div>
 
     <div id="appsGrid" class="apps-grid hidden"></div>
@@ -357,8 +374,7 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('searchInput').addEventListener('input', (e) => {
         applyFilters(e.target.value);
     });
-    
-    // Lightbox keyboard navigation
+
     document.addEventListener('keydown', (e) => {
         if (document.getElementById('lightbox').classList.contains('active')) {
             if (e.key === 'ArrowLeft') navigateLightbox(-1);
@@ -369,7 +385,7 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 /* =========================================================
-   📥 FETCH CSV DATA - Fast (under 1 second)
+   📥 FETCH CSV DATA
    ========================================================= */
 async function fetchApps() {
     const startTime = performance.now();
@@ -490,8 +506,8 @@ function applyFilters(searchTerm) {
     const q = searchTerm.toLowerCase().trim();
     filteredApps = allApps.filter(app => {
         const matchCat = currentCategory === 'all' || app.category === currentCategory;
-        const matchSearch = !q || 
-            app.name.toLowerCase().includes(q) || 
+        const matchSearch = !q ||
+            app.name.toLowerCase().includes(q) ||
             app.description.toLowerCase().includes(q) ||
             app.category.toLowerCase().includes(q);
         return matchCat && matchSearch;
@@ -500,7 +516,7 @@ function applyFilters(searchTerm) {
 }
 
 /* =========================================================
-   🎨 RENDER APPS - Equal height cards
+   🎨 RENDER APPS — equal size cards, no icon zoom
    ========================================================= */
 function renderApps() {
     const grid = document.getElementById('appsGrid');
@@ -519,22 +535,19 @@ function renderApps() {
 
     empty.classList.add('hidden');
     grid.classList.remove('hidden');
+
     grid.innerHTML = filteredApps.map((app, i) => `
         <div class="glass rounded-2xl p-4 card-hover cursor-pointer fade-in app-card" style="animation-delay:${i * 30}ms" onclick="openModal(${app.id})">
-            <div class="relative mb-4">
-                <div class="h-32 sm:h-36 rounded-xl bg-gradient-to-br from-slate-800 to-slate-900 flex items-center justify-center overflow-hidden border border-slate-700">
-                    ${app.icon 
-                        ? `<img src="${escapeAttr(app.icon)}" alt="${escapeAttr(app.name)}" class="w-full h-full object-cover" onerror="this.style.display='none'; this.parentElement.innerHTML='<i class=\\'fa-solid fa-mobile-screen-button text-5xl text-slate-600\\'></i>'">`
-                        : `<i class="fa-solid fa-mobile-screen-button text-5xl text-slate-600"></i>`}
-                </div>
-                <div class="absolute top-2 right-2 px-2 py-1 rounded-full bg-black/60 backdrop-blur text-xs text-yellow-400 font-medium">
-                    <i class="fa-solid fa-star"></i> ${escapeHtml(app.rating)}
-                </div>
+            <div class="icon-wrap">
+                ${app.icon
+                    ? `<img src="${escapeAttr(app.icon)}" alt="${escapeAttr(app.name)}" loading="lazy"
+                            onerror="this.style.display='none'; this.parentElement.innerHTML='<i class=\\'fa-solid fa-mobile-screen-button text-5xl text-slate-600\\'></i>'">`
+                    : `<i class="fa-solid fa-mobile-screen-button text-5xl text-slate-600"></i>`}
             </div>
             <div class="card-body">
-                <h3 class="font-semibold text-white text-base mb-1 truncate">${escapeHtml(app.name)}</h3>
-                <p class="text-slate-400 text-xs mb-3 line-clamp-2 h-8">${escapeHtml(app.description)}</p>
-                <div class="flex items-center justify-between text-xs text-slate-500 mb-3">
+                <h3 class="font-semibold text-white text-base mb-1 card-title">${escapeHtml(app.name)}</h3>
+                <p class="text-slate-400 text-xs mb-3 card-desc">${escapeHtml(app.description)}</p>
+                <div class="flex items-center justify-between text-xs text-slate-500 card-meta">
                     <span><i class="fa-solid fa-download mr-1"></i>${escapeHtml(app.downloads)}</span>
                     <span><i class="fa-solid fa-hard-drive mr-1"></i>${escapeHtml(app.size)}</span>
                 </div>
@@ -549,7 +562,7 @@ function renderApps() {
 }
 
 /* =========================================================
-   🪟 MODAL - Enhanced with professional screenshots
+   🪟 MODAL
    ========================================================= */
 function openModal(id) {
     const app = allApps.find(a => a.id === id);
@@ -558,11 +571,10 @@ function openModal(id) {
     const modal = document.getElementById('modal');
     const content = document.getElementById('modalContent');
 
-    // Store images for lightbox
     lightboxImages = app.screenshots;
     lightboxIndex = 0;
 
-    const screenshotsHtml = app.screenshots.length > 0 
+    const screenshotsHtml = app.screenshots.length > 0
         ? `<div class="mb-6">
              <div class="flex items-center justify-between mb-3">
                  <h4 class="text-sm font-semibold text-slate-300">
@@ -573,7 +585,7 @@ function openModal(id) {
              <div class="flex gap-3 overflow-x-auto no-scrollbar pb-2">
                 ${app.screenshots.map((s, idx) => `
                     <div class="screenshot-item" onclick="openLightbox(${idx})">
-                        <img src="${escapeAttr(s)}" alt="Screenshot ${idx + 1}" 
+                        <img src="${escapeAttr(s)}" alt="Screenshot ${idx + 1}"
                              onerror="this.parentElement.style.display='none'"
                              loading="lazy">
                         <div class="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 hover:opacity-100 transition-opacity flex items-end justify-center pb-3">
@@ -593,9 +605,10 @@ function openModal(id) {
             </button>
 
             <div class="flex flex-col sm:flex-row gap-4 sm:gap-5 mb-6">
-                <div class="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl bg-gradient-to-br from-slate-800 to-slate-900 flex items-center justify-center overflow-hidden border border-slate-700 flex-shrink-0 mx-auto sm:mx-0">
-                    ${app.icon 
-                        ? `<img src="${escapeAttr(app.icon)}" class="w-full h-full object-cover" onerror="this.style.display='none'; this.parentElement.innerHTML='<i class=\\'fa-solid fa-mobile-screen-button text-4xl text-slate-600\\'></i>'">`
+                <div class="modal-icon-wrap mx-auto sm:mx-0">
+                    ${app.icon
+                        ? `<img src="${escapeAttr(app.icon)}" alt="${escapeAttr(app.name)}"
+                                onerror="this.style.display='none'; this.parentElement.innerHTML='<i class=\\'fa-solid fa-mobile-screen-button text-4xl text-slate-600\\'></i>'">`
                         : `<i class="fa-solid fa-mobile-screen-button text-4xl text-slate-600"></i>`}
                 </div>
                 <div class="flex-1 min-w-0 text-center sm:text-left">
@@ -625,7 +638,7 @@ function openModal(id) {
                 <p class="text-sm text-slate-300 font-mono break-all">${escapeHtml(app.package)}</p>
             </div>` : ''}
 
-            <a href="${escapeAttr(app.apk_url)}" target="_blank" rel="noopener" 
+            <a href="${escapeAttr(app.apk_url)}" target="_blank" rel="noopener"
                class="block w-full py-4 rounded-xl bg-gradient-to-r from-blue-600 to-purple-600 text-white font-semibold text-center hover:opacity-90 transition-all shadow-lg shadow-blue-500/30">
                 <i class="fa-solid fa-download mr-2"></i>Download APK (${escapeHtml(app.size)})
             </a>
@@ -656,7 +669,7 @@ document.addEventListener('keydown', (e) => {
 });
 
 /* =========================================================
-   🔍 LIGHTBOX FUNCTIONALITY
+   🔍 LIGHTBOX
    ========================================================= */
 function openLightbox(index) {
     lightboxIndex = index;
@@ -685,7 +698,6 @@ function updateLightbox() {
     counter.textContent = `${lightboxIndex + 1} / ${lightboxImages.length}`;
 }
 
-// Lightbox click outside to close
 document.getElementById('lightbox').addEventListener('click', (e) => {
     if (e.target.id === 'lightbox') closeLightbox();
 });
