@@ -30,7 +30,7 @@
     .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 
     /* ================================================
-       🎯 CARDS — 200x200 — IMAGE ON TOP, TITLE BELOW
+       🎯 CARDS — MOBILE 200x200 | PC 250x250
        ================================================ */
     .apps-grid {
         display: grid;
@@ -51,7 +51,7 @@
         .apps-grid { grid-template-columns: repeat(6, minmax(0, 1fr)); }
     }
 
-    /* Card — EXACT 200x200 */
+    /* ============ MOBILE (default) — 200 x 200 ============ */
     .app-card {
         width: 200px;
         height: 200px;
@@ -67,11 +67,11 @@
         position: relative;
     }
 
-    /* IMAGE — TOP — fills the top area (150px) */
+    /* IMAGE — TOP — fills parent width & remaining height */
     .app-card .card-image-wrap {
         width: 100%;
-        height: 150px;              /* ← اوپر امیج */
-        flex-shrink: 0;
+        flex: 1;                    /* ← باقی ساری جگہ بھرے */
+        min-height: 0;
         overflow: hidden;
         position: relative;
         background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
@@ -113,10 +113,10 @@
         z-index: 2;
     }
 
-    /* TITLE — BOTTOM (50px) */
+    /* TITLE — BOTTOM */
     .app-card .card-title-bar {
         width: 100%;
-        height: 50px;
+        height: 48px;
         flex-shrink: 0;
         display: flex;
         align-items: center;
@@ -135,6 +135,32 @@
         text-overflow: ellipsis;
         width: 100%;
         line-height: 1.2;
+    }
+
+    /* ============ PC / LAPTOP (≥ 768px) — 250 x 250 ============ */
+    @media (min-width: 768px) {
+        .app-card {
+            width: 250px;
+            height: 250px;
+            min-width: 250px;
+            max-width: 250px;
+            min-height: 250px;
+            max-height: 250px;
+            border-radius: 16px;
+        }
+        .app-card .card-title-bar {
+            height: 56px;
+            padding: 0 12px;
+        }
+        .app-card .card-title-bar h3 {
+            font-size: 13px;
+        }
+        .app-card .rating-badge {
+            font-size: 11px;
+            padding: 3px 9px;
+            top: 8px;
+            right: 8px;
+        }
     }
 
     /* ================================================
@@ -221,20 +247,22 @@
     }
 
     /* ================================================
-       📱 RESPONSIVE
+       📱 EXTRA SMALL SCREENS
        ================================================ */
-    @media (max-width: 640px) {
+    @media (max-width: 400px) {
         .app-card {
-            width: 160px;
-            height: 160px;
-            min-width: 160px;
-            max-width: 160px;
-            min-height: 160px;
-            max-height: 160px;
+            width: 170px;
+            height: 170px;
+            min-width: 170px;
+            max-width: 170px;
+            min-height: 170px;
+            max-height: 170px;
         }
-        .app-card .card-image-wrap { height: 118px; }
         .app-card .card-title-bar { height: 42px; }
         .app-card .card-title-bar h3 { font-size: 11px; }
+    }
+
+    @media (max-width: 640px) {
         .screenshot-item img { height: 140px; }
         .lightbox-nav { width: 40px; height: 40px; }
         .lightbox-nav.prev { left: 0.5rem; }
@@ -518,7 +546,7 @@ function applyFilters(searchTerm) {
 }
 
 /* =========================================================
-   🎨 RENDER — 200x200 — IMAGE TOP, TITLE BOTTOM
+   🎨 RENDER — MOBILE 200x200 | PC 250x250
    ========================================================= */
 function renderApps() {
     const grid = document.getElementById('appsGrid');
