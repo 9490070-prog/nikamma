@@ -1,0 +1,458 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>APK Hub Store - Download Premium Apps</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+<style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+    * { font-family: 'Inter', sans-serif; }
+    body { background: #0f172a; color: #e2e8f0; }
+    .glass { background: rgba(30, 41, 59, 0.7); backdrop-filter: blur(20px); border: 1px solid rgba(148, 163, 184, 0.1); }
+    .card-hover { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+    .card-hover:hover { transform: translateY(-6px); box-shadow: 0 20px 40px rgba(59, 130, 246, 0.2); border-color: rgba(59, 130, 246, 0.5); }
+    .gradient-text { background: linear-gradient(135deg, #3b82f6, #8b5cf6); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+    .skeleton { background: linear-gradient(90deg, #1e293b 25%, #334155 50%, #1e293b 75%); background-size: 200% 100%; animation: shimmer 1.2s infinite; }
+    @keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+    .fade-in { animation: fadeIn 0.4s ease-out; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+    .pulse-dot { animation: pulse 2s infinite; }
+    @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
+    ::-webkit-scrollbar { width: 8px; height: 8px; }
+    ::-webkit-scrollbar-track { background: #0f172a; }
+    ::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
+    ::-webkit-scrollbar-thumb:hover { background: #475569; }
+    .modal-bg { background: rgba(0, 0, 0, 0.85); backdrop-filter: blur(8px); }
+    .no-scrollbar::-webkit-scrollbar { display: none; }
+    .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+</style>
+</head>
+<body class="min-h-screen">
+
+<!-- ============== HEADER ============== -->
+<header class="sticky top-0 z-50 glass border-b border-slate-800">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="flex justify-between items-center h-16">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center shadow-lg shadow-blue-500/30">
+                    <i class="fa-brands fa-android text-white text-xl"></i>
+                </div>
+                <div>
+                    <h1 class="text-lg font-bold text-white leading-none">APK <span class="gradient-text">Store</span></h1>
+                    <p class="text-xs text-slate-400 mt-0.5">Premium Apps Hub</p>
+                </div>
+            </div>
+            <div class="flex items-center gap-3">
+                <div class="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-full bg-green-500/10 border border-green-500/20">
+                    <div class="w-2 h-2 rounded-full bg-green-400 pulse-dot"></div>
+                    <span class="text-xs text-green-400 font-medium">Live</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</header>
+
+<!-- ============== HERO ============== -->
+<section class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-10 pb-6 fade-in">
+    <div class="text-center max-w-3xl mx-auto">
+        <h2 class="text-4xl sm:text-5xl font-extrabold text-white mb-4 leading-tight">
+            Download <span class="gradient-text">Premium APKs</span><br>Safe & Fast
+        </h2>
+        <p class="text-slate-400 text-base sm:text-lg mb-8">
+            Latest Android applications, verified and ready to install. One click, instant download.
+        </p>
+        <!-- Search Bar -->
+        <div class="relative max-w-xl mx-auto">
+            <i class="fa-solid fa-magnifying-glass absolute left-4 top-1/2 -translate-y-1/2 text-slate-500"></i>
+            <input type="text" id="searchInput" placeholder="Search apps by name or category..."
+                   class="w-full pl-12 pr-4 py-3.5 rounded-2xl bg-slate-800/60 border border-slate-700 text-white placeholder-slate-500 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/30 transition-all">
+        </div>
+    </div>
+</section>
+
+<!-- ============== STATS BAR ============== -->
+<section class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mb-8">
+    <div class="grid grid-cols-3 gap-3 sm:gap-4">
+        <div class="glass rounded-2xl p-4 text-center">
+            <p class="text-2xl sm:text-3xl font-bold gradient-text" id="totalApps">0</p>
+            <p class="text-xs sm:text-sm text-slate-400 mt-1">Total Apps</p>
+        </div>
+        <div class="glass rounded-2xl p-4 text-center">
+            <p class="text-2xl sm:text-3xl font-bold gradient-text" id="totalDownloads">0</p>
+            <p class="text-xs sm:text-sm text-slate-400 mt-1">Downloads</p>
+        </div>
+        <div class="glass rounded-2xl p-4 text-center">
+            <p class="text-2xl sm:text-3xl font-bold gradient-text">100%</p>
+            <p class="text-xs sm:text-sm text-slate-400 mt-1">Verified</p>
+        </div>
+    </div>
+</section>
+
+<!-- ============== CATEGORIES ============== -->
+<section class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mb-6">
+    <div class="flex gap-2 overflow-x-auto no-scrollbar pb-2" id="categoryBar">
+        <button onclick="filterCategory('all')" data-cat="all" class="category-btn active whitespace-nowrap px-5 py-2 rounded-full bg-blue-600 text-white text-sm font-medium transition-all">
+            <i class="fa-solid fa-border-all mr-1"></i> All
+        </button>
+    </div>
+</section>
+
+<!-- ============== APPS GRID ============== -->
+<section class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-20">
+    <div id="loadingSkeleton" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
+        <!-- Skeleton cards -->
+        <div class="glass rounded-2xl p-4"><div class="skeleton h-32 rounded-xl mb-4"></div><div class="skeleton h-4 w-3/4 rounded mb-2"></div><div class="skeleton h-3 w-1/2 rounded"></div></div>
+        <div class="glass rounded-2xl p-4"><div class="skeleton h-32 rounded-xl mb-4"></div><div class="skeleton h-4 w-3/4 rounded mb-2"></div><div class="skeleton h-3 w-1/2 rounded"></div></div>
+        <div class="glass rounded-2xl p-4"><div class="skeleton h-32 rounded-xl mb-4"></div><div class="skeleton h-4 w-3/4 rounded mb-2"></div><div class="skeleton h-3 w-1/2 rounded"></div></div>
+        <div class="glass rounded-2xl p-4"><div class="skeleton h-32 rounded-xl mb-4"></div><div class="skeleton h-4 w-3/4 rounded mb-2"></div><div class="skeleton h-3 w-1/2 rounded"></div></div>
+    </div>
+
+    <div id="appsGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5 hidden"></div>
+
+    <div id="emptyState" class="hidden text-center py-20">
+        <i class="fa-solid fa-box-open text-6xl text-slate-700 mb-4"></i>
+        <h3 class="text-xl font-semibold text-slate-300 mb-2">No Apps Found</h3>
+        <p class="text-slate-500">Try a different search or category.</p>
+    </div>
+
+    <div id="errorState" class="hidden text-center py-20">
+        <i class="fa-solid fa-triangle-exclamation text-6xl text-red-500/50 mb-4"></i>
+        <h3 class="text-xl font-semibold text-red-400 mb-2">Failed to Load</h3>
+        <p class="text-slate-500" id="errorMsg">Check your connection and try again.</p>
+    </div>
+</section>
+
+<!-- ============== APP DETAIL MODAL ============== -->
+<div id="modal" class="fixed inset-0 modal-bg z-[100] hidden items-center justify-center p-4">
+    <div class="glass rounded-3xl max-w-2xl w-full max-h-[90vh] overflow-y-auto no-scrollbar fade-in" id="modalContent"></div>
+</div>
+
+<!-- ============== FOOTER ============== -->
+<footer class="glass border-t border-slate-800 mt-auto">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 text-center">
+        <div class="flex items-center justify-center gap-2 mb-3">
+            <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center">
+                <i class="fa-brands fa-android text-white text-sm"></i>
+            </div>
+            <span class="font-bold text-white">APK <span class="gradient-text">Store</span></span>
+        </div>
+        <p class="text-slate-500 text-sm">© 2025 APK Hub Store. All rights reserved. Downloaded apps are property of their respective owners.</p>
+    </div>
+</footer>
+
+<script>
+/* =========================================================
+   ⚙️ CONFIGURATION - اپنا CSV URL یہاں پیسٹ کریں
+   ========================================================= */
+const CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vRXj5BzCuzHr_Gvh-hF7pPF9SnhrmIJIoGL-HR9Sh_EplNjl1k4_WsujK4xkXzp0B3_ZhOpo59h9XuY/pub?output=csv";
+
+/* =========================================================
+   📊 APP STATE
+   ========================================================= */
+let allApps = [];
+let filteredApps = [];
+let currentCategory = 'all';
+
+/* =========================================================
+   🚀 INITIALIZE
+   ========================================================= */
+document.addEventListener('DOMContentLoaded', () => {
+    fetchApps();
+    document.getElementById('searchInput').addEventListener('input', (e) => {
+        applyFilters(e.target.value);
+    });
+});
+
+/* =========================================================
+   📥 FETCH CSV DATA - Fast (under 1 second)
+   ========================================================= */
+async function fetchApps() {
+    const startTime = performance.now();
+    try {
+        // Cache-busting + fetch with timeout
+        const url = CSV_URL + (CSV_URL.includes('?') ? '&' : '?') + 't=' + Date.now();
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 8000);
+
+        const response = await fetch(url, { signal: controller.signal });
+        clearTimeout(timeoutId);
+
+        if (!response.ok) throw new Error('HTTP ' + response.status);
+        const csvText = await response.text();
+
+        Papa.parse(csvText, {
+            header: true,
+            skipEmptyLines: true,
+            dynamicTyping: false,
+            complete: (results) => {
+                const elapsed = (performance.now() - startTime).toFixed(0);
+                console.log(`✅ Loaded in ${elapsed}ms`);
+                processData(results.data);
+            },
+            error: (err) => showError(err.message)
+        });
+    } catch (err) {
+        console.error('Fetch error:', err);
+        showError(err.message);
+    }
+}
+
+/* =========================================================
+   🔄 PROCESS DATA
+   ========================================================= */
+function processData(rows) {
+    // Column names normalize (case insensitive)
+    allApps = rows.map((row, index) => {
+        const clean = {};
+        Object.keys(row).forEach(k => {
+            clean[k.toLowerCase().trim().replace(/\s+/g, '_')] = (row[k] || '').toString().trim();
+        });
+        return {
+            id: index,
+            name: clean.name || clean.app_name || clean.title || 'Untitled App',
+            description: clean.description || clean.desc || 'No description available.',
+            icon: clean.icon || clean.icon_url || clean.logo || '',
+            screenshots: (clean.screenshots || clean.screenshot || clean.images || clean.image || '')
+                            .split(/[,\n|]/).map(s => s.trim()).filter(Boolean),
+            apk_url: clean.apk_url || clean.download_url || clean.apk || clean.link || '#',
+            version: clean.version || '1.0.0',
+            size: clean.size || clean.file_size || 'N/A',
+            category: clean.category || clean.type || 'App',
+            rating: clean.rating || clean.stars || '4.5',
+            downloads: clean.downloads || clean.download_count || '1K+',
+            updated: clean.updated || clean.date || clean.last_updated || '',
+            package: clean.package || clean.package_name || ''
+        };
+    }).filter(app => app.name && app.name !== 'Untitled App' || app.apk_url !== '#');
+
+    // Update stats
+    document.getElementById('totalApps').textContent = allApps.length;
+    const totalDl = allApps.reduce((sum, a) => sum + parseCount(a.downloads), 0);
+    document.getElementById('totalDownloads').textContent = formatCount(totalDl);
+
+    // Build categories
+    buildCategories();
+
+    // Render
+    filteredApps = [...allApps];
+    renderApps();
+}
+
+function parseCount(str) {
+    if (!str) return 0;
+    const s = str.toString().toUpperCase();
+    if (s.includes('M')) return parseFloat(s) * 1000000;
+    if (s.includes('K')) return parseFloat(s) * 1000;
+    return parseFloat(s) || 0;
+}
+function formatCount(n) {
+    if (n >= 1000000) return (n / 1000000).toFixed(1) + 'M';
+    if (n >= 1000) return (n / 1000).toFixed(1) + 'K';
+    return n.toString();
+}
+
+/* =========================================================
+   🏷️ BUILD CATEGORIES
+   ========================================================= */
+function buildCategories() {
+    const cats = [...new Set(allApps.map(a => a.category).filter(Boolean))];
+    const bar = document.getElementById('categoryBar');
+    bar.innerHTML = `
+        <button onclick="filterCategory('all')" data-cat="all" class="category-btn active whitespace-nowrap px-5 py-2 rounded-full bg-blue-600 text-white text-sm font-medium transition-all">
+            <i class="fa-solid fa-border-all mr-1"></i> All
+        </button>
+    `;
+    cats.forEach(cat => {
+        const btn = document.createElement('button');
+        btn.dataset.cat = cat;
+        btn.className = 'category-btn whitespace-nowrap px-5 py-2 rounded-full bg-slate-800 text-slate-300 text-sm font-medium hover:bg-slate-700 transition-all';
+        btn.innerHTML = `<i class="fa-solid fa-tag mr-1"></i> ${escapeHtml(cat)}`;
+        btn.onclick = () => filterCategory(cat);
+        bar.appendChild(btn);
+    });
+}
+
+/* =========================================================
+   🔍 FILTERS
+   ========================================================= */
+function filterCategory(cat) {
+    currentCategory = cat;
+    document.querySelectorAll('.category-btn').forEach(btn => {
+        if (btn.dataset.cat === cat) {
+            btn.className = 'category-btn active whitespace-nowrap px-5 py-2 rounded-full bg-blue-600 text-white text-sm font-medium transition-all';
+        } else {
+            btn.className = 'category-btn whitespace-nowrap px-5 py-2 rounded-full bg-slate-800 text-slate-300 text-sm font-medium hover:bg-slate-700 transition-all';
+        }
+    });
+    applyFilters(document.getElementById('searchInput').value);
+}
+
+function applyFilters(searchTerm) {
+    const q = searchTerm.toLowerCase().trim();
+    filteredApps = allApps.filter(app => {
+        const matchCat = currentCategory === 'all' || app.category === currentCategory;
+        const matchSearch = !q || 
+            app.name.toLowerCase().includes(q) || 
+            app.description.toLowerCase().includes(q) ||
+            app.category.toLowerCase().includes(q);
+        return matchCat && matchSearch;
+    });
+    renderApps();
+}
+
+/* =========================================================
+   🎨 RENDER APPS
+   ========================================================= */
+function renderApps() {
+    const grid = document.getElementById('appsGrid');
+    const skeleton = document.getElementById('loadingSkeleton');
+    const empty = document.getElementById('emptyState');
+    const error = document.getElementById('errorState');
+
+    skeleton.classList.add('hidden');
+    error.classList.add('hidden');
+
+    if (filteredApps.length === 0) {
+        grid.classList.add('hidden');
+        empty.classList.remove('hidden');
+        return;
+    }
+
+    empty.classList.add('hidden');
+    grid.classList.remove('hidden');
+    grid.innerHTML = filteredApps.map((app, i) => `
+        <div class="glass rounded-2xl p-4 card-hover cursor-pointer fade-in" style="animation-delay:${i * 30}ms" onclick="openModal(${app.id})">
+            <div class="relative mb-4">
+                <div class="h-32 rounded-xl bg-gradient-to-br from-slate-800 to-slate-900 flex items-center justify-center overflow-hidden border border-slate-700">
+                    ${app.icon 
+                        ? `<img src="${escapeAttr(app.icon)}" alt="${escapeAttr(app.name)}" class="w-full h-full object-cover" onerror="this.style.display='none'; this.parentElement.innerHTML='<i class=\\'fa-solid fa-mobile-screen-button text-5xl text-slate-600\\'></i>'">`
+                        : `<i class="fa-solid fa-mobile-screen-button text-5xl text-slate-600"></i>`}
+                </div>
+                <div class="absolute top-2 right-2 px-2 py-1 rounded-full bg-black/60 backdrop-blur text-xs text-yellow-400 font-medium">
+                    <i class="fa-solid fa-star"></i> ${escapeHtml(app.rating)}
+                </div>
+            </div>
+            <h3 class="font-semibold text-white text-base mb-1 truncate">${escapeHtml(app.name)}</h3>
+            <p class="text-slate-400 text-xs mb-3 line-clamp-2 h-8 overflow-hidden">${escapeHtml(app.description)}</p>
+            <div class="flex items-center justify-between text-xs text-slate-500 mb-3">
+                <span><i class="fa-solid fa-download mr-1"></i>${escapeHtml(app.downloads)}</span>
+                <span><i class="fa-solid fa-hard-drive mr-1"></i>${escapeHtml(app.size)}</span>
+            </div>
+            <button class="w-full py-2.5 rounded-xl bg-gradient-to-r from-blue-600 to-purple-600 text-white text-sm font-medium hover:opacity-90 transition-all shadow-lg shadow-blue-500/20">
+                <i class="fa-solid fa-download mr-2"></i>Download APK
+            </button>
+        </div>
+    `).join('');
+}
+
+/* =========================================================
+   🪟 MODAL
+   ========================================================= */
+function openModal(id) {
+    const app = allApps.find(a => a.id === id);
+    if (!app) return;
+
+    const modal = document.getElementById('modal');
+    const content = document.getElementById('modalContent');
+
+    const screenshotsHtml = app.screenshots.length > 0 
+        ? `<div class="mb-5">
+             <h4 class="text-sm font-semibold text-slate-300 mb-3"><i class="fa-solid fa-images mr-2 text-blue-400"></i>Screenshots</h4>
+             <div class="flex gap-3 overflow-x-auto no-scrollbar pb-2">
+                ${app.screenshots.map(s => `
+                    <img src="${escapeAttr(s)}" class="h-48 rounded-xl border border-slate-700 flex-shrink-0 object-cover" 
+                         onerror="this.style.display='none'">
+                `).join('')}
+             </div>
+           </div>` : '';
+
+    content.innerHTML = `
+        <div class="relative p-6 sm:p-8">
+            <button onclick="closeModal()" class="absolute top-4 right-4 w-9 h-9 rounded-full bg-slate-800 hover:bg-slate-700 flex items-center justify-center text-slate-300 transition-all">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+
+            <div class="flex gap-5 mb-6">
+                <div class="w-24 h-24 rounded-2xl bg-gradient-to-br from-slate-800 to-slate-900 flex items-center justify-center overflow-hidden border border-slate-700 flex-shrink-0">
+                    ${app.icon 
+                        ? `<img src="${escapeAttr(app.icon)}" class="w-full h-full object-cover" onerror="this.style.display='none'; this.parentElement.innerHTML='<i class=\\'fa-solid fa-mobile-screen-button text-4xl text-slate-600\\'></i>'">`
+                        : `<i class="fa-solid fa-mobile-screen-button text-4xl text-slate-600"></i>`}
+                </div>
+                <div class="flex-1 min-w-0">
+                    <h3 class="text-2xl font-bold text-white mb-1">${escapeHtml(app.name)}</h3>
+                    <p class="text-blue-400 text-sm mb-2">${escapeHtml(app.category)}</p>
+                    <div class="flex flex-wrap gap-3 text-xs text-slate-400">
+                        <span><i class="fa-solid fa-star text-yellow-400 mr-1"></i>${escapeHtml(app.rating)}</span>
+                        <span><i class="fa-solid fa-download mr-1"></i>${escapeHtml(app.downloads)}</span>
+                        <span><i class="fa-solid fa-hard-drive mr-1"></i>${escapeHtml(app.size)}</span>
+                        <span><i class="fa-solid fa-code-branch mr-1"></i>v${escapeHtml(app.version)}</span>
+                    </div>
+                </div>
+            </div>
+
+            ${screenshotsHtml}
+
+            <div class="mb-6">
+                <h4 class="text-sm font-semibold text-slate-300 mb-2"><i class="fa-solid fa-circle-info mr-2 text-blue-400"></i>Description</h4>
+                <p class="text-slate-400 text-sm leading-relaxed">${escapeHtml(app.description)}</p>
+            </div>
+
+            ${app.package ? `
+            <div class="mb-6 p-3 rounded-xl bg-slate-800/50 border border-slate-700">
+                <p class="text-xs text-slate-500 mb-1">Package Name</p>
+                <p class="text-sm text-slate-300 font-mono break-all">${escapeHtml(app.package)}</p>
+            </div>` : ''}
+
+            <a href="${escapeAttr(app.apk_url)}" target="_blank" rel="noopener" 
+               class="block w-full py-4 rounded-xl bg-gradient-to-r from-blue-600 to-purple-600 text-white font-semibold text-center hover:opacity-90 transition-all shadow-lg shadow-blue-500/30">
+                <i class="fa-solid fa-download mr-2"></i>Download APK (${escapeHtml(app.size)})
+            </a>
+
+            <p class="text-center text-xs text-slate-500 mt-4">
+                <i class="fa-solid fa-shield-halved mr-1 text-green-400"></i> Verified & Safe Download
+            </p>
+        </div>
+    `;
+
+    modal.classList.remove('hidden');
+    modal.classList.add('flex');
+    document.body.style.overflow = 'hidden';
+}
+
+function closeModal() {
+    const modal = document.getElementById('modal');
+    modal.classList.add('hidden');
+    modal.classList.remove('flex');
+    document.body.style.overflow = '';
+}
+
+document.getElementById('modal').addEventListener('click', (e) => {
+    if (e.target.id === 'modal') closeModal();
+});
+document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') closeModal();
+});
+
+/* =========================================================
+   🛠️ UTILITIES
+   ========================================================= */
+function escapeHtml(str) {
+    if (!str) return '';
+    return str.toString().replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+}
+function escapeAttr(str) {
+    if (!str) return '';
+    return str.toString().replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
+function showError(msg) {
+    document.getElementById('loadingSkeleton').classList.add('hidden');
+    document.getElementById('errorState').classList.remove('hidden');
+    document.getElementById('errorMsg').textContent = msg || 'Failed to load data.';
+}
+</script>
+</body>
+</html>
