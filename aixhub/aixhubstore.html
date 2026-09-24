@@ -436,6 +436,8 @@
 </footer>
 
 <script>
+// REPLACE 'YOUR_GOOGLE_APPS_SCRIPT_WEB_APP_URL' with your actual deployed script URL later
+const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyP2kbQzCghKcCFru5KcNbllYBBjLkWBc9UL__L-4ASHiDjoFIyAB44a4HSml_pHyN5/exec";
 const CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vRXj5BzCuzHr_Gvh-hF7pPF9SnhrmIJIoGL-HR9Sh_EplNjl1k4_WsujK4xkXzp0B3_ZhOpo59h9XuY/pub?output=csv";
 
 let allApps = [];
@@ -463,15 +465,18 @@ async function fetchApps() {
     const startTime = performance.now();
     try {
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 15000);
+        const timeoutId = setTimeout(() => controller.abort(), 20000); // Increased timeout to 20s
 
         let response;
         try {
             response = await fetch(CSV_URL, { signal: controller.signal });
         } catch (e) {
-            console.warn("Direct fetch failed, trying CORS proxy...", e);
-            const proxyUrl = "https://api.allorigins.win/raw?url=" + encodeURIComponent(CSV_URL);
-            response = await fetch(proxyUrl, { signal: controller.signal });
+            console.warn("Direct fetch failed.", e);
+            if (e.name === 'AbortError') {
+                throw new Error('Request timed out. Connection is too slow.');
+            } else {
+                throw new Error('Network error. Check connection or disable ad-blocker.');
+            }
         }
         
         clearTimeout(timeoutId);
@@ -488,7 +493,7 @@ async function fetchApps() {
                 console.log(`✅ Loaded in ${elapsed}ms`);
                 processData(results.data);
             },
-            error: (err) => showError(err.message)
+            error: (err) => showError("Parsing Error: " + err.message)
         });
     } catch (err) {
         console.error('Fetch error:', err);
@@ -697,12 +702,25 @@ function openModal(id) {
 
             <div id="downloadSection" class="relative mt-2 transition-opacity duration-300">
                 <div class="glow-effect top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none"></div>
-                <button onclick="startDownload('${escapeAttr(app.apk_url)}', '${escapeAttr(app.name)}', '${escapeAttr(app.size)}')"
+                <button onclick="startDownload('${escapeAttr(app.apk_url)}', '${escapeAttr(app.name)}', '${escapeAttr(app.size)}', '${escapeAttr(app.name)}')"
                    class="relative w-full py-4 rounded-xl bg-gradient-to-r from-blue-600 to-purple-600 text-white font-bold flex items-center justify-center gap-2 hover:opacity-90 transition-all shadow-[0_0_20px_rgba(59,130,246,0.4)] hover:shadow-[0_0_30px_rgba(59,130,246,0.6)] transform hover:-translate-y-1 overflow-hidden group">
                     <div class="absolute inset-0 bg-white opacity-0 group-hover:opacity-20 transition-opacity"></div>
                     <i class="fa-solid fa-download text-xl group-hover:scale-110 transition-transform"></i>
                     <span class="tracking-wide">Download APK (${escapeHtml(app.size)})</span>
                 </button>
+            </div>
+
+            <!-- Rating Section -->
+            <div class="mt-6 p-4 rounded-xl bg-slate-800/40 border border-slate-700/50 text-center fade-in">
+                <p class="text-sm font-medium text-slate-300 mb-2">Rate this App</p>
+                <div class="flex justify-center gap-2 text-2xl" id="ratingStars_${app.id}">
+                    <i class="fa-regular fa-star cursor-pointer hover:text-yellow-400 transition-colors text-slate-500" onclick="submitRating(${app.id}, '${escapeAttr(app.name)}', 1)"></i>
+                    <i class="fa-regular fa-star cursor-pointer hover:text-yellow-400 transition-colors text-slate-500" onclick="submitRating(${app.id}, '${escapeAttr(app.name)}', 2)"></i>
+                    <i class="fa-regular fa-star cursor-pointer hover:text-yellow-400 transition-colors text-slate-500" onclick="submitRating(${app.id}, '${escapeAttr(app.name)}', 3)"></i>
+                    <i class="fa-regular fa-star cursor-pointer hover:text-yellow-400 transition-colors text-slate-500" onclick="submitRating(${app.id}, '${escapeAttr(app.name)}', 4)"></i>
+                    <i class="fa-regular fa-star cursor-pointer hover:text-yellow-400 transition-colors text-slate-500" onclick="submitRating(${app.id}, '${escapeAttr(app.name)}', 5)"></i>
+                </div>
+                <p id="ratingMessage_${app.id}" class="text-xs text-green-400 mt-2 hidden"><i class="fa-solid fa-check-circle mr-1"></i>Thank you for rating!</p>
             </div>
 
             <p class="text-center text-xs text-slate-500 mt-4">
@@ -761,8 +779,41 @@ document.getElementById('lightbox').addEventListener('click', (e) => {
     if (e.target.id === 'lightbox') closeLightbox();
 });
 
-function startDownload(url, appName, appSize) {
+function submitRating(appId, appName, rating) {
+    const starsContainer = document.getElementById('ratingStars_' + appId);
+    const msg = document.getElementById('ratingMessage_' + appId);
+    
+    // Visually update stars
+    const stars = starsContainer.querySelectorAll('i');
+    stars.forEach((star, index) => {
+        if (index < rating) {
+            star.classList.replace('fa-regular', 'fa-solid');
+            star.classList.add('text-yellow-400');
+            star.classList.remove('text-slate-500');
+        } else {
+            star.classList.replace('fa-solid', 'fa-regular');
+            star.classList.remove('text-yellow-400');
+            star.classList.add('text-slate-500');
+        }
+    });
+
+    msg.classList.remove('hidden');
+
+    // Send data to Google Sheet
+    if (typeof SCRIPT_URL !== 'undefined' && SCRIPT_URL && SCRIPT_URL !== "YOUR_GOOGLE_APPS_SCRIPT_WEB_APP_URL") {
+        fetch(SCRIPT_URL + '?action=rate&name=' + encodeURIComponent(appName) + '&rating=' + rating, { method: 'GET', mode: 'no-cors' })
+            .catch(e => console.error("Rating save error", e));
+    }
+}
+
+function startDownload(url, appName, appSize, appIdentifier) {
     const section = document.getElementById('downloadSection');
+    
+    // Send data to Google Sheet
+    if (typeof SCRIPT_URL !== 'undefined' && SCRIPT_URL && SCRIPT_URL !== "YOUR_GOOGLE_APPS_SCRIPT_WEB_APP_URL") {
+        fetch(SCRIPT_URL + '?action=download&name=' + encodeURIComponent(appIdentifier), { method: 'GET', mode: 'no-cors' })
+            .catch(e => console.error("Download tracking failed", e));
+    }
     
     // Smooth transition to downloading state
     section.style.opacity = '0';
