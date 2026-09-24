@@ -462,11 +462,18 @@ document.addEventListener('DOMContentLoaded', () => {
 async function fetchApps() {
     const startTime = performance.now();
     try {
-        const url = CSV_URL + (CSV_URL.includes('?') ? '&' : '?') + 't=' + Date.now();
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 8000);
+        const timeoutId = setTimeout(() => controller.abort(), 15000);
 
-        const response = await fetch(url, { signal: controller.signal });
+        let response;
+        try {
+            response = await fetch(CSV_URL, { signal: controller.signal });
+        } catch (e) {
+            console.warn("Direct fetch failed, trying CORS proxy...", e);
+            const proxyUrl = "https://api.allorigins.win/raw?url=" + encodeURIComponent(CSV_URL);
+            response = await fetch(proxyUrl, { signal: controller.signal });
+        }
+        
         clearTimeout(timeoutId);
 
         if (!response.ok) throw new Error('HTTP ' + response.status);
