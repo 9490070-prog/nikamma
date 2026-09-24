@@ -501,6 +501,22 @@ async function fetchApps() {
     }
 }
 
+function getWorkingImageUrl(url) {
+    if (!url) return '';
+    const strUrl = url.toString().trim();
+    let id = '';
+    const fileMatch = strUrl.match(/\/file\/d\/([a-zA-Z0-9_-]+)/);
+    if (fileMatch) id = fileMatch[1];
+    else {
+        const idMatch = strUrl.match(/[?&]id=([a-zA-Z0-9_-]+)/);
+        if (idMatch) id = idMatch[1];
+    }
+    if (id) {
+        return `https://drive.google.com/thumbnail?id=${id}&sz=w1000`;
+    }
+    return strUrl;
+}
+
 function processData(rows) {
     allApps = rows.map((row, index) => {
         const clean = {};
@@ -511,9 +527,9 @@ function processData(rows) {
             id: index,
             name: clean.name || clean.app_name || clean.title || 'Untitled App',
             description: clean.description || clean.desc || 'No description available.',
-            icon: clean.icon || clean.icon_url || clean.logo || '',
+            icon: getWorkingImageUrl(clean.icon || clean.icon_url || clean.logo || ''),
             screenshots: (clean.screenshots || clean.screenshot || clean.images || clean.image || '')
-                            .split(/[,\n|]/).map(s => s.trim()).filter(Boolean),
+                            .split(/[,\n|]/).map(s => getWorkingImageUrl(s)).filter(Boolean),
             apk_url: clean.apk_url || clean.download_url || clean.apk || clean.link || '#',
             version: clean.version || '1.0.0',
             size: clean.size || clean.file_size || 'N/A',
