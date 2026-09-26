@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
+    <title>Ultimate Image Panel</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: sans-serif; }
+        
+        body { background-color: #f0f2f5; padding: 15px; transition: background-color 0.3s ease; }
+        
+        #listContainer { display: flex; flex-direction: column; gap: 15px; }
+        
+        /* 🟢 Card Default Settings */
+        .card {
+            background-color: #ffffff;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1); 
+            border: 1px solid #e0e0e0; 
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .card img {
+            width: 100%;
+            height: auto; 
+            max-height: 300px; 
+            object-fit: contain; 
+            display: block;
+            border-bottom: 1px solid #e0e0e0;
+        }
+        
+        /* 🟢 Default Padding */
+        .card-content { padding: 15px; }
+        .card h3 { margin-bottom: 5px; font-size: 18px; }
+        .card p { font-size: 14px; line-height: 1.4; }
+
+        #fullscreenModal {
+            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.95); z-index: 9999; justify-content: center;
+            align-items: center; flex-direction: column;
+        }
+        #fullscreenModal img { max-width: 100%; max-height: 100%; object-fit: contain; } 
+        
+        .close-btn {
+            position: absolute; top: 15px; right: 20px; color: white; font-size: 35px;
+            font-weight: bold; cursor: pointer; background: none; border: none; z-index: 10000;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="listContainer"></div>
+
+    <div id="fullscreenModal">
+        <span class="close-btn" onclick="closeModal()">×</span>
+        <img id="modalImage" src="" alt="Full Screen">
+    </div>
+
+    <script>
+        function setPageBackground(bgColor) {
+            if (bgColor && String(bgColor).trim() !== "") {
+                document.body.style.backgroundColor = bgColor;
+            }
+        }
+
+        // Google Drive link fixer
+        function fixGoogleDriveUrl(url) {
+            if (!url) return url;
+            if (url.includes("drive.google.com") || url.includes("drive.usercontent.google.com")) {
+                let idMatch = url.match(/[?&]id=([a-zA-Z0-9_-]+)/) || url.match(/\/d\/([a-zA-Z0-9_-]+)/);
+                if (idMatch && idMatch[1]) {
+                    return "https://lh3.googleusercontent.com/d/" + idMatch[1];
+                }
+            }
+            return url;
+        }
+
+        let itemCount = 0; 
+
+        function addToList(title, description, imageUrl, titleColor, titleSize, descColor, descSize, cardColor, elevation, cornerRadius, contentPadding) {
+            itemCount++; 
+            const currentIndex = itemCount; 
+
+            const listDiv = document.getElementById('listContainer');
+            const card = document.createElement('div');
+            card.className = 'card';
+            
+            if (cardColor && String(cardColor).trim() !== "") {
+                card.style.backgroundColor = cardColor;
+            }
+            
+            if (elevation && String(elevation).trim() !== "") {
+                let e = parseFloat(elevation);
+                if (!isNaN(e)) {
+                    card.style.boxShadow = `0 ${e}px ${e*2}px rgba(0,0,0,0.15)`;
+                }
+            }
+            
+            if (cornerRadius && String(cornerRadius).trim() !== "") {
+                card.style.borderRadius = isNaN(cornerRadius) ? cornerRadius : cornerRadius + "px";
+            }
+            
+            if (imageUrl && String(imageUrl).trim() !== "") {
+                imageUrl = fixGoogleDriveUrl(imageUrl);
+                
+                const img = document.createElement('img');
+                img.src = imageUrl;
+                img.alt = "Screenshot";
+                
+                // 🟢 Single vs Double Click Logic
+                let clickTimer = null;
+                img.onclick = function(e) {
+                    e.stopPropagation(); // Card ke event ko fauran chalne se roko
+                    
+                    if (clickTimer === null) {
+                        // Agar single click hai, to thoda wait karo (300ms) taaki pata chale dusri baar tap hota hai ya nahi
+                        clickTimer = setTimeout(function() {
+                            clickTimer = null;
+                            // 300ms guzar gaye aur double click nahi hua, matlab single click tha
+                            if (window.AppInventor) {
+                                window.AppInventor.setWebViewString(currentIndex.toString());
+                            } else {
+                                alert("Card Clicked! Index: " + currentIndex);
+                            }
+                        }, 300); 
+                    } else {
+                        // Agar 300ms se pehle dubara click ho gaya, iska matlab DOUBLE CLICK hai
+                        clearTimeout(clickTimer); // Single click wale event ko cancel kar do
+                        clickTimer = null;
+                        openFullscreen(imageUrl); // Fullscreen open karo
+                    }
+                };
+                card.appendChild(img);
+            }
+
+            if ((title && String(title).trim() !== "") || (description && String(description).trim() !== "")) {
+                const contentDiv = document.createElement('div');
+                contentDiv.className = 'card-content';
+                
+                if (contentPadding && String(contentPadding).trim() !== "") {
+                    contentDiv.style.padding = isNaN(contentPadding) ? contentPadding : contentPadding + "px";
+                }
+                
+                if (title && String(title).trim() !== "") {
+                    const h3 = document.createElement('h3');
+                    h3.innerText = title;
+                    if (titleColor && String(titleColor).trim() !== "") h3.style.color = titleColor;
+                    if (titleSize && String(titleSize).trim() !== "") h3.style.fontSize = isNaN(titleSize) ? titleSize : titleSize + "px";
+                    contentDiv.appendChild(h3);
+                }
+                
+                if (description && String(description).trim() !== "") {
+                    const p = document.createElement('p');
+                    p.innerText = description;
+                    if (descColor && String(descColor).trim() !== "") p.style.color = descColor;
+                    if (descSize && String(descSize).trim() !== "") p.style.fontSize = isNaN(descSize) ? descSize : descSize + "px";
+                    contentDiv.appendChild(p);
+                }
+                
+                card.appendChild(contentDiv);
+            }
+            
+            // 🟢 Baaki Card par Single Click (Text area, background etc.)
+            card.onclick = function() {
+                if (window.AppInventor) {
+                    window.AppInventor.setWebViewString(currentIndex.toString());
+                } else {
+                    alert("Card Clicked! Index: " + currentIndex);
+                }
+            };
+            
+            if (card.hasChildNodes()) {
+                listDiv.appendChild(card);
+            }
+        }
+
+        function openFullscreen(url) {
+            document.getElementById('modalImage').src = url;
+            document.getElementById('fullscreenModal').style.display = 'flex';
+        }
+
+        function closeModal() {
+            document.getElementById('fullscreenModal').style.display = 'none';
+            document.getElementById('modalImage').src = '';
+        }
+    </script>
+</body>
+</html>
