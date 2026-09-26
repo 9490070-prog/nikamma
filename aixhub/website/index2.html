@@ -126,6 +126,42 @@
     </div>
 
     <script>
+        let loadCheckTimeout = null;
+
+        function sendLoadedMessage() {
+            if (window.AppInventor) {
+                // Kodular event block ko trigger karega jab sab kuch load ho jaye
+                window.AppInventor.setWebViewString("SuccessfullyLoaded");
+            } else {
+                console.log("SuccessfullyLoaded");
+            }
+        }
+
+        function checkImagesAndNotify() {
+            const images = Array.from(document.querySelectorAll('.card img'));
+            let pendingImages = images.filter(img => !img.complete);
+            
+            if (pendingImages.length === 0) {
+                sendLoadedMessage();
+                return;
+            }
+
+            let loadedCount = 0;
+            const totalPending = pendingImages.length;
+            
+            function onImageLoad() {
+                loadedCount++;
+                if (loadedCount === totalPending) {
+                    sendLoadedMessage();
+                }
+            }
+
+            pendingImages.forEach(img => {
+                img.addEventListener('load', onImageLoad);
+                img.addEventListener('error', onImageLoad); // Error ko bhi handle karein taake atkay nahi
+            });
+        }
+
         function setPageBackground(bgColor) {
             if (bgColor && String(bgColor).trim() !== "") {
                 document.body.style.backgroundColor = bgColor;
@@ -251,6 +287,10 @@
             if (card.hasChildNodes()) {
                 listDiv.appendChild(card);
             }
+            
+            // 🟢 Wait for Kodular loop to finish, then check images
+            if (loadCheckTimeout) clearTimeout(loadCheckTimeout);
+            loadCheckTimeout = setTimeout(checkImagesAndNotify, 300);
         }
 
         // Handle Fullscreen UI
