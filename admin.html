@@ -1,0 +1,741 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cloudflare D1 Admin Dashboard</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+  body { font-family: 'Inter', sans-serif; background-color: #f4f7fe; }
+  .sidebar-item { transition: all 0.3s ease; margin-bottom: 0.5rem; }
+  .sidebar-item:hover, .sidebar-item.active { background: linear-gradient(135deg, #4318FF 0%, #868CFF 100%); color: white; box-shadow: 0 4px 15px rgba(67, 24, 255, 0.3); transform: translateX(5px); }
+  .custom-scrollbar::-webkit-scrollbar { height: 6px; width: 6px; }
+  .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+  .loader { border: 4px solid #f3f3f3; border-top: 4px solid #4318FF; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin: 0 auto; }
+  @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }
+  .animate-fade-in { animation: fadeIn 0.5s cubic-bezier(0.4, 0, 0.2, 1) forwards; opacity: 0; }
+  .hover-scale { transition: transform 0.3s, box-shadow 0.3s; }
+  .hover-scale:hover { transform: translateY(-4px) scale(1.01); box-shadow: 0 15px 30px -5px rgba(67, 24, 255, 0.25); }
+  .glass-card { background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(24px); border-radius: 24px; box-shadow: 0px 15px 35px rgba(0,0,0,0.05); border: 1px solid rgba(255,255,255,1); }
+</style>
+</head>
+<body class="flex h-screen overflow-hidden text-gray-800 bg-gradient-to-br from-[#f4f7fe] via-indigo-50/30 to-purple-50/40 relative">
+
+<!-- API CONFIG MODAL -->
+<div id="configModal" class="hidden fixed inset-0 flex items-center justify-center bg-black/60 z-[200] backdrop-blur-sm">
+  <div class="glass-card p-8 max-w-md w-full mx-4 shadow-2xl">
+    <h3 class="text-xl font-black text-gray-800 mb-4"><i class="fa-solid fa-gear text-[#4318FF] mr-2"></i>Cloudflare Worker Config</h3>
+    <div class="space-y-4">
+      <div>
+        <label class="block text-xs font-bold text-gray-700 mb-1">Worker URL</label>
+        <input type="text" id="conf-workerUrl" class="w-full p-3 border border-gray-200 rounded-lg bg-gray-50 text-sm" placeholder="https://aixhub.nikamma4k.workers.dev/">
+      </div>
+      <div class="flex justify-end space-x-3 pt-4">
+        <button onclick="closeConfig()" class="px-5 py-2.5 text-sm text-gray-600 font-bold hover:bg-gray-100 rounded-lg">Cancel</button>
+        <button onclick="saveConfig()" class="px-5 py-2.5 text-sm text-white font-bold bg-[#4318FF] hover:bg-[#3311cc] rounded-lg">Save</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- LOGIN SCREEN -->
+<div id="login-container" class="fixed inset-0 flex items-center justify-center bg-gradient-to-br from-[#0f172a] via-[#1e1b4b] to-[#312e81] z-[100]">
+  <div class="absolute top-4 right-4 z-50">
+    <button onclick="openConfig()" class="text-white/70 hover:text-white transition p-3 bg-white/10 rounded-full hover:bg-white/20 backdrop-blur-md" title="Config">
+      <i class="fa-solid fa-gear text-xl"></i>
+    </button>
+  </div>
+  <div class="absolute inset-0 opacity-20" style="background-image: radial-gradient(#4318FF 1px, transparent 1px); background-size: 30px 30px;"></div>
+  <div class="glass-card p-10 md:p-12 max-w-[400px] w-full mx-4 relative z-10 shadow-2xl flex flex-col items-center animate-fade-in" style="background: rgba(255,255,255,0.9);">
+    <div class="bg-gradient-to-br from-[#4318FF] to-[#868CFF] p-4 rounded-2xl shadow-xl shadow-indigo-500/30 mb-6 text-white">
+      <i class="fa-solid fa-cloud text-4xl"></i>
+    </div>
+    <h2 class="text-3xl font-black text-gray-800 mb-1">D1 Admin</h2>
+    <p class="text-sm font-bold text-gray-400 mb-8">Cloudflare D1 Dashboard</p>
+    <div class="w-full space-y-5">
+      <div>
+        <label class="block text-[10px] font-black text-indigo-500 mb-2 uppercase tracking-widest">Email</label>
+        <div class="relative group">
+          <span class="absolute inset-y-0 left-0 flex items-center pl-4 text-gray-400"><i class="fa-solid fa-envelope"></i></span>
+          <input type="email" id="loginEmail" class="w-full pl-12 pr-4 py-3.5 border border-gray-200 rounded-xl bg-gray-50 focus:bg-white focus:border-[#4318FF] focus:ring-4 focus:ring-[#4318FF]/20 transition font-bold" placeholder="admin@example.com">
+        </div>
+      </div>
+      <div>
+        <label class="block text-[10px] font-black text-indigo-500 mb-2 uppercase tracking-widest">Password</label>
+        <div class="relative group">
+          <span class="absolute inset-y-0 left-0 flex items-center pl-4 text-gray-400"><i class="fa-solid fa-lock"></i></span>
+          <input type="password" id="loginPassword" class="w-full pl-12 pr-4 py-3.5 border border-gray-200 rounded-xl bg-gray-50 focus:bg-white focus:border-[#4318FF] focus:ring-4 focus:ring-[#4318FF]/20 transition font-bold" placeholder="••••••••" onkeypress="if(event.keyCode===13) handleLogin()">
+        </div>
+      </div>
+      <button onclick="handleLogin()" id="loginBtn" class="w-full mt-6 bg-gradient-to-r from-[#4318FF] to-[#868CFF] text-white font-black py-4 px-6 rounded-xl shadow-lg transition transform hover:-translate-y-1 flex justify-center items-center">
+        <i class="fa-solid fa-arrow-right-to-bracket mr-2"></i> Secure Login
+      </button>
+      <div id="loginLoader" class="hidden flex justify-center mt-4">
+        <div class="loader border-[#4318FF] h-8 w-8 border-4"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MAIN APP -->
+<div id="app-container" class="hidden flex h-screen w-full relative z-10">
+  <div id="sidebar-overlay" onclick="toggleSidebar()" class="fixed inset-0 bg-gray-900 bg-opacity-50 z-20 hidden md:hidden"></div>
+  <aside id="sidebar" class="w-64 bg-white/80 backdrop-blur-2xl shadow-xl flex flex-col z-30 fixed inset-y-0 left-0 transform -translate-x-full md:relative md:translate-x-0 transition-transform duration-300 border-r border-gray-100">
+    <div class="h-20 flex items-center justify-between px-6 border-b border-gray-50">
+      <h1 class="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-[#4318FF] to-[#868CFF]">
+        <i class="fa-solid fa-cloud text-[#4318FF] mr-2"></i>D1 Admin
+      </h1>
+      <button onclick="toggleSidebar()" class="md:hidden text-gray-400 text-xl"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+    <nav class="flex-1 p-4 space-y-3 mt-4 overflow-y-auto custom-scrollbar">
+      <button onclick="switchView('dashboard')" id="nav-dashboard" class="sidebar-item active w-full flex items-center p-3.5 rounded-xl text-gray-500 font-semibold"><i class="fa-solid fa-chart-pie w-6"></i> Dashboard</button>
+      <button onclick="switchView('payments')" id="nav-payments" class="sidebar-item w-full flex items-center p-3.5 rounded-xl text-gray-500 font-semibold"><i class="fa-solid fa-credit-card w-6"></i> Payments</button>
+      <button onclick="openAddForm()" id="nav-addForm" class="sidebar-item w-full flex items-center p-3.5 rounded-xl text-gray-500 font-semibold"><i class="fa-solid fa-circle-plus w-6"></i> Add New App</button>
+      <button onclick="switchView('settings')" id="nav-settings" class="sidebar-item w-full flex items-center p-3.5 rounded-xl text-gray-500 font-semibold"><i class="fa-solid fa-gear w-6"></i> API Settings</button>
+      <div class="mt-8 mb-4 border-t border-gray-100 pt-4">
+        <button onclick="handleLogout()" class="sidebar-item w-full flex items-center p-3.5 rounded-xl text-rose-500 hover:text-white hover:bg-rose-500 font-black border border-rose-100">
+          <i class="fa-solid fa-power-off w-6 mr-2"></i> Logout
+        </button>
+      </div>
+    </nav>
+  </aside>
+
+  <div class="flex-1 flex flex-col h-screen overflow-hidden w-full">
+    <header class="h-20 bg-white/60 backdrop-blur-2xl flex items-center justify-between px-4 md:px-8 z-10 sticky top-0 border-b border-gray-100">
+      <div class="flex items-center flex-1 max-w-2xl">
+        <button onclick="toggleSidebar()" class="md:hidden mr-4 text-gray-600"><i class="fa-solid fa-bars text-xl"></i></button>
+        <div id="top-search-container" class="flex-1">
+          <div class="relative">
+            <span class="absolute inset-y-0 left-0 flex items-center pl-4 text-gray-400"><i class="fa-solid fa-magnifying-glass"></i></span>
+            <input type="text" id="searchInput" onkeyup="filterTable()" class="w-full pl-12 pr-4 py-3 border border-gray-100 rounded-full bg-white/80 focus:bg-white focus:ring-4 focus:ring-[#4318FF]/20 transition" placeholder="Search apps...">
+          </div>
+        </div>
+      </div>
+      <div class="flex items-center ml-4 space-x-4">
+        <button onclick="fetchData()" id="refreshBtn" class="bg-white hover:bg-gray-50 text-gray-600 shadow-sm border border-gray-100 p-3 rounded-full"><i class="fa-solid fa-rotate-right"></i></button>
+        <button onclick="openAddForm()" id="topAddBtn" class="bg-gradient-to-r from-[#4318FF] to-[#868CFF] text-white px-6 py-3 rounded-full font-bold shadow-lg flex items-center">
+          <i class="fa-solid fa-plus md:mr-2"></i><span class="hidden md:inline">Add Item</span>
+        </button>
+      </div>
+    </header>
+
+    <main class="flex-1 overflow-x-hidden overflow-y-auto p-4 md:p-8 custom-scrollbar">
+      <div class="max-w-7xl mx-auto w-full">
+
+        <!-- SETTINGS -->
+        <div id="view-settings" class="hidden max-w-2xl mx-auto glass-card">
+          <div class="bg-gradient-to-r from-gray-800 to-gray-900 text-white p-6 rounded-t-3xl">
+            <h2 class="text-xl font-bold"><i class="fa-solid fa-shield-halved mr-2"></i>Worker Configuration</h2>
+          </div>
+          <div class="p-8 space-y-6">
+            <div>
+              <label class="block text-sm font-bold text-gray-700 mb-2">Cloudflare Worker URL</label>
+              <input type="url" id="conf-workerUrl2" class="w-full p-3 border border-gray-200 rounded-xl bg-[#f4f7fe]" placeholder="https://your-worker.workers.dev">
+            </div>
+            <button onclick="saveConfigFromSettings()" class="bg-[#4318FF] hover:bg-[#3311cc] text-white font-bold py-3 px-6 rounded-xl shadow-lg w-full">
+              Save Configuration <i class="fa-solid fa-arrow-right ml-2"></i>
+            </button>
+          </div>
+        </div>
+
+        <!-- DASHBOARD -->
+        <div id="view-dashboard" class="hidden">
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-8">
+            <div class="p-7 flex items-center justify-between rounded-3xl bg-gradient-to-br from-[#4318FF] to-[#868CFF] text-white shadow-xl hover-scale">
+              <div><p class="text-sm font-bold text-indigo-100 uppercase mb-1">Total Apps</p><h3 class="text-4xl font-black" id="stat-total">0</h3></div>
+              <div class="p-4 rounded-2xl bg-white/20"><i class="fa-solid fa-box-open text-3xl"></i></div>
+            </div>
+            <div class="p-7 flex items-center justify-between rounded-3xl bg-gradient-to-br from-[#00b09b] to-[#96c93d] text-white shadow-xl hover-scale">
+              <div><p class="text-sm font-bold text-green-100 uppercase mb-1">Free Apps</p><h3 class="text-4xl font-black" id="stat-free">0</h3></div>
+              <div class="p-4 rounded-2xl bg-white/20"><i class="fa-solid fa-gift text-3xl"></i></div>
+            </div>
+            <div class="p-7 flex items-center justify-between rounded-3xl bg-gradient-to-br from-[#f12711] to-[#f5af19] text-white shadow-xl hover-scale">
+              <div><p class="text-sm font-bold text-orange-100 uppercase mb-1">Paid Apps</p><h3 class="text-4xl font-black" id="stat-paid">0</h3></div>
+              <div class="p-4 rounded-2xl bg-white/20"><i class="fa-solid fa-gem text-3xl"></i></div>
+            </div>
+          </div>
+
+          <div class="glass-card overflow-hidden">
+            <div class="p-6 border-b border-gray-100"><h2 class="text-xl font-black text-[#2B3674]">Application Inventory</h2></div>
+            <div id="tableLoader" class="py-16 text-center text-gray-400 hidden">
+              <div class="loader mb-4 border-[#4318FF]"></div>
+              <p class="font-medium">Loading from Cloudflare D1...</p>
+            </div>
+            <div class="overflow-x-auto custom-scrollbar pb-4 w-full">
+              <table class="w-full text-sm text-left whitespace-nowrap min-w-max">
+                <thead class="text-xs text-[#4318FF] font-black uppercase bg-gradient-to-r from-indigo-50/80 to-purple-50/80 border-b border-indigo-100" id="tableHeader"></thead>
+                <tbody id="tableBody" class="divide-y divide-gray-100"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- ADD/EDIT FORM -->
+        <div id="view-addForm" class="hidden">
+          <div class="glass-card p-8 max-w-6xl mx-auto">
+            <div class="border-b border-gray-100 pb-5 mb-8 flex justify-between items-center">
+              <h2 id="formTitle" class="text-2xl font-black text-[#2B3674]">Publish New Application</h2>
+              <button onclick="switchView('dashboard')" class="bg-gray-100 hover:bg-gray-200 text-gray-600 px-4 py-2 rounded-lg font-bold"><i class="fa-solid fa-xmark mr-2"></i> Cancel</button>
+            </div>
+            <form id="adminForm" class="space-y-8">
+              <input type="hidden" id="editRowId" value="">
+              <div>
+                <h3 class="text-xs uppercase font-bold text-[#4318FF] tracking-widest mb-4">Basic Info</h3>
+                <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6">
+                  <div><label class="block text-xs font-bold text-gray-500 mb-2">ID (A)</label><input type="text" id="f_id" class="w-full p-3 border rounded-xl bg-[#f4f7fe]" required></div>
+                  <div><label class="block text-xs font-bold text-gray-500 mb-2">Name (B)</label><input type="text" id="f_name" class="w-full p-3 border rounded-xl bg-[#f4f7fe]" required></div>
+                  <div><label class="block text-xs font-bold text-gray-500 mb-2">Author (C)</label><input type="text" id="f_author" class="w-full p-3 border rounded-xl bg-[#f4f7fe]" required></div>
+                  <div><label class="block text-xs font-bold text-gray-500 mb-2">Version (D)</label><input type="text" id="f_version" class="w-full p-3 border rounded-xl bg-[#f4f7fe]" required></div>
+                  <div class="md:col-span-2"><label class="block text-xs font-bold text-gray-500 mb-2">Description (E)</label><textarea id="f_description" rows="2" class="w-full p-3 border rounded-xl bg-[#f4f7fe]"></textarea></div>
+                  <div><label class="block text-xs font-bold text-gray-500 mb-2">Platforms (G)</label><input type="text" id="f_platforms" class="w-full p-3 border rounded-xl bg-[#f4f7fe]"></div>
+                  <div><label class="block text-xs font-bold text-gray-500 mb-2">Category (H)</label><input type="text" id="f_category" class="w-full p-3 border rounded-xl bg-[#f4f7fe]" required></div>
+                </div>
+              </div>
+
+              <div class="bg-[#4318FF]/5 p-6 rounded-2xl border border-[#4318FF]/20">
+                <h3 class="text-xs uppercase font-bold text-[#4318FF] tracking-widest mb-4"><i class="fa-solid fa-list mr-1"></i> Dynamic Lists & Links</h3>
+                <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+                  <div>
+                    <label class="block text-xs font-bold text-gray-500 mb-2">Title Colors (Col F)</label>
+                    <div class="flex items-center space-x-2">
+                      <input type="color" id="colorPicker" onchange="let el=document.getElementById('f_TitleColors'); el.value += (el.value ? ',' : '') + this.value;" class="w-10 h-10 border-0 p-0 rounded cursor-pointer">
+                      <input type="text" id="f_TitleColors" class="w-full p-3 border rounded-xl bg-white" placeholder="#0000FF, #FF0000">
+                    </div>
+                  </div>
+                  <div><label class="block text-xs font-bold text-gray-500 mb-2">Download Apk URL (Col S)</label><input type="text" id="f_DownloadApkURL" class="w-full p-3 border rounded-xl bg-white"></div>
+                  <div><label class="block text-xs font-bold text-gray-500 mb-2">Aix Title List (Col V)</label><input type="text" id="f_AixTitleList" class="w-full p-3 border rounded-xl bg-white"></div>
+                  <div><label class="block text-xs font-bold text-gray-500 mb-2">Aix Detail List (Col Y)</label><input type="text" id="f_AixDetailList" class="w-full p-3 border rounded-xl bg-white"></div>
+                  <div class="md:col-span-2"><label class="block text-xs font-bold text-gray-500 mb-2">Aix ScreenShot List (Col Z)</label><input type="text" id="f_AixScreenShotList" class="w-full p-3 border rounded-xl bg-white"></div>
+                </div>
+              </div>
+
+              <div class="bg-[#f4f7fe]/50 p-6 rounded-2xl border border-gray-100">
+                <h3 class="text-xs uppercase font-bold text-[#4318FF] tracking-widest mb-4">Pricing & Stats</h3>
+                <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6">
+                  <div class="flex items-center space-x-3 pt-6 bg-white p-3 rounded-xl border"><input type="checkbox" id="f_isFree" class="w-5 h-5"><label class="text-sm font-black" for="f_isFree">Is Free App? (Col I)</label></div>
+                  <div><label class="block text-xs font-bold text-gray-500 mb-2">Price (J)</label><input type="number" step="0.01" id="f_price" value="0" class="w-full p-3 border rounded-xl"></div>
+                  <div><label class="block text-xs font-bold text-gray-500 mb-2">Currency (K)</label><input type="text" id="f_currency" value="USD" class="w-full p-3 border rounded-xl"></div>
+                  <div><label class="block text-xs font-bold text-gray-500 mb-2">Discount (%) (T)</label><input type="number" id="f_discount" value="0" class="w-full p-3 border rounded-xl"></div>
+                  <div><label class="block text-xs font-bold text-gray-500 mb-2">Downloads (L)</label><input type="number" id="f_downloadCount" value="0" class="w-full p-3 border rounded-xl"></div>
+                  <div><label class="block text-xs font-bold text-gray-500 mb-2">Rating (M)</label><input type="number" step="0.1" id="f_rating" value="5.0" class="w-full p-3 border rounded-xl"></div>
+                  <div><label class="block text-xs font-bold text-gray-500 mb-2">Reviews (N)</label><input type="number" id="f_reviewCount" value="0" class="w-full p-3 border rounded-xl"></div>
+                  <div class="flex items-center space-x-3 pt-6 bg-white p-3 rounded-xl border"><input type="checkbox" id="f_isNew" class="w-5 h-5"><label class="text-sm font-black" for="f_isNew">Mark as New (U)</label></div>
+                </div>
+              </div>
+
+              <div>
+                <h3 class="text-xs uppercase font-bold text-[#4318FF] tracking-widest mb-4">URLs, Dates & Media</h3>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  <div><label class="block text-xs font-bold text-gray-500 mb-2">AIA URL (O)</label><input type="url" id="f_aiaTestFileUrl" class="w-full p-3 border rounded-xl bg-[#f4f7fe]"></div>
+                  <div><label class="block text-xs font-bold text-gray-500 mb-2">Download URL (P)</label><input type="url" id="f_downloadUrl" class="w-full p-3 border rounded-xl bg-[#f4f7fe]"></div>
+                  <div><label class="block text-xs font-bold text-gray-500 mb-2">Buy URL (Q)</label><input type="url" id="f_buyUrl" class="w-full p-3 border rounded-xl bg-[#f4f7fe]"></div>
+                  <div class="md:col-span-2">
+                    <label class="block text-xs font-bold text-gray-500 mb-2">iconEmojiSlider (Col R)</label>
+                    <div class="flex space-x-4">
+                      <div class="border-2 border-dashed border-[#4318FF]/30 rounded-xl p-4 text-center cursor-pointer relative bg-white flex-1">
+                        <input type="file" id="iconFile" accept="image/*" class="absolute inset-0 opacity-0 cursor-pointer" onchange="compressImage(event)">
+                        <i class="fa-solid fa-cloud-arrow-up text-3xl text-[#4318FF]/40 mb-1"></i>
+                        <p class="text-xs font-bold text-gray-500">Upload Image (Base64)</p>
+                      </div>
+                      <div class="flex-1">
+                        <input type="text" id="f_iconEmojiSlider" class="w-full p-3 border rounded-xl text-center text-xl" placeholder="🎨">
+                        <div class="flex flex-wrap gap-2 justify-center mt-2" id="emojiPalette">
+                          <button type="button" onclick="selectEmoji('🎨')" class="hover:bg-gray-100 p-1 rounded text-lg">🎨</button>
+                          <button type="button" onclick="selectEmoji('🔥')" class="hover:bg-gray-100 p-1 rounded text-lg">🔥</button>
+                          <button type="button" onclick="selectEmoji('⭐')" class="hover:bg-gray-100 p-1 rounded text-lg">⭐</button>
+                          <button type="button" onclick="selectEmoji('🚀')" class="hover:bg-gray-100 p-1 rounded text-lg">🚀</button>
+                          <button type="button" onclick="selectEmoji('📱')" class="hover:bg-gray-100 p-1 rounded text-lg">📱</button>
+                          <button type="button" onclick="selectEmoji('🎮')" class="hover:bg-gray-100 p-1 rounded text-lg">🎮</button>
+                        </div>
+                      </div>
+                    </div>
+                    <input type="hidden" id="f_imageBase64">
+                    <p id="compressLog" class="text-xs font-bold mt-2"></p>
+                  </div>
+                  <div class="space-y-4">
+                    <div><label class="block text-xs font-bold text-gray-500 mb-2">publish date (W)</label><input type="date" id="f_publishDate" class="w-full p-3 border rounded-xl"></div>
+                    <div><label class="block text-xs font-bold text-gray-500 mb-2">update date (X)</label><input type="date" id="f_updateDate" class="w-full p-3 border rounded-xl"></div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="pt-6 flex justify-end items-center border-t">
+                <div id="formLoader" class="loader mr-4 border-[#4318FF] hidden"></div>
+                <button type="submit" id="submitFormBtn" class="bg-gradient-to-r from-[#4318FF] to-[#868CFF] text-white font-bold py-4 px-10 rounded-xl shadow-xl"><i class="fa-solid fa-paper-plane mr-2"></i> Sync to D1</button>
+              </div>
+            </form>
+          </div>
+        </div>
+
+        <!-- PAYMENTS -->
+        <div id="view-payments" class="hidden">
+          <div class="glass-card overflow-hidden">
+            <div class="p-6 border-b flex justify-between items-center">
+              <h2 class="text-xl font-black text-[#2B3674]">Payments Management</h2>
+              <button onclick="loadPaymentsData()" class="bg-gradient-to-r from-[#4318FF] to-[#868CFF] text-white px-4 py-2 rounded-lg font-bold text-sm"><i class="fa-solid fa-rotate-right mr-2"></i> Refresh</button>
+            </div>
+            <div id="paymentsLoader" class="py-16 text-center hidden"><div class="loader mb-4 border-[#4318FF]"></div><p class="font-medium">Loading...</p></div>
+            <div class="overflow-x-auto custom-scrollbar pb-4">
+              <table class="w-full text-sm text-left whitespace-nowrap min-w-max">
+                <thead class="text-xs text-[#4318FF] font-black uppercase bg-gradient-to-r from-indigo-50/80 to-purple-50/80 border-b">
+                  <tr>
+                    <th class="px-4 py-4">Order ID</th>
+                    <th class="px-4 py-4">Date</th>
+                    <th class="px-4 py-4">User Info</th>
+                    <th class="px-4 py-4">Item</th>
+                    <th class="px-4 py-4">Amount</th>
+                    <th class="px-4 py-4">Screenshot</th>
+                    <th class="px-4 py-4">Status</th>
+                    <th class="px-4 py-4 text-right">Action</th>
+                  </tr>
+                </thead>
+                <tbody id="paymentsTableBody" class="divide-y divide-gray-100"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </main>
+  </div>
+</div>
+
+<script>
+let CONFIG = { workerUrl: localStorage.getItem('cf_workerUrl') || '' };
+let tableDataCache = [];
+let paymentsCache = [];
+let isSubmitting = false;
+
+window.onload = () => {
+  if (localStorage.getItem('cf_adminSession') === 'active') {
+    showApp();
+  }
+};
+
+function showApp() {
+  document.getElementById('login-container').classList.add('hidden');
+  document.getElementById('app-container').classList.remove('hidden');
+  document.getElementById('app-container').classList.add('flex');
+  document.getElementById('conf-workerUrl2').value = CONFIG.workerUrl;
+  switchView('dashboard');
+}
+
+function openConfig() {
+  document.getElementById('conf-workerUrl').value = CONFIG.workerUrl;
+  document.getElementById('configModal').classList.remove('hidden');
+}
+function closeConfig() { document.getElementById('configModal').classList.add('hidden'); }
+function saveConfig() {
+  const url = document.getElementById('conf-workerUrl').value.trim();
+  localStorage.setItem('cf_workerUrl', url);
+  CONFIG.workerUrl = url;
+  closeConfig();
+  Swal.fire({title:'Saved', icon:'success', timer:1000, showConfirmButton:false});
+}
+function saveConfigFromSettings() {
+  const url = document.getElementById('conf-workerUrl2').value.trim();
+  localStorage.setItem('cf_workerUrl', url);
+  CONFIG.workerUrl = url;
+  Swal.fire({title:'Saved', icon:'success', timer:1000, showConfirmButton:false});
+}
+
+function toggleSidebar() {
+  document.getElementById('sidebar').classList.toggle('-translate-x-full');
+  document.getElementById('sidebar-overlay').classList.toggle('hidden');
+}
+
+function switchView(name) {
+  ['settings','dashboard','addForm','payments'].forEach(v => document.getElementById('view-'+v).classList.add('hidden'));
+  document.querySelectorAll('.sidebar-item').forEach(el => el.classList.remove('active'));
+  document.getElementById('view-'+name).classList.remove('hidden');
+  if(document.getElementById('nav-'+name)) document.getElementById('nav-'+name).classList.add('active');
+
+  const searchBar = document.getElementById('top-search-container');
+  const topAddBtn = document.getElementById('topAddBtn');
+  const refreshBtn = document.getElementById('refreshBtn');
+
+  if (name === 'dashboard') {
+    searchBar.classList.remove('hidden'); topAddBtn.classList.remove('hidden'); refreshBtn.classList.remove('hidden');
+    if (tableDataCache.length === 0) fetchData(); else renderTable(tableDataCache);
+  } else if (name === 'payments') {
+    searchBar.classList.add('hidden'); topAddBtn.classList.add('hidden'); refreshBtn.classList.add('hidden');
+    loadPaymentsData();
+  } else {
+    searchBar.classList.add('hidden'); topAddBtn.classList.add('hidden'); refreshBtn.classList.add('hidden');
+  }
+  if(window.innerWidth < 768) {
+    document.getElementById('sidebar').classList.add('-translate-x-full');
+    document.getElementById('sidebar-overlay').classList.add('hidden');
+  }
+}
+
+// ---------------- LOGIN ----------------
+async function handleLogin() {
+  const email = document.getElementById('loginEmail').value.trim();
+  const password = document.getElementById('loginPassword').value.trim();
+  if (!email || !password) { Swal.fire('Error','Enter email and password','error'); return; }
+  if (!CONFIG.workerUrl) { Swal.fire('Error','Set Worker URL first (gear icon top right)','error'); return; }
+
+  const btn = document.getElementById('loginBtn');
+  const loader = document.getElementById('loginLoader');
+  btn.classList.add('hidden'); loader.classList.remove('hidden'); loader.classList.add('flex');
+
+  try {
+    const res = await fetch(CONFIG.workerUrl, {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ action: 'admin_login', email, password })
+    });
+    const data = await res.json();
+    if (data.success) {
+      localStorage.setItem('cf_adminSession', 'active');
+      localStorage.setItem('cf_adminUser', JSON.stringify(data.user));
+      Swal.fire({title:'Access Granted', icon:'success', timer:1000, showConfirmButton:false}).then(showApp);
+    } else {
+      loginError(data.message || 'Invalid credentials');
+    }
+  } catch(e) { loginError('Network error: ' + e.message); }
+}
+
+function loginError(msg) {
+  document.getElementById('loginBtn').classList.remove('hidden');
+  document.getElementById('loginLoader').classList.add('hidden');
+  document.getElementById('loginLoader').classList.remove('flex');
+  Swal.fire('Access Denied', msg, 'error');
+}
+
+function handleLogout() {
+  Swal.fire({title:'Logout?', icon:'warning', showCancelButton:true, confirmButtonColor:'#ef4444', confirmButtonText:'Yes, Logout'}).then(r => {
+    if (r.isConfirmed) {
+      localStorage.removeItem('cf_adminSession');
+      localStorage.removeItem('cf_adminUser');
+      location.reload();
+    }
+  });
+}
+
+// ---------------- API CALL ----------------
+async function callWorker(action, data = {}) {
+  if (!CONFIG.workerUrl) throw new Error("Worker URL not set");
+  const res = await fetch(CONFIG.workerUrl, {
+    method: 'POST',
+    headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({ action, ...data })
+  });
+  return res.json();
+}
+
+// ---------------- FETCH DATA ----------------
+async function fetchData() {
+  document.getElementById('tableBody').innerHTML = '';
+  document.getElementById('tableHeader').innerHTML = '';
+  document.getElementById('tableLoader').style.display = 'block';
+  try {
+    const res = await callWorker('admin_fetch_all');
+    document.getElementById('tableLoader').style.display = 'none';
+    if (res.success) {
+      tableDataCache = res.extensions || [];
+      paymentsCache = res.payments || [];
+      renderTable(tableDataCache);
+    } else {
+      Swal.fire('Error', res.message, 'error');
+    }
+  } catch(e) {
+    document.getElementById('tableLoader').style.display = 'none';
+    Swal.fire('Error', e.message, 'error');
+  }
+}
+
+function renderTable(data) {
+  const thead = document.getElementById('tableHeader');
+  const tbody = document.getElementById('tableBody');
+
+  if (!data || data.length === 0) {
+    updateStats(0,0,0);
+    thead.innerHTML = '';
+    tbody.innerHTML = '<tr><td colspan="100%" class="text-center py-10 text-gray-400">No data found.</td></tr>';
+    return;
+  }
+
+  const first = data[0];
+  const keys = Object.keys(first);
+  let freeCount = 0, paidCount = 0;
+
+  let headerHTML = '<tr><th class="px-4 py-4">#</th>';
+  keys.slice(0, 7).forEach(k => headerHTML += `<th class="px-4 py-4">${k}</th>`);
+  headerHTML += '<th class="px-4 py-4 text-right">Actions</th></tr>';
+  thead.innerHTML = headerHTML;
+
+  let rowsHTML = [];
+  data.forEach((row, idx) => {
+    const isFree = (String(row.IS_FREE || row.isFree || row.IsFree || '').toUpperCase() === 'TRUE');
+    if (isFree) freeCount++; else paidCount++;
+
+    let tr = `<tr class="hover:bg-indigo-50/60 bg-white group border-b border-gray-100 animate-fade-in">`;
+    tr += `<td class="px-4 py-4 text-gray-400 font-bold">#${idx+1}</td>`;
+    keys.slice(0, 7).forEach(k => {
+      let v = String(row[k] ?? '');
+      if (v.length > 25 && !v.startsWith('data:image')) v = v.substring(0,25)+'...';
+      if (v.startsWith('data:image')) v = `<img src="${v}" class="h-8 w-8 rounded">`;
+      tr += `<td class="px-4 py-4 text-gray-600">${v}</td>`;
+    });
+    tr += `<td class="px-4 py-4 text-right">
+      <button onclick="editRow(${idx})" class="text-blue-600 hover:text-white border border-blue-200 hover:bg-blue-500 px-3 py-2 rounded-lg mr-2 text-xs font-bold"><i class="fa-solid fa-pen mr-1"></i>Edit</button>
+      <button onclick="deleteRow(${idx})" class="text-red-600 hover:text-white border border-red-200 hover:bg-red-500 px-3 py-2 rounded-lg text-xs font-bold"><i class="fa-solid fa-trash mr-1"></i>Delete</button>
+    </td></tr>`;
+    rowsHTML.push(tr);
+  });
+  tbody.innerHTML = rowsHTML.join('');
+  updateStats(data.length, freeCount, paidCount);
+}
+
+function updateStats(total, free, paid) {
+  document.getElementById('stat-total').innerText = total;
+  document.getElementById('stat-free').innerText = free;
+  document.getElementById('stat-paid').innerText = paid;
+}
+
+function filterTable() {
+  const q = document.getElementById('searchInput').value.toLowerCase();
+  const rows = document.getElementById('tableBody').getElementsByTagName('tr');
+  for (let i = 0; i < rows.length; i++) {
+    rows[i].style.display = rows[i].textContent.toLowerCase().indexOf(q) > -1 ? "" : "none";
+  }
+}
+
+// ---------------- ADD / EDIT ----------------
+function openAddForm() {
+  document.getElementById('adminForm').reset();
+  document.getElementById('editRowId').value = '';
+  document.getElementById('f_imageBase64').value = '';
+  document.getElementById('formTitle').innerText = 'Publish New Application';
+  document.getElementById('f_id').value = 'APP-' + Date.now();
+  switchView('addForm');
+}
+
+function editRow(idx) {
+  const row = tableDataCache[idx];
+  if (!row) return;
+  const map = {
+    f_id: 'ID', f_name: 'Name', f_author: 'Author', f_version: 'Version',
+    f_description: 'Description', f_TitleColors: 'TitleColors', f_platforms: 'Platforms',
+    f_category: 'Category', f_price: 'Price', f_currency: 'Currency',
+    f_downloadCount: 'DownloadCount', f_rating: 'Rating', f_reviewCount: 'ReviewCount',
+    f_aiaTestFileUrl: 'AiaTestFileUrl', f_downloadUrl: 'DownloadUrl', f_buyUrl: 'BuyUrl',
+    f_iconEmojiSlider: 'iconEmojiSlider', f_DownloadApkURL: 'DownloadApkURL',
+    f_discount: 'Discount', f_AixTitleList: 'AixTitleList',
+    f_publishDate: 'publishDate', f_updateDate: 'updateDate',
+    f_AixDetailList: 'AixDetailList', f_AixScreenShotList: 'AixScreenShotList'
+  };
+  Object.keys(map).forEach(fid => {
+    const el = document.getElementById(fid);
+    if (el) el.value = row[map[fid]] ?? '';
+  });
+  document.getElementById('f_isFree').checked = String(row.IS_FREE||row.isFree||'').toUpperCase()==='TRUE';
+  document.getElementById('f_isNew').checked = String(row.IS_NEW||row.isNew||'').toUpperCase()==='TRUE';
+  document.getElementById('editRowId').value = row.ID || row.id || '';
+  document.getElementById('formTitle').innerText = 'Update Application';
+  switchView('addForm');
+}
+
+function deleteRow(idx) {
+  const row = tableDataCache[idx];
+  if (!row) return;
+  Swal.fire({title:'Delete?', icon:'error', showCancelButton:true, confirmButtonText:'Delete'}).then(async r => {
+    if (!r.isConfirmed) return;
+    Swal.fire({title:'Deleting...', allowOutsideClick:false, showConfirmButton:false, didOpen:()=>Swal.showLoading()});
+    try {
+      const res = await callWorker('admin_delete_extension', { rowId: row.ID || row.id });
+      if (res.success) {
+        Swal.fire({title:'Deleted!', icon:'success', timer:1000, showConfirmButton:false});
+        fetchData();
+      } else Swal.fire('Error', res.message, 'error');
+    } catch(e) { Swal.fire('Error', e.message, 'error'); }
+  });
+}
+
+function selectEmoji(e) {
+  document.getElementById('f_iconEmojiSlider').value = e;
+  document.getElementById('f_imageBase64').value = '';
+  document.getElementById('compressLog').innerHTML = `<span class="text-[#4318FF]">Selected: ${e}</span>`;
+}
+
+function compressImage(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  document.getElementById('compressLog').innerHTML = '<span class="text-orange-500">Compressing...</span>';
+  const reader = new FileReader();
+  reader.readAsDataURL(file);
+  reader.onload = (e) => {
+    const img = new Image();
+    img.src = e.target.result;
+    img.onload = () => {
+      const canvas = document.createElement('canvas');
+      canvas.width = img.width; canvas.height = img.height;
+      canvas.getContext('2d').drawImage(img, 0, 0);
+      document.getElementById('f_imageBase64').value = canvas.toDataURL('image/jpeg', 0.6);
+      document.getElementById('f_iconEmojiSlider').value = '';
+      document.getElementById('compressLog').innerHTML = '<span class="text-green-500"><i class="fa-solid fa-check"></i> Compressed</span>';
+    };
+  };
+}
+
+// ---------------- FORM SUBMIT ----------------
+document.getElementById('adminForm').addEventListener('submit', async function(e) {
+  e.preventDefault();
+  if (isSubmitting) return;
+  isSubmitting = true;
+
+  const finalIcon = document.getElementById('f_imageBase64').value || document.getElementById('f_iconEmojiSlider').value;
+
+  const rowObj = {
+    ID: document.getElementById('f_id').value || '',
+    Name: document.getElementById('f_name').value || '',
+    Author: document.getElementById('f_author').value || '',
+    Version: document.getElementById('f_version').value || '',
+    Description: document.getElementById('f_description').value || '',
+    TitleColors: document.getElementById('f_TitleColors').value || '',
+    Platforms: document.getElementById('f_platforms').value || '',
+    Category: document.getElementById('f_category').value || '',
+    IS_FREE: document.getElementById('f_isFree').checked.toString().toUpperCase(),
+    Price: document.getElementById('f_price').value || '0',
+    Currency: document.getElementById('f_currency').value || 'USD',
+    DownloadCount: document.getElementById('f_downloadCount').value || '0',
+    Rating: document.getElementById('f_rating').value || '5.0',
+    ReviewCount: document.getElementById('f_reviewCount').value || '0',
+    AiaTestFileUrl: document.getElementById('f_aiaTestFileUrl').value || '',
+    DownloadUrl: document.getElementById('f_downloadUrl').value || '',
+    BuyUrl: document.getElementById('f_buyUrl').value || '',
+    iconEmojiSlider: finalIcon || '',
+    DownloadApkURL: document.getElementById('f_DownloadApkURL').value || '',
+    Discount: document.getElementById('f_discount').value || '0',
+    IS_NEW: document.getElementById('f_isNew').checked.toString().toUpperCase(),
+    AixTitleList: document.getElementById('f_AixTitleList').value || '',
+    publishDate: document.getElementById('f_publishDate').value || '',
+    updateDate: document.getElementById('f_updateDate').value || '',
+    AixDetailList: document.getElementById('f_AixDetailList').value || '',
+    AixScreenShotList: document.getElementById('f_AixScreenShotList').value || ''
+  };
+
+  document.getElementById('formLoader').style.display = 'block';
+  const btn = document.getElementById('submitFormBtn');
+  const orig = btn.innerHTML;
+  btn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin mr-2"></i> Syncing...';
+  btn.disabled = true;
+
+  try {
+    const editRowId = document.getElementById('editRowId').value;
+    let res;
+    if (editRowId) {
+      res = await callWorker('admin_update_extension', { rowId: editRowId, newValues: rowObj });
+    } else {
+      res = await callWorker('admin_add_extension', { data: rowObj });
+    }
+    if (res.success) {
+      Swal.fire({title:'Synced!', icon:'success', timer:1200, showConfirmButton:false}).then(() => {
+        tableDataCache = [];
+        switchView('dashboard');
+      });
+    } else {
+      Swal.fire('Error', res.message, 'error');
+    }
+  } catch(e) {
+    Swal.fire('Failed', e.message, 'error');
+  } finally {
+    document.getElementById('formLoader').style.display = 'none';
+    btn.innerHTML = orig;
+    btn.disabled = false;
+    isSubmitting = false;
+  }
+});
+
+// ---------------- PAYMENTS ----------------
+function loadPaymentsData() {
+  document.getElementById('paymentsTableBody').innerHTML = '';
+  document.getElementById('paymentsLoader').style.display = 'block';
+
+  if (paymentsCache.length > 0) {
+    document.getElementById('paymentsLoader').style.display = 'none';
+    displayPaymentsData(paymentsCache);
+    return;
+  }
+  fetchData().then(() => {
+    document.getElementById('paymentsLoader').style.display = 'none';
+    displayPaymentsData(paymentsCache);
+  });
+}
+
+function displayPaymentsData(data) {
+  document.getElementById('paymentsLoader').style.display = 'none';
+  const tbody = document.getElementById('paymentsTableBody');
+  if (!data || data.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="8" class="text-center py-10 text-gray-400">No records found.</td></tr>';
+    return;
+  }
+
+  let html = '';
+  data.slice().reverse().forEach((row, idx) => {
+    let statusText = row.PaymentStatus || 'Pending';
+    let statusClass = 'bg-yellow-100 text-yellow-600 border-yellow-200';
+    if (statusText.toLowerCase().includes('approv')) { statusText='Approved'; statusClass='bg-green-100 text-green-600 border-green-200'; }
+    else if (statusText.toLowerCase() === 'rejected') { statusClass='bg-red-100 text-red-600 border-red-200'; }
+    const isProcessed = statusText === 'Approved' || statusText === 'Rejected';
+    const screenshotHtml = row.SlipScreenShot ? `<a href="${row.SlipScreenShot}" target="_blank" class="text-[#4318FF] hover:underline font-bold"><i class="fa-solid fa-image"></i> View</a>` : '<span class="text-gray-400">N/A</span>';
+
+    let actionHtml = '';
+    if (!isProcessed) {
+      actionHtml = `<div class="flex justify-end gap-2" id="p-actions-${idx}">
+        <button onclick="updatePaymentStatus('${row.OrderID}','${row.UserEmail}','Approved', this, ${idx})" class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg text-xs font-bold"><i class="fa-solid fa-check mr-1"></i>Approve</button>
+        <button onclick="updatePaymentStatus('${row.OrderID}','${row.UserEmail}','Rejected', this, ${idx})" class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg text-xs font-bold"><i class="fa-solid fa-xmark mr-1"></i>Reject</button>
+      </div>`;
+    } else {
+      actionHtml = '<span class="text-gray-400 text-xs font-bold">Processed</span>';
+    }
+
+    html += `<tr class="hover:bg-indigo-50/60 bg-white border-b animate-fade-in">
+      <td class="px-4 py-4 font-mono text-xs font-bold text-gray-600">${row.OrderID}</td>
+      <td class="px-4 py-4 text-gray-500">${row.PurchaseDate || 'N/A'}</td>
+      <td class="px-4 py-4 text-gray-600 font-medium">${row.UserEmail}<br><span class="text-xs text-gray-400">${row.PhoneNumber || ''}</span></td>
+      <td class="px-4 py-4 text-gray-600">${row.ItemName || ''}<br><span class="text-xs text-gray-400">${row.ItemID || ''}</span></td>
+      <td class="px-4 py-4 font-bold text-[#2B3674]">${row.AmountPaid || ''} ${row.Currency || ''}</td>
+      <td class="px-4 py-4">${screenshotHtml}</td>
+      <td class="px-4 py-4"><span class="px-3 py-1 rounded-full text-xs font-bold border ${statusClass}" id="p-status-${idx}">${statusText}</span></td>
+      <td class="px-4 py-4 text-right">${actionHtml}</td>
+    </tr>`;
+  });
+  tbody.innerHTML = html;
+}
+
+async function updatePaymentStatus(orderId, email, newStatus, btn, idx) {
+  const actionsDiv = document.getElementById(`p-actions-${idx}`);
+  if(actionsDiv) actionsDiv.style.opacity = '0.5';
+  const orig = btn.innerHTML;
+  btn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i>';
+  btn.disabled = true;
+
+  try {
+    const res = await callWorker('admin_update_payment_status', { orderId, email, newStatus });
+    if (res.success) {
+      Swal.fire({title:'Updated!', icon:'success', timer:1000, showConfirmButton:false});
+      const badge = document.getElementById(`p-status-${idx}`);
+      if (badge) {
+        badge.innerText = newStatus;
+        badge.className = `px-3 py-1 rounded-full text-xs font-bold border ${newStatus === 'Approved' ? 'bg-green-100 text-green-600 border-green-200' : 'bg-red-100 text-red-600 border-red-200'}`;
+      }
+      if (actionsDiv) actionsDiv.innerHTML = '<span class="text-gray-400 text-xs font-bold">Processed</span>';
+    } else {
+      Swal.fire('Error', res.message, 'error');
+      btn.innerHTML = orig; btn.disabled = false;
+    }
+  } catch(e) {
+    Swal.fire('Error', e.message, 'error');
+    btn.innerHTML = orig; btn.disabled = false;
+  }
+}
+</script>
+</body>
+</html>
