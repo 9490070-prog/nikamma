@@ -477,6 +477,80 @@
         ::-webkit-scrollbar-track { background: var(--bg); }
         ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
         ::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
+        
+        .mobile-menu-btn {
+            display: none;
+            background: none;
+            border: none;
+            color: white;
+            font-size: 24px;
+            cursor: pointer;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .sidebar {
+                transform: translateX(-100%);
+                z-index: 1000;
+            }
+            .sidebar.active {
+                transform: translateX(0);
+            }
+            .main-content {
+                margin-left: 0;
+            }
+            .header {
+                flex-direction: column;
+                align-items: flex-start;
+                padding: 16px;
+            }
+            #connectionBox {
+                flex-direction: column;
+                width: 100%;
+                align-items: stretch !important;
+                margin-top: 16px;
+            }
+            .api-input {
+                width: 100% !important;
+            }
+            .mobile-menu-btn {
+                display: block;
+            }
+            .card-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 16px;
+            }
+            .card-header > div:last-child {
+                width: 100%;
+                justify-content: space-between;
+            }
+            .modal {
+                width: 95%;
+                margin: 20px auto;
+            }
+            .btn {
+                justify-content: center;
+            }
+            #connectedBadge {
+                margin-top: 16px;
+                width: 100%;
+                justify-content: space-between;
+                box-sizing: border-box;
+            }
+            
+            /* Sidebar overlay logic */
+            .sidebar.active::after {
+                content: '';
+                position: fixed;
+                top: 0;
+                right: -100vw;
+                width: 100vw;
+                height: 100vh;
+                background: rgba(0,0,0,0.5);
+                z-index: -1;
+            }
+        }
     </style>
 </head>
 <body>
@@ -521,7 +595,12 @@
     <!-- Main Content -->
     <main class="main-content">
         <header class="header">
-            <h1 class="page-title" id="pageTitle">Extensions Data</h1>
+            <div style="display: flex; align-items: center; gap: 16px;">
+                <button class="mobile-menu-btn" onclick="document.querySelector('.sidebar').classList.toggle('active')">
+                    <i class="fa-solid fa-bars"></i>
+                </button>
+                <h1 class="page-title" id="pageTitle">Extensions Data</h1>
+            </div>
             <div class="api-config" id="connectionBox">
                 <input type="text" id="apiUrl" class="api-input" placeholder="Cloudflare Worker URL (e.g., https://api.worker.dev)">
                 <input type="password" id="apiSecret" class="api-input" style="width: 200px;" placeholder="API Secret" value="MeraSecretPassword123xyz">
@@ -702,6 +781,11 @@
         }
 
         async function loadTable(tableName, element) {
+            // Hide sidebar on mobile after clicking
+            if (window.innerWidth <= 768) {
+                document.querySelector('.sidebar').classList.remove('active');
+            }
+            
             // Update UI
             document.querySelectorAll('.menu-item').forEach(el => el.classList.remove('active'));
             element.classList.add('active');
