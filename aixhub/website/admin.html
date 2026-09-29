@@ -1478,7 +1478,8 @@
                         <td>${sizeMb}</td>
                         <td>${date}</td>
                         <td>
-                            <button class="btn-icon" style="color: var(--primary);" onclick="copyToClipboard('${link}')" title="Copy Link"><i class="fa-regular fa-copy"></i></button>
+                            <button class="btn-icon" style="color: var(--primary);" onclick="copyToClipboard('${link}')" title="Copy Master Link (App Ke Liye)"><i class="fa-solid fa-link"></i></button>
+                            <button class="btn-icon" style="color: #10b981; margin-left: 8px;" onclick="copyTempLink('${file.key}')" title="Copy 50-Min Expiring Link (Share Karne Ke Liye)"><i class="fa-solid fa-stopwatch"></i></button>
                             <button class="btn-icon" style="color: #ef4444; margin-left: 8px;" onclick="deleteR2File('${file.key}')" title="Delete File"><i class="fa-solid fa-trash"></i></button>
                         </td>
                     `;
@@ -1493,6 +1494,30 @@
             }).catch(() => {
                 showToast('Failed to copy link', 'error');
             });
+        }
+        
+        async function copyTempLink(fileName) {
+            const url = getBaseUrl();
+            const secret = document.getElementById('apiSecret').value;
+            if (!url || !secret) return showToast('API URL or Secret missing', 'error');
+            
+            try {
+                startProgress();
+                const response = await fetch(`${url}/?action=generate_temp_link&file=${encodeURIComponent(fileName)}&token=${secret}`);
+                const data = await response.json();
+                
+                if (response.ok && data.tempLink) {
+                    navigator.clipboard.writeText(data.tempLink).then(() => {
+                        showToast('50-Min Secure Link Copied!', 'success');
+                    });
+                } else {
+                    showToast(data.error || 'Failed to generate temp link', 'error');
+                }
+            } catch(e) {
+                showToast('Network error generating link', 'error');
+            } finally {
+                endProgress();
+            }
         }
         
         async function deleteR2File(fileName) {
