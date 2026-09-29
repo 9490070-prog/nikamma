@@ -640,6 +640,9 @@
                     </div>
                     <div style="display: flex; gap: 12px; align-items: center;">
                         <div class="loader" id="tableLoader"></div>
+                        <button class="btn btn-danger" id="deleteSelectedBtn" onclick="deleteSelected()" style="display: none;">
+                            <i class="fa-solid fa-trash-can"></i> Delete Selected (<span id="selectedCount">0</span>)
+                        </button>
                         <button class="btn btn-primary" onclick="openModal('add')">
                             <i class="fa-solid fa-plus"></i> Add New Record
                         </button>
@@ -994,7 +997,7 @@
             startProgress();
             
             try {
-                const response = await fetch(`${url}/?table=${currentTable}&format=object`, {
+                const response = await fetch(`${url}/?table=${currentTable}&format=object&_t=${Date.now()}`, {
                     method: 'GET',
                     headers: { 'Authorization': getAuthHeader() }
                 });
@@ -1035,12 +1038,13 @@
                 
                 tableColumns = defaultCols;
                 
+                thead.innerHTML += `<th style="width: 40px;"><input type="checkbox" id="selectAllCheckbox" disabled></th>`;
                 tableColumns.forEach(col => {
                     thead.innerHTML += `<th>${col}</th>`;
                 });
                 thead.innerHTML += `<th>Actions</th>`;
                 
-                tbody.innerHTML = `<tr><td colspan="${tableColumns.length + 1}" class="empty-state"><i class="fa-solid fa-folder-open"></i><h3>No records found in this table</h3></td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="${tableColumns.length + 2}" class="empty-state"><i class="fa-solid fa-folder-open"></i><h3>No records found in this table</h3></td></tr>`;
                 return;
             }
 
@@ -1058,6 +1062,7 @@
             }
 
             // Render Header
+            thead.innerHTML += `<th style="width: 40px;"><input type="checkbox" id="selectAllCheckbox" onclick="toggleSelectAll()"></th>`;
             tableColumns.forEach(col => {
                 thead.innerHTML += `<th>${col}</th>`;
             });
@@ -1067,6 +1072,10 @@
             const reversedData = [...tableData].reverse();
             reversedData.forEach(row => {
                 let tr = document.createElement('tr');
+                const rowId = row[getIdColumn()];
+                
+                // Add Checkbox
+                tr.innerHTML += `<td><input type="checkbox" class="row-checkbox" value="${rowId}" onclick="updateSelectedCount()"></td>`;
                 
                 tableColumns.forEach(col => {
                     let val = row[col] !== undefined && row[col] !== null ? row[col] : '';
@@ -1086,8 +1095,6 @@
                     }
                 });
 
-                const rowId = row[getIdColumn()];
-                
                 let actionsHtml = `<div class="actions-cell">`;
                 
                 // Extra actions for Purchased_data
@@ -1108,6 +1115,84 @@
                 tr.innerHTML += `<td>${actionsHtml}</td>`;
                 tbody.appendChild(tr);
             });
+            
+            updateSelectedCount(); // Reset count on render
+        }
+        
+        function toggleSelectAll() {
+            const selectAll = document.getElementById('selectAllCheckbox').checked;
+            const checkboxes = document.querySelectorAll('.row-checkbox');
+            checkboxes.forEach(cb => cb.checked = selectAll);
+            updateSelectedCount();
+        }
+        
+        function updateSelectedCount() {
+            const checkboxes = document.querySelectorAll('.row-checkbox:checked');
+            const count = checkboxes.length;
+            const btn = document.getElementById('deleteSelectedBtn');
+            const span = document.getElementById('selectedCount');
+            
+            if (count > 0) {
+                btn.style.display = 'block';
+                span.textContent = count;
+            } else {
+                btn.style.display = 'none';
+            }
+            
+            const allCheckboxes = document.querySelectorAll('.row-checkbox');
+            const selectAllCb = document.getElementById('selectAllCheckbox');
+            if (selectAllCb && allCheckboxes.length > 0) {
+                selectAllCb.checked = count === allCheckboxes.length;
+            }
+        }
+        
+        async function deleteSelected() {
+            const checkboxes = document.querySelectorAll('.row-checkbox:checked');
+            if (checkboxes.length === 0) return;
+            
+            if (!confirm(`Are you sure you want to delete ${checkboxes.length} selected records? This cannot be undone.`)) return;
+            
+            const url = getBaseUrl();
+            const idCol = getIdColumn();
+            startProgress();
+            let successCount = 0;
+            let errorCount = 0;
+            
+            const btn = document.getElementById('deleteSelectedBtn');
+            const originalBtnHtml = btn.innerHTML;
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Deleting...';
+            btn.disabled = true;
+            
+            // Delete one by one to avoid changing the worker code and to ensure safety
+            for (let cb of checkboxes) {
+                const id = cb.value;
+                try {
+                    const response = await fetch(`${url}/?table=${currentTable}&col=${idCol}&val=${encodeURIComponent(id)}`, {
+                        method: 'DELETE',
+                        headers: { 'Authorization': getAuthHeader() }
+                    });
+                    if (response.ok) {
+                        successCount++;
+                    } else {
+                        errorCount++;
+                    }
+                } catch(e) {
+                    errorCount++;
+                }
+            }
+            
+            if (errorCount === 0) {
+                showToast(`Successfully deleted ${successCount} records!`, 'success');
+            } else {
+                showToast(`Deleted ${successCount} records, but failed to delete ${errorCount} records.`, 'warning');
+            }
+            
+            btn.innerHTML = originalBtnHtml;
+            btn.disabled = false;
+            endProgress();
+            
+            // Reload table
+            fetchData();
         }
 
         function getPlaceholder(col) {
