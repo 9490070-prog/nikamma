@@ -522,12 +522,16 @@
     <main class="main-content">
         <header class="header">
             <h1 class="page-title" id="pageTitle">Extensions Data</h1>
-            <div class="api-config">
+            <div class="api-config" id="connectionBox">
                 <input type="text" id="apiUrl" class="api-input" placeholder="Cloudflare Worker URL (e.g., https://api.worker.dev)">
-                <input type="password" id="apiSecret" class="api-input" style="width: 200px;" placeholder="API Secret (Default: MeraSecretPassword123xyz)" value="MeraSecretPassword123xyz">
+                <input type="password" id="apiSecret" class="api-input" style="width: 200px;" placeholder="API Secret" value="MeraSecretPassword123xyz">
                 <button class="btn btn-primary" onclick="testConnection()">
                     <i class="fa-solid fa-plug"></i> Connect
                 </button>
+            </div>
+            <div class="api-config" id="connectedBadge" style="display: none; align-items: center; gap: 10px; background: rgba(16, 185, 129, 0.1); color: #10b981; padding: 10px 16px; border-radius: 8px; border: 1px solid rgba(16, 185, 129, 0.3);">
+                <i class="fa-solid fa-check-circle"></i> API Connected
+                <button class="btn-icon" onclick="disconnectApi()" style="color: var(--text-muted); margin-left: 10px;" title="Edit Connection"><i class="fa-solid fa-pen"></i></button>
             </div>
         </header>
 
@@ -588,12 +592,12 @@
     <div class="toast-container" id="toastContainer"></div>
 
     <script>
-        // State
         let currentTable = 'extensions_data';
         let tableData = [];
         let tableColumns = [];
         let currentMode = 'add'; // 'add' or 'edit'
         let editingId = null;
+        let globalCategories = ['Category', 'Tag'];
 
         // Initialize
         document.addEventListener('DOMContentLoaded', () => {
@@ -603,7 +607,7 @@
             if (savedSecret) document.getElementById('apiSecret').value = savedSecret;
             
             if (savedUrl) {
-                fetchData();
+                testConnection(); // Auto-connect if saved
             }
         });
 
@@ -668,7 +672,33 @@
             localStorage.setItem('cfApiUrl', url);
             localStorage.setItem('cfApiSecret', secret);
             
-            await fetchData();
+            document.getElementById('connectionBox').style.display = 'none';
+            document.getElementById('connectedBadge').style.display = 'flex';
+            
+            // Pre-fetch Tag categories globally then fetch table
+            fetchGlobalCategories().then(() => fetchData());
+        }
+
+        function disconnectApi() {
+            document.getElementById('connectionBox').style.display = 'flex';
+            document.getElementById('connectedBadge').style.display = 'none';
+        }
+        
+        async function fetchGlobalCategories() {
+            const url = getBaseUrl();
+            if (!url) return;
+            try {
+                const response = await fetch(`${url}/?table=Tag_list&format=object`, {
+                    headers: { 'Authorization': getAuthHeader() }
+                });
+                if(response.ok) {
+                    const data = await response.json();
+                    if(data && Array.isArray(data)) {
+                        const tags = [...new Set(data.map(r => r.TagType).filter(Boolean))];
+                        if(tags.length > 0) globalCategories = tags;
+                    }
+                }
+            } catch(e) {}
         }
 
         async function loadTable(tableName, element) {
@@ -911,6 +941,29 @@
                                 <option value="TRUE" ${String(val).toUpperCase()==='TRUE'?'selected':''}>TRUE</option>
                                 <option value="FALSE" ${String(val).toUpperCase()==='FALSE'?'selected':''}>FALSE</option>
                             </select>
+                        </div>
+                    `;
+                } else if (colLower === 'tagtype' || colLower === 'category' || colLower === 'type') {
+                    // Extract unique categories from GLOBAL tags (fetched from Tag_list)
+                    let optionsHtml = `<option value="">Select ${friendlyCol}...</option>`;
+                    let found = false;
+                    globalCategories.forEach(cat => {
+                        const selected = val === cat ? 'selected' : '';
+                        if (selected) found = true;
+                        optionsHtml += `<option value="${cat}" ${selected}>${cat}</option>`;
+                    });
+                    
+                    if (val && !found) optionsHtml += `<option value="${val}" selected>${val}</option>`;
+                    
+                    body.innerHTML += `
+                        <div class="form-group">
+                            <label><i class="fa-solid fa-list"></i> <strong>${friendlyCol}</strong></label>
+                            <div style="display:flex; gap:8px;">
+                                <select id="input_${col}" style="flex:1;">
+                                    ${optionsHtml}
+                                </select>
+                                <button class="btn btn-primary" onclick="event.preventDefault(); const newCat = prompt('Enter new ${friendlyCol}:'); if(newCat) { const sel = document.getElementById('input_${col}'); sel.add(new Option(newCat, newCat, false, true)); }" title="Add New ${friendlyCol}" style="padding: 0 12px;"><i class="fa-solid fa-plus"></i></button>
+                            </div>
                         </div>
                     `;
                 } else if (colLower.includes('color')) {
