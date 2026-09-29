@@ -1,0 +1,948 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cloudflare Admin Panel</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary: #4f46e5;
+            --primary-hover: #4338ca;
+            --secondary: #10b981;
+            --danger: #ef4444;
+            --dark: #1e1e2d;
+            --dark-panel: #2b2b40;
+            --text-main: #ffffff;
+            --text-muted: #a1a5b7;
+            --border: #323248;
+            --bg: #151521;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Inter', sans-serif;
+        }
+
+        body {
+            background-color: var(--bg);
+            color: var(--text-main);
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            width: 280px;
+            background-color: var(--dark);
+            border-right: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            transition: all 0.3s ease;
+        }
+
+        .brand {
+            padding: 24px;
+            font-size: 20px;
+            font-weight: 700;
+            color: var(--text-main);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .brand i {
+            color: var(--primary);
+            font-size: 24px;
+        }
+
+        .menu {
+            padding: 16px;
+            flex: 1;
+            overflow-y: auto;
+        }
+
+        .menu-title {
+            font-size: 11px;
+            text-transform: uppercase;
+            color: var(--text-muted);
+            font-weight: 600;
+            letter-spacing: 1px;
+            margin-bottom: 12px;
+            padding-left: 12px;
+        }
+
+        .menu-item {
+            padding: 12px 16px;
+            border-radius: 8px;
+            color: var(--text-muted);
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 4px;
+            transition: all 0.2s;
+            cursor: pointer;
+            font-weight: 500;
+        }
+
+        .menu-item:hover, .menu-item.active {
+            background-color: rgba(79, 70, 229, 0.1);
+            color: var(--primary);
+        }
+
+        .menu-item i {
+            font-size: 18px;
+            width: 24px;
+            text-align: center;
+        }
+
+        /* Main Content */
+        .main-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .header {
+            height: 80px;
+            background-color: var(--dark);
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 32px;
+        }
+
+        .page-title {
+            font-size: 24px;
+            font-weight: 600;
+        }
+
+        .api-config {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .api-input {
+            background: var(--dark-panel);
+            border: 1px solid var(--border);
+            color: var(--text-main);
+            padding: 10px 16px;
+            border-radius: 8px;
+            width: 300px;
+            font-size: 14px;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        .api-input:focus {
+            border-color: var(--primary);
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border-radius: 8px;
+            border: none;
+            font-weight: 600;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.2s;
+            font-size: 14px;
+        }
+
+        .btn-primary {
+            background-color: var(--primary);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background-color: var(--primary-hover);
+            transform: translateY(-1px);
+        }
+
+        .btn-danger {
+            background-color: rgba(239, 68, 68, 0.1);
+            color: var(--danger);
+        }
+
+        .btn-danger:hover {
+            background-color: var(--danger);
+            color: white;
+        }
+
+        .btn-success {
+            background-color: rgba(16, 185, 129, 0.1);
+            color: var(--secondary);
+        }
+
+        .btn-success:hover {
+            background-color: var(--secondary);
+            color: white;
+        }
+        
+        .btn-icon {
+            padding: 8px;
+            border-radius: 6px;
+            border: none;
+            cursor: pointer;
+            transition: 0.2s;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .btn-edit { background: rgba(79, 70, 229, 0.1); color: var(--primary); }
+        .btn-edit:hover { background: var(--primary); color: white; }
+
+        .btn-delete { background: rgba(239, 68, 68, 0.1); color: var(--danger); }
+        .btn-delete:hover { background: var(--danger); color: white; }
+
+        .content-body {
+            flex: 1;
+            padding: 32px;
+            overflow-y: auto;
+        }
+
+        /* Table Card */
+        .card {
+            background-color: var(--dark);
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            min-height: 400px;
+        }
+
+        .card-header {
+            padding: 24px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .table-responsive {
+            overflow-x: auto;
+            padding: 0;
+            flex: 1;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: left;
+            white-space: nowrap;
+        }
+
+        th {
+            background-color: var(--dark-panel);
+            color: var(--text-muted);
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            padding: 16px 24px;
+            font-weight: 600;
+        }
+
+        td {
+            padding: 16px 24px;
+            border-bottom: 1px solid var(--border);
+            color: #e4e6ef;
+            font-size: 14px;
+            max-width: 250px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        tr:hover td {
+            background-color: rgba(255, 255, 255, 0.02);
+        }
+
+        .actions-cell {
+            display: flex;
+            gap: 8px;
+        }
+
+        /* Badges */
+        .badge {
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: capitalize;
+        }
+        .badge-success { background: rgba(16, 185, 129, 0.15); color: #10b981; }
+        .badge-danger { background: rgba(239, 68, 68, 0.15); color: #ef4444; }
+        .badge-warning { background: rgba(245, 158, 11, 0.15); color: #f59e0b; }
+
+        /* Modal */
+        .modal-overlay {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.7);
+            backdrop-filter: blur(4px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            opacity: 0;
+            visibility: hidden;
+            transition: 0.3s;
+        }
+
+        .modal-overlay.active {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .modal {
+            background: var(--dark);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            width: 100%;
+            max-width: 600px;
+            transform: translateY(20px);
+            transition: 0.3s;
+            max-height: 90vh;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+        }
+
+        .modal-overlay.active .modal {
+            transform: translateY(0);
+        }
+
+        .modal-header {
+            padding: 24px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .modal-header h3 { font-size: 18px; }
+        .modal-close {
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            font-size: 20px;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        .modal-close:hover { color: white; }
+
+        .modal-body {
+            padding: 24px;
+            overflow-y: auto;
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 16px;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .form-group label {
+            font-size: 13px;
+            color: var(--text-muted);
+            font-weight: 500;
+        }
+
+        .form-group input, .form-group select, .form-group textarea {
+            background: var(--bg);
+            border: 1px solid var(--border);
+            color: white;
+            padding: 12px 16px;
+            border-radius: 8px;
+            outline: none;
+            font-size: 14px;
+            transition: border-color 0.2s;
+        }
+
+        .form-group input:focus, .form-group select:focus, .form-group textarea:focus {
+            border-color: var(--primary);
+        }
+
+        .modal-footer {
+            padding: 20px 24px;
+            border-top: 1px solid var(--border);
+            display: flex;
+            justify-content: flex-end;
+            gap: 12px;
+        }
+
+        /* Toast */
+        .toast-container {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            z-index: 2000;
+        }
+
+        .toast {
+            background: var(--dark-panel);
+            border-left: 4px solid var(--primary);
+            color: white;
+            padding: 16px 24px;
+            border-radius: 8px;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            transform: translateX(120%);
+            transition: 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+        }
+
+        .toast.show {
+            transform: translateX(0);
+        }
+        
+        .toast.success { border-left-color: var(--secondary); }
+        .toast.error { border-left-color: var(--danger); }
+
+        .loader {
+            display: none;
+            width: 24px;
+            height: 24px;
+            border: 3px solid rgba(255,255,255,0.1);
+            border-radius: 50%;
+            border-top-color: var(--primary);
+            animation: spin 1s ease-in-out infinite;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        .empty-state {
+            padding: 60px 20px;
+            text-align: center;
+            color: var(--text-muted);
+        }
+        .empty-state i { font-size: 48px; margin-bottom: 16px; opacity: 0.5; }
+
+        /* Ensure smooth scrollbars */
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: var(--bg); }
+        ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
+    </style>
+</head>
+<body>
+
+    <!-- Sidebar -->
+    <aside class="sidebar">
+        <div class="brand">
+            <i class="fa-solid fa-cloud"></i>
+            CloudAdmin
+        </div>
+        <div class="menu">
+            <div class="menu-title">Database Tables</div>
+            <div class="menu-item active" onclick="loadTable('extensions_data', this)">
+                <i class="fa-solid fa-puzzle-piece"></i> Extensions Data
+            </div>
+            <div class="menu-item" onclick="loadTable('Purchased_data', this)">
+                <i class="fa-solid fa-cart-shopping"></i> Purchased Data
+            </div>
+            <div class="menu-item" onclick="loadTable('Tag_list', this)">
+                <i class="fa-solid fa-tags"></i> Tag List
+            </div>
+            <div class="menu-item" onclick="loadTable('Source_code', this)">
+                <i class="fa-solid fa-code"></i> Source Code
+            </div>
+            <div class="menu-item" onclick="loadTable('Free_Paid_Register', this)">
+                <i class="fa-solid fa-id-card"></i> Free Paid Register
+            </div>
+            <div class="menu-item" onclick="loadTable('Login_User', this)">
+                <i class="fa-solid fa-users"></i> Login User
+            </div>
+            <div class="menu-item" onclick="loadTable('Aix_Apk_Update', this)">
+                <i class="fa-brands fa-android"></i> Aix Apk Update
+            </div>
+        </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <header class="header">
+            <h1 class="page-title" id="pageTitle">Extensions Data</h1>
+            <div class="api-config">
+                <input type="text" id="apiUrl" class="api-input" placeholder="Cloudflare Worker URL (e.g., https://api.worker.dev)">
+                <input type="password" id="apiSecret" class="api-input" style="width: 200px;" placeholder="API Secret (Default: MeraSecretPassword123xyz)" value="MeraSecretPassword123xyz">
+                <button class="btn btn-primary" onclick="testConnection()">
+                    <i class="fa-solid fa-plug"></i> Connect
+                </button>
+            </div>
+        </header>
+
+        <div class="content-body">
+            <div class="card">
+                <div class="card-header">
+                    <div>
+                        <h3 style="margin-bottom: 4px;">Records</h3>
+                        <span style="font-size: 13px; color: var(--text-muted);" id="recordCount">0 total records found</span>
+                    </div>
+                    <div style="display: flex; gap: 12px; align-items: center;">
+                        <div class="loader" id="tableLoader"></div>
+                        <button class="btn btn-primary" onclick="openModal('add')">
+                            <i class="fa-solid fa-plus"></i> Add New Record
+                        </button>
+                    </div>
+                </div>
+                <div class="table-responsive">
+                    <table id="dataTable">
+                        <thead>
+                            <tr id="tableHead">
+                                <!-- Dynamic Headers -->
+                            </tr>
+                        </thead>
+                        <tbody id="tableBody">
+                            <!-- Dynamic Rows -->
+                            <tr>
+                                <td colspan="100%" class="empty-state">
+                                    <i class="fa-solid fa-database"></i>
+                                    <h3>Please connect to the Cloudflare API first</h3>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Modal (Add/Edit) -->
+    <div class="modal-overlay" id="formModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h3 id="modalTitle">Add Record</h3>
+                <button class="modal-close" onclick="closeModal()"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="modal-body" id="modalFormBody">
+                <!-- Dynamic Inputs -->
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-danger" style="background: transparent; border: 1px solid var(--border);" onclick="closeModal()">Cancel</button>
+                <button class="btn btn-primary" id="saveBtn" onclick="saveRecord()">Save Changes</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notifications -->
+    <div class="toast-container" id="toastContainer"></div>
+
+    <script>
+        // State
+        let currentTable = 'extensions_data';
+        let tableData = [];
+        let tableColumns = [];
+        let currentMode = 'add'; // 'add' or 'edit'
+        let editingId = null;
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            const savedUrl = localStorage.getItem('cfApiUrl');
+            const savedSecret = localStorage.getItem('cfApiSecret');
+            if (savedUrl) document.getElementById('apiUrl').value = savedUrl;
+            if (savedSecret) document.getElementById('apiSecret').value = savedSecret;
+            
+            if (savedUrl) {
+                fetchData();
+            }
+        });
+
+        function getAuthHeader() {
+            const secret = document.getElementById('apiSecret').value.trim() || 'MeraSecretPassword123xyz';
+            return `Bearer ${secret}`;
+        }
+
+        function getBaseUrl() {
+            let url = document.getElementById('apiUrl').value.trim();
+            if(url && url.endsWith('/')) url = url.slice(0, -1);
+            return url;
+        }
+
+        function showToast(message, type = 'success') {
+            const container = document.getElementById('toastContainer');
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            
+            const icon = type === 'success' ? '<i class="fa-solid fa-circle-check" style="color:var(--secondary); font-size:20px;"></i>' 
+                                            : '<i class="fa-solid fa-circle-exclamation" style="color:var(--danger); font-size:20px;"></i>';
+            toast.innerHTML = `${icon} <div>${message}</div>`;
+            
+            container.appendChild(toast);
+            
+            // Trigger animation
+            setTimeout(() => toast.classList.add('show'), 10);
+            
+            setTimeout(() => {
+                toast.classList.remove('show');
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
+
+        async function testConnection() {
+            const url = getBaseUrl();
+            const secret = document.getElementById('apiSecret').value;
+            
+            if (!url) {
+                showToast('Please enter the API URL', 'error');
+                return;
+            }
+
+            localStorage.setItem('cfApiUrl', url);
+            localStorage.setItem('cfApiSecret', secret);
+            
+            document.getElementById('tableLoader').style.display = 'block';
+            await fetchData();
+        }
+
+        async function loadTable(tableName, element) {
+            // Update UI
+            document.querySelectorAll('.menu-item').forEach(el => el.classList.remove('active'));
+            element.classList.add('active');
+            
+            const titles = {
+                'extensions_data': 'Extensions Data',
+                'Purchased_data': 'Purchased Data',
+                'Tag_list': 'Tag List',
+                'Source_code': 'Source Code',
+                'Free_Paid_Register': 'Free Paid Register',
+                'Login_User': 'Login Users',
+                'Aix_Apk_Update': 'Aix Apk Update'
+            };
+            
+            document.getElementById('pageTitle').textContent = titles[tableName];
+            currentTable = tableName;
+            
+            await fetchData();
+        }
+
+        function getIdColumn() {
+            return (currentTable === 'Purchased_data' || currentTable === 'Tag_list') ? 'ID' : 'id';
+        }
+
+        async function fetchData() {
+            const url = getBaseUrl();
+            if (!url) return;
+
+            document.getElementById('tableLoader').style.display = 'block';
+            
+            try {
+                const response = await fetch(`${url}/?table=${currentTable}`, {
+                    method: 'GET',
+                    headers: { 'Authorization': getAuthHeader() }
+                });
+                
+                if (!response.ok) {
+                    throw new Error(response.status === 401 ? 'Unauthorized: Invalid Secret' : `Error ${response.status}`);
+                }
+                
+                const data = await response.json();
+                
+                if (data.error) throw new Error(data.error);
+
+                tableData = data;
+                document.getElementById('recordCount').textContent = `${tableData.length} total records found`;
+                renderTable();
+                showToast('Data loaded successfully');
+            } catch (error) {
+                showToast(error.message, 'error');
+                document.getElementById('tableBody').innerHTML = `<tr><td colspan="100%" class="empty-state"><i class="fa-solid fa-triangle-exclamation"></i><h3>Failed to load data: ${error.message}</h3></td></tr>`;
+            } finally {
+                document.getElementById('tableLoader').style.display = 'none';
+            }
+        }
+
+        function renderTable() {
+            const thead = document.getElementById('tableHead');
+            const tbody = document.getElementById('tableBody');
+            
+            thead.innerHTML = '';
+            tbody.innerHTML = '';
+
+            if (tableData.length === 0) {
+                // Determine some default columns if table is empty just to have a UI
+                let defaultCols = ['id', 'Name', 'Date'];
+                if(currentTable === 'Purchased_data') defaultCols = ['ID', 'OrderID', 'UserEmail', 'PaymentStatus', 'Date'];
+                if(currentTable === 'Login_User') defaultCols = ['id', 'name', 'email', 'password', 'otp'];
+                
+                tableColumns = defaultCols;
+                
+                tableColumns.forEach(col => {
+                    thead.innerHTML += `<th>${col}</th>`;
+                });
+                thead.innerHTML += `<th>Actions</th>`;
+                
+                tbody.innerHTML = `<tr><td colspan="${tableColumns.length + 1}" class="empty-state"><i class="fa-solid fa-folder-open"></i><h3>No records found in this table</h3></td></tr>`;
+                return;
+            }
+
+            // Get unique columns from all rows to ensure no missing columns
+            const colSet = new Set();
+            tableData.forEach(row => {
+                Object.keys(row).forEach(k => colSet.add(k));
+            });
+            tableColumns = Array.from(colSet);
+            
+            // Move ID column to front if exists
+            const idCol = getIdColumn();
+            if (tableColumns.includes(idCol)) {
+                tableColumns = [idCol, ...tableColumns.filter(c => c !== idCol)];
+            }
+
+            // Render Header
+            tableColumns.forEach(col => {
+                thead.innerHTML += `<th>${col}</th>`;
+            });
+            thead.innerHTML += `<th>Actions</th>`;
+
+            // Render Rows
+            tableData.forEach(row => {
+                let tr = document.createElement('tr');
+                
+                tableColumns.forEach(col => {
+                    let val = row[col] !== undefined && row[col] !== null ? row[col] : '';
+                    
+                    // Special styling for status badges
+                    if(col === 'PaymentStatus') {
+                        let badgeClass = 'badge-warning';
+                        if(val === 'Approved') badgeClass = 'badge-success';
+                        else if(val === 'Rejected') badgeClass = 'badge-danger';
+                        tr.innerHTML += `<td><span class="badge ${badgeClass}">${val || 'Pending'}</span></td>`;
+                    } else if (col === 'profile' && val.startsWith('http')) {
+                        tr.innerHTML += `<td><img src="${val}" style="width:32px; height:32px; border-radius:50%;"></td>`;
+                    } else {
+                        // Escape HTML to prevent XSS
+                        const safeVal = String(val).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+                        tr.innerHTML += `<td>${safeVal}</td>`;
+                    }
+                });
+
+                const rowId = row[getIdColumn()];
+                
+                let actionsHtml = `<div class="actions-cell">`;
+                
+                // Extra actions for Purchased_data
+                if (currentTable === 'Purchased_data') {
+                    const status = row['PaymentStatus'];
+                    if (status === 'Approved') {
+                        actionsHtml += `<button class="btn-icon btn-danger" onclick="updateStatus('${rowId}', 'Rejected')" title="Reject"><i class="fa-solid fa-xmark"></i></button>`;
+                    } else {
+                        actionsHtml += `<button class="btn-icon btn-success" onclick="updateStatus('${rowId}', 'Approved')" title="Approve"><i class="fa-solid fa-check"></i></button>`;
+                    }
+                }
+                
+                actionsHtml += `
+                    <button class="btn-icon btn-edit" onclick="openModal('edit', '${rowId}')" title="Edit"><i class="fa-solid fa-pen"></i></button>
+                    <button class="btn-icon btn-delete" onclick="deleteRecord('${rowId}')" title="Delete"><i class="fa-solid fa-trash"></i></button>
+                </div>`;
+                
+                tr.innerHTML += `<td>${actionsHtml}</td>`;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function getPlaceholder(col) {
+            const lower = col.toLowerCase();
+            if(lower.includes('email')) return 'e.g. user@example.com';
+            if(lower.includes('name')) return 'e.g. John Doe';
+            if(lower.includes('url') || lower.includes('link')) return 'e.g. https://example.com';
+            if(lower.includes('password')) return 'Enter secure password';
+            if(lower === 'id' || lower === 'orderid') return 'Unique Identifier (Auto-generated if left blank)';
+            return `Enter ${col} data...`;
+        }
+
+        function openModal(mode, id = null) {
+            currentMode = mode;
+            editingId = id;
+            document.getElementById('modalTitle').textContent = mode === 'add' ? 'Add New Record' : 'Edit Record';
+            
+            const body = document.getElementById('modalFormBody');
+            body.innerHTML = '';
+            
+            let recordData = {};
+            if (mode === 'edit') {
+                const idCol = getIdColumn();
+                recordData = tableData.find(r => String(r[idCol]) === String(id)) || {};
+            }
+
+            tableColumns.forEach(col => {
+                // Don't allow editing ID in edit mode
+                const isId = col === getIdColumn();
+                const readOnly = (isId && mode === 'edit') ? 'readonly disabled style="opacity:0.5"' : '';
+                
+                let val = recordData[col] !== undefined ? recordData[col] : '';
+                const placeholder = getPlaceholder(col);
+                const colLower = col.toLowerCase();
+                const isDate = colLower.includes('date') || colLower.includes('time');
+                
+                if (isDate) {
+                    // Try to format existing date for datetime-local
+                    if (val && val.length > 10) {
+                        try {
+                            const d = new Date(val);
+                            if(!isNaN(d.getTime())) val = d.toISOString().slice(0, 16);
+                        } catch(e) {}
+                    }
+                    body.innerHTML += `
+                        <div class="form-group">
+                            <label><i class="fa-regular fa-calendar"></i> ${col}</label>
+                            <input type="datetime-local" id="input_${col}" value="${val}" ${readOnly}>
+                        </div>
+                    `;
+                } else if (col === 'PaymentStatus' && currentTable === 'Purchased_data') {
+                    body.innerHTML += `
+                        <div class="form-group">
+                            <label><i class="fa-solid fa-money-bill"></i> ${col}</label>
+                            <select id="input_${col}">
+                                <option value="" ${val===''?'selected':''}>Pending</option>
+                                <option value="Approved" ${val==='Approved'?'selected':''}>Approved</option>
+                                <option value="Rejected" ${val==='Rejected'?'selected':''}>Rejected</option>
+                            </select>
+                        </div>
+                    `;
+                } else if (String(val).length > 100 || colLower.includes('description')) {
+                     body.innerHTML += `
+                        <div class="form-group">
+                            <label><i class="fa-solid fa-align-left"></i> ${col}</label>
+                            <textarea id="input_${col}" rows="3" placeholder="${placeholder}" ${readOnly}>${val}</textarea>
+                        </div>
+                    `;
+                } else {
+                    body.innerHTML += `
+                        <div class="form-group">
+                            <label><i class="fa-solid fa-pen"></i> ${col}</label>
+                            <input type="text" id="input_${col}" value="${val}" placeholder="${placeholder}" ${readOnly}>
+                        </div>
+                    `;
+                }
+            });
+
+            document.getElementById('formModal').classList.add('active');
+        }
+
+        function closeModal() {
+            document.getElementById('formModal').classList.remove('active');
+        }
+
+        async function saveRecord() {
+            const url = getBaseUrl();
+            const btn = document.getElementById('saveBtn');
+            const originalText = btn.innerHTML;
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Saving...';
+            btn.disabled = true;
+
+            const payload = {};
+            tableColumns.forEach(col => {
+                const isId = col === getIdColumn();
+                const val = document.getElementById(`input_${col}`).value;
+                // Exclude ID from payload during edit to prevent SQL errors, and during add if empty
+                if (isId && currentMode === 'edit') return; 
+                if (isId && currentMode === 'add' && val === '') return;
+                
+                payload[col] = val;
+            });
+
+            try {
+                let endpoint = `${url}/?table=${currentTable}`;
+                let method = 'POST'; // Cloudflare script uses POST for both insert and specific column update, and PUT for full record
+                
+                if (currentMode === 'edit') {
+                    method = 'PUT';
+                    endpoint += `&id=${encodeURIComponent(editingId)}`;
+                }
+
+                const response = await fetch(endpoint, {
+                    method: method,
+                    headers: { 
+                        'Authorization': getAuthHeader(),
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(payload)
+                });
+
+                const data = await response.json();
+                
+                if (!response.ok || data.error) {
+                    throw new Error(data.error || 'Failed to save');
+                }
+
+                showToast(data.message || 'Record saved successfully');
+                closeModal();
+                fetchData(); // Reload table
+            } catch (error) {
+                showToast(error.message, 'error');
+            } finally {
+                btn.innerHTML = originalText;
+                btn.disabled = false;
+            }
+        }
+
+        async function deleteRecord(id) {
+            if (!confirm('Are you sure you want to delete this record? This action cannot be undone.')) return;
+
+            const url = getBaseUrl();
+            try {
+                const response = await fetch(`${url}/?table=${currentTable}&id=${encodeURIComponent(id)}`, {
+                    method: 'DELETE',
+                    headers: { 'Authorization': getAuthHeader() }
+                });
+                
+                const data = await response.json();
+                if (!response.ok || data.error) throw new Error(data.error || 'Failed to delete');
+                
+                showToast('Record deleted successfully');
+                fetchData();
+            } catch (error) {
+                showToast(error.message, 'error');
+            }
+        }
+
+        // Specific function for quick Approve/Reject without opening modal
+        async function updateStatus(id, newStatus) {
+            const url = getBaseUrl();
+            const idCol = getIdColumn();
+            const record = tableData.find(r => String(r[idCol]) === String(id));
+            if(!record) return;
+
+            // Using the POST method for partial column update with the primary ID
+            const payload = { "PaymentStatus": newStatus };
+            
+            try {
+                const response = await fetch(`${url}/?table=${currentTable}&col=${idCol}&val=${encodeURIComponent(id)}`, {
+                    method: 'POST',
+                    headers: { 
+                        'Authorization': getAuthHeader(),
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(payload)
+                });
+                
+                const data = await response.json();
+                if (!response.ok || data.error) throw new Error(data.error || 'Failed to update status');
+                
+                showToast(`Order ${newStatus} successfully!`);
+                fetchData();
+            } catch (error) {
+                showToast(error.message, 'error');
+            }
+        }
+    </script>
+</body>
+</html>
