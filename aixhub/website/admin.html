@@ -600,6 +600,10 @@
             <div class="menu-item" onclick="loadTable('Aix_Apk_Update', this)">
                 <i class="fa-brands fa-android"></i> Aix Apk Update
             </div>
+            <div class="menu-title" style="margin-top: 16px;">Storage</div>
+            <div class="menu-item" onclick="showFileManager(this)">
+                <i class="fa-solid fa-folder-open"></i> Secure File Manager
+            </div>
         </div>
     </aside>
 
@@ -625,8 +629,8 @@
             </div>
         </header>
 
-        <div class="content-body">
-            <div class="card">
+        <div class="content-body" id="mainContentBody">
+            <div class="card" id="tableCard">
                 <div class="card-header">
                     <div>
                         <h3 style="margin-bottom: 4px;">Records</h3>
@@ -656,6 +660,113 @@
                             </tr>
                         </tbody>
                     </table>
+                </div>
+            </div>
+
+            <!-- File Manager View -->
+            <div class="card" id="fileManagerCard" style="display: none;">
+                <div class="card-header" style="justify-content: space-between;">
+                    <div>
+                        <h3 style="margin-bottom: 4px;">Secure File Manager (R2)</h3>
+                        <span style="font-size: 13px; color: var(--text-muted);">Upload files securely to Cloudflare R2</span>
+                    </div>
+                    <div id="storageStats" style="text-align: right; font-size: 13px; color: var(--text-muted);">
+                        <div><i class="fa-solid fa-hard-drive"></i> Storage: <strong id="storageUsed" style="color: var(--primary);">0 MB</strong> / 10 GB</div>
+                        <div><i class="fa-solid fa-file"></i> Files: <strong id="fileCount" style="color: var(--text-main);">0</strong></div>
+                    </div>
+                </div>
+                <div style="padding: 24px;">
+                    <!-- Tabs -->
+                    <div style="display: flex; border-bottom: 1px solid var(--border); margin-bottom: 24px;">
+                        <button id="tabR2" class="btn" style="border-bottom: 2px solid var(--primary); border-radius: 0; color: var(--text-main); background: transparent;" onclick="switchFileManagerTab('r2')">
+                            <i class="fa-solid fa-cloud"></i> R2 Cloud Storage
+                        </button>
+                        <button id="tabGDrive" class="btn" style="border-bottom: 2px solid transparent; border-radius: 0; color: var(--text-muted); background: transparent;" onclick="switchFileManagerTab('gdrive')">
+                            <i class="fa-brands fa-google-drive"></i> Google Drive Proxy
+                        </button>
+                    </div>
+
+                    <!-- R2 Upload Section -->
+                    <div id="r2UploadSection">
+                        <div class="form-group">
+                            <label><strong>Select File (Any extension: APK, ZIP, AIX, etc.)</strong></label>
+                            <input type="file" id="r2FileInput" style="padding: 10px; border: 1px dashed var(--border); width: 100%; border-radius: 8px; margin-top: 8px; background: var(--bg); color: white;">
+                        </div>
+                        <div class="form-group" style="margin-top: 16px;">
+                            <label><strong>Save As (Optional Filename)</strong></label>
+                            <input type="text" id="r2FileName" placeholder="e.g. my_app_v1.apk" class="api-input" style="width: 100%;">
+                            <small style="color: var(--text-muted);">Leave empty to use original file name. Spaces will be converted to underscores.</small>
+                        </div>
+                        <button id="uploadBtn" class="btn btn-primary" style="margin-top: 16px; width: 100%; justify-content: center; font-size: 16px; padding: 12px;" onclick="uploadFileToR2()">
+                            <i class="fa-solid fa-cloud-arrow-up"></i> Upload to R2 Bucket
+                        </button>
+                        
+                        <div id="uploadResult" style="margin-top: 24px; display: none; padding: 16px; background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.3); border-radius: 8px;">
+                            <h4 style="color: #10b981; margin-bottom: 8px;"><i class="fa-solid fa-circle-check"></i> Upload Successful!</h4>
+                            <p style="margin-bottom: 8px; font-size: 14px;"><strong>Secure Download Link:</strong></p>
+                            <div style="display: flex; gap: 8px; margin-bottom: 8px;">
+                                <input type="text" id="r2SecureLink" readonly class="api-input" style="flex: 1; font-size: 12px;" onclick="this.select();">
+                                <button class="btn btn-primary" onclick="copyText('r2SecureLink')" title="Copy Link" style="padding: 0 16px;"><i class="fa-regular fa-copy"></i></button>
+                            </div>
+                            <p style="font-size: 12px; color: var(--text-muted);">This link contains your API Secret token. Only apps/users with this exact link can download the file.</p>
+                        </div>
+                    </div>
+
+                    <!-- Google Drive Proxy Section -->
+                    <div id="gdriveSection" style="display: none;">
+                        <div style="background: rgba(59, 130, 246, 0.1); border: 1px solid rgba(59, 130, 246, 0.3); padding: 16px; border-radius: 8px; margin-bottom: 16px;">
+                            <h4 style="color: #3b82f6; margin-bottom: 8px;"><i class="fa-solid fa-circle-info"></i> How it works</h4>
+                            <ul style="font-size: 13px; color: var(--text-muted); margin-left: 20px; line-height: 1.6;">
+                                <li>Upload your file to Google Drive and set it to <strong>"Anyone with the link"</strong>.</li>
+                                <li>Paste the Google Drive link below.</li>
+                                <li>We will generate a Secure Tokenized Link that fetches the file through your Cloudflare Worker without exposing the original Drive link.</li>
+                                <li><i class="fa-solid fa-bolt" style="color:#fbbf24;"></i> Works best for files under 100MB.</li>
+                            </ul>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label><strong>Paste Google Drive Link</strong></label>
+                            <input type="text" id="gdriveLinkInput" placeholder="https://drive.google.com/file/d/1aBcDeFgHiJ.../view?usp=sharing" class="api-input" style="width: 100%; margin-top: 8px;">
+                        </div>
+                        <div class="form-group" style="margin-top: 16px;">
+                            <label><strong>Save As (Optional Filename)</strong></label>
+                            <input type="text" id="gdriveFileName" placeholder="e.g. Aix_Store_Hub.apk" class="api-input" style="width: 100%; margin-top: 8px;">
+                            <small style="color: var(--text-muted);">Leave empty to use Google Drive's original filename.</small>
+                        </div>
+                        <button class="btn btn-primary" style="margin-top: 16px; width: 100%; justify-content: center; font-size: 16px; padding: 12px; background: #3b82f6;" onclick="generateGDriveLink()">
+                            <i class="fa-solid fa-link"></i> Generate Secure Link
+                        </button>
+
+                        <div id="gdriveResult" style="margin-top: 24px; display: none; padding: 16px; background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.3); border-radius: 8px;">
+                            <h4 style="color: #10b981; margin-bottom: 8px;"><i class="fa-solid fa-shield-halved"></i> Secure Link Generated!</h4>
+                            <p style="margin-bottom: 8px; font-size: 14px;"><strong>Proxy Download Link:</strong></p>
+                            <div style="display: flex; gap: 8px; margin-bottom: 8px;">
+                                <input type="text" id="gdriveSecureLink" readonly class="api-input" style="flex: 1; font-size: 12px;" onclick="this.select();">
+                                <button class="btn btn-primary" onclick="copyText('gdriveSecureLink')" title="Copy Link" style="padding: 0 16px;"><i class="fa-regular fa-copy"></i></button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <hr style="border: 0; border-top: 1px solid var(--border); margin: 0;">
+                
+                <div style="padding: 24px;">
+                    <h3 style="margin-bottom: 16px;">Uploaded Files</h3>
+                    <div class="table-responsive">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>File Name</th>
+                                    <th>Size</th>
+                                    <th>Uploaded On</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="r2FileTableBody">
+                                <tr><td colspan="4" style="text-align: center;">Loading files...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
         </div>
@@ -706,7 +817,11 @@
             const bar = document.getElementById('progressBar');
             container.classList.add('active');
             bar.style.width = '30%';
-            setTimeout(() => { if (container.classList.contains('active')) bar.style.width = '70%'; }, 400);
+        }
+        
+        function updateProgress(percent) {
+            const bar = document.getElementById('progressBar');
+            if(bar) bar.style.width = percent + '%';
         }
 
         function endProgress() {
@@ -813,6 +928,8 @@
             };
             
             document.getElementById('pageTitle').textContent = titles[tableName];
+            document.getElementById('tableCard').style.display = 'flex';
+            document.getElementById('fileManagerCard').style.display = 'none';
             currentTable = tableName;
             
             await fetchData();
@@ -1211,6 +1328,239 @@
             } finally {
                 endProgress();
             }
+        }
+        // --- FILE MANAGER LOGIC ---
+        function showFileManager(element) {
+            if (window.innerWidth <= 768) {
+                document.querySelector('.sidebar').classList.remove('active');
+                document.querySelector('.sidebar-overlay').classList.remove('active');
+            }
+            document.querySelectorAll('.menu-item').forEach(el => el.classList.remove('active'));
+            element.classList.add('active');
+            
+            document.getElementById('pageTitle').innerText = 'Secure File Manager';
+            document.getElementById('tableCard').style.display = 'none';
+            document.getElementById('fileManagerCard').style.display = 'flex';
+            document.getElementById('uploadResult').style.display = 'none'; // reset
+            
+            fetchStorageStats();
+        }
+        
+        async function fetchStorageStats() {
+            const url = getBaseUrl();
+            if (!url) return;
+            try {
+                const tbody = document.getElementById('r2FileTableBody');
+                tbody.innerHTML = '<tr><td colspan="4" style="text-align: center;"><div class="loader" style="margin: 0 auto;"></div></td></tr>';
+                
+                const response = await fetch(`${url}/?action=list_files`, {
+                    headers: { 'Authorization': getAuthHeader() }
+                });
+                if (response.ok) {
+                    const data = await response.json();
+                    
+                    // Update stats
+                    const mb = (data.totalBytes / (1024 * 1024)).toFixed(2);
+                    document.getElementById('storageUsed').innerText = `${mb} MB`;
+                    document.getElementById('fileCount').innerText = data.fileCount;
+                    
+                    // Render Table
+                    tbody.innerHTML = '';
+                    if (!data.files || data.files.length === 0) {
+                        tbody.innerHTML = '<tr><td colspan="4" style="text-align: center; color: var(--text-muted);">No files found in R2 Bucket.</td></tr>';
+                    } else {
+                        data.files.forEach(file => {
+                            const sizeMb = (file.size / (1024 * 1024)).toFixed(2) + ' MB';
+                            const date = new Date(file.uploaded).toLocaleString();
+                            const secret = document.getElementById('apiSecret').value;
+                            const link = `${url}/?action=download_file&file=${encodeURIComponent(file.key)}&token=${secret}`;
+                            
+                            const tr = document.createElement('tr');
+                            tr.innerHTML = `
+                                <td><strong>${file.key}</strong></td>
+                                <td>${sizeMb}</td>
+                                <td>${date}</td>
+                                <td>
+                                    <button class="btn-icon" style="color: var(--primary);" onclick="copyToClipboard('${link}')" title="Copy Link"><i class="fa-regular fa-copy"></i></button>
+                                    <button class="btn-icon" style="color: #ef4444; margin-left: 8px;" onclick="deleteR2File('${file.key}')" title="Delete File"><i class="fa-solid fa-trash"></i></button>
+                                </td>
+                            `;
+                            tbody.appendChild(tr);
+                        });
+                    }
+                } else {
+                    tbody.innerHTML = '<tr><td colspan="4" style="text-align: center; color: #ef4444;">Failed to load files. Check API connection.</td></tr>';
+                }
+            } catch(e) {
+                document.getElementById('r2FileTableBody').innerHTML = '<tr><td colspan="4" style="text-align: center; color: #ef4444;">Network error.</td></tr>';
+            }
+        }
+        
+        function copyToClipboard(text) {
+            navigator.clipboard.writeText(text).then(() => {
+                showToast('Link copied to clipboard!', 'success');
+            }).catch(() => {
+                showToast('Failed to copy link', 'error');
+            });
+        }
+        
+        async function deleteR2File(fileName) {
+            if (!confirm(`Are you sure you want to delete "${fileName}"? This cannot be undone.`)) return;
+            
+            const url = getBaseUrl();
+            if (!url) return;
+            
+            startProgress();
+            try {
+                const response = await fetch(`${url}/?action=delete_file&file=${encodeURIComponent(fileName)}`, {
+                    method: 'DELETE',
+                    headers: { 'Authorization': getAuthHeader() }
+                });
+                const data = await response.json();
+                
+                if (response.ok) {
+                    showToast('File deleted successfully!', 'success');
+                    fetchStorageStats(); // Refresh table
+                } else {
+                    showToast(data.error || 'Failed to delete file', 'error');
+                }
+            } catch(e) {
+                showToast('Error deleting file', 'error');
+            } finally {
+                endProgress();
+            }
+        }
+        function copyText(inputId) {
+            const el = document.getElementById(inputId);
+            el.select();
+            document.execCommand('copy');
+            showToast('Link copied to clipboard!', 'success');
+        }
+        
+        function switchFileManagerTab(tab) {
+            const r2Sec = document.getElementById('r2UploadSection');
+            const gdSec = document.getElementById('gdriveSection');
+            const tabR2 = document.getElementById('tabR2');
+            const tabGD = document.getElementById('tabGDrive');
+            
+            if(tab === 'r2') {
+                r2Sec.style.display = 'block';
+                gdSec.style.display = 'none';
+                tabR2.style.borderBottomColor = 'var(--primary)';
+                tabR2.style.color = 'var(--text-main)';
+                tabGD.style.borderBottomColor = 'transparent';
+                tabGD.style.color = 'var(--text-muted)';
+            } else {
+                r2Sec.style.display = 'none';
+                gdSec.style.display = 'block';
+                tabGD.style.borderBottomColor = '#3b82f6';
+                tabGD.style.color = 'var(--text-main)';
+                tabR2.style.borderBottomColor = 'transparent';
+                tabR2.style.color = 'var(--text-muted)';
+            }
+        }
+        
+        function generateGDriveLink() {
+            const gLink = document.getElementById('gdriveLinkInput').value.trim();
+            if(!gLink) return showToast('Please enter a Google Drive link', 'error');
+            
+            // Extract file ID
+            let fileId = '';
+            const match = gLink.match(/\/d\/([a-zA-Z0-9_-]+)/);
+            const idMatch = gLink.match(/id=([a-zA-Z0-9_-]+)/);
+            if (match) fileId = match[1];
+            else if (idMatch) fileId = idMatch[1];
+            else return showToast('Invalid Google Drive link format', 'error');
+            
+            const url = getBaseUrl();
+            if(!url) return showToast('API URL not connected!', 'error');
+            const secret = document.getElementById('apiSecret').value;
+            
+            let secureLink = `${url}/?action=download_gdrive&id=${fileId}&token=${secret}`;
+            
+            let fileName = document.getElementById('gdriveFileName').value.trim();
+            if (fileName) {
+                fileName = fileName.replace(/\s+/g, '_');
+                secureLink += `&name=${encodeURIComponent(fileName)}`;
+            }
+            
+            document.getElementById('gdriveResult').style.display = 'block';
+            document.getElementById('gdriveSecureLink').value = secureLink;
+            showToast('Secure Google Drive Proxy link generated!', 'success');
+        }
+        function uploadFileToR2() {
+            const fileInput = document.getElementById('r2FileInput');
+            if (fileInput.files.length === 0) return showToast('Please select a file first', 'error');
+            
+            const file = fileInput.files[0];
+            let fileName = document.getElementById('r2FileName').value.trim();
+            if (!fileName) fileName = file.name;
+            
+            // replace spaces with underscores for safe URLs
+            fileName = fileName.replace(/\s+/g, '_');
+            
+            const url = getBaseUrl();
+            if (!url) return showToast('API URL not connected!', 'error');
+            
+            const uploadBtn = document.getElementById('uploadBtn');
+            uploadBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Uploading...';
+            uploadBtn.disabled = true;
+            
+            document.getElementById('progressBarContainer').classList.add('active');
+            updateProgress(0);
+            
+            const xhr = new XMLHttpRequest();
+            xhr.open('POST', `${url}/?action=upload_file&file=${encodeURIComponent(fileName)}`, true);
+            xhr.setRequestHeader('Authorization', getAuthHeader());
+            
+            // Track real upload progress
+            xhr.upload.onprogress = function(e) {
+                if (e.lengthComputable) {
+                    const percentComplete = (e.loaded / e.total) * 100;
+                    updateProgress(percentComplete);
+                }
+            };
+            
+            xhr.onload = function() {
+                endProgress();
+                uploadBtn.innerHTML = '<i class="fa-solid fa-cloud-arrow-up"></i> Upload to R2 Bucket';
+                uploadBtn.disabled = false;
+                
+                if (xhr.status >= 200 && xhr.status < 300) {
+                    try {
+                        const data = JSON.parse(xhr.responseText);
+                        showToast('File Uploaded Securely!', 'success');
+                        const secret = document.getElementById('apiSecret').value;
+                        const secureLink = `${url}/?action=download_file&file=${encodeURIComponent(fileName)}&token=${secret}`;
+                        
+                        document.getElementById('uploadResult').style.display = 'block';
+                        document.getElementById('r2SecureLink').value = secureLink;
+                        
+                        fileInput.value = '';
+                        document.getElementById('r2FileName').value = '';
+                        
+                        fetchStorageStats(); // Refresh stats after upload
+                    } catch(e) {
+                        showToast('Error parsing response', 'error');
+                    }
+                } else {
+                    let errStr = 'Upload failed';
+                    try {
+                        const data = JSON.parse(xhr.responseText);
+                        if(data.error) errStr = data.error;
+                    } catch(e){}
+                    showToast(errStr, 'error');
+                }
+            };
+            
+            xhr.onerror = function() {
+                endProgress();
+                uploadBtn.innerHTML = '<i class="fa-solid fa-cloud-arrow-up"></i> Upload to R2 Bucket';
+                uploadBtn.disabled = false;
+                showToast('Network error occurred during upload', 'error');
+            };
+            
+            xhr.send(file); // Direct binary stream
         }
     </script>
 </body>
