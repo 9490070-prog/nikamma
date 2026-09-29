@@ -782,6 +782,15 @@
                 recordData = tableData.find(r => String(r[idCol]) === String(id)) || {};
             }
 
+            // Human-readable title generator
+            const getFriendlyName = (name) => {
+                return name
+                    .replace(/([A-Z])/g, ' $1') // insert a space before all caps
+                    .replace(/_/g, ' ') // replace underscores with spaces
+                    .replace(/^./, str => str.toUpperCase()) // uppercase first letter
+                    .trim();
+            };
+
             tableColumns.forEach(col => {
                 // Don't allow editing ID in edit mode
                 const isId = col === getIdColumn();
@@ -791,6 +800,8 @@
                 const placeholder = getPlaceholder(col);
                 const colLower = col.toLowerCase();
                 const isDate = colLower.includes('date') || colLower.includes('time');
+                
+                const friendlyCol = getFriendlyName(col);
                 
                 if (isDate) {
                     // Try to format existing date for datetime-local
@@ -802,14 +813,14 @@
                     }
                     body.innerHTML += `
                         <div class="form-group">
-                            <label><i class="fa-regular fa-calendar"></i> ${col}</label>
+                            <label><i class="fa-regular fa-calendar"></i> <strong>${friendlyCol}</strong></label>
                             <input type="datetime-local" id="input_${col}" value="${val}" ${readOnly}>
                         </div>
                     `;
                 } else if (col === 'PaymentStatus' && currentTable === 'Purchased_data') {
                     body.innerHTML += `
                         <div class="form-group">
-                            <label><i class="fa-solid fa-money-bill"></i> ${col}</label>
+                            <label><i class="fa-solid fa-money-bill"></i> <strong>${friendlyCol}</strong></label>
                             <select id="input_${col}">
                                 <option value="" ${val===''?'selected':''}>Pending</option>
                                 <option value="Approved" ${val==='Approved'?'selected':''}>Approved</option>
@@ -820,14 +831,14 @@
                 } else if (String(val).length > 100 || colLower.includes('description')) {
                      body.innerHTML += `
                         <div class="form-group">
-                            <label><i class="fa-solid fa-align-left"></i> ${col}</label>
+                            <label><i class="fa-solid fa-align-left"></i> <strong>${friendlyCol}</strong></label>
                             <textarea id="input_${col}" rows="3" placeholder="${placeholder}" ${readOnly}>${val}</textarea>
                         </div>
                     `;
                 } else {
                     body.innerHTML += `
                         <div class="form-group">
-                            <label><i class="fa-solid fa-pen"></i> ${col}</label>
+                            <label><i class="fa-solid fa-pen"></i> <strong>${friendlyCol}</strong></label>
                             <input type="text" id="input_${col}" value="${val}" placeholder="${placeholder}" ${readOnly}>
                         </div>
                     `;
