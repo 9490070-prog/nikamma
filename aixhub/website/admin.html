@@ -6,6 +6,8 @@
     <title>Cloudflare Admin Panel</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.css" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
     <style>
         :root {
             --primary: #4f46e5;
@@ -677,12 +679,15 @@
                 </div>
                 <div style="padding: 24px;">
                     <!-- Tabs -->
-                    <div style="display: flex; border-bottom: 1px solid var(--border); margin-bottom: 24px;">
+                    <div style="display: flex; border-bottom: 1px solid var(--border); margin-bottom: 24px; overflow-x: auto; white-space: nowrap;">
                         <button id="tabR2" class="btn" style="border-bottom: 2px solid var(--primary); border-radius: 0; color: var(--text-main); background: transparent;" onclick="switchFileManagerTab('r2')">
-                            <i class="fa-solid fa-cloud"></i> R2 Cloud Storage
+                            <i class="fa-solid fa-cloud"></i> R2 Storage
+                        </button>
+                        <button id="tabImageManager" class="btn" style="border-bottom: 2px solid transparent; border-radius: 0; color: var(--text-muted); background: transparent;" onclick="switchFileManagerTab('image')">
+                            <i class="fa-solid fa-crop-simple"></i> Image Manager
                         </button>
                         <button id="tabGDrive" class="btn" style="border-bottom: 2px solid transparent; border-radius: 0; color: var(--text-muted); background: transparent;" onclick="switchFileManagerTab('gdrive')">
-                            <i class="fa-brands fa-google-drive"></i> Google Drive Proxy
+                            <i class="fa-brands fa-google-drive"></i> GDrive Proxy
                         </button>
                     </div>
 
@@ -746,12 +751,49 @@
                             </div>
                         </div>
                     </div>
+
+                    <!-- Image Manager Section -->
+                    <div id="imageManagerSection" style="display: none;">
+                        <div style="background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.3); padding: 16px; border-radius: 8px; margin-bottom: 16px;">
+                            <h4 style="color: #10b981; margin-bottom: 8px;"><i class="fa-solid fa-wand-magic-sparkles"></i> Image Cropper & Compressor</h4>
+                            <p style="font-size: 13px; color: var(--text-muted); line-height: 1.6;">Select an image, crop it perfectly, reduce its size, and upload directly to R2 for blazing fast delivery.</p>
+                        </div>
+
+                        <div class="form-group">
+                            <label><strong>Select Image</strong></label>
+                            <input type="file" id="imageInput" accept="image/*" style="padding: 10px; border: 1px dashed var(--border); width: 100%; border-radius: 8px; margin-top: 8px; background: var(--bg); color: white;">
+                        </div>
+
+                        <!-- Cropper Container -->
+                        <div id="cropperContainer" style="display: none; margin-top: 16px; max-height: 400px; overflow: hidden; border-radius: 8px; border: 1px solid var(--border); background: #000;">
+                            <img id="cropperImage" src="" style="display: block; max-width: 100%;">
+                        </div>
+
+                        <div id="imageSettings" style="display: none; margin-top: 16px;">
+                            <div class="form-group">
+                                <label><strong>Save As (Filename)</strong></label>
+                                <input type="text" id="imageFileName" placeholder="e.g. icon.jpg" class="api-input" style="width: 100%;">
+                            </div>
+                            <div class="form-group" style="margin-top: 16px;">
+                                <label><strong>Compression Quality (<span id="qualityValue">80</span>%)</strong></label>
+                                <input type="range" id="imageQuality" min="10" max="100" value="80" style="width: 100%; margin-top: 8px;" oninput="document.getElementById('qualityValue').innerText=this.value">
+                                <small style="color: var(--text-muted);">Lower quality = smaller file size. 80% is recommended.</small>
+                            </div>
+                            <button id="cropUploadBtn" class="btn btn-primary" style="margin-top: 16px; width: 100%; justify-content: center; font-size: 16px; padding: 12px; background: #10b981;" onclick="cropAndUploadImage()">
+                                <i class="fa-solid fa-crop-simple"></i> Crop, Compress & Upload
+                            </button>
+                        </div>
+                    </div>
                 </div>
                 
                 <hr style="border: 0; border-top: 1px solid var(--border); margin: 0;">
                 
                 <div style="padding: 24px;">
                     <h3 style="margin-bottom: 16px;">Uploaded Files</h3>
+                    <!-- Category Filters -->
+                    <div id="fileCategoryFilters" style="display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 16px;">
+                        <button class="btn btn-primary" style="padding: 6px 12px; font-size: 12px; border-radius: 20px;">All Files</button>
+                    </div>
                     <div class="table-responsive">
                         <table>
                             <thead>
@@ -1346,6 +1388,9 @@
             fetchStorageStats();
         }
         
+        let allR2Files = [];
+        let currentCategory = 'all';
+
         async function fetchStorageStats() {
             const url = getBaseUrl();
             if (!url) return;
@@ -1364,35 +1409,81 @@
                     document.getElementById('storageUsed').innerText = `${mb} MB`;
                     document.getElementById('fileCount').innerText = data.fileCount;
                     
-                    // Render Table
-                    tbody.innerHTML = '';
-                    if (!data.files || data.files.length === 0) {
-                        tbody.innerHTML = '<tr><td colspan="4" style="text-align: center; color: var(--text-muted);">No files found in R2 Bucket.</td></tr>';
-                    } else {
-                        data.files.forEach(file => {
-                            const sizeMb = (file.size / (1024 * 1024)).toFixed(2) + ' MB';
-                            const date = new Date(file.uploaded).toLocaleString();
-                            const secret = document.getElementById('apiSecret').value;
-                            const link = `${url}/?action=download_file&file=${encodeURIComponent(file.key)}&token=${secret}`;
-                            
-                            const tr = document.createElement('tr');
-                            tr.innerHTML = `
-                                <td><strong>${file.key}</strong></td>
-                                <td>${sizeMb}</td>
-                                <td>${date}</td>
-                                <td>
-                                    <button class="btn-icon" style="color: var(--primary);" onclick="copyToClipboard('${link}')" title="Copy Link"><i class="fa-regular fa-copy"></i></button>
-                                    <button class="btn-icon" style="color: #ef4444; margin-left: 8px;" onclick="deleteR2File('${file.key}')" title="Delete File"><i class="fa-solid fa-trash"></i></button>
-                                </td>
-                            `;
-                            tbody.appendChild(tr);
-                        });
-                    }
+                    allR2Files = data.files || [];
+                    renderFileCategories();
+                    renderFileTable();
                 } else {
                     tbody.innerHTML = '<tr><td colspan="4" style="text-align: center; color: #ef4444;">Failed to load files. Check API connection.</td></tr>';
                 }
             } catch(e) {
                 document.getElementById('r2FileTableBody').innerHTML = '<tr><td colspan="4" style="text-align: center; color: #ef4444;">Network error.</td></tr>';
+            }
+        }
+        
+        function renderFileCategories() {
+            const container = document.getElementById('fileCategoryFilters');
+            const exts = new Set();
+            
+            allR2Files.forEach(f => {
+                const parts = f.key.split('.');
+                if (parts.length > 1) {
+                    exts.add(parts.pop().toUpperCase());
+                } else {
+                    exts.add('UNKNOWN');
+                }
+            });
+            
+            let html = `<button class="btn ${currentCategory === 'all' ? 'btn-primary' : ''}" style="padding: 6px 12px; font-size: 12px; border-radius: 20px; ${currentCategory !== 'all' ? 'background: rgba(255,255,255,0.05); color: var(--text-muted);' : ''}" onclick="filterFilesByCategory('all')">All Files (${allR2Files.length})</button>`;
+            
+            Array.from(exts).sort().forEach(ext => {
+                const count = allR2Files.filter(f => f.key.toUpperCase().endsWith('.' + ext) || (ext === 'UNKNOWN' && !f.key.includes('.'))).length;
+                const isActive = currentCategory === ext;
+                html += `<button class="btn ${isActive ? 'btn-primary' : ''}" style="padding: 6px 12px; font-size: 12px; border-radius: 20px; ${!isActive ? 'background: rgba(255,255,255,0.05); color: var(--text-muted);' : ''}" onclick="filterFilesByCategory('${ext}')">${ext} (${count})</button>`;
+            });
+            
+            container.innerHTML = html;
+        }
+        
+        function filterFilesByCategory(cat) {
+            currentCategory = cat;
+            renderFileCategories();
+            renderFileTable();
+        }
+
+        function renderFileTable() {
+            const tbody = document.getElementById('r2FileTableBody');
+            tbody.innerHTML = '';
+            
+            let filteredFiles = allR2Files;
+            if (currentCategory !== 'all') {
+                filteredFiles = allR2Files.filter(f => {
+                    if (currentCategory === 'UNKNOWN') return !f.key.includes('.');
+                    return f.key.toUpperCase().endsWith('.' + currentCategory);
+                });
+            }
+
+            if (filteredFiles.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="4" style="text-align: center; color: var(--text-muted);">No files found in this category.</td></tr>';
+            } else {
+                const url = getBaseUrl();
+                filteredFiles.forEach(file => {
+                    const sizeMb = (file.size / (1024 * 1024)).toFixed(2) + ' MB';
+                    const date = new Date(file.uploaded).toLocaleString();
+                    const secret = document.getElementById('apiSecret').value;
+                    const link = `${url}/?action=download_file&file=${encodeURIComponent(file.key)}&token=${secret}`;
+                    
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td><strong>${file.key}</strong></td>
+                        <td>${sizeMb}</td>
+                        <td>${date}</td>
+                        <td>
+                            <button class="btn-icon" style="color: var(--primary);" onclick="copyToClipboard('${link}')" title="Copy Link"><i class="fa-regular fa-copy"></i></button>
+                            <button class="btn-icon" style="color: #ef4444; margin-left: 8px;" onclick="deleteR2File('${file.key}')" title="Delete File"><i class="fa-solid fa-trash"></i></button>
+                        </td>
+                    `;
+                    tbody.appendChild(tr);
+                });
             }
         }
         
@@ -1437,26 +1528,115 @@
             showToast('Link copied to clipboard!', 'success');
         }
         
+        let cropperInstance = null;
+        
+        document.getElementById('imageInput').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                document.getElementById('imageFileName').value = file.name;
+                const url = URL.createObjectURL(file);
+                const image = document.getElementById('cropperImage');
+                image.src = url;
+                document.getElementById('cropperContainer').style.display = 'block';
+                document.getElementById('imageSettings').style.display = 'block';
+                
+                if (cropperInstance) cropperInstance.destroy();
+                cropperInstance = new Cropper(image, {
+                    viewMode: 1,
+                    autoCropArea: 1
+                });
+            }
+        });
+        
+        function cropAndUploadImage() {
+            if (!cropperInstance) return;
+            
+            let fileName = document.getElementById('imageFileName').value.trim() || 'image.jpg';
+            fileName = fileName.replace(/\s+/g, '_');
+            const quality = parseInt(document.getElementById('imageQuality').value) / 100;
+            
+            const btn = document.getElementById('cropUploadBtn');
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Processing...';
+            btn.disabled = true;
+            
+            const url = getBaseUrl();
+            if (!url) return showToast('API URL not connected!', 'error');
+
+            cropperInstance.getCroppedCanvas({
+                fillColor: '#fff',
+                imageSmoothingEnabled: true,
+                imageSmoothingQuality: 'high',
+            }).toBlob((blob) => {
+                document.getElementById('progressBarContainer').classList.add('active');
+                updateProgress(0);
+                
+                const xhr = new XMLHttpRequest();
+                xhr.open('POST', `${url}/?action=upload_file&file=${encodeURIComponent(fileName)}`, true);
+                xhr.setRequestHeader('Authorization', getAuthHeader());
+                
+                xhr.upload.onprogress = function(e) {
+                    if (e.lengthComputable) {
+                        updateProgress((e.loaded / e.total) * 100);
+                    }
+                };
+                
+                xhr.onload = function() {
+                    endProgress();
+                    btn.innerHTML = '<i class="fa-solid fa-crop-simple"></i> Crop, Compress & Upload';
+                    btn.disabled = false;
+                    
+                    if (xhr.status >= 200 && xhr.status < 300) {
+                        showToast('Image Compressed & Uploaded!', 'success');
+                        fetchStorageStats();
+                        // Reset cropper
+                        cropperInstance.destroy();
+                        cropperInstance = null;
+                        document.getElementById('imageInput').value = '';
+                        document.getElementById('cropperContainer').style.display = 'none';
+                        document.getElementById('imageSettings').style.display = 'none';
+                    } else {
+                        showToast('Upload failed', 'error');
+                    }
+                };
+                
+                xhr.onerror = function() {
+                    endProgress();
+                    btn.innerHTML = '<i class="fa-solid fa-crop-simple"></i> Crop, Compress & Upload';
+                    btn.disabled = false;
+                    showToast('Network error during upload', 'error');
+                };
+                
+                xhr.send(blob);
+            }, 'image/jpeg', quality);
+        }
+        
         function switchFileManagerTab(tab) {
             const r2Sec = document.getElementById('r2UploadSection');
             const gdSec = document.getElementById('gdriveSection');
+            const imgSec = document.getElementById('imageManagerSection');
             const tabR2 = document.getElementById('tabR2');
             const tabGD = document.getElementById('tabGDrive');
+            const tabImg = document.getElementById('tabImageManager');
             
+            // Reset all
+            [r2Sec, gdSec, imgSec].forEach(el => el.style.display = 'none');
+            [tabR2, tabGD, tabImg].forEach(el => {
+                el.style.borderBottomColor = 'transparent';
+                el.style.color = 'var(--text-muted)';
+            });
+
             if(tab === 'r2') {
                 r2Sec.style.display = 'block';
-                gdSec.style.display = 'none';
                 tabR2.style.borderBottomColor = 'var(--primary)';
                 tabR2.style.color = 'var(--text-main)';
-                tabGD.style.borderBottomColor = 'transparent';
-                tabGD.style.color = 'var(--text-muted)';
-            } else {
-                r2Sec.style.display = 'none';
+            } else if(tab === 'gdrive') {
                 gdSec.style.display = 'block';
                 tabGD.style.borderBottomColor = '#3b82f6';
                 tabGD.style.color = 'var(--text-main)';
-                tabR2.style.borderBottomColor = 'transparent';
-                tabR2.style.color = 'var(--text-muted)';
+            } else if(tab === 'image') {
+                imgSec.style.display = 'block';
+                tabImg.style.borderBottomColor = '#10b981';
+                tabImg.style.color = 'var(--text-main)';
             }
         }
         
