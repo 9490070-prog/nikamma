@@ -1548,65 +1548,103 @@
             }
         });
         
+        function performUpload(fileName, fileOrBlob, buttonId, originalBtnHtml, isCropper = false) {
+            const url = getBaseUrl();
+            if (!url) return showToast('API URL not connected!', 'error');
+            
+            const btn = document.getElementById(buttonId);
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Uploading...';
+            btn.disabled = true;
+            
+            document.getElementById('progressBarContainer').classList.add('active');
+            updateProgress(0);
+            
+            const xhr = new XMLHttpRequest();
+            xhr.open('POST', `${url}/?action=upload_file&file=${encodeURIComponent(fileName)}`, true);
+            xhr.setRequestHeader('Authorization', getAuthHeader());
+            
+            xhr.upload.onprogress = function(e) {
+                if (e.lengthComputable) {
+                    updateProgress((e.loaded / e.total) * 100);
+                }
+            };
+            
+            xhr.onload = function() {
+                endProgress();
+                btn.innerHTML = originalBtnHtml;
+                btn.disabled = false;
+                
+                if (xhr.status >= 200 && xhr.status < 300) {
+                    try {
+                        const data = JSON.parse(xhr.responseText);
+                        showToast('File Uploaded Securely!', 'success');
+                        const secret = document.getElementById('apiSecret').value;
+                        const secureLink = `${url}/?action=download_file&file=${encodeURIComponent(fileName)}&token=${secret}`;
+                        
+                        if (isCropper) {
+                            if (cropperInstance) {
+                                cropperInstance.destroy();
+                                cropperInstance = null;
+                            }
+                            document.getElementById('imageInput').value = '';
+                            document.getElementById('cropperContainer').style.display = 'none';
+                            document.getElementById('imageSettings').style.display = 'none';
+                        } else {
+                            document.getElementById('r2FileInput').value = '';
+                            document.getElementById('r2FileName').value = '';
+                            document.getElementById('uploadResult').style.display = 'block';
+                            document.getElementById('r2SecureLink').value = secureLink;
+                        }
+                        
+                        fetchStorageStats(); // Refresh table
+                    } catch(e) {
+                        showToast('Error parsing response', 'error');
+                    }
+                } else {
+                    let errStr = 'Upload failed (Status ' + xhr.status + ')';
+                    try {
+                        const data = JSON.parse(xhr.responseText);
+                        if(data.error) errStr = data.error;
+                    } catch(e){}
+                    showToast(errStr, 'error');
+                }
+            };
+            
+            xhr.onerror = function() {
+                endProgress();
+                btn.innerHTML = originalBtnHtml;
+                btn.disabled = false;
+                showToast('Network error during upload. Please check your internet.', 'error');
+            };
+            
+            xhr.send(fileOrBlob);
+        }
+
         function cropAndUploadImage() {
             if (!cropperInstance) return;
             
             let fileName = document.getElementById('imageFileName').value.trim() || 'image.jpg';
             fileName = fileName.replace(/\s+/g, '_');
+            
+            const exists = allR2Files.some(f => f.key === fileName);
+            if (exists) {
+                const choice = confirm(`File "${fileName}" already exists!\n\nClick [OK] to UPDATE (Overwrite).\nClick [Cancel] to RENAME this new file.`);
+                if (!choice) {
+                    let newName = prompt("Enter new file name:", "new_" + fileName);
+                    if (!newName) return;
+                    fileName = newName.trim().replace(/\s+/g, '_');
+                }
+            }
+            
             const quality = parseInt(document.getElementById('imageQuality').value) / 100;
+            const originalBtnHtml = '<i class="fa-solid fa-crop-simple"></i> Crop, Compress & Upload';
             
-            const btn = document.getElementById('cropUploadBtn');
-            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Processing...';
-            btn.disabled = true;
-            
-            const url = getBaseUrl();
-            if (!url) return showToast('API URL not connected!', 'error');
-
             cropperInstance.getCroppedCanvas({
                 fillColor: '#fff',
                 imageSmoothingEnabled: true,
                 imageSmoothingQuality: 'high',
             }).toBlob((blob) => {
-                document.getElementById('progressBarContainer').classList.add('active');
-                updateProgress(0);
-                
-                const xhr = new XMLHttpRequest();
-                xhr.open('POST', `${url}/?action=upload_file&file=${encodeURIComponent(fileName)}`, true);
-                xhr.setRequestHeader('Authorization', getAuthHeader());
-                
-                xhr.upload.onprogress = function(e) {
-                    if (e.lengthComputable) {
-                        updateProgress((e.loaded / e.total) * 100);
-                    }
-                };
-                
-                xhr.onload = function() {
-                    endProgress();
-                    btn.innerHTML = '<i class="fa-solid fa-crop-simple"></i> Crop, Compress & Upload';
-                    btn.disabled = false;
-                    
-                    if (xhr.status >= 200 && xhr.status < 300) {
-                        showToast('Image Compressed & Uploaded!', 'success');
-                        fetchStorageStats();
-                        // Reset cropper
-                        cropperInstance.destroy();
-                        cropperInstance = null;
-                        document.getElementById('imageInput').value = '';
-                        document.getElementById('cropperContainer').style.display = 'none';
-                        document.getElementById('imageSettings').style.display = 'none';
-                    } else {
-                        showToast('Upload failed', 'error');
-                    }
-                };
-                
-                xhr.onerror = function() {
-                    endProgress();
-                    btn.innerHTML = '<i class="fa-solid fa-crop-simple"></i> Crop, Compress & Upload';
-                    btn.disabled = false;
-                    showToast('Network error during upload', 'error');
-                };
-                
-                xhr.send(blob);
+                performUpload(fileName, blob, 'cropUploadBtn', originalBtnHtml, true);
             }, 'image/jpeg', quality);
         }
         
@@ -1668,6 +1706,7 @@
             document.getElementById('gdriveSecureLink').value = secureLink;
             showToast('Secure Google Drive Proxy link generated!', 'success');
         }
+
         function uploadFileToR2() {
             const fileInput = document.getElementById('r2FileInput');
             if (fileInput.files.length === 0) return showToast('Please select a file first', 'error');
@@ -1676,71 +1715,20 @@
             let fileName = document.getElementById('r2FileName').value.trim();
             if (!fileName) fileName = file.name;
             
-            // replace spaces with underscores for safe URLs
             fileName = fileName.replace(/\s+/g, '_');
             
-            const url = getBaseUrl();
-            if (!url) return showToast('API URL not connected!', 'error');
-            
-            const uploadBtn = document.getElementById('uploadBtn');
-            uploadBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Uploading...';
-            uploadBtn.disabled = true;
-            
-            document.getElementById('progressBarContainer').classList.add('active');
-            updateProgress(0);
-            
-            const xhr = new XMLHttpRequest();
-            xhr.open('POST', `${url}/?action=upload_file&file=${encodeURIComponent(fileName)}`, true);
-            xhr.setRequestHeader('Authorization', getAuthHeader());
-            
-            // Track real upload progress
-            xhr.upload.onprogress = function(e) {
-                if (e.lengthComputable) {
-                    const percentComplete = (e.loaded / e.total) * 100;
-                    updateProgress(percentComplete);
+            const exists = allR2Files.some(f => f.key === fileName);
+            if (exists) {
+                const choice = confirm(`File "${fileName}" already exists!\n\nClick [OK] to UPDATE (Overwrite) the file.\nClick [Cancel] to RENAME this new file.`);
+                if (!choice) {
+                    let newName = prompt("Enter new file name:", "v2_" + fileName);
+                    if (!newName) return;
+                    fileName = newName.trim().replace(/\s+/g, '_');
                 }
-            };
+            }
             
-            xhr.onload = function() {
-                endProgress();
-                uploadBtn.innerHTML = '<i class="fa-solid fa-cloud-arrow-up"></i> Upload to R2 Bucket';
-                uploadBtn.disabled = false;
-                
-                if (xhr.status >= 200 && xhr.status < 300) {
-                    try {
-                        const data = JSON.parse(xhr.responseText);
-                        showToast('File Uploaded Securely!', 'success');
-                        const secret = document.getElementById('apiSecret').value;
-                        const secureLink = `${url}/?action=download_file&file=${encodeURIComponent(fileName)}&token=${secret}`;
-                        
-                        document.getElementById('uploadResult').style.display = 'block';
-                        document.getElementById('r2SecureLink').value = secureLink;
-                        
-                        fileInput.value = '';
-                        document.getElementById('r2FileName').value = '';
-                        
-                        fetchStorageStats(); // Refresh stats after upload
-                    } catch(e) {
-                        showToast('Error parsing response', 'error');
-                    }
-                } else {
-                    let errStr = 'Upload failed';
-                    try {
-                        const data = JSON.parse(xhr.responseText);
-                        if(data.error) errStr = data.error;
-                    } catch(e){}
-                    showToast(errStr, 'error');
-                }
-            };
-            
-            xhr.onerror = function() {
-                endProgress();
-                uploadBtn.innerHTML = '<i class="fa-solid fa-cloud-arrow-up"></i> Upload to R2 Bucket';
-                uploadBtn.disabled = false;
-                showToast('Network error occurred during upload', 'error');
-            };
-            
-            xhr.send(file); // Direct binary stream
+            const originalBtnHtml = '<i class="fa-solid fa-cloud-arrow-up"></i> Upload to R2 Bucket';
+            performUpload(fileName, file, 'uploadBtn', originalBtnHtml, false);
         }
     </script>
 </body>
