@@ -685,6 +685,19 @@
                     </div>
                 </div>
                 <div style="padding: 24px;">
+                    <!-- Cloudflare Free Limits Info -->
+                    <div style="background: rgba(59, 130, 246, 0.05); border: 1px solid rgba(59, 130, 246, 0.2); border-radius: 8px; padding: 12px 16px; margin-bottom: 20px; display: flex; align-items: flex-start; gap: 12px;">
+                        <i class="fa-solid fa-circle-info" style="color: var(--primary); margin-top: 2px;"></i>
+                        <div style="font-size: 13px; color: var(--text-main);">
+                            <strong style="display: block; margin-bottom: 4px;">Cloudflare Free Tier Usage & Limits</strong>
+                            <p style="margin-bottom: 6px; color: var(--text-muted); line-height: 1.5;">Cloudflare API does not support showing live API limit tracking from inside the app directly. To see your live remaining limits, please check the <a href="https://dash.cloudflare.com/" target="_blank" style="color: var(--primary); text-decoration: none; font-weight: bold;">Cloudflare Dashboard <i class="fa-solid fa-external-link-alt" style="font-size: 10px;"></i></a>.</p>
+                            <ul style="margin-left: 20px; color: var(--text-muted); display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 4px;">
+                                <li><strong>Daily Workers Limits:</strong> 100,000 requests</li>
+                                <li><strong>R2 Read Limits:</strong> 10,000,000 / month</li>
+                                <li><strong>R2 Write Limits:</strong> 1,000,000 / month</li>
+                            </ul>
+                        </div>
+                    </div>
                     <!-- Tabs -->
                     <div style="display: flex; border-bottom: 1px solid var(--border); margin-bottom: 24px; overflow-x: auto; white-space: nowrap;">
                         <button id="tabR2" class="btn" style="border-bottom: 2px solid var(--primary); border-radius: 0; color: var(--text-main); background: transparent;" onclick="switchFileManagerTab('r2')">
@@ -860,6 +873,28 @@
                     <div class="form-group" style="margin-bottom: 30px;">
                         <label><strong>Extension Subtitle / Description</strong></label>
                         <textarea id="docExtDesc" class="api-input" style="width: 100%; margin-top: 8px; min-height: 80px;" placeholder="Write a short description or introduction..."></textarea>
+                    </div>
+
+                    <div style="background: var(--dark-panel); padding: 16px; border-radius: 12px; border: 1px solid var(--border); margin-bottom: 30px;">
+                        <h4 style="margin-bottom: 12px; font-size: 14px; color: var(--text-muted);"><i class="fa-solid fa-palette"></i> Page Theme & Styling</h4>
+                        <div style="display: flex; gap: 16px; flex-wrap: wrap;">
+                            <div class="form-group" style="flex: 1; min-width: 150px;">
+                                <label style="font-size: 12px;">Background Color</label>
+                                <input type="color" id="docBgColor" value="#0f172a" style="width: 100%; height: 40px; margin-top: 8px; cursor: pointer; border: none; border-radius: 4px; background: transparent;">
+                            </div>
+                            <div class="form-group" style="flex: 1; min-width: 150px;">
+                                <label style="font-size: 12px;">Title Color</label>
+                                <input type="color" id="docTitleColor" value="#3b82f6" style="width: 100%; height: 40px; margin-top: 8px; cursor: pointer; border: none; border-radius: 4px; background: transparent;">
+                            </div>
+                            <div class="form-group" style="flex: 1; min-width: 150px;">
+                                <label style="font-size: 12px;">Subtitle Color</label>
+                                <input type="color" id="docSubtitleColor" value="#94a3b8" style="width: 100%; height: 40px; margin-top: 8px; cursor: pointer; border: none; border-radius: 4px; background: transparent;">
+                            </div>
+                            <div class="form-group" style="flex: 1; min-width: 150px;">
+                                <label style="font-size: 12px;">Card View Color</label>
+                                <input type="color" id="docCardColor" value="#1e293b" style="width: 100%; height: 40px; margin-top: 8px; cursor: pointer; border: none; border-radius: 4px; background: transparent;">
+                            </div>
+                        </div>
                     </div>
 
                     <h4 style="margin-bottom: 16px; border-bottom: 1px solid var(--border); padding-bottom: 8px;">Documentation Blocks</h4>
@@ -2055,6 +2090,11 @@
             let slug = document.getElementById('docSlug').value.trim();
             const extDesc = document.getElementById('docExtDesc').value.trim();
             
+            const bgColor = document.getElementById('docBgColor').value || '#0f172a';
+            const titleColor = document.getElementById('docTitleColor').value || '#3b82f6';
+            const subtitleColor = document.getElementById('docSubtitleColor').value || '#94a3b8';
+            const cardColor = document.getElementById('docCardColor').value || '#1e293b';
+            
             if (!extTitle) return showToast('Extension title is required', 'error');
             if (!slug) {
                 slug = extTitle.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, '');
@@ -2102,6 +2142,12 @@
                     title: extTitle,
                     description: extDesc,
                     slug: slug,
+                    theme: {
+                        bgColor: bgColor,
+                        titleColor: titleColor,
+                        subtitleColor: subtitleColor,
+                        cardColor: cardColor
+                    },
                     blocks: []
                 };
 
@@ -2134,8 +2180,8 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
         :root {
-            --bg: #0f172a;
-            --surface: #1e293b;
+            --bg: ${bgColor};
+            --surface: ${cardColor};
             --primary: #3b82f6;
             --primary-glow: rgba(59, 130, 246, 0.5);
             --text-main: #f8fafc;
@@ -2146,17 +2192,23 @@
         body { background-color: var(--bg); color: var(--text-main); line-height: 1.6; }
         
         .header {
-            background: rgba(30, 41, 59, 0.8);
+            background: ${bgColor}E6;
             backdrop-filter: blur(12px);
             border-bottom: 1px solid var(--border);
-            padding: 60px 20px;
+            padding: 24px 20px;
             text-align: center;
             position: sticky;
             top: 0;
             z-index: 100;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
         }
-        .header h1 { font-size: 42px; font-weight: 800; background: linear-gradient(135deg, #60a5fa, #a78bfa, #f472b6); -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin-bottom: 15px; }
-        .header p { color: var(--text-muted); font-size: 18px; max-width: 600px; margin: 0 auto; }
+        .header h1 { font-size: 26px; font-weight: 800; color: ${titleColor}; margin-bottom: 8px; }
+        .header p { color: ${subtitleColor}; font-size: 14px; max-width: 600px; margin: 0 auto; }
+        @media (min-width: 768px) {
+            .header { padding: 32px 20px; }
+            .header h1 { font-size: 34px; margin-bottom: 12px; }
+            .header p { font-size: 16px; }
+        }
         
         .container {
             max-width: 900px;
@@ -2218,14 +2270,14 @@
 </head>
 <body>
     <div class="header">
-        <h1>${extTitle}</h1>
+        <h1 ${extDesc ? '' : 'style="margin-bottom: 0;"'}>${extTitle}</h1>
         ${extDesc ? `<p>${extDesc.replace(/\\n/g, '<br>')}</p>` : ''}
     </div>
     <div class="container">
         ${blocksHtml}
     </div>
     <div class="footer">
-        <p>&copy; ${new Date().getFullYear()} Generated securely by CloudAdmin API</p>
+        <p>&copy; ${new Date().getFullYear()} Generated Aix Hub Store API</p>
     </div>
 </body>
 </html>`;
@@ -2348,6 +2400,18 @@
                 document.getElementById('docExtTitle').value = data.title || '';
                 document.getElementById('docExtDesc').value = data.description || '';
                 document.getElementById('docSlug').value = data.slug.replace('.html', '');
+                
+                if (data.theme) {
+                    document.getElementById('docBgColor').value = data.theme.bgColor || '#0f172a';
+                    document.getElementById('docTitleColor').value = data.theme.titleColor || '#3b82f6';
+                    document.getElementById('docSubtitleColor').value = data.theme.subtitleColor || '#94a3b8';
+                    document.getElementById('docCardColor').value = data.theme.cardColor || '#1e293b';
+                } else {
+                    document.getElementById('docBgColor').value = '#0f172a';
+                    document.getElementById('docTitleColor').value = '#3b82f6';
+                    document.getElementById('docSubtitleColor').value = '#94a3b8';
+                    document.getElementById('docCardColor').value = '#1e293b';
+                }
                 
                 document.getElementById('docBlocksContainer').innerHTML = '';
                 docBlockCounter = 0;
