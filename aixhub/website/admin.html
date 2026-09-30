@@ -811,13 +811,17 @@
                 <div style="padding: 24px;">
                     <h3 style="margin-bottom: 16px;">Uploaded Files</h3>
                     <!-- Category Filters -->
-                    <div id="fileCategoryFilters" style="display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 16px;">
-                        <button class="btn btn-primary" style="padding: 6px 12px; font-size: 12px; border-radius: 20px;">All Files</button>
+                    <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 16px;">
+                        <div id="fileCategoryFilters" style="display: flex; gap: 8px; flex-wrap: wrap;">
+                            <button class="btn btn-primary" style="padding: 6px 12px; font-size: 12px; border-radius: 20px;">All Files</button>
+                        </div>
+                        <button class="btn btn-danger" id="deleteSelectedR2Btn" style="display: none; padding: 6px 12px; font-size: 12px; flex-shrink: 0;" onclick="deleteSelectedR2Files()"><i class="fa-solid fa-trash"></i> Delete Selected</button>
                     </div>
                     <div class="table-responsive">
                         <table>
                             <thead>
                                 <tr>
+                                    <th style="width: 40px;"><input type="checkbox" id="selectAllR2" onchange="toggleSelectAllR2(this)"></th>
                                     <th>File Name</th>
                                     <th>Size</th>
                                     <th>Uploaded On</th>
@@ -825,7 +829,7 @@
                                 </tr>
                             </thead>
                             <tbody id="r2FileTableBody">
-                                <tr><td colspan="4" style="text-align: center;">Loading files...</td></tr>
+                                <tr><td colspan="5" style="text-align: center;">Loading files...</td></tr>
                             </tbody>
                         </table>
                     </div>
@@ -893,6 +897,53 @@
                             <div class="form-group" style="flex: 1; min-width: 150px;">
                                 <label style="font-size: 12px;">Card View Color</label>
                                 <input type="color" id="docCardColor" value="#1e293b" style="width: 100%; height: 40px; margin-top: 8px; cursor: pointer; border: none; border-radius: 4px; background: transparent;">
+                            </div>
+                            <div class="form-group" style="flex: 1; min-width: 150px;">
+                                <label style="font-size: 12px;">Header Padding</label>
+                                <input type="text" id="docHeaderPadding" value="24px 20px" class="api-input" style="width: 100%; margin-top: 8px;" placeholder="e.g. 24px 20px">
+                            </div>
+                            <div class="form-group" style="flex: 1; min-width: 150px;">
+                                <label style="font-size: 12px;">Title Font Size</label>
+                                <input type="text" id="docTitleSize" value="34px" class="api-input" style="width: 100%; margin-top: 8px;" placeholder="e.g. 34px">
+                            </div>
+                            <div class="form-group" style="flex: 1; min-width: 150px;">
+                                <label style="font-size: 12px;">Subtitle Font Size</label>
+                                <input type="text" id="docSubtitleSize" value="16px" class="api-input" style="width: 100%; margin-top: 8px;" placeholder="e.g. 16px">
+                            </div>
+                            <div class="form-group" style="flex: 1; min-width: 150px;">
+                                <label style="font-size: 12px;">Card Border Radius</label>
+                                <input type="text" id="docCardRadius" value="16px" class="api-input" style="width: 100%; margin-top: 8px;" placeholder="e.g. 16px">
+                            </div>
+                            <div class="form-group" style="flex: 1; min-width: 150px;">
+                                <label style="font-size: 12px;">Card Padding</label>
+                                <input type="text" id="docCardPadding" value="30px" class="api-input" style="width: 100%; margin-top: 8px;" placeholder="e.g. 30px">
+                            </div>
+                            <div class="form-group" style="flex: 1; min-width: 150px;">
+                                <label style="font-size: 12px;">Card Margin Bottom</label>
+                                <input type="text" id="docCardMargin" value="30px" class="api-input" style="width: 100%; margin-top: 8px;" placeholder="e.g. 30px">
+                            </div>
+                            <div class="form-group" style="flex: 1; min-width: 150px;">
+                                <label style="font-size: 12px;">Card Title Padding</label>
+                                <input type="text" id="docCardTitlePadding" value="0px" class="api-input" style="width: 100%; margin-top: 8px;" placeholder="e.g. 0px 10px">
+                            </div>
+                            <div class="form-group" style="flex: 1; min-width: 150px;">
+                                <label style="font-size: 12px;">Card Subtitle Padding</label>
+                                <input type="text" id="docCardSubtitlePadding" value="0px" class="api-input" style="width: 100%; margin-top: 8px;" placeholder="e.g. 0px 10px">
+                            </div>
+                            <div class="form-group" style="flex: 1; min-width: 150px;">
+                                <label style="font-size: 12px;">Card Title Size</label>
+                                <input type="text" id="docCardTitleSize" value="22px" class="api-input" style="width: 100%; margin-top: 8px;" placeholder="e.g. 22px">
+                            </div>
+                            <div class="form-group" style="flex: 1; min-width: 150px;">
+                                <label style="font-size: 12px;">Card Subtitle Size</label>
+                                <input type="text" id="docCardSubtitleSize" value="16px" class="api-input" style="width: 100%; margin-top: 8px;" placeholder="e.g. 16px">
+                            </div>
+                            <div class="form-group" style="flex: 1; min-width: 100%; margin-top: 8px;">
+                                <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                                    <input type="checkbox" id="docEnableCardView" checked style="width: 18px; height: 18px;">
+                                    <strong>Enable Card View</strong>
+                                    <span style="font-size: 12px; color: var(--text-muted);">(Uncheck for a simple layout without background or borders)</span>
+                                </label>
                             </div>
                         </div>
                     </div>
@@ -1119,6 +1170,7 @@
             document.getElementById('pageTitle').textContent = titles[tableName];
             document.getElementById('tableCard').style.display = 'flex';
             document.getElementById('fileManagerCard').style.display = 'none';
+            document.getElementById('docsCreatorCard').style.display = 'none';
             currentTable = tableName;
             
             await fetchData();
@@ -1613,6 +1665,7 @@
             
             document.getElementById('pageTitle').innerText = 'Secure File Manager';
             document.getElementById('tableCard').style.display = 'none';
+            document.getElementById('docsCreatorCard').style.display = 'none';
             document.getElementById('fileManagerCard').style.display = 'flex';
             document.getElementById('uploadResult').style.display = 'none'; // reset
             
@@ -1644,10 +1697,10 @@
                     renderFileCategories();
                     renderFileTable();
                 } else {
-                    tbody.innerHTML = '<tr><td colspan="4" style="text-align: center; color: #ef4444;">Failed to load files. Check API connection.</td></tr>';
+                    tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; color: #ef4444;">Failed to load files. Check API connection.</td></tr>';
                 }
             } catch(e) {
-                document.getElementById('r2FileTableBody').innerHTML = '<tr><td colspan="4" style="text-align: center; color: #ef4444;">Network error.</td></tr>';
+                document.getElementById('r2FileTableBody').innerHTML = '<tr><td colspan="5" style="text-align: center; color: #ef4444;">Network error.</td></tr>';
             }
         }
         
@@ -1694,7 +1747,7 @@
             }
 
             if (filteredFiles.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="4" style="text-align: center; color: var(--text-muted);">No files found in this category.</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; color: var(--text-muted);">No files found in this category.</td></tr>';
             } else {
                 const url = getBaseUrl();
                 filteredFiles.forEach(file => {
@@ -1705,6 +1758,7 @@
                     
                     const tr = document.createElement('tr');
                     tr.innerHTML = `
+                        <td><input type="checkbox" class="r2-file-checkbox" value="${file.key}"></td>
                         <td><strong>${file.key}</strong></td>
                         <td>${sizeMb}</td>
                         <td>${date}</td>
@@ -1717,6 +1771,75 @@
                     tbody.appendChild(tr);
                 });
             }
+            
+            // Re-evaluate select all logic when table is rendered
+            const selectAll = document.getElementById('selectAllR2');
+            if (selectAll) selectAll.checked = false;
+            toggleDeleteSelectedBtn();
+        }
+        
+        function toggleSelectAllR2(checkbox) {
+            const checkboxes = document.querySelectorAll('.r2-file-checkbox');
+            checkboxes.forEach(cb => cb.checked = checkbox.checked);
+            toggleDeleteSelectedBtn();
+        }
+        
+        document.addEventListener('change', function(e) {
+            if (e.target.classList.contains('r2-file-checkbox')) {
+                toggleDeleteSelectedBtn();
+                const allCb = document.querySelectorAll('.r2-file-checkbox');
+                const checkedCb = document.querySelectorAll('.r2-file-checkbox:checked');
+                const selectAll = document.getElementById('selectAllR2');
+                if (selectAll) selectAll.checked = (allCb.length > 0 && allCb.length === checkedCb.length);
+            }
+        });
+        
+        function toggleDeleteSelectedBtn() {
+            const checkedCount = document.querySelectorAll('.r2-file-checkbox:checked').length;
+            const btn = document.getElementById('deleteSelectedR2Btn');
+            if (btn) {
+                btn.style.display = checkedCount > 0 ? 'inline-flex' : 'none';
+                btn.innerHTML = `<i class="fa-solid fa-trash"></i> Delete Selected (${checkedCount})`;
+            }
+        }
+        
+        async function deleteSelectedR2Files() {
+            const checkboxes = document.querySelectorAll('.r2-file-checkbox:checked');
+            if (checkboxes.length === 0) return;
+            
+            if (!confirm(`Are you sure you want to delete ${checkboxes.length} selected file(s)?`)) return;
+            
+            startProgress();
+            let successCount = 0;
+            let failCount = 0;
+            const url = getBaseUrl();
+            const secret = getAuthHeader();
+            
+            for (let i = 0; i < checkboxes.length; i++) {
+                const percent = Math.max(30, Math.round(((i) / checkboxes.length) * 100));
+                updateProgress(percent);
+                const fileName = checkboxes[i].value;
+                try {
+                    const response = await fetch(`${url}/?action=delete_file&file=${encodeURIComponent(fileName)}`, {
+                        method: 'DELETE',
+                        headers: { 'Authorization': secret }
+                    });
+                    const data = await response.json();
+                    if (data.status === 'success') successCount++;
+                    else failCount++;
+                } catch(e) {
+                    failCount++;
+                }
+            }
+            updateProgress(100);
+            endProgress();
+            showToast(`Deleted ${successCount} file(s). ${failCount > 0 ? failCount + ' failed.' : ''}`, successCount > 0 ? 'success' : 'error');
+            
+            fetchStorageStats();
+            // Clear selection logic after deletion
+            const selectAll = document.getElementById('selectAllR2');
+            if (selectAll) selectAll.checked = false;
+            toggleDeleteSelectedBtn();
         }
         
         function copyToClipboard(text) {
@@ -2094,8 +2217,20 @@
             const titleColor = document.getElementById('docTitleColor').value || '#3b82f6';
             const subtitleColor = document.getElementById('docSubtitleColor').value || '#94a3b8';
             const cardColor = document.getElementById('docCardColor').value || '#1e293b';
+            const headerPadding = document.getElementById('docHeaderPadding').value || '24px 20px';
+            const titleSize = document.getElementById('docTitleSize').value || '34px';
+            const subtitleSize = document.getElementById('docSubtitleSize').value || '16px';
+            const cardRadius = document.getElementById('docCardRadius').value || '16px';
+            const cardPadding = document.getElementById('docCardPadding').value || '30px';
+            const cardMargin = document.getElementById('docCardMargin').value || '30px';
+            const cardTitlePadding = document.getElementById('docCardTitlePadding').value || '0px';
+            const cardSubtitlePadding = document.getElementById('docCardSubtitlePadding').value || '0px';
+            const cardTitleSize = document.getElementById('docCardTitleSize').value || '22px';
+            const cardSubtitleSize = document.getElementById('docCardSubtitleSize').value || '16px';
+            const enableCardViewElement = document.getElementById('docEnableCardView');
+            const enableCardView = enableCardViewElement ? enableCardViewElement.checked : true;
             
-            if (!extTitle) return showToast('Extension title is required', 'error');
+            if (!extTitle && !slug) return showToast('Please enter an Extension Title or a URL Slug', 'error');
             if (!slug) {
                 slug = extTitle.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, '');
             }
@@ -2146,7 +2281,18 @@
                         bgColor: bgColor,
                         titleColor: titleColor,
                         subtitleColor: subtitleColor,
-                        cardColor: cardColor
+                        cardColor: cardColor,
+                        cardRadius: cardRadius,
+                        cardPadding: cardPadding,
+                        cardMargin: cardMargin,
+                        headerPadding: headerPadding,
+                        titleSize: titleSize,
+                        subtitleSize: subtitleSize,
+                        cardTitlePadding: cardTitlePadding,
+                        cardSubtitlePadding: cardSubtitlePadding,
+                        cardTitleSize: cardTitleSize,
+                        cardSubtitleSize: cardSubtitleSize,
+                        enableCardView: enableCardView
                     },
                     blocks: []
                 };
@@ -2195,19 +2341,17 @@
             background: ${bgColor}E6;
             backdrop-filter: blur(12px);
             border-bottom: 1px solid var(--border);
-            padding: 24px 20px;
+            padding: ${headerPadding};
             text-align: center;
             position: sticky;
             top: 0;
             z-index: 100;
             box-shadow: 0 4px 20px rgba(0,0,0,0.1);
         }
-        .header h1 { font-size: 26px; font-weight: 800; color: ${titleColor}; margin-bottom: 8px; }
-        .header p { color: ${subtitleColor}; font-size: 14px; max-width: 600px; margin: 0 auto; }
+        .header h1 { font-size: ${titleSize}; font-weight: 800; color: ${titleColor}; margin-bottom: 8px; }
+        .header p { color: ${subtitleColor}; font-size: ${subtitleSize}; max-width: 600px; margin: 0 auto; }
         @media (min-width: 768px) {
-            .header { padding: 32px 20px; }
-            .header h1 { font-size: 34px; margin-bottom: 12px; }
-            .header p { font-size: 16px; }
+            .header h1 { margin-bottom: 12px; }
         }
         
         .container {
@@ -2217,46 +2361,53 @@
         }
         
         .block-section {
+            ${enableCardView ? `
             background: var(--surface);
             border: 1px solid var(--border);
-            border-radius: 16px;
-            padding: 30px;
-            margin-bottom: 30px;
+            border-radius: ${cardRadius};
+            padding: ${cardPadding};
             box-shadow: 0 10px 30px -10px rgba(0,0,0,0.3);
             transition: transform 0.3s ease, box-shadow 0.3s ease;
+            overflow: hidden;
+            ` : ''}
+            margin-bottom: ${cardMargin};
         }
+        .block-section > :last-child {
+            margin-bottom: 0;
+        }
+        ${enableCardView ? `
         .block-section:hover {
             transform: translateY(-5px);
             box-shadow: 0 20px 40px -10px rgba(0,0,0,0.5), 0 0 20px var(--primary-glow);
             border-color: var(--primary);
         }
+        ` : ''}
         .block-section h3 {
-            font-size: 22px;
+            font-size: ${cardTitleSize};
             font-weight: 700;
-            margin-bottom: 20px;
+            margin-bottom: 15px;
             color: #e2e8f0;
-            border-bottom: 1px solid var(--border);
-            padding-bottom: 10px;
+            padding: ${cardTitlePadding};
         }
         .block-image-container {
-            background: rgba(0,0,0,0.2);
-            border-radius: 8px;
-            padding: 20px;
             text-align: center;
-            margin-bottom: 20px;
-            border: 1px dashed var(--border);
+            margin-bottom: 15px;
+            overflow: hidden;
         }
         .block-section img {
-            max-width: 100%;
+            width: 100%;
             height: auto;
-            border-radius: 4px;
-            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
+            display: block;
+            margin: 0 auto;
+            border-radius: 8px;
+            object-fit: cover;
         }
         .block-section p {
             color: #cbd5e1;
-            font-size: 16px;
+            font-size: ${cardSubtitleSize};
             line-height: 1.7;
             white-space: pre-line;
+            padding: ${cardSubtitlePadding};
         }
         
         .footer {
@@ -2269,10 +2420,12 @@
     </style>
 </head>
 <body>
+    ${(extTitle || extDesc) ? `
     <div class="header">
-        <h1 ${extDesc ? '' : 'style="margin-bottom: 0;"'}>${extTitle}</h1>
+        ${extTitle ? `<h1 ${extDesc ? '' : 'style="margin-bottom: 0;"'}>${extTitle}</h1>` : ''}
         ${extDesc ? `<p>${extDesc.replace(/\\n/g, '<br>')}</p>` : ''}
     </div>
+    ` : ''}
     <div class="container">
         ${blocksHtml}
     </div>
