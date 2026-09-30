@@ -606,6 +606,10 @@
             <div class="menu-item" onclick="showFileManager(this)">
                 <i class="fa-solid fa-folder-open"></i> Secure File Manager
             </div>
+            <div class="menu-title" style="margin-top: 16px;">Tools</div>
+            <div class="menu-item" onclick="showDocsCreator(this)">
+                <i class="fa-solid fa-file-code"></i> Extension Docs Creator
+            </div>
         </div>
     </aside>
 
@@ -814,7 +818,112 @@
                     </div>
                 </div>
             </div>
+            
+            <!-- Docs Creator Card -->
+            <div class="card" id="docsCreatorCard" style="display: none;">
+                <div class="card-header" style="flex-direction: column; align-items: flex-start; gap: 16px;">
+                    <div>
+                        <h3 style="margin-bottom: 4px;">Extension Docs Creator</h3>
+                        <span style="font-size: 13px; color: var(--text-muted);">Create & Manage professional documentation pages</span>
+                    </div>
+                    <div style="display: flex; gap: 8px;">
+                        <button id="tabCreateDocBtn" class="btn btn-primary" onclick="switchDocTab('create')">Create / Edit Docs</button>
+                        <button id="tabManageDocBtn" class="btn" style="background: transparent; border: 1px solid var(--border); color: var(--text-muted);" onclick="switchDocTab('manage')">Manage Docs</button>
+                    </div>
+                </div>
+                
+                <!-- Manage Docs Section -->
+                <div id="manageDocsSection" style="display: none; padding: 24px; flex: 1; flex-direction: column;">
+                    <div class="table-responsive">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Page Title</th>
+                                    <th>URL Slug</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="docsTableBody">
+                                <tr><td colspan="3" style="text-align: center;">Loading documentation pages...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Create Docs Section -->
+                <div id="createDocsSection" style="padding: 24px; max-width: 800px; margin: 0 auto; width: 100%;">
+                    <div class="form-group" style="margin-bottom: 20px;">
+                        <label><strong>Extension Title</strong></label>
+                        <input type="text" id="docExtTitle" class="api-input" style="width: 100%; margin-top: 8px;" placeholder="e.g. Advanced ExoPlayer Extension">
+                    </div>
+                    
+                    <div class="form-group" style="margin-bottom: 30px;">
+                        <label><strong>Extension Subtitle / Description</strong></label>
+                        <textarea id="docExtDesc" class="api-input" style="width: 100%; margin-top: 8px; min-height: 80px;" placeholder="Write a short description or introduction..."></textarea>
+                    </div>
+
+                    <h4 style="margin-bottom: 16px; border-bottom: 1px solid var(--border); padding-bottom: 8px;">Documentation Blocks</h4>
+                    
+                    <div id="docBlocksContainer" style="display: flex; flex-direction: column; gap: 24px; margin-bottom: 24px;">
+                        <!-- Blocks will be injected here -->
+                    </div>
+
+                    <button class="btn btn-primary" onclick="addDocBlock()" style="width: 100%; justify-content: center; margin-bottom: 30px; background: rgba(79, 70, 229, 0.1); color: var(--primary); border: 1px dashed var(--primary);">
+                        <i class="fa-solid fa-plus"></i> Add New Block Section
+                    </button>
+
+                    <div style="background: var(--dark-panel); padding: 20px; border-radius: 12px; border: 1px solid var(--border);">
+                        <div class="form-group">
+                            <label><strong>Page URL Slug (Filename)</strong></label>
+                            <input type="text" id="docSlug" class="api-input" style="width: 100%; margin-top: 8px;" placeholder="e.g. exoplayer-docs (will be saved as exoplayer-docs.html)">
+                        </div>
+                        <button id="generateDocsBtn" class="btn btn-primary" style="width: 100%; justify-content: center; margin-top: 20px; font-size: 16px; padding: 14px; background: linear-gradient(135deg, #4f46e5, #0ea5e9);" onclick="generateAndPublishDocs()">
+                            <i class="fa-solid fa-wand-magic-sparkles"></i> Generate & Publish to R2
+                        </button>
+                    </div>
+
+                    <div id="docPublishResult" style="margin-top: 24px; display: none; padding: 16px; background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.3); border-radius: 8px;">
+                        <h4 style="color: #10b981; margin-bottom: 8px;"><i class="fa-solid fa-circle-check"></i> Published Successfully!</h4>
+                        <p style="margin-bottom: 8px; font-size: 14px;"><strong>Public Documentation Link:</strong></p>
+                        <div style="display: flex; gap: 8px; margin-bottom: 8px;">
+                            <input type="text" id="docPublicLink" readonly class="api-input" style="flex: 1; font-size: 12px;" onclick="this.select();">
+                            <button class="btn btn-primary" onclick="copyText('docPublicLink')" title="Copy Link" style="padding: 0 16px;"><i class="fa-regular fa-copy"></i></button>
+                            <a id="docPublicLinkBtn" target="_blank" class="btn btn-success" style="padding: 0 16px; text-decoration: none;"><i class="fa-solid fa-external-link-alt"></i></a>
+                        </div>
+                        <p style="font-size: 12px; color: var(--text-muted);">This is a public, beautifully rendered webpage hosted directly on your Cloudflare R2 via Worker.</p>
+                    </div>
+
+                </div>
+            </div>
         </div>
+
+        <!-- Global Doc Image Cropper Modal -->
+        <div class="modal-overlay" id="docCropModal">
+            <div class="modal" style="max-width: 800px; width: 90%;">
+                <div class="modal-header">
+                    <h3>Crop & Resize Block Image</h3>
+                    <button class="btn-icon" onclick="closeDocCropModal()"><i class="fa-solid fa-times"></i></button>
+                </div>
+                <div class="modal-body">
+                    <div style="width: 100%; max-height: 400px; overflow: hidden; background: #000; border-radius: 8px;">
+                        <img id="docCropperImage" src="" style="max-width: 100%;">
+                    </div>
+                    <div style="margin-top: 20px;">
+                        <label><strong>Image Quality (Compression)</strong></label>
+                        <input type="range" id="docImageQuality" min="10" max="100" value="80" style="width: 100%; margin-top: 8px;">
+                        <div style="display: flex; justify-content: space-between; font-size: 12px; color: var(--text-muted);">
+                            <span>High Compression (Small File)</span>
+                            <span>High Quality (Large File)</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer" style="display: flex; justify-content: flex-end; gap: 12px; margin-top: 16px;">
+                    <button class="btn btn-secondary" onclick="closeDocCropModal()">Cancel</button>
+                    <button class="btn btn-primary" onclick="saveDocCrop()"><i class="fa-solid fa-check"></i> Apply Crop</button>
+                </div>
+            </div>
+        </div>
+
     </main>
 
     <!-- Modal (Add/Edit) -->
@@ -1841,6 +1950,474 @@
             
             const originalBtnHtml = '<i class="fa-solid fa-cloud-arrow-up"></i> Upload to R2 Bucket';
             performUpload(fileName, file, 'uploadBtn', originalBtnHtml, false);
+        }
+        
+        // --- Extension Docs Creator Functions ---
+        function showDocsCreator(el) {
+            document.querySelectorAll('.menu-item').forEach(m => m.classList.remove('active'));
+            if(el) el.classList.add('active');
+            
+            document.getElementById('tableCard').style.display = 'none';
+            document.getElementById('fileManagerCard').style.display = 'none';
+            document.getElementById('docsCreatorCard').style.display = 'flex';
+            document.getElementById('pageTitle').innerHTML = 'Extension Docs Creator';
+            
+            if (document.getElementById('docBlocksContainer').children.length === 0) {
+                addDocBlock();
+            }
+        }
+
+        let docBlockCounter = 0;
+        function addDocBlock() {
+            docBlockCounter++;
+            const container = document.getElementById('docBlocksContainer');
+            const blockHtml = `
+                <div class="doc-block" id="docBlock_${docBlockCounter}" style="background: var(--dark-panel); padding: 20px; border-radius: 12px; border: 1px solid var(--border); position: relative;">
+                    <button class="btn btn-danger" style="position: absolute; top: 16px; right: 16px; padding: 6px 12px;" onclick="this.parentElement.remove()"><i class="fa-solid fa-trash"></i></button>
+                    <h4 style="margin-bottom: 16px; color: var(--primary);">Block Section</h4>
+                    <div class="form-group" style="margin-bottom: 16px;">
+                        <label><strong>Block Title</strong></label>
+                        <input type="text" class="api-input block-title" style="width: 100%; margin-top: 8px;" placeholder="e.g. Initialize Player">
+                    </div>
+                    <div class="form-group" style="margin-bottom: 16px;">
+                        <label><strong>Block Description / Text</strong></label>
+                        <textarea class="api-input block-desc" style="width: 100%; margin-top: 8px; min-height: 80px;" placeholder="Describe what this block does..."></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label><strong>Block Image (Will auto-upload to R2)</strong></label>
+                        <input type="file" accept="image/*" class="block-image-file" style="padding: 10px; border: 1px dashed var(--border); width: 100%; border-radius: 8px; margin-top: 8px; background: var(--bg); color: white;" onchange="previewDocImage(this)">
+                        <input type="hidden" class="block-image-r2url" value="">
+                        <img class="block-image-preview" src="" style="display: none; max-width: 100%; max-height: 200px; margin-top: 10px; border-radius: 8px; border: 1px solid var(--border);">
+                    </div>
+                </div>
+            `;
+            container.insertAdjacentHTML('beforeend', blockHtml);
+        }
+
+        let currentDocImageInput = null;
+        let docCropperInstance = null;
+
+        function previewDocImage(input) {
+            const file = input.files[0];
+            if (file) {
+                currentDocImageInput = input;
+                const url = URL.createObjectURL(file);
+                const image = document.getElementById('docCropperImage');
+                image.src = url;
+                document.getElementById('docCropModal').classList.add('active');
+                
+                if (docCropperInstance) docCropperInstance.destroy();
+                docCropperInstance = new Cropper(image, {
+                    viewMode: 1,
+                    autoCropArea: 1
+                });
+            } else {
+                input.croppedBlob = null;
+                const preview = input.parentElement.querySelector('.block-image-preview');
+                preview.style.display = 'none';
+            }
+        }
+
+        function closeDocCropModal() {
+            document.getElementById('docCropModal').classList.remove('active');
+            if (docCropperInstance) {
+                docCropperInstance.destroy();
+                docCropperInstance = null;
+            }
+        }
+
+        function saveDocCrop() {
+            if (!docCropperInstance) return;
+            const quality = parseInt(document.getElementById('docImageQuality').value) / 100;
+            
+            docCropperInstance.getCroppedCanvas({
+                fillColor: '#fff',
+                imageSmoothingEnabled: true,
+                imageSmoothingQuality: 'high',
+            }).toBlob((blob) => {
+                if (currentDocImageInput) {
+                    currentDocImageInput.croppedBlob = blob;
+                    const preview = currentDocImageInput.parentElement.querySelector('.block-image-preview');
+                    preview.src = URL.createObjectURL(blob);
+                    preview.style.display = 'block';
+                    currentDocImageInput.parentElement.querySelector('.block-image-r2url').value = '';
+                }
+                closeDocCropModal();
+            }, 'image/jpeg', quality);
+        }
+
+        async function generateAndPublishDocs() {
+            const url = getBaseUrl();
+            if (!url) return showToast('API URL not connected!', 'error');
+            
+            const btn = document.getElementById('generateDocsBtn');
+            const extTitle = document.getElementById('docExtTitle').value.trim();
+            let slug = document.getElementById('docSlug').value.trim();
+            const extDesc = document.getElementById('docExtDesc').value.trim();
+            
+            if (!extTitle) return showToast('Extension title is required', 'error');
+            if (!slug) {
+                slug = extTitle.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, '');
+            }
+            if (!slug.endsWith('.html')) slug += '.html';
+            
+            const blocks = document.querySelectorAll('.doc-block');
+            if (blocks.length === 0) return showToast('Add at least one block section', 'error');
+
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Processing Images...';
+            btn.disabled = true;
+            
+            try {
+                // Upload images sequentially
+                for (let i = 0; i < blocks.length; i++) {
+                    const block = blocks[i];
+                    const fileInput = block.querySelector('.block-image-file');
+                    const urlInput = block.querySelector('.block-image-r2url');
+                    
+                    let blobToUpload = fileInput.croppedBlob || (fileInput.files.length > 0 ? fileInput.files[0] : null);
+                    
+                    if (blobToUpload) {
+                        const originalName = fileInput.files.length > 0 ? fileInput.files[0].name : 'image.jpg';
+                        const fileName = 'docs_' + Date.now() + '_' + originalName.replace(/\s+/g, '_');
+                        
+                        btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Uploading Image ${i+1}/${blocks.length}...`;
+                        const res = await fetch(`${url}/?action=upload_file&file=${encodeURIComponent(fileName)}`, {
+                            method: 'POST',
+                            headers: { 'Authorization': getAuthHeader() },
+                            body: blobToUpload
+                        });
+                        const data = await res.json();
+                        if (data.status === 'success') {
+                            urlInput.value = `${url}/?action=view_page&file=${encodeURIComponent(fileName)}`;
+                        } else {
+                            throw new Error(data.error || 'Upload failed for image ' + (i+1));
+                        }
+                    }
+                }
+                
+                btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Generating Documentation...';
+                
+                let blocksHtml = '';
+                let jsonState = {
+                    title: extTitle,
+                    description: extDesc,
+                    slug: slug,
+                    blocks: []
+                };
+
+                blocks.forEach(block => {
+                    const bTitle = block.querySelector('.block-title').value;
+                    const bDesc = block.querySelector('.block-desc').value;
+                    const bImgUrl = block.querySelector('.block-image-r2url').value;
+                    
+                    jsonState.blocks.push({
+                        title: bTitle,
+                        description: bDesc,
+                        imageUrl: bImgUrl
+                    });
+                    
+                    blocksHtml += `
+                    <div class="block-section">
+                        ${bTitle ? `<h3>${bTitle}</h3>` : ''}
+                        ${bImgUrl ? `<div class="block-image-container"><img src="${bImgUrl}" alt="${bTitle}"></div>` : ''}
+                        ${bDesc ? `<p>${bDesc.replace(/\\n/g, '<br>')}</p>` : ''}
+                    </div>
+                    `;
+                });
+                
+                const htmlContent = `<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>${extTitle} Documentation</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #0f172a;
+            --surface: #1e293b;
+            --primary: #3b82f6;
+            --primary-glow: rgba(59, 130, 246, 0.5);
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --border: #334155;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', sans-serif; }
+        body { background-color: var(--bg); color: var(--text-main); line-height: 1.6; }
+        
+        .header {
+            background: rgba(30, 41, 59, 0.8);
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid var(--border);
+            padding: 60px 20px;
+            text-align: center;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        .header h1 { font-size: 42px; font-weight: 800; background: linear-gradient(135deg, #60a5fa, #a78bfa, #f472b6); -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin-bottom: 15px; }
+        .header p { color: var(--text-muted); font-size: 18px; max-width: 600px; margin: 0 auto; }
+        
+        .container {
+            max-width: 900px;
+            margin: 40px auto;
+            padding: 0 20px;
+        }
+        
+        .block-section {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 30px;
+            margin-bottom: 30px;
+            box-shadow: 0 10px 30px -10px rgba(0,0,0,0.3);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        .block-section:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 40px -10px rgba(0,0,0,0.5), 0 0 20px var(--primary-glow);
+            border-color: var(--primary);
+        }
+        .block-section h3 {
+            font-size: 22px;
+            font-weight: 700;
+            margin-bottom: 20px;
+            color: #e2e8f0;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 10px;
+        }
+        .block-image-container {
+            background: rgba(0,0,0,0.2);
+            border-radius: 8px;
+            padding: 20px;
+            text-align: center;
+            margin-bottom: 20px;
+            border: 1px dashed var(--border);
+        }
+        .block-section img {
+            max-width: 100%;
+            height: auto;
+            border-radius: 4px;
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
+        }
+        .block-section p {
+            color: #cbd5e1;
+            font-size: 16px;
+            line-height: 1.7;
+            white-space: pre-line;
+        }
+        
+        .footer {
+            text-align: center;
+            padding: 40px 20px;
+            color: var(--text-muted);
+            border-top: 1px solid var(--border);
+            margin-top: 60px;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>${extTitle}</h1>
+        ${extDesc ? `<p>${extDesc.replace(/\\n/g, '<br>')}</p>` : ''}
+    </div>
+    <div class="container">
+        ${blocksHtml}
+    </div>
+    <div class="footer">
+        <p>&copy; ${new Date().getFullYear()} Generated securely by CloudAdmin API</p>
+    </div>
+</body>
+</html>`;
+
+                btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Publishing Page...';
+                
+                const blob = new Blob([htmlContent], { type: 'text/html' });
+                const res = await fetch(`${url}/?action=upload_file&file=${encodeURIComponent(slug)}`, {
+                    method: 'POST',
+                    headers: { 'Authorization': getAuthHeader() },
+                    body: blob
+                });
+                const data = await res.json();
+                
+                if (data.status === 'success') {
+                    // Upload JSON State
+                    const stateBlob = new Blob([JSON.stringify(jsonState)], { type: 'application/json' });
+                    const jsonFileName = 'docs_data_' + slug.replace('.html', '.json');
+                    await fetch(`${url}/?action=upload_file&file=${encodeURIComponent(jsonFileName)}`, {
+                        method: 'POST',
+                        headers: { 'Authorization': getAuthHeader() },
+                        body: stateBlob
+                    });
+
+                    const publicUrl = `${url}/?action=view_page&file=${encodeURIComponent(slug)}`;
+                    document.getElementById('docPublishResult').style.display = 'block';
+                    document.getElementById('docPublicLink').value = publicUrl;
+                    document.getElementById('docPublicLinkBtn').href = publicUrl;
+                    showToast('Documentation Published Successfully!', 'success');
+                    if (document.getElementById('manageDocsSection').style.display === 'flex') {
+                        loadDocsList();
+                    }
+                } else {
+                    throw new Error(data.error || 'Upload failed');
+                }
+            } catch (e) {
+                showToast(`Failed to publish: ${e.message}`, 'error');
+            }
+            
+            btn.innerHTML = '<i class="fa-solid fa-wand-magic-sparkles"></i> Generate & Publish to R2';
+            btn.disabled = false;
+        }
+
+        function switchDocTab(tab) {
+            if (tab === 'create') {
+                document.getElementById('createDocsSection').style.display = 'block';
+                document.getElementById('manageDocsSection').style.display = 'none';
+                document.getElementById('tabCreateDocBtn').className = 'btn btn-primary';
+                document.getElementById('tabManageDocBtn').className = 'btn';
+                document.getElementById('tabManageDocBtn').style.cssText = 'background: transparent; border: 1px solid var(--border); color: var(--text-muted);';
+                document.getElementById('tabCreateDocBtn').style.cssText = '';
+            } else {
+                document.getElementById('createDocsSection').style.display = 'none';
+                document.getElementById('manageDocsSection').style.display = 'flex';
+                document.getElementById('tabManageDocBtn').className = 'btn btn-primary';
+                document.getElementById('tabCreateDocBtn').className = 'btn';
+                document.getElementById('tabCreateDocBtn').style.cssText = 'background: transparent; border: 1px solid var(--border); color: var(--text-muted);';
+                document.getElementById('tabManageDocBtn').style.cssText = '';
+                loadDocsList();
+            }
+        }
+
+        async function loadDocsList() {
+            const url = getBaseUrl();
+            if (!url) return;
+            const tbody = document.getElementById('docsTableBody');
+            tbody.innerHTML = '<tr><td colspan="3" style="text-align: center;"><i class="fa-solid fa-spinner fa-spin"></i> Loading...</td></tr>';
+            try {
+                const res = await fetch(`${url}/?action=list_files`, {
+                    headers: { 'Authorization': getAuthHeader() }
+                });
+                const data = await res.json();
+                if (data.files) {
+                    const docJsonFiles = data.files.filter(f => f.key.startsWith('docs_data_') && f.key.endsWith('.json'));
+                    if (docJsonFiles.length === 0) {
+                        tbody.innerHTML = '<tr><td colspan="3" style="text-align: center;">No documentation pages found.</td></tr>';
+                        return;
+                    }
+                    tbody.innerHTML = '';
+                    
+                    for (const f of docJsonFiles) {
+                        const slug = f.key.replace('docs_data_', '').replace('.json', '.html');
+                        
+                        // We could fetch the JSON to get the title, but to save requests, let's just use the slug as title, or fetch in background
+                        const tr = document.createElement('tr');
+                        tr.innerHTML = `
+                            <td><strong id="title_${f.key}">Loading...</strong></td>
+                            <td><span style="color: var(--primary);">${slug}</span></td>
+                            <td class="actions-cell">
+                                <a href="${url}/?action=view_page&file=${encodeURIComponent(slug)}" target="_blank" class="btn-icon" style="background: rgba(16, 185, 129, 0.1); color: var(--secondary);" title="View"><i class="fa-solid fa-eye"></i></a>
+                                <button class="btn-icon btn-edit" onclick="editDoc('${f.key}')" title="Edit"><i class="fa-solid fa-pen"></i></button>
+                                <button class="btn-icon btn-delete" onclick="deleteDoc('${slug}', '${f.key}')" title="Delete"><i class="fa-solid fa-trash"></i></button>
+                            </td>
+                        `;
+                        tbody.appendChild(tr);
+                        
+                        // Fetch JSON to get real title
+                        fetch(`${url}/?action=view_page&file=${encodeURIComponent(f.key)}`)
+                            .then(r => r.json())
+                            .then(j => {
+                                document.getElementById(`title_${f.key}`).innerText = j.title || slug;
+                            }).catch(() => {
+                                document.getElementById(`title_${f.key}`).innerText = slug;
+                            });
+                    }
+                }
+            } catch (e) {
+                tbody.innerHTML = '<tr><td colspan="3" style="text-align: center; color: var(--danger);">Error loading data.</td></tr>';
+            }
+        }
+
+        async function editDoc(jsonKey) {
+            const url = getBaseUrl();
+            if (!url) return;
+            try {
+                showToast('Loading document data...', 'success');
+                const res = await fetch(`${url}/?action=view_page&file=${encodeURIComponent(jsonKey)}`);
+                const data = await res.json();
+                
+                document.getElementById('docExtTitle').value = data.title || '';
+                document.getElementById('docExtDesc').value = data.description || '';
+                document.getElementById('docSlug').value = data.slug.replace('.html', '');
+                
+                document.getElementById('docBlocksContainer').innerHTML = '';
+                docBlockCounter = 0;
+                
+                if (data.blocks && data.blocks.length > 0) {
+                    data.blocks.forEach(b => {
+                        addDocBlock();
+                        const currentBlock = document.getElementById(`docBlock_${docBlockCounter}`);
+                        currentBlock.querySelector('.block-title').value = b.title || '';
+                        currentBlock.querySelector('.block-desc').value = b.description || '';
+                        currentBlock.querySelector('.block-image-r2url').value = b.imageUrl || '';
+                        if (b.imageUrl) {
+                            const imgPreview = currentBlock.querySelector('.block-image-preview');
+                            imgPreview.src = b.imageUrl;
+                            imgPreview.style.display = 'block';
+                        }
+                    });
+                } else {
+                    addDocBlock();
+                }
+                
+                switchDocTab('create');
+                document.getElementById('tabCreateDocBtn').innerText = 'Update Docs';
+                document.getElementById('generateDocsBtn').innerHTML = '<i class="fa-solid fa-arrows-rotate"></i> Update & Publish to R2';
+                
+            } catch (e) {
+                showToast('Error loading document data', 'error');
+            }
+        }
+
+        async function deleteDoc(slug, jsonKey) {
+            if (!confirm(`Are you sure you want to permanently delete "${slug}" and all its images?`)) return;
+            
+            const url = getBaseUrl();
+            if (!url) return;
+            
+            try {
+                // 1. Fetch JSON to find image URLs
+                const res = await fetch(`${url}/?action=view_page&file=${encodeURIComponent(jsonKey)}`);
+                const data = await res.json();
+                
+                let filesToDelete = [slug, jsonKey];
+                
+                if (data.blocks) {
+                    data.blocks.forEach(b => {
+                        if (b.imageUrl) {
+                            // Extract filename from URL (action=view_page&file=XYZ)
+                            const match = b.imageUrl.match(/file=([^&]+)/);
+                            if (match && match[1]) {
+                                filesToDelete.push(decodeURIComponent(match[1]));
+                            }
+                        }
+                    });
+                }
+                
+                showToast(`Deleting ${filesToDelete.length} files...`, 'success');
+                
+                // Delete all files
+                for (const file of filesToDelete) {
+                    await fetch(`${url}/?action=delete_file&file=${encodeURIComponent(file)}`, {
+                        method: 'DELETE',
+                        headers: { 'Authorization': getAuthHeader() }
+                    });
+                }
+                
+                showToast('Documentation deleted successfully!', 'success');
+                loadDocsList();
+            } catch (e) {
+                showToast('Error deleting document: ' + e.message, 'error');
+            }
         }
     </script>
 </body>
