@@ -709,6 +709,9 @@
                         <button id="tabGDrive" class="btn" style="border-bottom: 2px solid transparent; border-radius: 0; color: var(--text-muted); background: transparent;" onclick="switchFileManagerTab('gdrive')">
                             <i class="fa-brands fa-google-drive"></i> GDrive Proxy
                         </button>
+                        <button id="tabPublicR2" class="btn" style="border-bottom: 2px solid transparent; border-radius: 0; color: var(--text-muted); background: transparent;" onclick="switchFileManagerTab('public_r2')">
+                            <i class="fa-solid fa-globe"></i> Public R2 (CDN)
+                        </button>
                     </div>
 
                     <!-- R2 Upload Section -->
@@ -772,6 +775,61 @@
                         </div>
                     </div>
 
+                    <!-- Public R2 (CDN) Section -->
+                    <div id="publicR2Section" style="display: none;">
+                        <div style="background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.3); padding: 16px; border-radius: 8px; margin-bottom: 16px;">
+                            <h4 style="color: #10b981; margin-bottom: 8px;"><i class="fa-solid fa-globe"></i> Public Image/File Uploader</h4>
+                            <p style="font-size: 13px; color: var(--text-muted); line-height: 1.6;">Upload files to your public R2 bucket folder. These files will not use Worker limits when accessed via the public link.</p>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label><strong>R2 Public Domain</strong></label>
+                            <input type="text" id="r2PublicDomain" placeholder="e.g. https://pub-b22066...r2.dev" class="api-input" style="width: 100%; margin-top: 8px;" onchange="localStorage.setItem('r2PublicDomain', this.value.replace(/\/$/, ''))">
+                        </div>
+                        <div class="form-group" style="margin-top: 16px;">
+                            <label><strong>Folder Name (Optional)</strong></label>
+                            <input type="text" id="r2PublicFolder" placeholder="e.g. aix_images" class="api-input" style="width: 100%; margin-top: 8px;" oninput="localStorage.setItem('r2PublicFolder', this.value.replace(/^\/|\/$/g, ''))">
+                        </div>
+                        <div class="form-group" style="margin-top: 16px;">
+                            <label><strong>Bucket Binding Name (Optional)</strong></label>
+                            <input type="text" id="r2BucketBindingName" placeholder="e.g. aixhubdata1" class="api-input" style="width: 100%; margin-top: 8px;" oninput="localStorage.setItem('r2BucketBindingName', this.value.trim())">
+                            <small style="color: var(--text-muted);">Leave empty to use default PUBLIC_BUCKET. Type your exact Variable Name if you created a different one.</small>
+                        </div>
+                        <div class="form-group" style="margin-top: 16px;">
+                            <label><strong>Select File (Image, APK, ZIP, etc.)</strong></label>
+                            <input type="file" id="publicR2FileInput" style="padding: 10px; border: 1px dashed var(--border); width: 100%; border-radius: 8px; margin-top: 8px; background: var(--bg); color: white;">
+                        </div>
+                        
+                        <!-- Cropper Container (Only shows for images) -->
+                        <div id="publicR2CropperContainer" style="display: none; margin-top: 16px; max-height: 400px; overflow: hidden; border-radius: 8px; border: 1px solid var(--border); background: #000;">
+                            <img id="publicR2CropperImage" src="" style="display: block; max-width: 100%;">
+                        </div>
+                        
+                        <div id="publicR2ImageSettings" style="display: none; margin-top: 16px;">
+                            <div class="form-group">
+                                <label><strong>Compression Quality (<span id="publicR2QualityValue">80</span>%)</strong></label>
+                                <input type="range" id="publicR2ImageQuality" min="10" max="100" value="80" style="width: 100%; margin-top: 8px;" oninput="document.getElementById('publicR2QualityValue').innerText=this.value">
+                            </div>
+                        </div>
+
+                        <div class="form-group" style="margin-top: 16px;">
+                            <label><strong>Save As (Optional Filename)</strong></label>
+                            <input type="text" id="publicR2FileName" placeholder="e.g. icon.jpg" class="api-input" style="width: 100%; margin-top: 8px;">
+                        </div>
+                        <button id="uploadPublicBtn" class="btn btn-primary" style="margin-top: 16px; width: 100%; justify-content: center; font-size: 16px; padding: 12px; background: #10b981;" onclick="uploadFileToPublicR2(this)">
+                            <i class="fa-solid fa-cloud-arrow-up"></i> Upload Public File
+                        </button>
+                        
+                        <div id="uploadPublicResult" style="margin-top: 24px; display: none; padding: 16px; background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.3); border-radius: 8px;">
+                            <h4 style="color: #10b981; margin-bottom: 8px;"><i class="fa-solid fa-circle-check"></i> Public Upload Successful!</h4>
+                            <p style="margin-bottom: 8px; font-size: 14px;"><strong>Direct Public Link:</strong></p>
+                            <div style="display: flex; gap: 8px; margin-bottom: 8px;">
+                                <input type="text" id="r2PublicLinkResult" readonly class="api-input" style="flex: 1; font-size: 12px;" onclick="this.select();">
+                                <button class="btn btn-primary" onclick="copyText('r2PublicLinkResult')" title="Copy Link" style="padding: 0 16px;"><i class="fa-regular fa-copy"></i></button>
+                            </div>
+                        </div>
+                    </div>
+
                     <!-- Image Manager Section -->
                     <div id="imageManagerSection" style="display: none;">
                         <div style="background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.3); padding: 16px; border-radius: 8px; margin-bottom: 16px;">
@@ -795,6 +853,12 @@
                                 <input type="text" id="imageFileName" placeholder="e.g. icon.jpg" class="api-input" style="width: 100%;">
                             </div>
                             <div class="form-group" style="margin-top: 16px;">
+                                <label>
+                                    <input type="checkbox" id="imageUploadPublic" checked> 
+                                    <strong>Upload to Public Bucket (CDN)</strong>
+                                </label>
+                            </div>
+                            <div class="form-group" style="margin-top: 16px;">
                                 <label><strong>Compression Quality (<span id="qualityValue">80</span>%)</strong></label>
                                 <input type="range" id="imageQuality" min="10" max="100" value="80" style="width: 100%; margin-top: 8px;" oninput="document.getElementById('qualityValue').innerText=this.value">
                                 <small style="color: var(--text-muted);">Lower quality = smaller file size. 80% is recommended.</small>
@@ -802,6 +866,15 @@
                             <button id="cropUploadBtn" class="btn btn-primary" style="margin-top: 16px; width: 100%; justify-content: center; font-size: 16px; padding: 12px; background: #10b981;" onclick="cropAndUploadImage()">
                                 <i class="fa-solid fa-crop-simple"></i> Crop, Compress & Upload
                             </button>
+                        </div>
+                        
+                        <div id="imageUploadResult" style="margin-top: 24px; display: none; padding: 16px; background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.3); border-radius: 8px;">
+                            <h4 style="color: #10b981; margin-bottom: 8px;"><i class="fa-solid fa-circle-check"></i> Image Uploaded Successfully!</h4>
+                            <p style="margin-bottom: 8px; font-size: 14px;"><strong id="imageUploadLinkLabel">Image Link:</strong></p>
+                            <div style="display: flex; gap: 8px; margin-bottom: 8px;">
+                                <input type="text" id="imageUploadLinkResult" readonly class="api-input" style="flex: 1; font-size: 12px;" onclick="this.select();">
+                                <button class="btn btn-primary" onclick="copyText('imageUploadLinkResult')" title="Copy Link" style="padding: 0 16px;"><i class="fa-regular fa-copy"></i></button>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -1762,17 +1835,31 @@
                     const sizeMb = (file.size / (1024 * 1024)).toFixed(2) + ' MB';
                     const date = new Date(file.uploaded).toLocaleString();
                     const secret = document.getElementById('apiSecret').value;
-                    const link = `${url}/?action=download_file&file=${encodeURIComponent(file.key)}&token=${secret}`;
+                    
+                    let link = '';
+                    let isPublic = false;
+                    const r2DomainRaw = localStorage.getItem('r2PublicDomain') || (document.getElementById('r2PublicDomain') ? document.getElementById('r2PublicDomain').value.trim() : '');
+                    const cleanDomain = r2DomainRaw.replace(/\/$/, '');
+                    
+                    if (file.bucket && file.bucket !== 'MY_BUCKET' && cleanDomain) {
+                        link = `${cleanDomain}/${file.key}`;
+                        isPublic = true;
+                    } else {
+                        link = `${url}/?action=download_file&file=${encodeURIComponent(file.key)}&token=${secret}`;
+                    }
+                    
+                    const badge = isPublic ? '<span style="background:#10b981;color:#fff;padding:2px 6px;border-radius:4px;font-size:10px;margin-left:8px;">Public CDN</span>' : '';
+                    let tempLinkBtn = isPublic ? '' : `<button class="btn-icon" style="color: #10b981; margin-left: 8px;" onclick="copyTempLink('${file.key}')" title="Copy 50-Min Expiring Link (Share Karne Ke Liye)"><i class="fa-solid fa-stopwatch"></i></button>`;
                     
                     const tr = document.createElement('tr');
                     tr.innerHTML = `
                         <td><input type="checkbox" class="r2-file-checkbox" value="${file.key}"></td>
-                        <td><strong>${file.key}</strong></td>
+                        <td><strong>${file.key}</strong>${badge}</td>
                         <td>${sizeMb}</td>
                         <td>${date}</td>
                         <td>
-                            <button class="btn-icon" style="color: var(--primary);" onclick="copyToClipboard('${link}')" title="Copy Master Link (App Ke Liye)"><i class="fa-solid fa-link"></i></button>
-                            <button class="btn-icon" style="color: #10b981; margin-left: 8px;" onclick="copyTempLink('${file.key}')" title="Copy 50-Min Expiring Link (Share Karne Ke Liye)"><i class="fa-solid fa-stopwatch"></i></button>
+                            <button class="btn-icon" style="color: var(--primary);" onclick="copyToClipboard('${link}')" title="Copy ${isPublic ? 'Public CDN Link' : 'Master Link'}"><i class="fa-solid fa-link"></i></button>
+                            ${tempLinkBtn}
                             <button class="btn-icon" style="color: #ef4444; margin-left: 8px;" onclick="deleteR2File('${file.key}')" title="Delete File"><i class="fa-solid fa-trash"></i></button>
                         </td>
                     `;
@@ -1935,7 +2022,10 @@
             }
         });
         
-        function performUpload(fileName, fileOrBlob, buttonId, originalBtnHtml, isCropper = false) {
+        function performUpload(fileName, fileOrBlob, buttonId, originalBtnHtml, isCropper = false, onSuccessCallback = null, bucketType = 'default') {
+            if (!navigator.onLine) {
+                return showToast('No internet connection. Please check your network.', 'error');
+            }
             const url = getBaseUrl();
             if (!url) return showToast('API URL not connected!', 'error');
             
@@ -1947,7 +2037,7 @@
             updateProgress(0);
             
             const xhr = new XMLHttpRequest();
-            xhr.open('POST', `${url}/?action=upload_file&file=${encodeURIComponent(fileName)}`, true);
+            xhr.open('POST', `${url}/?action=upload_file&file=${encodeURIComponent(fileName)}&bucket=${bucketType}`, true);
             xhr.setRequestHeader('Authorization', getAuthHeader());
             
             xhr.upload.onprogress = function(e) {
@@ -1964,6 +2054,12 @@
                 if (xhr.status >= 200 && xhr.status < 300) {
                     try {
                         const data = JSON.parse(xhr.responseText);
+                        
+                        if (typeof onSuccessCallback === 'function') {
+                            onSuccessCallback(fileName);
+                            return;
+                        }
+                        
                         showToast('File Uploaded Securely!', 'success');
                         const secret = document.getElementById('apiSecret').value;
                         const secureLink = `${url}/?action=download_file&file=${encodeURIComponent(fileName)}&token=${secret}`;
@@ -1976,6 +2072,21 @@
                             document.getElementById('imageInput').value = '';
                             document.getElementById('cropperContainer').style.display = 'none';
                             document.getElementById('imageSettings').style.display = 'none';
+                            
+                            const resDiv = document.getElementById('imageUploadResult');
+                            if (resDiv) {
+                                resDiv.style.display = 'block';
+                                let isPub = document.getElementById('imageUploadPublic') ? document.getElementById('imageUploadPublic').checked : false;
+                                if(isPub) {
+                                    document.getElementById('imageUploadLinkLabel').innerText = 'Direct Public Link:';
+                                    let dom = document.getElementById('r2PublicDomain') ? document.getElementById('r2PublicDomain').value.trim().replace(/\/$/, '') : '';
+                                    if(!dom) dom = localStorage.getItem('r2PublicDomain') || '';
+                                    document.getElementById('imageUploadLinkResult').value = dom ? (dom + '/' + fileName) : fileName;
+                                } else {
+                                    document.getElementById('imageUploadLinkLabel').innerText = 'Secure Proxy Link:';
+                                    document.getElementById('imageUploadLinkResult').value = secureLink;
+                                }
+                            }
                         } else {
                             document.getElementById('r2FileInput').value = '';
                             document.getElementById('r2FileName').value = '';
@@ -2010,8 +2121,22 @@
         function cropAndUploadImage() {
             if (!cropperInstance) return;
             
-            let fileName = document.getElementById('imageFileName').value.trim() || 'image.jpg';
+            let fileName = document.getElementById('imageFileName').value.trim();
+            if (!fileName) {
+                const fileInput = document.getElementById('imageInput');
+                if (fileInput.files.length > 0) {
+                    fileName = fileInput.files[0].name;
+                } else {
+                    fileName = 'image.jpg';
+                }
+            }
+            
             fileName = fileName.replace(/\s+/g, '_');
+            
+            // If it's being cropped, ensure it has a jpg extension if user didn't provide one
+            if (!fileName.toLowerCase().match(/\.(jpg|jpeg|png|gif|webp)$/i)) {
+                fileName += '.jpg';
+            }
             
             const exists = allR2Files.some(f => f.key === fileName);
             if (exists) {
@@ -2026,12 +2151,17 @@
             const quality = parseInt(document.getElementById('imageQuality').value) / 100;
             const originalBtnHtml = '<i class="fa-solid fa-crop-simple"></i> Crop, Compress & Upload';
             
+            const isPublic = document.getElementById('imageUploadPublic') ? document.getElementById('imageUploadPublic').checked : false;
+            let bucketType = isPublic ? 'public' : 'default';
+            const customBucket = document.getElementById('imageManagerBucketName') ? document.getElementById('imageManagerBucketName').value.trim() : '';
+            if (customBucket) bucketType = customBucket;
+            
             cropperInstance.getCroppedCanvas({
                 fillColor: '#fff',
                 imageSmoothingEnabled: true,
                 imageSmoothingQuality: 'high',
             }).toBlob((blob) => {
-                performUpload(fileName, blob, 'cropUploadBtn', originalBtnHtml, true);
+                performUpload(fileName, blob, 'cropUploadBtn', originalBtnHtml, true, null, bucketType);
             }, 'image/jpeg', quality);
         }
         
@@ -2039,13 +2169,15 @@
             const r2Sec = document.getElementById('r2UploadSection');
             const gdSec = document.getElementById('gdriveSection');
             const imgSec = document.getElementById('imageManagerSection');
+            const pubSec = document.getElementById('publicR2Section');
             const tabR2 = document.getElementById('tabR2');
             const tabGD = document.getElementById('tabGDrive');
             const tabImg = document.getElementById('tabImageManager');
+            const tabPub = document.getElementById('tabPublicR2');
             
             // Reset all
-            [r2Sec, gdSec, imgSec].forEach(el => el.style.display = 'none');
-            [tabR2, tabGD, tabImg].forEach(el => {
+            [r2Sec, gdSec, imgSec, pubSec].forEach(el => el.style.display = 'none');
+            [tabR2, tabGD, tabImg, tabPub].forEach(el => {
                 el.style.borderBottomColor = 'transparent';
                 el.style.color = 'var(--text-muted)';
             });
@@ -2062,10 +2194,112 @@
                 imgSec.style.display = 'block';
                 tabImg.style.borderBottomColor = '#10b981';
                 tabImg.style.color = 'var(--text-main)';
+            } else if(tab === 'public_r2') {
+                pubSec.style.display = 'block';
+                tabPub.style.borderBottomColor = '#3b82f6';
+                tabPub.style.color = 'var(--text-main)';
+                document.getElementById('r2PublicDomain').value = localStorage.getItem('r2PublicDomain') || '';
+                document.getElementById('r2PublicFolder').value = localStorage.getItem('r2PublicFolder') || '';
+                document.getElementById('r2BucketBindingName').value = localStorage.getItem('r2BucketBindingName') || '';
             }
         }
         
-        function generateGDriveLink() {
+        function uploadFileToPublicR2(btn) {
+            if (!navigator.onLine) {
+                return showToast('No internet connection. Please check your network.', 'error');
+            }
+            const domain = document.getElementById('r2PublicDomain').value.trim().replace(/\/$/, '');
+            const folder = document.getElementById('r2PublicFolder').value.trim().replace(/^\/|\/$/g, '');
+            const bucketBindingInput = document.getElementById('r2BucketBindingName').value.trim();
+            const fileInput = document.getElementById('publicR2FileInput');
+            
+            localStorage.setItem('r2PublicDomain', domain);
+            localStorage.setItem('r2PublicFolder', folder);
+            localStorage.setItem('r2BucketBindingName', bucketBindingInput);
+            
+            if (!domain) return showToast('Please enter your R2 Public Domain (e.g. https://pub-xyz.r2.dev)', 'error');
+            if (fileInput.files.length === 0) return showToast('Please select a file to upload.', 'error');
+            
+            const file = fileInput.files[0];
+            let fileName = document.getElementById('publicR2FileName').value.trim();
+            if (!fileName) fileName = file.name;
+            fileName = fileName.replace(/\s+/g, '_');
+            
+            if (folder) fileName = folder + '/' + fileName;
+            
+            const originalHtml = btn.innerHTML;
+            
+            const onSuccess = function(finalFileName) {
+                const publicUrl = domain + '/' + finalFileName;
+                document.getElementById('uploadPublicResult').style.display = 'block';
+                document.getElementById('r2PublicLinkResult').value = publicUrl;
+                
+                // Clear cropper state after successful upload
+                document.getElementById('publicR2FileInput').value = '';
+                document.getElementById('publicR2CropperContainer').style.display = 'none';
+                document.getElementById('publicR2ImageSettings').style.display = 'none';
+                if (publicR2CropperInstance) {
+                    publicR2CropperInstance.destroy();
+                    publicR2CropperInstance = null;
+                }
+                
+                showToast('Public file uploaded successfully!', 'success');
+                if(typeof fetchStorageStats === 'function') fetchStorageStats();
+            };
+
+            const bucketName = document.getElementById('r2BucketBindingName').value.trim() || 'public';
+
+            if (publicR2CropperInstance) {
+                // Ensure extension exists for custom public cropper names
+                if (!fileName.toLowerCase().match(/\.(jpg|jpeg|png|gif|webp)$/i)) {
+                    fileName += '.jpg';
+                }
+                const quality = parseInt(document.getElementById('publicR2ImageQuality').value) / 100;
+                publicR2CropperInstance.getCroppedCanvas({
+                    fillColor: '#fff',
+                    imageSmoothingEnabled: true,
+                    imageSmoothingQuality: 'high',
+                }).toBlob((blob) => {
+                    performUpload(fileName, blob, btn.id, originalHtml, false, onSuccess, bucketName);
+                }, 'image/jpeg', quality);
+            } else {
+                performUpload(fileName, file, btn.id, originalHtml, false, onSuccess, bucketName);
+            }
+        }
+        
+        let publicR2CropperInstance = null;
+        document.getElementById('publicR2FileInput').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                document.getElementById('publicR2FileName').value = file.name;
+                const isImage = file.type.startsWith('image/') || file.name.match(/\.(jpg|jpeg|png|gif|webp)$/i);
+                if (isImage) {
+                    const url = URL.createObjectURL(file);
+                    const image = document.getElementById('publicR2CropperImage');
+                    image.src = url;
+                    document.getElementById('publicR2CropperContainer').style.display = 'block';
+                    document.getElementById('publicR2ImageSettings').style.display = 'block';
+                    
+                    if (publicR2CropperInstance) publicR2CropperInstance.destroy();
+                    publicR2CropperInstance = new Cropper(image, {
+                        viewMode: 1,
+                        autoCropArea: 1
+                    });
+                } else {
+                    document.getElementById('publicR2CropperContainer').style.display = 'none';
+                    document.getElementById('publicR2ImageSettings').style.display = 'none';
+                    if (publicR2CropperInstance) {
+                        publicR2CropperInstance.destroy();
+                        publicR2CropperInstance = null;
+                    }
+                }
+            }
+        });
+        
+        async function generateGDriveLink() {
+            if (!navigator.onLine) {
+                return showToast('No internet connection. Please check your network.', 'error');
+            }
             const gLink = document.getElementById('gdriveLinkInput').value.trim();
             if(!gLink) return showToast('Please enter a Google Drive link', 'error');
             
@@ -2081,17 +2315,45 @@
             if(!url) return showToast('API URL not connected!', 'error');
             const secret = document.getElementById('apiSecret').value;
             
-            let secureLink = `${url}/?action=download_gdrive&id=${fileId}&token=${secret}`;
-            
             let fileName = document.getElementById('gdriveFileName').value.trim();
-            if (fileName) {
-                fileName = fileName.replace(/\s+/g, '_');
-                secureLink += `&name=${encodeURIComponent(fileName)}`;
-            }
+            if (!fileName) fileName = "gdrive_" + fileId;
+            fileName = fileName.replace(/\s+/g, '_');
+            if (!fileName.endsWith('.gdrive')) fileName += '.gdrive';
             
-            document.getElementById('gdriveResult').style.display = 'block';
-            document.getElementById('gdriveSecureLink').value = secureLink;
-            showToast('Secure Google Drive Proxy link generated!', 'success');
+            const btn = document.querySelector('#gdriveSection button.btn-primary');
+            const originalHtml = btn.innerHTML;
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Generating & Saving...';
+            btn.disabled = true;
+            
+            try {
+                const blob = new Blob([fileId], { type: 'text/plain' });
+                const response = await fetch(`${url}/?action=upload_file&file=${encodeURIComponent(fileName)}`, {
+                    method: 'POST',
+                    headers: { 'Authorization': getAuthHeader() },
+                    body: blob
+                });
+                
+                if (response.ok) {
+                    let secureLink = `${url}/?action=download_file&file=${encodeURIComponent(fileName)}&token=${secret}`;
+                    document.getElementById('gdriveResult').style.display = 'block';
+                    document.getElementById('gdriveSecureLink').value = secureLink;
+                    showToast('Secure Google Drive Proxy link generated & saved to File Manager!', 'success');
+                    
+                    document.getElementById('gdriveLinkInput').value = '';
+                    document.getElementById('gdriveFileName').value = '';
+                    
+                    if(typeof fetchStorageStats === 'function') fetchStorageStats();
+                } else {
+                    let err = "Failed to save link";
+                    try { const d = await response.json(); err = d.error || err; } catch(e){}
+                    showToast(err, 'error');
+                }
+            } catch (e) {
+                showToast('Network error saving GDrive proxy', 'error');
+            } finally {
+                btn.innerHTML = originalHtml;
+                btn.disabled = false;
+            }
         }
 
         function uploadFileToR2() {
@@ -2213,6 +2475,9 @@
         }
 
         async function generateAndPublishDocs() {
+            if (!navigator.onLine) {
+                return showToast('No internet connection. Please check your network.', 'error');
+            }
             const url = getBaseUrl();
             if (!url) return showToast('API URL not connected!', 'error');
             
