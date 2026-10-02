@@ -1992,8 +1992,25 @@
                     let badgeLabel = isPublic ? 'Public CDN' : '';
                     if (file.key.startsWith('GDrive_') || file.key.startsWith('GDrive::')) badgeLabel = 'Google Drive';
                     
-                    const badge = isPublic ? `<span style="background:${file.key.startsWith('GDrive_') ? '#3b82f6' : '#10b981'};color:#fff;padding:2px 6px;border-radius:4px;font-size:10px;margin-left:8px;">${badgeLabel}</span>` : '';
+                    const badge = isPublic ? `<span style="background:${(file.key.startsWith('GDrive_') || file.key.startsWith('GDrive::')) ? '#3b82f6' : '#10b981'};color:#fff;padding:2px 6px;border-radius:4px;font-size:10px;margin-left:8px;">${badgeLabel}</span>` : '';
                     let tempLinkBtn = isPublic ? '' : `<button class="btn-icon" style="color: #10b981; margin-left: 8px;" onclick="copyTempLink('${file.key}')" title="Copy 50-Min Expiring Link (Share Karne Ke Liye)"><i class="fa-solid fa-stopwatch"></i></button>`;
+                    
+                    let proxyBtn = '';
+                    let appScriptBtn = '';
+                    if (file.key.startsWith('GDrive_') || file.key.startsWith('GDrive::')) {
+                        const fileId = file.key.startsWith('GDrive::') ? file.key.split('::')[1] : file.key.split('_')[1];
+                        
+                        // Cloudflare Proxy
+                        const proxyLink = `${url}/?action=download_gdrive&id=${fileId}&token=${secret}&name=${encodeURIComponent(displayFileName)}`;
+                        proxyBtn = `<button class="btn-icon" style="color: #a855f7; margin-left: 8px;" onclick="copyToClipboard('${proxyLink}')" title="Copy CF Proxy Link (Bypasses Virus Scan for APKs)"><i class="fa-solid fa-bolt"></i></button>`;
+                        
+                        // Apps Script Proxy
+                        const scriptUrl = localStorage.getItem('gdriveScriptUrl') || (document.getElementById('gdriveScriptUrl') ? document.getElementById('gdriveScriptUrl').value.trim() : '');
+                        if (scriptUrl) {
+                            const appScriptProxyLink = `${scriptUrl}?action=download_gdrive&id=${fileId}`;
+                            appScriptBtn = `<button class="btn-icon" style="color: #f97316; margin-left: 8px;" onclick="copyToClipboard('${appScriptProxyLink}')" title="Copy Apps Script Proxy Link (Bypasses Virus Scan via Google Script)"><i class="fa-solid fa-rocket"></i></button>`;
+                        }
+                    }
                     
                     const tr = document.createElement('tr');
                     tr.innerHTML = `
@@ -2002,7 +2019,9 @@
                         <td>${sizeMb}</td>
                         <td>${date}</td>
                         <td>
-                            <button class="btn-icon" style="color: var(--primary);" onclick="copyToClipboard('${link}')" title="Copy ${isPublic ? 'Public CDN Link' : 'Master Link'}"><i class="fa-solid fa-link"></i></button>
+                            <button class="btn-icon" style="color: var(--primary);" onclick="copyToClipboard('${link}')" title="Copy ${isPublic ? 'Public CDN / Google Drive Link' : 'Master Link'}"><i class="fa-solid fa-link"></i></button>
+                            ${proxyBtn}
+                            ${appScriptBtn}
                             ${tempLinkBtn}
                             <button class="btn-icon" style="color: #ef4444; margin-left: 8px;" onclick="deleteR2File('${file.key}')" title="Delete File"><i class="fa-solid fa-trash"></i></button>
                         </td>
@@ -2136,19 +2155,23 @@
                 // Check if it's a GDrive pointer and delete from Google Drive first
                 if (fileName.startsWith('GDrive::')) {
                     const fileId = fileName.split('::')[1];
-                    const gdriveScript = localStorage.getItem('gdriveScriptUrl');
+                    const gdriveScript = localStorage.getItem('gdriveScriptUrl') || (document.getElementById('gdriveScriptUrl') ? document.getElementById('gdriveScriptUrl').value.trim() : '');
                     if (gdriveScript && fileId) {
                         await fetch(gdriveScript, {
                             method: 'POST',
+                            mode: 'no-cors',
+                            headers: { 'Content-Type': 'text/plain' },
                             body: JSON.stringify({ action: 'delete_gdrive_file', fileId: fileId })
                         }).catch(e => console.error("GDrive delete error", e));
                     }
                 } else if (fileName.startsWith('GDrive_')) {
                     const fileId = fileName.split('_')[1];
-                    const gdriveScript = localStorage.getItem('gdriveScriptUrl');
+                    const gdriveScript = localStorage.getItem('gdriveScriptUrl') || (document.getElementById('gdriveScriptUrl') ? document.getElementById('gdriveScriptUrl').value.trim() : '');
                     if (gdriveScript && fileId) {
                         await fetch(gdriveScript, {
                             method: 'POST',
+                            mode: 'no-cors',
+                            headers: { 'Content-Type': 'text/plain' },
                             body: JSON.stringify({ action: 'delete_gdrive_file', fileId: fileId })
                         }).catch(e => console.error("GDrive delete error", e));
                     }
