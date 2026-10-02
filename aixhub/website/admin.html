@@ -768,6 +768,9 @@
                         <button id="tabPublicR2" class="btn" style="border-bottom: 2px solid transparent; border-radius: 0; color: var(--text-muted); background: transparent;" onclick="switchFileManagerTab('public_r2')">
                             <i class="fa-solid fa-globe"></i> Public R2 (CDN)
                         </button>
+                        <button id="tabGDriveUpload" class="btn" style="border-bottom: 2px solid transparent; border-radius: 0; color: var(--text-muted); background: transparent;" onclick="switchFileManagerTab('gdrive_upload')">
+                            <i class="fa-solid fa-cloud-arrow-up"></i> GDrive Upload
+                        </button>
                     </div>
 
                     <!-- R2 Upload Section -->
@@ -827,6 +830,59 @@
                             <div style="display: flex; gap: 8px; margin-bottom: 8px;">
                                 <input type="text" id="gdriveSecureLink" readonly class="api-input" style="flex: 1; font-size: 12px;" onclick="this.select();">
                                 <button class="btn btn-primary" onclick="copyText('gdriveSecureLink')" title="Copy Link" style="padding: 0 16px;"><i class="fa-regular fa-copy"></i></button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Google Drive Direct Upload Section -->
+                    <div id="gdriveUploadSection" style="display: none;">
+                        <div style="background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.3); padding: 16px; border-radius: 8px; margin-bottom: 16px;">
+                            <h4 style="color: #10b981; margin-bottom: 8px;"><i class="fa-solid fa-cloud-arrow-up"></i> Upload to Google Drive</h4>
+                            <p style="font-size: 13px; color: var(--text-muted); line-height: 1.6;">Directly upload files from your device to Google Drive. Images will be opened in Cropper first. You must deploy the Google Apps Script and enter the Web App URL below.</p>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label><strong>Google Apps Script Web App URL</strong></label>
+                            <input type="text" id="gdriveScriptUrl" placeholder="https://script.google.com/macros/s/.../exec" class="api-input" style="width: 100%; margin-top: 8px;" onchange="localStorage.setItem('gdriveScriptUrl', this.value.trim())">
+                        </div>
+                        
+                        <div class="form-group" style="margin-top: 16px;">
+                            <label><strong>Google Drive Folder ID (Optional)</strong></label>
+                            <input type="text" id="gdriveFolderId" placeholder="e.g. 1aBcDeFgHiJ..." class="api-input" style="width: 100%; margin-top: 8px;" onchange="localStorage.setItem('gdriveFolderId', this.value.trim())">
+                        </div>
+
+                        <div class="form-group" style="margin-top: 16px;">
+                            <label><strong>Select File (Image will open cropper)</strong></label>
+                            <input type="file" id="gdriveUploadInput" style="padding: 10px; border: 1px dashed var(--border); width: 100%; border-radius: 8px; margin-top: 8px; background: var(--bg); color: white;">
+                        </div>
+
+                        <!-- Cropper Container for GDrive Upload -->
+                        <div id="gdriveCropperContainer" style="display: none; margin-top: 16px; max-height: 400px; overflow: hidden; border-radius: 8px; border: 1px solid var(--border); background: #000;">
+                            <img id="gdriveCropperImage" src="" style="display: block; max-width: 100%;">
+                        </div>
+                        
+                        <div id="gdriveImageSettings" style="display: none; margin-top: 16px;">
+                            <div class="form-group">
+                                <label><strong>Compression Quality (<span id="gdriveQualityValue">80</span>%)</strong></label>
+                                <input type="range" id="gdriveImageQuality" min="10" max="100" value="80" style="width: 100%; margin-top: 8px;" oninput="document.getElementById('gdriveQualityValue').innerText=this.value">
+                            </div>
+                        </div>
+
+                        <div class="form-group" style="margin-top: 16px;">
+                            <label><strong>Save As (Optional Filename)</strong></label>
+                            <input type="text" id="gdriveUploadFileName" placeholder="e.g. file.apk" class="api-input" style="width: 100%; margin-top: 8px;">
+                        </div>
+
+                        <button id="btnGdriveUpload" class="btn btn-primary" style="margin-top: 16px; width: 100%; justify-content: center; font-size: 16px; padding: 12px; background: #10b981;" onclick="uploadToGDriveDirectly(this)">
+                            <i class="fa-solid fa-cloud-arrow-up"></i> Upload to Google Drive
+                        </button>
+                        
+                        <div id="gdriveUploadResult" style="margin-top: 24px; display: none; padding: 16px; background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.3); border-radius: 8px;">
+                            <h4 style="color: #10b981; margin-bottom: 8px;"><i class="fa-solid fa-circle-check"></i> Upload Successful!</h4>
+                            <p style="margin-bottom: 8px; font-size: 14px;"><strong>Google Drive Link:</strong></p>
+                            <div style="display: flex; gap: 8px; margin-bottom: 8px;">
+                                <input type="text" id="gdriveUploadResultLink" readonly class="api-input" style="flex: 1; font-size: 12px;" onclick="this.select();">
+                                <button class="btn btn-primary" onclick="copyText('gdriveUploadResultLink')" title="Copy Link" style="padding: 0 16px;"><i class="fa-regular fa-copy"></i></button>
                             </div>
                         </div>
                     </div>
@@ -1890,7 +1946,7 @@
             } else {
                 const url = getBaseUrl();
                 filteredFiles.forEach(file => {
-                    const sizeMb = (file.size / (1024 * 1024)).toFixed(2) + ' MB';
+                    let sizeMb = file.size < 1024 * 1024 ? (file.size / 1024).toFixed(2) + ' KB' : (file.size / (1024 * 1024)).toFixed(2) + ' MB';
                     const date = new Date(file.uploaded).toLocaleString();
                     const secret = document.getElementById('apiSecret').value;
                     
@@ -1899,20 +1955,50 @@
                     const r2DomainRaw = localStorage.getItem('r2PublicDomain') || (document.getElementById('r2PublicDomain') ? document.getElementById('r2PublicDomain').value.trim() : '');
                     const cleanDomain = r2DomainRaw.replace(/\/$/, '');
                     
+                    let displayFileName = file.key;
+
                     if (file.bucket && file.bucket !== 'MY_BUCKET' && cleanDomain) {
                         link = `${cleanDomain}/${file.key}`;
                         isPublic = true;
+                    } else if (file.key.startsWith('GDrive::')) {
+                        const parts = file.key.split('::');
+                        if (parts.length >= 4) {
+                            const realSize = parseInt(parts[2]);
+                            sizeMb = realSize < 1024 * 1024 ? (realSize / 1024).toFixed(2) + ' KB' : (realSize / (1024 * 1024)).toFixed(2) + ' MB';
+                            displayFileName = parts.slice(3).join('::');
+                            link = `https://drive.google.com/u/0/uc?id=${parts[1]}`;
+                            isPublic = true;
+                        }
+                    } else if (file.key.startsWith('GDrive_')) {
+                        const parts = file.key.split('_');
+                        if (parts.length >= 4 && !isNaN(parts[2])) {
+                            const realSize = parseInt(parts[2]);
+                            sizeMb = realSize < 1024 * 1024 ? (realSize / 1024).toFixed(2) + ' KB' : (realSize / (1024 * 1024)).toFixed(2) + ' MB';
+                            displayFileName = parts.slice(3).join('_');
+                            link = `https://drive.google.com/u/0/uc?id=${parts[1]}`;
+                            isPublic = true;
+                        } else if (parts.length >= 3) {
+                            sizeMb = 'N/A';
+                            displayFileName = parts.slice(2).join('_');
+                            link = `https://drive.google.com/u/0/uc?id=${parts[1]}`;
+                            isPublic = true; // no temp link needed
+                        } else {
+                            link = `${url}/?action=download_file&file=${encodeURIComponent(file.key)}&token=${secret}`;
+                        }
                     } else {
                         link = `${url}/?action=download_file&file=${encodeURIComponent(file.key)}&token=${secret}`;
                     }
                     
-                    const badge = isPublic ? '<span style="background:#10b981;color:#fff;padding:2px 6px;border-radius:4px;font-size:10px;margin-left:8px;">Public CDN</span>' : '';
+                    let badgeLabel = isPublic ? 'Public CDN' : '';
+                    if (file.key.startsWith('GDrive_') || file.key.startsWith('GDrive::')) badgeLabel = 'Google Drive';
+                    
+                    const badge = isPublic ? `<span style="background:${file.key.startsWith('GDrive_') ? '#3b82f6' : '#10b981'};color:#fff;padding:2px 6px;border-radius:4px;font-size:10px;margin-left:8px;">${badgeLabel}</span>` : '';
                     let tempLinkBtn = isPublic ? '' : `<button class="btn-icon" style="color: #10b981; margin-left: 8px;" onclick="copyTempLink('${file.key}')" title="Copy 50-Min Expiring Link (Share Karne Ke Liye)"><i class="fa-solid fa-stopwatch"></i></button>`;
                     
                     const tr = document.createElement('tr');
                     tr.innerHTML = `
                         <td><input type="checkbox" class="r2-file-checkbox" value="${file.key}"></td>
-                        <td><strong>${file.key}</strong>${badge}</td>
+                        <td><strong>${displayFileName}</strong>${badge}</td>
                         <td>${sizeMb}</td>
                         <td>${date}</td>
                         <td>
@@ -1973,6 +2059,18 @@
                 updateProgress(percent);
                 const fileName = checkboxes[i].value;
                 try {
+                    // Check if it's a GDrive pointer and delete from Google Drive first
+                    if (fileName.startsWith('GDrive_')) {
+                        const fileId = fileName.split('_')[1];
+                        const gdriveScript = localStorage.getItem('gdriveScriptUrl');
+                        if (gdriveScript && fileId) {
+                            await fetch(gdriveScript, {
+                                method: 'POST',
+                                body: JSON.stringify({ action: 'delete', fileId: fileId })
+                            }).catch(e => console.error("GDrive delete error", e));
+                        }
+                    }
+
                     const response = await fetch(`${url}/?action=delete_file&file=${encodeURIComponent(fileName)}`, {
                         method: 'DELETE',
                         headers: { 'Authorization': secret }
@@ -2035,6 +2133,27 @@
             
             startProgress();
             try {
+                // Check if it's a GDrive pointer and delete from Google Drive first
+                if (fileName.startsWith('GDrive::')) {
+                    const fileId = fileName.split('::')[1];
+                    const gdriveScript = localStorage.getItem('gdriveScriptUrl');
+                    if (gdriveScript && fileId) {
+                        await fetch(gdriveScript, {
+                            method: 'POST',
+                            body: JSON.stringify({ action: 'delete_gdrive_file', fileId: fileId })
+                        }).catch(e => console.error("GDrive delete error", e));
+                    }
+                } else if (fileName.startsWith('GDrive_')) {
+                    const fileId = fileName.split('_')[1];
+                    const gdriveScript = localStorage.getItem('gdriveScriptUrl');
+                    if (gdriveScript && fileId) {
+                        await fetch(gdriveScript, {
+                            method: 'POST',
+                            body: JSON.stringify({ action: 'delete_gdrive_file', fileId: fileId })
+                        }).catch(e => console.error("GDrive delete error", e));
+                    }
+                }
+
                 const response = await fetch(`${url}/?action=delete_file&file=${encodeURIComponent(fileName)}`, {
                     method: 'DELETE',
                     headers: { 'Authorization': getAuthHeader() }
@@ -2226,18 +2345,25 @@
         function switchFileManagerTab(tab) {
             const r2Sec = document.getElementById('r2UploadSection');
             const gdSec = document.getElementById('gdriveSection');
+            const gdUpSec = document.getElementById('gdriveUploadSection');
             const imgSec = document.getElementById('imageManagerSection');
             const pubSec = document.getElementById('publicR2Section');
+            
             const tabR2 = document.getElementById('tabR2');
             const tabGD = document.getElementById('tabGDrive');
+            const tabGDUp = document.getElementById('tabGDriveUpload');
             const tabImg = document.getElementById('tabImageManager');
             const tabPub = document.getElementById('tabPublicR2');
             
             // Reset all
-            [r2Sec, gdSec, imgSec, pubSec].forEach(el => el.style.display = 'none');
-            [tabR2, tabGD, tabImg, tabPub].forEach(el => {
-                el.style.borderBottomColor = 'transparent';
-                el.style.color = 'var(--text-muted)';
+            [r2Sec, gdSec, gdUpSec, imgSec, pubSec].forEach(el => {
+                if (el) el.style.display = 'none';
+            });
+            [tabR2, tabGD, tabGDUp, tabImg, tabPub].forEach(el => {
+                if (el) {
+                    el.style.borderBottomColor = 'transparent';
+                    el.style.color = 'var(--text-muted)';
+                }
             });
 
             if(tab === 'r2') {
@@ -2248,6 +2374,14 @@
                 gdSec.style.display = 'block';
                 tabGD.style.borderBottomColor = '#3b82f6';
                 tabGD.style.color = 'var(--text-main)';
+            } else if(tab === 'gdrive_upload') {
+                gdUpSec.style.display = 'block';
+                tabGDUp.style.borderBottomColor = '#10b981';
+                tabGDUp.style.color = 'var(--text-main)';
+                const savedScriptUrl = localStorage.getItem('gdriveScriptUrl');
+                if(savedScriptUrl) document.getElementById('gdriveScriptUrl').value = savedScriptUrl;
+                const savedFolderId = localStorage.getItem('gdriveFolderId');
+                if(savedFolderId) document.getElementById('gdriveFolderId').value = savedFolderId;
             } else if(tab === 'image') {
                 imgSec.style.display = 'block';
                 tabImg.style.borderBottomColor = '#10b981';
@@ -3095,6 +3229,192 @@
                 console.error(error);
             } finally {
                 endProgress();
+            }
+        }
+        let gdriveCropperInstance = null;
+        
+        document.getElementById('gdriveUploadInput').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                document.getElementById('gdriveUploadFileName').value = file.name;
+                if (file.type.startsWith('image/')) {
+                    const url = URL.createObjectURL(file);
+                    const image = document.getElementById('gdriveCropperImage');
+                    image.src = url;
+                    document.getElementById('gdriveCropperContainer').style.display = 'block';
+                    document.getElementById('gdriveImageSettings').style.display = 'block';
+                    
+                    if (gdriveCropperInstance) gdriveCropperInstance.destroy();
+                    gdriveCropperInstance = new Cropper(image, {
+                        viewMode: 1,
+                        autoCropArea: 1
+                    });
+                } else {
+                    document.getElementById('gdriveCropperContainer').style.display = 'none';
+                    document.getElementById('gdriveImageSettings').style.display = 'none';
+                    if (gdriveCropperInstance) {
+                        gdriveCropperInstance.destroy();
+                        gdriveCropperInstance = null;
+                    }
+                }
+            }
+        });
+
+        async function uploadToGDriveDirectly(btn) {
+            if (!navigator.onLine) {
+                return showToast('No internet connection. Please check your network.', 'error');
+            }
+            const scriptUrl = document.getElementById('gdriveScriptUrl').value.trim();
+            if (!scriptUrl) return showToast('Please enter the Google Apps Script Web App URL first', 'error');
+
+            const folderId = document.getElementById('gdriveFolderId').value.trim();
+            const fileInput = document.getElementById('gdriveUploadInput');
+            if (fileInput.files.length === 0) return showToast('Please select a file to upload.', 'error');
+
+            let fileName = document.getElementById('gdriveUploadFileName').value.trim();
+            const originalFile = fileInput.files[0];
+            if (!fileName) fileName = originalFile.name;
+            fileName = fileName.replace(/\s+/g, '_');
+
+            const originalBtnHtml = btn.innerHTML;
+
+            // --- DUPLICATE CHECK LOGIC ---
+            let existingFileKey = null;
+            if (typeof allR2Files !== 'undefined' && allR2Files) {
+                for (let i = 0; i < allR2Files.length; i++) {
+                    const f = allR2Files[i];
+                    let fName = f.key;
+                    if (f.key.startsWith('GDrive::')) {
+                        const parts = f.key.split('::');
+                        if (parts.length >= 4) fName = parts.slice(3).join('::');
+                    } else if (f.key.startsWith('GDrive_')) {
+                        const parts = f.key.split('_');
+                        if (parts.length >= 4 && !isNaN(parts[2])) {
+                            fName = parts.slice(3).join('_');
+                        } else if (parts.length >= 3) {
+                            fName = parts.slice(2).join('_');
+                        }
+                    }
+                    if (fName === fileName) {
+                        existingFileKey = f.key;
+                        break;
+                    }
+                }
+            }
+
+            if (existingFileKey) {
+                if (confirm(`A file named "${fileName}" already exists!\n\nClick OK to UPDATE (Replace) it.\nClick Cancel to change the file name.`)) {
+                    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Deleting old file...';
+                    btn.disabled = true;
+                    startProgress();
+                    
+                    try {
+                        if (existingFileKey.startsWith('GDrive::')) {
+                            const fileId = existingFileKey.split('::')[1];
+                            await fetch(scriptUrl, { method: 'POST', body: JSON.stringify({ action: 'delete_gdrive_file', fileId: fileId }) }).catch(e => console.error(e));
+                        } else if (existingFileKey.startsWith('GDrive_')) {
+                            const fileId = existingFileKey.split('_')[1];
+                            await fetch(scriptUrl, { method: 'POST', body: JSON.stringify({ action: 'delete_gdrive_file', fileId: fileId }) }).catch(e => console.error(e));
+                        }
+                        const url = getBaseUrl();
+                        if (url) {
+                            await fetch(`${url}/?action=delete_file&file=${encodeURIComponent(existingFileKey)}`, {
+                                method: 'DELETE',
+                                headers: { 'Authorization': getAuthHeader() }
+                            });
+                        }
+                    } catch(e) {
+                        console.error('Error replacing file', e);
+                    }
+                    endProgress();
+                } else {
+                    document.getElementById('gdriveUploadFileName').focus();
+                    return; // Stop upload, user will rename
+                }
+            }
+            // --- END DUPLICATE CHECK LOGIC ---
+
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Uploading to GDrive...';
+            btn.disabled = true;
+            startProgress();
+
+            try {
+                let blobToUpload = originalFile;
+                let mimeType = originalFile.type;
+
+                if (gdriveCropperInstance) {
+                    const quality = parseInt(document.getElementById('gdriveImageQuality').value) / 100;
+                    blobToUpload = await new Promise((resolve) => {
+                        gdriveCropperInstance.getCroppedCanvas({
+                            fillColor: '#fff',
+                            imageSmoothingEnabled: true,
+                            imageSmoothingQuality: 'high',
+                        }).toBlob(resolve, 'image/jpeg', quality);
+                    });
+                    mimeType = 'image/jpeg';
+                    if (!fileName.toLowerCase().match(/\.(jpg|jpeg|png|gif|webp)$/i)) {
+                        fileName += '.jpg';
+                    }
+                }
+
+                const base64data = await new Promise((resolve, reject) => {
+                    const reader = new FileReader();
+                    reader.onload = () => resolve(reader.result.split(',')[1]);
+                    reader.onerror = reject;
+                    reader.readAsDataURL(blobToUpload);
+                });
+
+                updateProgress(50);
+                const response = await fetch(scriptUrl, {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        base64: base64data,
+                        fileName: fileName,
+                        mimeType: mimeType,
+                        folderId: folderId
+                    })
+                });
+
+                const data = await response.json();
+                updateProgress(100);
+                
+                if (data.status === 'success') {
+                    // Upload a pointer to R2 so it shows in "All Files" list
+                    try {
+                        const r2PointerName = 'GDrive::' + data.fileId + '::' + (data.size || 0) + '::' + fileName;
+                        const pointerBlob = new Blob(['1'], {type: 'text/plain'});
+                        const url = getBaseUrl();
+                        await fetch(`${url}/?action=upload_file&file=${encodeURIComponent(r2PointerName)}&bucket=default`, {
+                            method: 'POST',
+                            headers: { 'Authorization': getAuthHeader() },
+                            body: pointerBlob
+                        });
+                        if (typeof fetchStorageStats === 'function') fetchStorageStats();
+                    } catch(err) {
+                        console.error('Failed to create pointer in R2:', err);
+                    }
+
+                    document.getElementById('gdriveUploadResult').style.display = 'block';
+                    document.getElementById('gdriveUploadResultLink').value = data.url;
+                    showToast('Uploaded to Google Drive successfully!', 'success');
+                    
+                    fileInput.value = '';
+                    document.getElementById('gdriveCropperContainer').style.display = 'none';
+                    document.getElementById('gdriveImageSettings').style.display = 'none';
+                    if (gdriveCropperInstance) {
+                        gdriveCropperInstance.destroy();
+                        gdriveCropperInstance = null;
+                    }
+                } else {
+                    throw new Error(data.message || 'Unknown error');
+                }
+
+            } catch (e) {
+                showToast('Error uploading: ' + e.message, 'error');
+            } finally {
+                endProgress();
+                btn.innerHTML = originalBtnHtml;
+                btn.disabled = false;
             }
         }
     </script>
