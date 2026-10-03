@@ -884,6 +884,11 @@
                                 <input type="text" id="gdriveUploadResultLink" readonly class="api-input" style="flex: 1; font-size: 12px;" onclick="this.select();">
                                 <button class="btn btn-primary" onclick="copyText('gdriveUploadResultLink')" title="Copy Link" style="padding: 0 16px;"><i class="fa-regular fa-copy"></i></button>
                             </div>
+                            <p style="margin-bottom: 8px; font-size: 14px; margin-top: 12px;"><strong>MIT App Inventor Link (JSON):</strong></p>
+                            <div style="display: flex; gap: 8px; margin-bottom: 8px;">
+                                <input type="text" id="gdriveAppInventorResultLink" readonly class="api-input" style="flex: 1; font-size: 12px;" onclick="this.select();">
+                                <button class="btn btn-primary" style="background-color: #06b6d4;" onclick="copyText('gdriveAppInventorResultLink')" title="Copy JSON Link" style="padding: 0 16px;"><i class="fa-regular fa-copy"></i></button>
+                            </div>
                         </div>
                     </div>
 
@@ -2004,11 +2009,18 @@
                         const proxyLink = `${url}/?action=download_gdrive&id=${fileId}&token=${secret}&name=${encodeURIComponent(displayFileName)}`;
                         proxyBtn = `<button class="btn-icon" style="color: #a855f7; margin-left: 8px;" onclick="copyToClipboard('${proxyLink}')" title="Copy CF Proxy Link (Bypasses Virus Scan for APKs)"><i class="fa-solid fa-bolt"></i></button>`;
                         
-                        // Apps Script Proxy
+                        // Apps Script Proxy & MIT App Inventor Links
                         const scriptUrl = localStorage.getItem('gdriveScriptUrl') || (document.getElementById('gdriveScriptUrl') ? document.getElementById('gdriveScriptUrl').value.trim() : '');
                         if (scriptUrl) {
                             const appScriptProxyLink = `${scriptUrl}?action=download_gdrive&id=${fileId}`;
-                            appScriptBtn = `<button class="btn-icon" style="color: #f97316; margin-left: 8px;" onclick="copyToClipboard('${appScriptProxyLink}')" title="Copy Apps Script Proxy Link (Bypasses Virus Scan via Google Script)"><i class="fa-solid fa-rocket"></i></button>`;
+                            const appInventorJsonLink = `${scriptUrl}?action=download_gdrive&id=${fileId}&json=true`;
+                            
+                            appScriptBtn = `<button class="btn-icon" style="color: #f97316; margin-left: 8px;" onclick="copyToClipboard('${appScriptProxyLink}')" title="Copy Apps Script Proxy Link (Bypasses Virus Scan via Google Script)"><i class="fa-solid fa-rocket"></i></button>` +
+                                           `<button class="btn-icon" style="color: #06b6d4; margin-left: 8px;" onclick="copyToClipboard('${appInventorJsonLink}')" title="Copy MIT App Inventor Link (JSON Response)"><i class="fa-solid fa-code"></i></button>`;
+                        } else {
+                            const errorMsg = "Please go to 'GDrive Upload' tab and enter your Google Apps Script Web App URL first!";
+                            appScriptBtn = `<button class="btn-icon" style="color: #f97316; margin-left: 8px; opacity: 0.5;" onclick="showToast(\`${errorMsg}\`, 'error')" title="Apps Script URL missing"><i class="fa-solid fa-rocket"></i></button>` +
+                                           `<button class="btn-icon" style="color: #06b6d4; margin-left: 8px; opacity: 0.5;" onclick="showToast(\`${errorMsg}\`, 'error')" title="MIT App Inventor Link missing"><i class="fa-solid fa-code"></i></button>`;
                         }
                     }
                     
@@ -3419,6 +3431,7 @@
 
                     document.getElementById('gdriveUploadResult').style.display = 'block';
                     document.getElementById('gdriveUploadResultLink').value = data.url;
+                    document.getElementById('gdriveAppInventorResultLink').value = scriptUrl + '?action=download_gdrive&id=' + data.fileId + '&json=true';
                     showToast('Uploaded to Google Drive successfully!', 'success');
                     
                     fileInput.value = '';
