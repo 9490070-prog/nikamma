@@ -247,7 +247,9 @@
                 mediaContainer.style.width = '100%';
                 
                 let mediaElement;
+                let isIframe = false;
                 if (imageUrl.includes('.html') || imageUrl.includes('action=view_page')) {
+                    isIframe = true;
                     mediaElement = document.createElement('iframe');
                     mediaElement.src = imageUrl;
                     mediaElement.className = 'card-iframe';
@@ -267,39 +269,41 @@
                 
                 mediaContainer.appendChild(mediaElement);
                 
-                const overlay = document.createElement('div');
-                overlay.style.position = 'absolute';
-                overlay.style.top = '0';
-                overlay.style.left = '0';
-                overlay.style.width = '100%';
-                overlay.style.height = '100%';
-                overlay.style.zIndex = '10';
-                overlay.style.cursor = 'pointer';
-                
-                // 🟢 Single vs Double Click Logic
-                let clickTimer = null;
-                overlay.onclick = function(e) {
-                    e.stopPropagation(); // Card click event ko roko
+                if (!isIframe) {
+                    const overlay = document.createElement('div');
+                    overlay.style.position = 'absolute';
+                    overlay.style.top = '0';
+                    overlay.style.left = '0';
+                    overlay.style.width = '100%';
+                    overlay.style.height = '100%';
+                    overlay.style.zIndex = '10';
+                    overlay.style.cursor = 'pointer';
                     
-                    if (clickTimer === null) {
-                        clickTimer = setTimeout(function() {
+                    // 🟢 Single vs Double Click Logic for Images
+                    let clickTimer = null;
+                    overlay.onclick = function(e) {
+                        e.stopPropagation(); // Card click event ko roko
+                        
+                        if (clickTimer === null) {
+                            clickTimer = setTimeout(function() {
+                                clickTimer = null;
+                                // Single Click -> Return index to Kodular
+                                if (window.AppInventor) {
+                                    window.AppInventor.setWebViewString(currentIndex.toString());
+                                } else {
+                                    console.log("Card Clicked! Index: " + currentIndex);
+                                }
+                            }, 300); 
+                        } else {
+                            // Double Click -> Open Fullscreen
+                            clearTimeout(clickTimer); 
                             clickTimer = null;
-                            // Single Click -> Return index to Kodular
-                            if (window.AppInventor) {
-                                window.AppInventor.setWebViewString(currentIndex.toString());
-                            } else {
-                                console.log("Card Clicked! Index: " + currentIndex);
-                            }
-                        }, 300); 
-                    } else {
-                        // Double Click -> Open Fullscreen
-                        clearTimeout(clickTimer); 
-                        clickTimer = null;
-                        openFullscreen(imageUrl); 
-                    }
-                };
-                
-                mediaContainer.appendChild(overlay);
+                            openFullscreen(imageUrl); 
+                        }
+                    };
+                    
+                    mediaContainer.appendChild(overlay);
+                }
                 card.appendChild(mediaContainer);
             }
 
@@ -377,6 +381,18 @@
                 document.getElementById('modalIframe').src = '';
             }, 300); // Wait for transition
         }
+
+        // Auto-resize logic for iframes
+        window.addEventListener('message', function(e) {
+            if (e.data && e.data.type === 'iframe_resize' && e.data.height) {
+                const iframes = document.querySelectorAll('iframe.card-iframe');
+                iframes.forEach(iframe => {
+                    if (iframe.contentWindow === e.source) {
+                        iframe.style.height = (e.data.height + 10) + 'px'; // +10px buffer to prevent scrollbars
+                    }
+                });
+            }
+        });
     </script>
 </body>
 </html>
