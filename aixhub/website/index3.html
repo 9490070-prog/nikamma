@@ -122,7 +122,8 @@
 
     <div id="fullscreenModal" onclick="closeModal()">
         <span class="close-btn" onclick="closeModal()">×</span>
-        <img id="modalImage" src="" alt="Full Screen">
+        <img id="modalImage" src="" alt="Full Screen" style="display:none;">
+        <iframe id="modalIframe" src="" style="display:none; width: 95%; height: 95%; border: none; border-radius: 8px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); background: white;"></iframe>
     </div>
 
     <script>
@@ -138,27 +139,37 @@
         }
 
         function checkImagesAndNotify() {
-            const images = Array.from(document.querySelectorAll('.card img'));
-            let pendingImages = images.filter(img => !img.complete);
+            const elements = Array.from(document.querySelectorAll('.card img, .card iframe.card-iframe'));
+            let pendingElements = elements.filter(el => {
+                if (el.tagName.toLowerCase() === 'img') return !el.complete;
+                if (el.tagName.toLowerCase() === 'iframe') return el.dataset.loaded !== "true";
+                return false;
+            });
             
-            if (pendingImages.length === 0) {
+            if (pendingElements.length === 0) {
                 sendLoadedMessage();
                 return;
             }
 
             let loadedCount = 0;
-            const totalPending = pendingImages.length;
+            const totalPending = pendingElements.length;
             
-            function onImageLoad() {
+            function onElementLoad() {
                 loadedCount++;
                 if (loadedCount === totalPending) {
                     sendLoadedMessage();
                 }
             }
 
-            pendingImages.forEach(img => {
-                img.addEventListener('load', onImageLoad);
-                img.addEventListener('error', onImageLoad); // Error ko bhi handle karein taake atkay nahi
+            pendingElements.forEach(el => {
+                el.addEventListener('load', () => {
+                    el.dataset.loaded = "true";
+                    onElementLoad();
+                });
+                el.addEventListener('error', () => {
+                    el.dataset.loaded = "true";
+                    onElementLoad();
+                }); // Error ko bhi handle karein taake atkay nahi
             });
         }
 
@@ -174,16 +185,29 @@
             if (url.includes("drive.google.com") || url.includes("drive.usercontent.google.com")) {
                 let idMatch = url.match(/[?&]id=([a-zA-Z0-9_-]+)/) || url.match(/\/d\/([a-zA-Z0-9_-]+)/);
                 if (idMatch && idMatch[1]) {
-                    return "https://lh3.googleusercontent.com/d/" + idMatch[1];
+                    // Use thumbnail endpoint to completely bypass Google Drive virus scan warnings for images
+                    return "https://drive.google.com/thumbnail?id=" + idMatch[1];
                 }
             }
             return url;
         }
 
         let itemCount = 0; 
+        const loadedUrls = new Set(); // To prevent duplicate loads and make app faster
 
         // 12 parameters to match your Kodular blocks perfectly!
         function addToList(title, description, imageUrl, titleColor, titleSize, descColor, descSize, cardColor, elevation, cornerRadius, contentPadding, extraMargin) {
+            
+            // Advance cache/duplicate prevention: If URL already exists, don't load it again
+            if (imageUrl && String(imageUrl).trim() !== "") {
+                let checkUrl = fixGoogleDriveUrl(imageUrl);
+                if (loadedUrls.has(checkUrl)) {
+                    console.log("URL already loaded, skipping to save time: " + checkUrl);
+                    return; 
+                }
+                loadedUrls.add(checkUrl);
+            }
+            
             itemCount++; 
             const currentIndex = itemCount; 
 
@@ -214,17 +238,47 @@
                 card.style.marginBottom = isNaN(extraMargin) ? extraMargin : extraMargin + "px";
             }
             
-            // 🟢 Handle Image
+            // 🟢 Handle Image or Webpage
             if (imageUrl && String(imageUrl).trim() !== "" && String(imageUrl).trim().toLowerCase().startsWith("http")) {
                 imageUrl = fixGoogleDriveUrl(imageUrl);
                 
-                const img = document.createElement('img');
-                img.src = imageUrl;
-                img.alt = "Image";
+                const mediaContainer = document.createElement('div');
+                mediaContainer.style.position = 'relative';
+                mediaContainer.style.width = '100%';
+                
+                let mediaElement;
+                if (imageUrl.includes('.html') || imageUrl.includes('action=view_page')) {
+                    mediaElement = document.createElement('iframe');
+                    mediaElement.src = imageUrl;
+                    mediaElement.className = 'card-iframe';
+                    mediaElement.dataset.loaded = "false";
+                    mediaElement.style.width = '100%';
+                    mediaElement.style.height = '350px';
+                    mediaElement.style.border = 'none';
+                    mediaElement.style.display = 'block';
+                    mediaElement.style.borderBottom = '1px solid #f1f5f9';
+                    mediaElement.onload = function() { this.dataset.loaded = "true"; };
+                    mediaElement.onerror = function() { this.dataset.loaded = "true"; };
+                } else {
+                    mediaElement = document.createElement('img');
+                    mediaElement.src = imageUrl;
+                    mediaElement.alt = "Image";
+                }
+                
+                mediaContainer.appendChild(mediaElement);
+                
+                const overlay = document.createElement('div');
+                overlay.style.position = 'absolute';
+                overlay.style.top = '0';
+                overlay.style.left = '0';
+                overlay.style.width = '100%';
+                overlay.style.height = '100%';
+                overlay.style.zIndex = '10';
+                overlay.style.cursor = 'pointer';
                 
                 // 🟢 Single vs Double Click Logic
                 let clickTimer = null;
-                img.onclick = function(e) {
+                overlay.onclick = function(e) {
                     e.stopPropagation(); // Card click event ko roko
                     
                     if (clickTimer === null) {
@@ -244,7 +298,9 @@
                         openFullscreen(imageUrl); 
                     }
                 };
-                card.appendChild(img);
+                
+                mediaContainer.appendChild(overlay);
+                card.appendChild(mediaContainer);
             }
 
             // 🟢 Handle Text Content
@@ -296,7 +352,20 @@
         // Handle Fullscreen UI
         function openFullscreen(url) {
             const modal = document.getElementById('fullscreenModal');
-            document.getElementById('modalImage').src = url;
+            const img = document.getElementById('modalImage');
+            const iframe = document.getElementById('modalIframe');
+            
+            if (url.includes('.html') || url.includes('action=view_page')) {
+                img.style.display = 'none';
+                img.src = '';
+                iframe.style.display = 'block';
+                iframe.src = url;
+            } else {
+                iframe.style.display = 'none';
+                iframe.src = '';
+                img.style.display = 'block';
+                img.src = url;
+            }
             modal.classList.add('show');
         }
 
@@ -305,6 +374,7 @@
             modal.classList.remove('show');
             setTimeout(() => {
                 document.getElementById('modalImage').src = '';
+                document.getElementById('modalIframe').src = '';
             }, 300); // Wait for transition
         }
     </script>
