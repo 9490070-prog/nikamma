@@ -1069,6 +1069,18 @@
                         <textarea id="docExtDesc" class="api-input" style="width: 100%; margin-top: 8px; min-height: 80px;" placeholder="Write a short description or introduction..."></textarea>
                     </div>
 
+                    <div style="background: rgba(16, 185, 129, 0.1); padding: 16px; border-radius: 12px; border: 1px solid rgba(16, 185, 129, 0.3); margin-bottom: 30px;">
+                        <h4 style="margin-bottom: 12px; font-size: 14px; color: #10b981;"><i class="fa-brands fa-google-drive"></i> Google Drive Integration (Required for File Uploads)</h4>
+                        <div class="form-group" style="margin-bottom: 12px;">
+                            <label style="font-size: 12px;"><strong>Google Apps Script Web App URL</strong></label>
+                            <input type="text" id="docsGdriveScriptUrl" class="api-input" style="width: 100%; margin-top: 4px;" placeholder="https://script.google.com/macros/s/.../exec" onchange="if(document.getElementById('gdriveScriptUrl')) document.getElementById('gdriveScriptUrl').value=this.value; localStorage.setItem('gdriveScriptUrl', this.value.trim());">
+                        </div>
+                        <div class="form-group">
+                            <label style="font-size: 12px;"><strong>Google Drive Folder ID</strong></label>
+                            <input type="text" id="docsGdriveFolderId" class="api-input" style="width: 100%; margin-top: 4px;" placeholder="e.g. 148xTETECosVSbmltgA2bgl1K-prAmmmC" onchange="if(document.getElementById('gdriveFolderId')) document.getElementById('gdriveFolderId').value=this.value; localStorage.setItem('gdriveFolderId', this.value.trim());">
+                        </div>
+                    </div>
+
                     <div style="background: var(--dark-panel); padding: 16px; border-radius: 12px; border: 1px solid var(--border); margin-bottom: 30px;">
                         <h4 style="margin-bottom: 12px; font-size: 14px; color: var(--text-muted);"><i class="fa-solid fa-palette"></i> Page Theme & Styling</h4>
                         <div style="display: flex; gap: 16px; flex-wrap: wrap;">
@@ -1244,6 +1256,15 @@
             const savedSecret = localStorage.getItem('cfApiSecret');
             if (savedUrl) document.getElementById('apiUrl').value = savedUrl;
             if (savedSecret) document.getElementById('apiSecret').value = savedSecret;
+            
+            const savedGdriveScriptUrl = localStorage.getItem('gdriveScriptUrl');
+            const savedGdriveFolderId = localStorage.getItem('gdriveFolderId');
+            if (savedGdriveScriptUrl && document.getElementById('docsGdriveScriptUrl')) {
+                document.getElementById('docsGdriveScriptUrl').value = savedGdriveScriptUrl;
+            }
+            if (savedGdriveFolderId && document.getElementById('docsGdriveFolderId')) {
+                document.getElementById('docsGdriveFolderId').value = savedGdriveFolderId;
+            }
             
             if (savedUrl) {
                 testConnection(); // Auto-connect if saved
@@ -2646,6 +2667,14 @@
                         <input type="hidden" class="block-image-r2url" value="">
                         <img class="block-image-preview" src="" style="display: none; max-width: 100%; max-height: 200px; margin-top: 10px; border-radius: 8px; border: 1px solid var(--border);">
                     </div>
+                    <div class="form-group" style="margin-top: 16px;">
+                        <label><strong>GDrive File (Will auto-upload to Google Drive)</strong></label>
+                        <input type="file" class="block-gdrive-file" style="padding: 10px; border: 1px dashed var(--border); width: 100%; border-radius: 8px; margin-top: 8px; background: var(--bg); color: white;">
+                        <input type="hidden" class="block-gdrive-url" value="">
+                        <input type="hidden" class="block-gdrive-filename" value="">
+                        <input type="hidden" class="block-gdrive-size" value="">
+                        <div class="gdrive-status" style="display:none; color: var(--primary); font-size: 13px; margin-top: 5px;"></div>
+                    </div>
                 </div>
             `;
             container.insertAdjacentHTML('beforeend', blockHtml);
@@ -2768,8 +2797,66 @@
                         const data = await res.json();
                         if (data.status === 'success') {
                             urlInput.value = `${url}/?action=view_page&file=${encodeURIComponent(fileName)}`;
+                            fileInput.value = '';
+                            fileInput.croppedBlob = null;
                         } else {
                             throw new Error(data.error || 'Upload failed for image ' + (i+1));
+                        }
+                    }
+                }
+                
+                // Upload GDrive files sequentially
+                for (let i = 0; i < blocks.length; i++) {
+                    const block = blocks[i];
+                    const gdriveInput = block.querySelector('.block-gdrive-file');
+                    const gdriveUrlInput = block.querySelector('.block-gdrive-url');
+                    const gdriveNameInput = block.querySelector('.block-gdrive-filename');
+                    const gdriveSizeInput = block.querySelector('.block-gdrive-size');
+                    
+                    if (gdriveInput && gdriveInput.files.length > 0) {
+                        const scriptUrl = localStorage.getItem('gdriveScriptUrl') || (document.getElementById('gdriveScriptUrl') ? document.getElementById('gdriveScriptUrl').value.trim() : '');
+                        let folderId = localStorage.getItem('gdriveFolderId') || (document.getElementById('gdriveFolderId') ? document.getElementById('gdriveFolderId').value.trim() : '');
+                        if (!folderId) folderId = '148xTETECosVSbmltgA2bgl1K-prAmmmC'; // Default to provided ID
+                        
+                        if (!scriptUrl) {
+                            throw new Error('Google Apps Script URL is missing. Please configure it in Google Drive Settings first.');
+                        }
+                        
+                        const file = gdriveInput.files[0];
+                        const fileName = file.name;
+                        
+                        btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Uploading GDrive File ${i+1}/${blocks.length}...`;
+                        
+                        const base64data = await new Promise((resolve, reject) => {
+                            const reader = new FileReader();
+                            reader.onload = () => resolve(reader.result.split(',')[1]);
+                            reader.onerror = reject;
+                            reader.readAsDataURL(file);
+                        });
+
+                        const response = await fetch(scriptUrl, {
+                            method: 'POST',
+                            body: JSON.stringify({
+                                base64: base64data,
+                                fileName: fileName,
+                                mimeType: file.type,
+                                folderId: folderId
+                            })
+                        });
+
+                        const data = await response.json();
+                        if (data.status === 'success') {
+                            gdriveUrlInput.value = data.url;
+                            gdriveNameInput.value = fileName;
+                            gdriveSizeInput.value = data.size || file.size;
+                            gdriveInput.value = '';
+                            const statusDiv = block.querySelector('.gdrive-status');
+                            if(statusDiv) {
+                                statusDiv.style.display = 'block';
+                                statusDiv.innerHTML = `<i class="fa-solid fa-check-circle"></i> Attached: ${fileName}`;
+                            }
+                        } else {
+                            throw new Error(data.message || 'GDrive Upload failed for block ' + (i+1));
                         }
                     }
                 }
@@ -2807,18 +2894,61 @@
                     const bTitle = block.querySelector('.block-title').value;
                     const bDesc = block.querySelector('.block-desc').value;
                     const bImgUrl = block.querySelector('.block-image-r2url').value;
+                    const bGDriveUrl = block.querySelector('.block-gdrive-url') ? block.querySelector('.block-gdrive-url').value : '';
+                    const bGDriveName = block.querySelector('.block-gdrive-filename') ? block.querySelector('.block-gdrive-filename').value : '';
+                    const bGDriveSize = block.querySelector('.block-gdrive-size') ? block.querySelector('.block-gdrive-size').value : '';
                     
                     jsonState.blocks.push({
                         title: bTitle,
                         description: bDesc,
-                        imageUrl: bImgUrl
+                        imageUrl: bImgUrl,
+                        gdriveUrl: bGDriveUrl,
+                        gdriveName: bGDriveName,
+                        gdriveSize: bGDriveSize
                     });
+                    
+                    let gdriveHtml = '';
+                    if (bGDriveUrl) {
+                        const isImage = bGDriveName.match(/\.(jpeg|jpg|gif|png|webp|svg|bmp)$/i);
+                        
+                        if (isImage) {
+                            let imgUrl = bGDriveUrl;
+                            const matchId = bGDriveUrl.match(/id=([^&]+)/);
+                            if (matchId && matchId[1]) {
+                                imgUrl = `https://drive.google.com/thumbnail?id=${matchId[1]}&sz=w1000`;
+                            }
+                            gdriveHtml = `
+                            <div class="block-image-container" style="margin-top: 20px;">
+                                <img src="${imgUrl}" alt="${bGDriveName}" style="width: 100%; height: auto; display: block; margin: 0 auto; border-radius: 8px; object-fit: cover;">
+                            </div>`;
+                        } else {
+                            let sizeStr = '';
+                            if (bGDriveSize) {
+                                let kb = bGDriveSize / 1024;
+                                sizeStr = kb > 1024 ? (kb / 1024).toFixed(2) + ' MB' : kb.toFixed(2) + ' KB';
+                            }
+                            gdriveHtml = `
+                            <div class="gdrive-download-box" style="margin-top: 20px; padding: 16px; border: 1px solid var(--border); border-radius: 8px; background: rgba(59, 130, 246, 0.05); display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px;">
+                                <div style="display: flex; align-items: center; gap: 12px;">
+                                    <div style="background: var(--primary); width: 40px; height: 40px; border-radius: 8px; display: flex; align-items: center; justify-content: center; color: white; font-size: 20px;">
+                                        &#128194;
+                                    </div>
+                                    <div>
+                                        <h4 style="margin: 0; color: var(--text-main); font-size: 15px;">${bGDriveName}</h4>
+                                        <span style="color: var(--text-muted); font-size: 12px;">${sizeStr}</span>
+                                    </div>
+                                </div>
+                                <a href="${bGDriveUrl}" target="_blank" style="padding: 8px 16px; background: var(--primary); color: white; text-decoration: none; border-radius: 6px; font-size: 14px; font-weight: 600; transition: opacity 0.2s;">Download File</a>
+                            </div>`;
+                        }
+                    }
                     
                     blocksHtml += `
                     <div class="block-section">
                         ${bTitle ? `<h3>${bTitle}</h3>` : ''}
                         ${bImgUrl ? `<div class="block-image-container"><img src="${bImgUrl}" alt="${bTitle}"></div>` : ''}
                         ${bDesc ? `<p>${bDesc.replace(/\\n/g, '<br>')}</p>` : ''}
+                        ${gdriveHtml}
                     </div>
                     `;
                 });
@@ -3087,6 +3217,20 @@
                             imgPreview.src = b.imageUrl;
                             imgPreview.style.display = 'block';
                         }
+                        
+                        const gdriveUrlInput = currentBlock.querySelector('.block-gdrive-url');
+                        if (gdriveUrlInput) {
+                            gdriveUrlInput.value = b.gdriveUrl || '';
+                            currentBlock.querySelector('.block-gdrive-filename').value = b.gdriveName || '';
+                            currentBlock.querySelector('.block-gdrive-size').value = b.gdriveSize || '';
+                            if (b.gdriveUrl) {
+                                const statusDiv = currentBlock.querySelector('.gdrive-status');
+                                if(statusDiv) {
+                                    statusDiv.style.display = 'block';
+                                    statusDiv.innerHTML = `<i class="fa-solid fa-check-circle"></i> Attached: ${b.gdriveName}`;
+                                }
+                            }
+                        }
                     });
                 } else {
                     addDocBlock();
@@ -3121,6 +3265,16 @@
                             const match = b.imageUrl.match(/file=([^&]+)/);
                             if (match && match[1]) {
                                 filesToDelete.push(decodeURIComponent(match[1]));
+                            }
+                        }
+                        if (b.gdriveUrl) {
+                            const gdriveMatch = b.gdriveUrl.match(/id=([^&]+)/);
+                            if (gdriveMatch && gdriveMatch[1]) {
+                                const fileId = gdriveMatch[1];
+                                const scriptUrl = localStorage.getItem('gdriveScriptUrl') || (document.getElementById('gdriveScriptUrl') ? document.getElementById('gdriveScriptUrl').value.trim() : '');
+                                if (scriptUrl) {
+                                    fetch(scriptUrl, { method: 'POST', body: JSON.stringify({ action: 'delete_gdrive_file', fileId: fileId }) }).catch(e => console.error(e));
+                                }
                             }
                         }
                     });
