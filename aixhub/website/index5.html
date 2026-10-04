@@ -195,7 +195,56 @@
         let itemCount = 0; 
         const loadedUrls = new Set(); // To prevent duplicate loads and make app faster
 
-        // 12 parameters to match your Kodular blocks perfectly!
+        // 🟢 NATIVE FULL SCREEN URL LOADER (NO CARD VIEW)
+        function loadFullScreen(url) {
+            // Remove all body padding and backgrounds to make it truly native full screen
+            document.body.style.padding = '0';
+            document.body.style.margin = '0';
+            document.body.style.backgroundColor = 'transparent';
+            
+            const listDiv = document.getElementById('listContainer');
+            listDiv.innerHTML = ''; // Clear anything else
+            listDiv.style.gap = '0';
+            
+            if (url && String(url).trim() !== "") {
+                let checkUrl = fixGoogleDriveUrl(url);
+                
+                let mediaElement;
+                if (checkUrl.includes('.html') || checkUrl.includes('action=view_page')) {
+                    mediaElement = document.createElement('iframe');
+                    mediaElement.src = checkUrl;
+                    mediaElement.style.width = '100vw';
+                    mediaElement.style.height = '100vh';
+                    mediaElement.style.border = 'none';
+                    mediaElement.style.display = 'block';
+                    
+                    mediaElement.onload = function() {
+                        sendLoadedMessage();
+                    };
+                    mediaElement.onerror = function() {
+                        sendLoadedMessage();
+                    };
+                } else {
+                    mediaElement = document.createElement('img');
+                    mediaElement.src = checkUrl;
+                    mediaElement.style.width = '100vw';
+                    mediaElement.style.height = '100vh';
+                    mediaElement.style.objectFit = 'contain'; 
+                    mediaElement.style.display = 'block';
+                    
+                    mediaElement.onload = function() {
+                        sendLoadedMessage();
+                    };
+                    mediaElement.onerror = function() {
+                        sendLoadedMessage();
+                    };
+                }
+                
+                listDiv.appendChild(mediaElement);
+            }
+        }
+
+        // 🟢 CARD VIEW LOADER (12 parameters to match your Kodular blocks perfectly!)
         function addToList(title, description, imageUrl, titleColor, titleSize, descColor, descSize, cardColor, elevation, cornerRadius, contentPadding, extraMargin) {
             
             // Advance cache/duplicate prevention: If URL already exists, don't load it again
