@@ -265,12 +265,14 @@
         // 🚀 API CONFIGURATION
         const CLOUDFLARE_URL = 'https://aixhub.nikamma4k.workers.dev';
         const API_TOKEN = 'MeraSecretPassword123xyz';
-        const GOOGLE_SHEET_URL = 'https://script.google.com/macros/s/YOUR_SCRIPT_ID_HERE/exec';
+        const GOOGLE_SHEET_URL = 'https://script.google.com/macros/s/AKfycby3c2t3Ff8gW4E0pP4hL9FkS_8L7R9I9p9K8D9v1V8x/exec'; // Your previous URL
+        const REGISTER_SHEET_URL = 'https://script.google.com/macros/s/AKfycbzqc9nLINLqc9_eN7O3YUprcQoTjf8UWnBTMXabNvO0vpgBAQM9LUsIVh19gSRSHFgM/exec';
 
         // State
         let currentUser = null; // Email
         let allExtensions = [];
         let purchasedItems = []; // Array of objects { ExtName, PaymentStatus }
+        let registeredEmails = []; // Array of objects { email, itemId, itemName }
 
         // Initialize App
         async function initApp() {
@@ -359,7 +361,6 @@
             }
         }
 
-        // --- FETCH DATA ---
         async function fetchUserPurchases(email) {
             try {
                 const url = `${CLOUDFLARE_URL}/?table=Purchased_data&col=UserEmail&val=${email}&token=${API_TOKEN}&format=object`;
@@ -367,6 +368,14 @@
                 const data = await res.json();
                 purchasedItems = Array.isArray(data) ? data : (data.results || []);
             } catch (err) { console.log("Error fetching purchases", err); }
+            
+            try {
+                if (REGISTER_SHEET_URL.includes("script.google.com")) {
+                    const rRes = await fetch(`${REGISTER_SHEET_URL}?email=${encodeURIComponent(email)}`);
+                    const rData = await rRes.json();
+                    registeredEmails = Array.isArray(rData) ? rData : [];
+                }
+            } catch (err) { console.log("Error fetching registered emails", err); }
         }
 
         async function fetchExtensions() {
@@ -430,22 +439,16 @@
                     }
                 }
 
+                let registeredRecord = null;
+                if (currentUser) {
+                    registeredRecord = registeredEmails.find(r => r.itemId === extId || r.itemID === extId);
+                }
+
                 if (isFree) {
                     actionHtml = `
                         <div class="extension-price free">FREE</div>
                         <button class="download-btn" onclick="downloadAix('${title.replace(/'/g,"\\'")}', this)">Download Extension</button>
                     `;
-                    if (currentUser) {
-                        actionHtml += `
-                        <div style="margin-top: 15px; text-align: left;">
-                            <p style="font-size: 0.8rem; color: #94a3b8; margin-bottom: 5px;">Register the email you use for MIT, Kodular, Niotron & AnyBuilder:</p>
-                            <div style="display: flex; gap: 10px;">
-                                <input type="email" id="save-email-${extId}" value="${currentUser}" placeholder="Enter email to save" style="flex:1; padding: 8px; border-radius: 5px; border: 1px solid var(--card-border); background: rgba(255,255,255,0.05); color: white;">
-                                <button onclick="saveEmailToSheet('${extId}', '${title.replace(/'/g,"\\'")}')" style="background: var(--primary); color: white; border: none; border-radius: 5px; padding: 8px 15px; cursor: pointer; font-weight: bold; transition: 0.3s;">Save</button>
-                            </div>
-                        </div>
-                        `;
-                    }
                 } else {
                     const pNum = parseFloat(priceVal.replace(/[^0-9.]/g, '')) || 0;
                     const pkrNum = pNum;
@@ -463,6 +466,28 @@
                         actionHtml = `
                             <div class="extension-price">${priceDisplay} <span style="font-size:0.8rem; color:#94a3b8;">(Rs ${pkrNum})</span></div>
                             <button class="buy-btn" onclick="handleBuyClick('${extId}', '${title.replace(/'/g,"\\'")}', '${priceDisplay}', '${downloadLink}')">Buy Now</button>
+                        `;
+                    }
+                }
+
+                if (currentUser && (isFree || isPurchased)) {
+                    if (registeredRecord) {
+                        actionHtml += `
+                        <div style="margin-top: 15px; padding: 10px; background: rgba(16,185,129,0.1); border: 1px solid #10b981; border-radius: 5px; text-align: left;">
+                            <p style="color: #10b981; font-weight: bold; margin-bottom: 5px; font-size: 0.9rem;">✅ Registered Credentials:</p>
+                            <p style="color: white; font-size: 0.85rem; margin-bottom: 3px;"><strong>Email:</strong> ${registeredRecord.email}</p>
+                            <p style="color: white; font-size: 0.85rem;"><strong>Item ID:</strong> ${registeredRecord.itemId}</p>
+                        </div>
+                        `;
+                    } else {
+                        actionHtml += `
+                        <div id="reg-box-${extId}" style="margin-top: 15px; text-align: left;">
+                            <p style="font-size: 0.8rem; color: #94a3b8; margin-bottom: 5px;">Register the email you use for MIT, Kodular, Niotron & AnyBuilder:</p>
+                            <div style="display: flex; gap: 10px;">
+                                <input type="email" id="save-email-${extId}" value="${currentUser}" placeholder="Enter email to save" style="flex:1; padding: 8px; border-radius: 5px; border: 1px solid var(--card-border); background: rgba(255,255,255,0.05); color: white;">
+                                <button onclick="saveRegistration('${extId}', '${title.replace(/'/g,"\\'")}')" style="background: var(--primary); color: white; border: none; border-radius: 5px; padding: 8px 15px; cursor: pointer; font-weight: bold; transition: 0.3s;">Save</button>
+                            </div>
+                        </div>
                         `;
                     }
                 }
@@ -543,7 +568,11 @@
             btnElement.disabled = false;
         }
 
-        async function saveEmailToSheet(extId, title) {
+        async function saveRegistration(extId, title) {
+            if (!REGISTER_SHEET_URL.includes("script.google.com")) {
+                alert("App Script URL for registration is not configured yet. Add it to store.html first.");
+                return;
+            }
             const emailBox = document.getElementById(`save-email-${extId}`);
             const email = emailBox.value.trim();
             if (!email || !email.includes('@')) return alert("Please enter a valid email address.");
@@ -554,19 +583,21 @@
             emailBox.disabled = true;
             
             try {
-                await fetch(GOOGLE_SHEET_URL, {
+                await fetch(REGISTER_SHEET_URL, {
                     method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ email: email, tid: "Email Saved", extId: extId, extName: title, type: "saved_email", date: new Date().toISOString() })
+                    body: JSON.stringify({ email: email, itemId: extId, itemName: title })
                 });
-                alert("Email saved successfully!");
-                emailBox.value = "";
+                
+                // Add to local state and re-render to hide the box
+                registeredEmails.push({ email: email, itemId: extId, itemName: title });
+                renderExtensions();
+                alert("Email saved and registered successfully!");
             } catch(e) {
-                alert("Failed to save email.");
+                alert("Failed to save email. Check your internet connection.");
+                btn.textContent = "Save";
+                btn.disabled = false;
+                emailBox.disabled = false;
             }
-            
-            btn.textContent = "Save";
-            btn.disabled = false;
-            emailBox.disabled = false;
         }
 
         async function submitPayment(e) {
