@@ -448,19 +448,20 @@
                     }
                 } else {
                     const pNum = parseFloat(priceVal.replace(/[^0-9.]/g, '')) || 0;
-                    const pkr = Math.round(pNum * 290);
-                    const priceDisplay = priceVal.includes('$') ? priceVal : '$' + priceVal;
+                    const pkrNum = pNum;
+                    const usdNum = (pkrNum / 290).toFixed(2);
+                    const priceDisplay = "$" + usdNum;
                     
                     if (isPurchased) {
                         actionHtml = `<button class="download-btn" onclick="downloadAix('${title.replace(/'/g,"\\'")}', this)">Download Extension</button>`;
                     } else if (isPending) {
                         actionHtml = `
-                            <div class="extension-price">${priceDisplay} <span style="font-size:0.8rem; color:#94a3b8;">(Rs ${pkr})</span></div>
+                            <div class="extension-price">${priceDisplay} <span style="font-size:0.8rem; color:#94a3b8;">(Rs ${pkrNum})</span></div>
                             <button class="pending-btn" disabled>Pending Approval...</button>
                         `;
                     } else {
                         actionHtml = `
-                            <div class="extension-price">${priceDisplay} <span style="font-size:0.8rem; color:#94a3b8;">(Rs ${pkr})</span></div>
+                            <div class="extension-price">${priceDisplay} <span style="font-size:0.8rem; color:#94a3b8;">(Rs ${pkrNum})</span></div>
                             <button class="buy-btn" onclick="handleBuyClick('${extId}', '${title.replace(/'/g,"\\'")}', '${priceDisplay}', '${downloadLink}')">Buy Now</button>
                         `;
                     }
