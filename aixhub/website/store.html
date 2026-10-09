@@ -184,20 +184,24 @@
                 <div class="auth-tab" id="tab-signup" onclick="switchAuthTab('signup')">Signup</div>
             </div>
             
-            <form id="auth-form" onsubmit="handleAuth(event)">
+            <form id="auth-form" onsubmit="handleAuth(event)" autocomplete="off">
+                <!-- Hidden inputs to stop aggressive browser autofill -->
+                <input type="email" style="display:none" name="fakeusernameremembered">
+                <input type="password" style="display:none" name="fakepasswordremembered">
+                
                 <input type="hidden" id="auth-mode" value="login">
                 
                 <div class="form-group" id="name-group" style="display: none;">
                     <label>Full Name</label>
-                    <input type="text" id="auth-name" placeholder="John Doe">
+                    <input type="text" id="auth-name" placeholder="John Doe" autocomplete="new-password">
                 </div>
                 <div class="form-group">
                     <label>Email Address</label>
-                    <input type="email" id="auth-email" required placeholder="you@example.com">
+                    <input type="email" id="auth-email" required placeholder="you@example.com" autocomplete="new-password">
                 </div>
                 <div class="form-group">
                     <label>Password</label>
-                    <input type="password" id="auth-password" required placeholder="••••••••">
+                    <input type="password" id="auth-password" required placeholder="••••••••" autocomplete="new-password">
                 </div>
                 <button type="submit" class="buy-btn" id="auth-btn">Login</button>
             </form>
@@ -398,10 +402,7 @@
                 if (isFree) {
                     actionHtml = `
                         <div class="extension-price free">FREE</div>
-                        <div class="free-download-box">
-                            <input type="email" id="free-email-${extId}" placeholder="Enter your email to save & download" value="${currentUser || ''}">
-                            <button class="download-btn" onclick="handleFreeDownload('${extId}', '${title.replace(/'/g,"\\'")}', '${downloadLink}')">Save & Download</button>
-                        </div>
+                        <button class="download-btn" onclick="handleFreeDownload('${extId}', '${title.replace(/'/g,"\\'")}', '${downloadLink}')">Download Extension</button>
                     `;
                 } else {
                     // Check Purchase Status
@@ -459,21 +460,20 @@
         }
 
         async function handleFreeDownload(id, title, downloadLink) {
-            const emailBox = document.getElementById(`free-email-${id}`);
-            const email = emailBox.value.trim();
-            if(!email || !email.includes('@')) return alert("Please enter a valid email address.");
+            if (!currentUser) {
+                alert("Please login first to download free extensions.");
+                openModal('auth-modal');
+                return;
+            }
             
-            emailBox.disabled = true;
-            
-            // Send to Google Sheet
+            // Send to Google Sheet for record keeping
             try {
                 await fetch(GOOGLE_SHEET_URL, {
                     method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ email: email, tid: "Free Download", extId: id, extName: title, type: "free", date: new Date().toISOString() })
+                    body: JSON.stringify({ email: currentUser, tid: "Free Download", extId: id, extName: title, type: "free", date: new Date().toISOString() })
                 });
             } catch(e) {}
             
-            emailBox.disabled = false;
             window.open(downloadLink, '_blank');
         }
 
