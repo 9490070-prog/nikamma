@@ -238,7 +238,7 @@
             <a href="#" class="menu-item">AIA Projects</a>
             <a href="#" class="menu-item">Templates</a>
             <hr style="border-color: rgba(255,255,255,0.1); margin: 20px 0;">
-            <a href="https://aixhub.nikamma4k.workers.dev/?action=download_file&file=Aix_Hub.apk&token=MeraSecretPassword123xyz" class="menu-item android-link">📱 Get Android App</a>
+            <a href="#" onclick="downloadApk(event, this)" class="menu-item android-link">📱 Get Android App</a>
         </div>
     </div>
     <div id="menu-overlay" class="menu-overlay" onclick="toggleMenu()"></div>
@@ -252,7 +252,7 @@
             </div>
         </div>
         <div style="display: flex; align-items: center; gap: 20px;">
-            <a href="https://aixhub.nikamma4k.workers.dev/?action=download_file&file=Aix_Hub.apk&token=MeraSecretPassword123xyz" class="android-app-btn desktop-only">📱 Android App</a>
+            <a href="#" onclick="downloadApk(event, this)" class="android-app-btn desktop-only">📱 Android App</a>
             <div class="auth-section" id="auth-section">
                 <!-- Auth buttons injected via JS -->
             </div>
@@ -397,6 +397,70 @@
         function toggleMenu() {
             document.getElementById('side-menu').classList.toggle('open');
             document.getElementById('menu-overlay').classList.toggle('open');
+        }
+
+        async function downloadApk(e, btn) {
+            e.preventDefault();
+            const originalText = btn.innerHTML;
+            btn.style.pointerEvents = 'none';
+            btn.style.opacity = '0.8';
+
+            try {
+                const url = 'https://aixhub.nikamma4k.workers.dev/?action=download_file&file=Aix_Hub.apk&token=MeraSecretPassword123xyz';
+                const response = await fetch(url);
+                if (!response.ok) throw new Error("Download failed");
+                
+                const contentLength = response.headers.get('content-length');
+                
+                function triggerDownload(blob) {
+                    const downloadUrl = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.style.display = 'none';
+                    a.href = downloadUrl;
+                    a.download = 'AIX_Hub_Store.apk';
+                    document.body.appendChild(a);
+                    a.click();
+                    window.URL.revokeObjectURL(downloadUrl);
+                    document.body.removeChild(a);
+                }
+
+                if (!contentLength) {
+                    btn.innerHTML = '⏳ Downloading...';
+                    const blob = await response.blob();
+                    triggerDownload(blob);
+                } else {
+                    const total = parseInt(contentLength, 10);
+                    let loaded = 0;
+                    const reader = response.body.getReader();
+                    const chunks = [];
+                    
+                    while (true) {
+                        const { done, value } = await reader.read();
+                        if (done) break;
+                        chunks.push(value);
+                        loaded += value.length;
+                        const percent = Math.round((loaded / total) * 100);
+                        btn.innerHTML = `⏳ ${percent}%`;
+                    }
+                    
+                    const blob = new Blob(chunks, { type: 'application/vnd.android.package-archive' });
+                    triggerDownload(blob);
+                }
+                
+                btn.innerHTML = '✅ Done!';
+                setTimeout(() => {
+                    btn.innerHTML = originalText;
+                    btn.style.pointerEvents = 'auto';
+                    btn.style.opacity = '1';
+                }, 3000);
+                
+            } catch (err) {
+                console.error(err);
+                alert("Failed to download APK. Please try again.");
+                btn.innerHTML = originalText;
+                btn.style.pointerEvents = 'auto';
+                btn.style.opacity = '1';
+            }
         }
 
         function logout() {
