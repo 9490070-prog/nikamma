@@ -154,6 +154,21 @@
         .auth-tab { flex: 1; text-align: center; padding: 10px; cursor: pointer; color: var(--text-muted); font-weight: 600; transition: 0.3s; }
         .auth-tab.active { color: white; border-bottom: 2px solid var(--primary); }
 
+        .purchased-badge {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: #10b981;
+            color: white;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 0.7rem;
+            font-weight: bold;
+            letter-spacing: 1px;
+            z-index: 10;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+
         .skeleton {
             background: linear-gradient(90deg, var(--card-bg) 25%, rgba(255,255,255,0.05) 50%, var(--card-bg) 75%);
             background-size: 200% 100%; animation: loading 1.5s infinite; border-radius: 10px;
@@ -394,15 +409,26 @@
                 title = String(title);
                 
                 const desc = ext.description || ext.Description || ext.Details || 'No details available.';
-                const priceVal = String(ext.price || ext.Price || '0');
+                const priceVal = String(ext.discount || ext.Discount || ext.discount_price || ext.price || ext.Price || '0');
                 const isFree = (priceVal === '0' || priceVal.toLowerCase() === 'free' || priceVal === '$0.00');
                 const downloadLink = ext.DownloadLink || ext.downloadLink || ext.Url || ext.paymentLink || '#';
                 const extId = String(ext.id || ext.ID || title);
 
                 const card = document.createElement('div');
                 card.className = 'extension-card';
+                card.style.position = 'relative';
 
                 let actionHtml = '';
+                
+                let isPurchased = false;
+                let isPending = false;
+                if (currentUser && !isFree) {
+                    const purchaseRecord = purchasedItems.find(p => (p.ExtName === title || p.ExtensionName === title || p.ExtensionID === extId || p.OrderID === extId));
+                    if (purchaseRecord) {
+                        if (purchaseRecord.PaymentStatus === 'Approved') isPurchased = true;
+                        else isPending = true;
+                    }
+                }
 
                 if (isFree) {
                     actionHtml = `
@@ -421,24 +447,27 @@
                         `;
                     }
                 } else {
-                    // Check Purchase Status
-                    const purchaseRecord = purchasedItems.find(p => (p.ExtName === title || p.ExtensionName === title));
+                    const pNum = parseFloat(priceVal.replace(/[^0-9.]/g, '')) || 0;
+                    const pkr = Math.round(pNum * 290);
                     const priceDisplay = priceVal.includes('$') ? priceVal : '$' + priceVal;
                     
-                    actionHtml = `<div class="extension-price">${priceDisplay}</div>`;
-                    
-                    if (currentUser && purchaseRecord) {
-                        if (purchaseRecord.PaymentStatus === 'Approved') {
-                            actionHtml += `<button class="download-btn" onclick="downloadAix('${title.replace(/'/g,"\\'")}', this)">Download Extension</button>`;
-                        } else {
-                            actionHtml += `<button class="pending-btn" disabled>Pending Approval...</button>`;
-                        }
+                    if (isPurchased) {
+                        actionHtml = `<button class="download-btn" onclick="downloadAix('${title.replace(/'/g,"\\'")}', this)">Download Extension</button>`;
+                    } else if (isPending) {
+                        actionHtml = `
+                            <div class="extension-price">${priceDisplay} <span style="font-size:0.8rem; color:#94a3b8;">(Rs ${pkr})</span></div>
+                            <button class="pending-btn" disabled>Pending Approval...</button>
+                        `;
                     } else {
-                        actionHtml += `<button class="buy-btn" onclick="handleBuyClick('${extId}', '${title.replace(/'/g,"\\'")}', '${priceDisplay}', '${downloadLink}')">Buy Now</button>`;
+                        actionHtml = `
+                            <div class="extension-price">${priceDisplay} <span style="font-size:0.8rem; color:#94a3b8;">(Rs ${pkr})</span></div>
+                            <button class="buy-btn" onclick="handleBuyClick('${extId}', '${title.replace(/'/g,"\\'")}', '${priceDisplay}', '${downloadLink}')">Buy Now</button>
+                        `;
                     }
                 }
 
                 card.innerHTML = `
+                    ${isPurchased ? '<div class="purchased-badge">Purchased</div>' : ''}
                     <div class="extension-icon">${ext.icon || ext.Icon || '🚀'}</div>
                     <h2 class="extension-title">${title}</h2>
                     <div class="extension-desc-container">
