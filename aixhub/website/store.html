@@ -408,11 +408,18 @@
                     actionHtml = `
                         <div class="extension-price free">FREE</div>
                         <button class="download-btn" onclick="downloadAix('${title.replace(/'/g,"\\'")}', this)">Download Extension</button>
-                        <div style="display: flex; gap: 10px; margin-top: 15px;">
-                            <input type="email" id="save-email-${extId}" placeholder="Enter email to save" style="flex:1; padding: 8px; border-radius: 5px; border: 1px solid var(--card-border); background: rgba(255,255,255,0.05); color: white;">
-                            <button onclick="saveEmailToSheet('${extId}', '${title.replace(/'/g,"\\'")}')" style="background: var(--primary); color: white; border: none; border-radius: 5px; padding: 8px 15px; cursor: pointer; font-weight: bold; transition: 0.3s;">Save</button>
-                        </div>
                     `;
+                    if (currentUser) {
+                        actionHtml += `
+                        <div style="margin-top: 15px; text-align: left;">
+                            <p style="font-size: 0.8rem; color: #94a3b8; margin-bottom: 5px;">Register the email you use for MIT, Kodular, Niotron & AnyBuilder:</p>
+                            <div style="display: flex; gap: 10px;">
+                                <input type="email" id="save-email-${extId}" value="${currentUser}" placeholder="Enter email to save" style="flex:1; padding: 8px; border-radius: 5px; border: 1px solid var(--card-border); background: rgba(255,255,255,0.05); color: white;">
+                                <button onclick="saveEmailToSheet('${extId}', '${title.replace(/'/g,"\\'")}')" style="background: var(--primary); color: white; border: none; border-radius: 5px; padding: 8px 15px; cursor: pointer; font-weight: bold; transition: 0.3s;">Save</button>
+                            </div>
+                        </div>
+                        `;
+                    }
                 } else {
                     // Check Purchase Status
                     const purchaseRecord = purchasedItems.find(p => (p.ExtName === title || p.ExtensionName === title));
@@ -456,10 +463,22 @@
         // --- ACTIONS ---
         function handleBuyClick(id, title, price, downloadLink) {
             if (!currentUser) {
-                alert("Please login first to purchase extensions.");
                 openModal('auth-modal');
                 return;
             }
+            
+            // Final check to prevent showing buy button if they already purchased it
+            const purchaseRecord = purchasedItems.find(p => (p.ExtName === title || p.ExtensionName === title || p.ExtensionID === id || p.OrderID === id));
+            if (purchaseRecord) {
+                if (purchaseRecord.PaymentStatus === 'Approved') {
+                    downloadAix(title, document.activeElement);
+                    return;
+                } else {
+                    alert("Your purchase is pending approval.");
+                    return;
+                }
+            }
+
             document.getElementById('ext-id').value = id;
             document.getElementById('ext-name').value = title;
             document.getElementById('ext-price').value = price;
@@ -471,7 +490,6 @@
         // --- DOWNLOAD & SAVE EMAIL LOGIC ---
         async function downloadAix(title, btnElement) {
             if (!currentUser) {
-                alert("Please login first to download extensions.");
                 openModal('auth-modal');
                 return;
             }
@@ -537,6 +555,7 @@
                     OrderID: tid,
                     UserEmail: currentUser,
                     ExtName: extName,
+                    ExtensionID: extId,
                     PaymentStatus: "Pending"
                 };
                 
