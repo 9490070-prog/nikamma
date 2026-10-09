@@ -1,0 +1,908 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Premium AIX Store</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.css" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
+    <style>
+        :root {
+            --bg-color: #0f172a;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --primary: #3b82f6;
+            --primary-hover: #2563eb;
+            --card-bg: rgba(30, 41, 59, 0.7);
+            --card-border: rgba(255, 255, 255, 0.1);
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: 'Outfit', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            background-image: radial-gradient(circle at 15% 50%, rgba(59, 130, 246, 0.15), transparent 25%),
+                              radial-gradient(circle at 85% 30%, rgba(147, 51, 234, 0.15), transparent 25%);
+        }
+
+        header {
+            width: 100%;
+            padding: 20px 40px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: rgba(15, 23, 42, 0.8);
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid var(--card-border);
+            position: sticky;
+            top: 0; z-index: 100;
+        }
+
+        .header-title {
+            text-align: left;
+        }
+
+        h1 {
+            font-size: 2rem; font-weight: 800;
+            background: linear-gradient(to right, #60a5fa, #c084fc);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+        }
+
+        .auth-section { display: flex; align-items: center; gap: 15px; }
+        
+        .login-btn, .logout-btn {
+            background: rgba(255, 255, 255, 0.1); color: white;
+            border: 1px solid var(--card-border); padding: 8px 20px;
+            border-radius: 8px; font-weight: 600; cursor: pointer; transition: 0.3s;
+        }
+        .login-btn:hover { background: var(--primary); border-color: var(--primary); }
+        .logout-btn:hover { background: #ef4444; border-color: #ef4444; }
+
+        main {
+            width: 100%; max-width: 1200px; padding: 50px 20px;
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 30px;
+        }
+
+        .extension-card {
+            background: var(--card-bg); border: 1px solid var(--card-border);
+            border-radius: 20px; padding: 25px; backdrop-filter: blur(10px);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            display: flex; flex-direction: column; position: relative; overflow: hidden;
+        }
+
+        .extension-card:hover {
+            transform: translateY(-5px); box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+            border-color: rgba(255, 255, 255, 0.2);
+        }
+
+        .extension-icon {
+            width: 60px; height: 60px; background: linear-gradient(135deg, #3b82f6, #9333ea);
+            border-radius: 15px; display: flex; align-items: center; justify-content: center;
+            font-size: 24px; margin-bottom: 20px; box-shadow: 0 10px 20px rgba(59, 130, 246, 0.3);
+        }
+
+        .extension-title { font-size: 1.5rem; margin-bottom: 10px; color: #ffffff; }
+
+        .extension-desc-container { margin-bottom: 20px; flex-grow: 1; }
+        .extension-desc {
+            color: var(--text-muted); font-size: 0.95rem; line-height: 1.5;
+            display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical;
+            overflow: hidden; transition: all 0.3s ease;
+        }
+        .extension-desc.expanded { -webkit-line-clamp: unset; }
+
+        .read-more-btn {
+            background: none; border: none; color: var(--primary);
+            font-size: 0.85rem; font-weight: 600; cursor: pointer; padding: 0; margin-top: 5px;
+        }
+
+        .extension-price { font-size: 1.8rem; font-weight: 800; color: #10b981; margin-bottom: 15px; }
+        .extension-price.free { color: #3b82f6; }
+
+        .buy-btn, .download-btn {
+            background: linear-gradient(135deg, #3b82f6, #2563eb);
+            color: white; border: none; padding: 12px 20px; border-radius: 12px;
+            font-size: 1rem; font-weight: 600; cursor: pointer; text-align: center; width: 100%; transition: 0.2s;
+        }
+        .buy-btn:hover { background: linear-gradient(135deg, #2563eb, #1d4ed8); transform: scale(1.02); }
+        .download-btn { background: linear-gradient(135deg, #10b981, #059669); }
+        .download-btn:hover { background: linear-gradient(135deg, #059669, #047857); transform: scale(1.02); }
+        
+        .pending-btn {
+            background: #f59e0b; color: white; border: none; padding: 12px 20px; border-radius: 12px;
+            font-size: 1rem; font-weight: 600; width: 100%; cursor: not-allowed; opacity: 0.8;
+        }
+
+        .free-download-box {
+            background: rgba(0,0,0,0.2); padding: 15px; border-radius: 12px; margin-top: 10px; border: 1px solid var(--card-border);
+        }
+        .free-download-box input {
+            width: 100%; padding: 10px; margin-bottom: 10px; border-radius: 8px; border: 1px solid var(--card-border);
+            background: rgba(0,0,0,0.4); color: white;
+        }
+
+        /* Modals */
+        .modal-overlay {
+            position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(15, 23, 42, 0.9); backdrop-filter: blur(5px);
+            display: flex; align-items: center; justify-content: center;
+            z-index: 1000; opacity: 0; pointer-events: none; transition: 0.3s;
+        }
+        .modal-overlay.active { opacity: 1; pointer-events: auto; }
+        .modal-content {
+            background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 20px;
+            padding: 30px; width: 90%; max-width: 450px; position: relative;
+            max-height: 90vh; overflow-y: auto;
+        }
+        .modal-close {
+            position: absolute; top: 15px; right: 15px; background: none; border: none;
+            color: white; font-size: 1.5rem; cursor: pointer;
+        }
+        .form-group { margin-bottom: 15px; }
+        .form-group label { display: block; margin-bottom: 5px; color: var(--text-muted); font-size: 0.9rem; }
+        .form-group input {
+            width: 100%; padding: 12px; background: rgba(0,0,0,0.3); border: 1px solid var(--card-border);
+            border-radius: 8px; color: white; font-family: inherit;
+        }
+        
+        /* Auth Tabs */
+        .auth-tabs { display: flex; margin-bottom: 20px; border-bottom: 1px solid var(--card-border); }
+        .auth-tab { flex: 1; text-align: center; padding: 10px; cursor: pointer; color: var(--text-muted); font-weight: 600; transition: 0.3s; }
+        .auth-tab.active { color: white; border-bottom: 2px solid var(--primary); }
+
+        .purchased-badge {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: #10b981;
+            color: white;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 0.7rem;
+            font-weight: bold;
+            letter-spacing: 1px;
+            z-index: 10;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+
+        .skeleton {
+            background: linear-gradient(90deg, var(--card-bg) 25%, rgba(255,255,255,0.05) 50%, var(--card-bg) 75%);
+            background-size: 200% 100%; animation: loading 1.5s infinite; border-radius: 10px;
+        }
+        @keyframes loading { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+
+        /* Side Menu & Responsiveness */
+        .hamburger-btn {
+            background: none; border: none; color: white; font-size: 1.8rem; cursor: pointer;
+            display: flex; align-items: center; justify-content: center; transition: 0.3s;
+        }
+        .hamburger-btn:hover { color: var(--primary); }
+
+        .side-menu {
+            position: fixed; top: 0; left: -300px; width: 280px; height: 100vh;
+            background: rgba(15, 23, 42, 0.95); backdrop-filter: blur(15px);
+            border-right: 1px solid var(--card-border); z-index: 2000;
+            transition: left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            display: flex; flex-direction: column; padding: 20px;
+        }
+        .side-menu.open { left: 0; }
+        
+        .menu-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.5); z-index: 1999;
+            opacity: 0; pointer-events: none; transition: 0.3s;
+        }
+        .menu-overlay.open { opacity: 1; pointer-events: auto; }
+
+        .close-menu {
+            align-self: flex-end; background: none; border: none; color: white;
+            font-size: 2rem; cursor: pointer; margin-bottom: 20px;
+        }
+        
+        .menu-item {
+            display: block; padding: 12px 15px; color: var(--text-main);
+            text-decoration: none; font-size: 1.1rem; border-radius: 8px;
+            margin-bottom: 5px; transition: 0.2s; font-weight: 500;
+        }
+        .menu-item:hover { background: rgba(255,255,255,0.1); }
+        .menu-item.active { background: var(--primary); color: white; }
+        .menu-item.android-link { background: linear-gradient(135deg, #10b981, #059669); font-weight: bold; margin-top: 10px; }
+
+        .android-app-btn {
+            background: rgba(255,255,255,0.1); color: white; text-decoration: none;
+            padding: 8px 15px; border-radius: 8px; font-weight: 600; font-size: 0.9rem;
+            border: 1px solid var(--card-border); transition: 0.3s;
+        }
+        .android-app-btn:hover { background: var(--primary); border-color: var(--primary); }
+
+        @media (max-width: 768px) {
+            .desktop-only { display: none !important; }
+            header { padding: 15px 20px; }
+            h1 { font-size: 1.5rem; }
+            main { grid-template-columns: 1fr; padding: 30px 15px; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Side Menu -->
+    <div id="side-menu" class="side-menu">
+        <button class="close-menu" onclick="toggleMenu()">×</button>
+        <div class="menu-content">
+            <h2 style="margin-bottom: 20px; font-size: 1.5rem;">Categories</h2>
+            <a href="#" class="menu-item active">AIX Extensions</a>
+            <a href="#" class="menu-item">AIA Projects</a>
+            <a href="#" class="menu-item">Templates</a>
+            <hr style="border-color: rgba(255,255,255,0.1); margin: 20px 0;">
+            <a href="#" onclick="downloadApk(event, this)" class="menu-item android-link">📱 Get Android App</a>
+        </div>
+    </div>
+    <div id="menu-overlay" class="menu-overlay" onclick="toggleMenu()"></div>
+
+    <header>
+        <div style="display: flex; align-items: center; gap: 15px;">
+            <button class="hamburger-btn" onclick="toggleMenu()">☰</button>
+            <div class="header-title">
+                <h1>AIX Hub Store</h1>
+                <p style="color: var(--text-muted); font-size: 0.8rem;" class="desktop-only">Advanced App Inventor Extensions</p>
+            </div>
+        </div>
+        <div style="display: flex; align-items: center; gap: 20px;">
+            <a href="#" onclick="downloadApk(event, this)" class="android-app-btn desktop-only">📱 Android App</a>
+            <div class="auth-section" id="auth-section">
+                <!-- Auth buttons injected via JS -->
+            </div>
+        </div>
+    </header>
+
+    <main id="store-container"></main>
+
+    <!-- Auth Modal -->
+    <div class="modal-overlay" id="auth-modal">
+        <div class="modal-content">
+            <button class="modal-close" onclick="closeModal('auth-modal')">×</button>
+            <div class="auth-tabs">
+                <div class="auth-tab active" id="tab-login" onclick="switchAuthTab('login')">Login</div>
+                <div class="auth-tab" id="tab-signup" onclick="switchAuthTab('signup')">Signup</div>
+            </div>
+            
+            <form id="auth-form" onsubmit="handleAuth(event)" autocomplete="off">
+                <!-- Hidden inputs to stop aggressive browser autofill -->
+                <input type="email" style="display:none" name="fakeusernameremembered">
+                <input type="password" style="display:none" name="fakepasswordremembered">
+                
+                <input type="hidden" id="auth-mode" value="login">
+                
+                <div class="form-group" id="name-group" style="display: none;">
+                    <label>Full Name</label>
+                    <input type="text" id="auth-name" placeholder="John Doe" autocomplete="new-password">
+                </div>
+                <div class="form-group">
+                    <label>Email Address</label>
+                    <input type="email" id="auth-email" required placeholder="you@example.com" autocomplete="new-password">
+                </div>
+                <div class="form-group">
+                    <label>Password</label>
+                    <input type="password" id="auth-password" required placeholder="••••••••" autocomplete="new-password">
+                </div>
+                <button type="submit" class="buy-btn" id="auth-btn">Login</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Payment Modal -->
+    <div class="modal-overlay" id="payment-modal">
+        <div class="modal-content">
+            <button class="modal-close" onclick="closeModal('payment-modal')">×</button>
+            <h2 id="modal-title" style="margin-bottom: 5px;">Purchase Extension</h2>
+            <p id="modal-price" style="color: #10b981; font-weight: bold; font-size: 1.2rem; margin-bottom: 15px;">$0.00</p>
+            
+            <div style="background: rgba(0,0,0,0.2); padding: 15px; border-radius: 12px; margin-bottom: 20px;">
+                <h4 style="color: #60a5fa; margin-bottom: 10px;">Send Payment To:</h4>
+                <p style="font-size:0.9rem;">Easypaisa: <b style="color:#10b981;">03449490070</b> (Name)</p>
+                <p style="font-size:0.9rem;">JazzCash: <b style="color:#10b981;">03449490070</b> (Name)</p>
+                <p style="font-size:0.9rem;">UBL Bank: <b style="color:#10b981;">PK00 UBL...</b></p>
+                
+                <hr style="border: none; height: 1px; background: rgba(255,255,255,0.1); margin: 15px 0;">
+                
+                <div style="text-align: center;">
+                    <p style="font-size: 0.9rem; margin-bottom: 10px; color: var(--text-muted);">Alternatively, buy directly from our App</p>
+                    <a href="#" id="apk-link" target="_blank" style="background: rgba(255,255,255,0.1); color: white; border: 1px solid var(--card-border); padding: 8px 15px; border-radius: 8px; text-decoration: none; font-size: 0.9rem; font-weight: bold; display: inline-block; transition: 0.3s;">
+                        📱 Get AIX Hub Store APK
+                    </a>
+                </div>
+            </div>
+
+            <form id="payment-form" onsubmit="submitPayment(event)">
+                <input type="hidden" id="ext-id">
+                <input type="hidden" id="ext-name">
+                <input type="hidden" id="ext-price">
+                <input type="hidden" id="ext-download">
+                
+                <div class="form-group">
+                    <label>Transaction ID (TID / Ref No)</label>
+                    <input type="text" id="user-tid" required placeholder="Enter TID after sending payment">
+                </div>
+                
+                <div class="form-group" style="margin-bottom: 10px;">
+                    <label>Payment Slip / Screenshot</label>
+                    <input type="file" id="slip-file" accept="image/*" required style="border: 1px dashed var(--card-border); padding: 10px; border-radius: 8px; width: 100%; color: var(--text-muted); background: rgba(0,0,0,0.2);">
+                </div>
+                
+                <div id="cropper-box" style="display:none; text-align:center; margin-bottom: 15px;">
+                    <div style="max-height: 250px; overflow:hidden; border-radius:8px; background: #000;">
+                        <img id="cropper-image" style="max-width: 100%; display: block;">
+                    </div>
+                    <button type="button" onclick="cropImage()" style="margin-top:10px; padding:8px 15px; background:var(--primary); color:white; border:none; border-radius:5px; cursor:pointer;">✅ Crop & Save Slip</button>
+                </div>
+                
+                <div id="cropped-preview-box" style="display:none; text-align:center; margin-bottom: 15px;">
+                    <img id="cropped-preview" style="max-height: 150px; border-radius: 8px; border: 2px solid #10b981;">
+                    <p style="color:#10b981; font-size:0.8rem; margin-top:5px;">Slip attached!</p>
+                </div>
+
+                <button type="submit" class="buy-btn" id="submit-btn" style="background: linear-gradient(135deg, #10b981, #059669);">Verify & Submit Order</button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // 🚀 API CONFIGURATION
+        const CLOUDFLARE_URL = 'https://aixhub.nikamma4k.workers.dev';
+        const API_TOKEN = 'MeraSecretPassword123xyz';
+        const GOOGLE_SHEET_URL = 'https://script.google.com/macros/s/AKfycby3c2t3Ff8gW4E0pP4hL9FkS_8L7R9I9p9K8D9v1V8x/exec'; // Your previous URL
+        const REGISTER_SHEET_URL = 'https://script.google.com/macros/s/AKfycbzqc9nLINLqc9_eN7O3YUprcQoTjf8UWnBTMXabNvO0vpgBAQM9LUsIVh19gSRSHFgM/exec';
+        const SLIP_UPLOAD_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbx7Ri_d09IMPHcDOaWHLIHcb8JwLU0y5lDLGu7AFCy-Qxe6TXM7J9wXvvtOZV51Y33R/exec';
+
+        // State
+        let currentUser = null; // Email
+        let allExtensions = [];
+        let purchasedItems = []; // Array of objects { ExtName, PaymentStatus }
+        let registeredEmails = []; // Array of objects { email, itemId, itemName }
+        let cropperInstance = null;
+        let croppedBase64 = null;
+
+        // Initialize App
+        async function initApp() {
+            const savedEmail = localStorage.getItem('userEmail');
+            if (savedEmail) {
+                currentUser = savedEmail;
+                await fetchUserPurchases(savedEmail);
+            }
+            updateAuthUI();
+            await fetchExtensions();
+        }
+
+        // --- AUTH LOGIC ---
+        function updateAuthUI() {
+            const authSec = document.getElementById('auth-section');
+            if (currentUser) {
+                const userProfileUrl = localStorage.getItem('userProfile') || `https://ui-avatars.com/api/?name=${encodeURIComponent(currentUser)}&background=3b82f6&color=fff`;
+                authSec.innerHTML = `
+                <div style="display:flex; align-items:center; gap:10px;">
+                    <img src="${userProfileUrl}" alt="Profile" style="width: 40px; height: 40px; border-radius: 50%; cursor: pointer; border: 2px solid var(--primary); object-fit: cover;" onclick="promptUpdateProfile()" title="Click to change logo">
+                    <span style="font-size:0.9rem; color:#94a3b8;" class="desktop-only">${currentUser}</span> 
+                    <button class="logout-btn" onclick="logout()">Logout</button>
+                </div>`;
+            } else {
+                authSec.innerHTML = `<button class="login-btn" onclick="openModal('auth-modal')">Login / Signup</button>`;
+            }
+        }
+
+        async function promptUpdateProfile() {
+            const newUrl = prompt("Enter the URL of your new profile logo image:");
+            if (!newUrl) return;
+            
+            try {
+                let res = await fetch(CLOUDFLARE_URL, {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ action: "update_profile", email: currentUser, profile_url: newUrl })
+                });
+                let data = await res.json();
+                if (data.status === "success" && data.profile) {
+                    localStorage.setItem('userProfile', data.profile);
+                    updateAuthUI();
+                    alert("Profile logo updated successfully!");
+                } else {
+                    alert(data.error || "Failed to update profile.");
+                }
+            } catch (err) {
+                alert("Error updating profile. Backend may not be updated yet.");
+            }
+        }
+
+        function toggleMenu() {
+            document.getElementById('side-menu').classList.toggle('open');
+            document.getElementById('menu-overlay').classList.toggle('open');
+        }
+
+        async function downloadApk(e, btn) {
+            e.preventDefault();
+            const originalText = btn.innerHTML;
+            btn.style.pointerEvents = 'none';
+            btn.style.opacity = '0.8';
+
+            try {
+                const url = 'https://aixhub.nikamma4k.workers.dev/?action=download_file&file=Aix_Hub.apk&token=MeraSecretPassword123xyz';
+                const response = await fetch(url);
+                if (!response.ok) throw new Error("Download failed");
+                
+                const contentLength = response.headers.get('content-length');
+                
+                function triggerDownload(blob) {
+                    const downloadUrl = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.style.display = 'none';
+                    a.href = downloadUrl;
+                    a.download = 'AIX_Hub_Store.apk';
+                    document.body.appendChild(a);
+                    a.click();
+                    window.URL.revokeObjectURL(downloadUrl);
+                    document.body.removeChild(a);
+                }
+
+                if (!contentLength) {
+                    btn.innerHTML = '⏳ Downloading...';
+                    const blob = await response.blob();
+                    triggerDownload(blob);
+                } else {
+                    const total = parseInt(contentLength, 10);
+                    let loaded = 0;
+                    const reader = response.body.getReader();
+                    const chunks = [];
+                    
+                    while (true) {
+                        const { done, value } = await reader.read();
+                        if (done) break;
+                        chunks.push(value);
+                        loaded += value.length;
+                        const percent = Math.round((loaded / total) * 100);
+                        btn.innerHTML = `⏳ ${percent}%`;
+                    }
+                    
+                    const blob = new Blob(chunks, { type: 'application/vnd.android.package-archive' });
+                    triggerDownload(blob);
+                }
+                
+                btn.innerHTML = '✅ Done!';
+                setTimeout(() => {
+                    btn.innerHTML = originalText;
+                    btn.style.pointerEvents = 'auto';
+                    btn.style.opacity = '1';
+                }, 3000);
+                
+            } catch (err) {
+                console.error(err);
+                alert("Failed to download APK. Please try again.");
+                btn.innerHTML = originalText;
+                btn.style.pointerEvents = 'auto';
+                btn.style.opacity = '1';
+            }
+        }
+
+        function logout() {
+            localStorage.removeItem('userEmail');
+            currentUser = null;
+            purchasedItems = [];
+            updateAuthUI();
+            renderExtensions();
+        }
+
+        function switchAuthTab(mode) {
+            document.getElementById('auth-mode').value = mode;
+            if (mode === 'signup') {
+                document.getElementById('tab-signup').classList.add('active');
+                document.getElementById('tab-login').classList.remove('active');
+                document.getElementById('name-group').style.display = 'block';
+                document.getElementById('auth-name').required = true;
+                document.getElementById('auth-btn').textContent = 'Create Account';
+            } else {
+                document.getElementById('tab-login').classList.add('active');
+                document.getElementById('tab-signup').classList.remove('active');
+                document.getElementById('name-group').style.display = 'none';
+                document.getElementById('auth-name').required = false;
+                document.getElementById('auth-btn').textContent = 'Login';
+            }
+        }
+
+        async function handleAuth(e) {
+            e.preventDefault();
+            const mode = document.getElementById('auth-mode').value;
+            const email = document.getElementById('auth-email').value;
+            const pass = document.getElementById('auth-password').value;
+            const name = document.getElementById('auth-name').value;
+            const btn = document.getElementById('auth-btn');
+            
+            btn.textContent = "Please wait...";
+            btn.disabled = true;
+
+            try {
+                let bodyPayload = mode === 'signup' 
+                    ? { action: "signup", email: email, password: pass, name: name }
+                    : { action: "login", email: email, password: pass };
+
+                let res = await fetch(CLOUDFLARE_URL, {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(bodyPayload)
+                });
+                let data = await res.json();
+
+                if (data.status === "success") {
+                    localStorage.setItem('userEmail', email);
+                    if (data.profile) localStorage.setItem('userProfile', data.profile);
+                    currentUser = email;
+                    await fetchUserPurchases(email);
+                    updateAuthUI();
+                    closeModal('auth-modal');
+                    renderExtensions();
+                } else {
+                    alert(data.error || "Authentication failed.");
+                }
+            } catch (err) { 
+                alert("Network error: Could not reach authentication server."); 
+            }
+            finally { 
+                btn.textContent = mode === 'signup' ? "Create Account" : "Login"; 
+                btn.disabled = false;
+            }
+        }
+
+        async function fetchUserPurchases(email) {
+            try {
+                const url = `${CLOUDFLARE_URL}/?table=Purchased_data&col=UserEmail&val=${email}&token=${API_TOKEN}&format=object`;
+                const res = await fetch(url);
+                const data = await res.json();
+                purchasedItems = Array.isArray(data) ? data : (data.results || []);
+            } catch (err) { console.log("Error fetching purchases", err); }
+            
+            try {
+                if (REGISTER_SHEET_URL.includes("script.google.com")) {
+                    const rRes = await fetch(`${REGISTER_SHEET_URL}?loginEmail=${encodeURIComponent(email)}`);
+                    const rData = await rRes.json();
+                    registeredEmails = Array.isArray(rData) ? rData : [];
+                }
+            } catch (err) { console.log("Error fetching registered emails", err); }
+        }
+
+        async function fetchExtensions() {
+            const container = document.getElementById('store-container');
+            container.innerHTML = '<div class="skeleton" style="height:300px;"></div><div class="skeleton" style="height:300px;"></div>';
+            try {
+                const url = `${CLOUDFLARE_URL}/?table=extensions_data&token=${API_TOKEN}&format=object`;
+                const res = await fetch(url);
+                const data = await res.json();
+                allExtensions = Array.isArray(data) ? data : (data.results || []);
+                renderExtensions();
+            } catch (err) {
+                console.error("Fetch Extensions Error:", err);
+                container.innerHTML = `<div style="color:red; text-align:center; padding: 20px;">
+                    <h3>Error Loading Extensions</h3>
+                    <p>${err.message}</p>
+                    <p style="font-size:12px; color:gray;">If it says "Failed to fetch" or "Unexpected token", your internet/browser is blocking Cloudflare, or Cloudflare is returning a Captcha.</p>
+                </div>`;
+            }
+        }
+
+        // --- RENDER CARDS ---
+        function renderExtensions() {
+            const container = document.getElementById('store-container');
+            container.innerHTML = '';
+
+            const aixExtensions = allExtensions.filter(ext => {
+                const cat = String(ext.category || ext.Category || ext.Type || ext.type || '');
+                return cat.trim().toUpperCase() === 'AIX';
+            }).reverse();
+
+            if (aixExtensions.length === 0) {
+                container.innerHTML = `<p style="text-align:center; width:100%;">No extensions found.</p>`;
+                return;
+            }
+
+            aixExtensions.forEach(ext => {
+                let title = ext.title || ext.Title || ext.Name || ext.name || 'Extension';
+                if (!title) return;
+                title = String(title);
+                
+                const desc = ext.description || ext.Description || ext.Details || 'No details available.';
+                const priceVal = String(ext.discount || ext.Discount || ext.discount_price || ext.price || ext.Price || '0');
+                const isFree = (priceVal === '0' || priceVal.toLowerCase() === 'free' || priceVal === '$0.00');
+                const downloadLink = ext.DownloadLink || ext.downloadLink || ext.Url || ext.paymentLink || '#';
+                const extId = String(ext.id || ext.ID || title);
+
+                const card = document.createElement('div');
+                card.className = 'extension-card';
+                card.style.position = 'relative';
+
+                let actionHtml = '';
+                
+                let isPurchased = false;
+                let isPending = false;
+                if (currentUser && !isFree) {
+                    const purchaseRecord = purchasedItems.find(p => (p.ExtName === title || p.ExtensionName === title || p.ExtensionID === extId || p.OrderID === extId));
+                    if (purchaseRecord) {
+                        if (purchaseRecord.PaymentStatus === 'Approved') isPurchased = true;
+                        else isPending = true;
+                    }
+                }
+
+                let registeredRecord = null;
+                if (currentUser) {
+                    registeredRecord = registeredEmails.find(r => r.itemId === extId || r.itemID === extId);
+                }
+
+                if (isFree) {
+                    actionHtml = `
+                        <div class="extension-price free">FREE</div>
+                        <button class="download-btn" onclick="downloadAix('${title.replace(/'/g,"\\'")}', this)">Download Extension</button>
+                    `;
+                } else {
+                    const pNum = parseFloat(priceVal.replace(/[^0-9.]/g, '')) || 0;
+                    const pkrNum = pNum;
+                    const usdNum = (pkrNum / 290).toFixed(2);
+                    const priceDisplay = "$" + usdNum;
+                    
+                    if (isPurchased) {
+                        actionHtml = `<button class="download-btn" onclick="downloadAix('${title.replace(/'/g,"\\'")}', this)">Download Extension</button>`;
+                    } else if (isPending) {
+                        actionHtml = `
+                            <div class="extension-price">${priceDisplay} <span style="font-size:0.8rem; color:#94a3b8;">(Rs ${pkrNum})</span></div>
+                            <button class="pending-btn" disabled>Pending Approval...</button>
+                        `;
+                    } else {
+                        actionHtml = `
+                            <div class="extension-price">${priceDisplay} <span style="font-size:0.8rem; color:#94a3b8;">(Rs ${pkrNum})</span></div>
+                            <button class="buy-btn" onclick="handleBuyClick('${extId}', '${title.replace(/'/g,"\\'")}', '${priceDisplay}', '${downloadLink}')">Buy Now</button>
+                        `;
+                    }
+                }
+
+                if (currentUser && (isFree || isPurchased)) {
+                    if (registeredRecord) {
+                        actionHtml += `
+                        <div style="margin-top: 15px; padding: 10px; background: rgba(16,185,129,0.1); border: 1px solid #10b981; border-radius: 5px; text-align: left;">
+                            <p style="color: #10b981; font-weight: bold; margin-bottom: 5px; font-size: 0.9rem;">✅ Registered Credentials:</p>
+                            <p style="color: white; font-size: 0.85rem; margin-bottom: 3px;"><strong>Email:</strong> ${registeredRecord.email}</p>
+                            <p style="color: white; font-size: 0.85rem;"><strong>Item ID:</strong> ${registeredRecord.itemId}</p>
+                        </div>
+                        `;
+                    } else {
+                        actionHtml += `
+                        <div id="reg-box-${extId}" style="margin-top: 15px; text-align: left;">
+                            <p style="font-size: 0.8rem; color: #94a3b8; margin-bottom: 5px;">Register the email you use for MIT, Kodular, Niotron & AnyBuilder:</p>
+                            <div style="display: flex; gap: 10px;">
+                                <input type="email" id="save-email-${extId}" value="${currentUser}" placeholder="Enter email to save" style="flex:1; padding: 8px; border-radius: 5px; border: 1px solid var(--card-border); background: rgba(255,255,255,0.05); color: white;">
+                                <button onclick="saveRegistration('${extId}', '${title.replace(/'/g,"\\'")}')" style="background: var(--primary); color: white; border: none; border-radius: 5px; padding: 8px 15px; cursor: pointer; font-weight: bold; transition: 0.3s;">Save</button>
+                            </div>
+                        </div>
+                        `;
+                    }
+                }
+
+                card.innerHTML = `
+                    ${isPurchased ? '<div class="purchased-badge">Purchased</div>' : ''}
+                    <div class="extension-icon">${ext.icon || ext.Icon || '🚀'}</div>
+                    <h2 class="extension-title">${title}</h2>
+                    <div class="extension-desc-container">
+                        <div class="extension-desc">${desc}</div>
+                        <button class="read-more-btn" onclick="toggleDesc(this)">Read More</button>
+                    </div>
+                    ${actionHtml}
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        function toggleDesc(btn) {
+            const descElement = btn.previousElementSibling;
+            if (descElement.classList.contains('expanded')) {
+                descElement.classList.remove('expanded'); btn.textContent = 'Read More';
+            } else {
+                descElement.classList.add('expanded'); btn.textContent = 'Read Less';
+            }
+        }
+
+        // --- ACTIONS ---
+        function handleBuyClick(id, title, price, downloadLink) {
+            if (!currentUser) {
+                openModal('auth-modal');
+                return;
+            }
+            
+            // Final check to prevent showing buy button if they already purchased it
+            const purchaseRecord = purchasedItems.find(p => (p.ExtName === title || p.ExtensionName === title || p.ExtensionID === id || p.OrderID === id));
+            if (purchaseRecord) {
+                if (purchaseRecord.PaymentStatus === 'Approved') {
+                    downloadAix(title, document.activeElement);
+                    return;
+                } else {
+                    alert("Your purchase is pending approval.");
+                    return;
+                }
+            }
+
+            document.getElementById('ext-id').value = id;
+            document.getElementById('ext-name').value = title;
+            document.getElementById('ext-price').value = price;
+            document.getElementById('modal-title').textContent = 'Purchase ' + title;
+            document.getElementById('modal-price').textContent = price;
+            openModal('payment-modal');
+        }
+
+        // --- DOWNLOAD & SAVE EMAIL LOGIC ---
+        async function downloadAix(title, btnElement) {
+            if (!currentUser) {
+                openModal('auth-modal');
+                return;
+            }
+            const originalText = btnElement.textContent;
+            btnElement.textContent = "Generating Link...";
+            btnElement.disabled = true;
+            try {
+                const fileName = title.replace(/ /g, "_") + ".aix";
+                const tempLinkApiUrl = `${CLOUDFLARE_URL}/?action=generate_temp_link&token=${API_TOKEN}&file=${encodeURIComponent(fileName)}`;
+                const res = await fetch(tempLinkApiUrl);
+                const data = await res.json();
+                if (data.status === 'success' && data.tempLink) {
+                    window.open(data.tempLink, '_blank');
+                } else {
+                    alert("Error generating download link: " + (data.error || "Unknown error"));
+                }
+            } catch (err) {
+                alert("Failed to connect to secure download server.");
+            }
+            btnElement.textContent = originalText;
+            btnElement.disabled = false;
+        }
+
+        async function saveRegistration(extId, title) {
+            if (!REGISTER_SHEET_URL.includes("script.google.com")) {
+                alert("App Script URL for registration is not configured yet. Add it to store.html first.");
+                return;
+            }
+            const emailBox = document.getElementById(`save-email-${extId}`);
+            const email = emailBox.value.trim();
+            if (!email || !email.includes('@')) return alert("Please enter a valid email address.");
+            
+            const btn = emailBox.nextElementSibling;
+            btn.textContent = "Saving...";
+            btn.disabled = true;
+            emailBox.disabled = true;
+            
+            try {
+                await fetch(REGISTER_SHEET_URL, {
+                    method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email: email, itemId: extId, itemName: title, loginEmail: currentUser })
+                });
+                
+                // Add to local state and re-render to hide the box
+                registeredEmails.push({ email: email, itemId: extId, itemName: title, loginEmail: currentUser });
+                renderExtensions();
+                alert("Email saved and registered successfully!");
+            } catch(e) {
+                alert("Failed to save email. Check your internet connection.");
+                btn.textContent = "Save";
+                btn.disabled = false;
+                emailBox.disabled = false;
+            }
+        }
+
+        document.getElementById('slip-file').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function(event) {
+                document.getElementById('cropper-box').style.display = 'block';
+                document.getElementById('cropped-preview-box').style.display = 'none';
+                document.getElementById('submit-btn').style.display = 'none';
+                const img = document.getElementById('cropper-image');
+                img.src = event.target.result;
+                if(cropperInstance) cropperInstance.destroy();
+                cropperInstance = new Cropper(img, {
+                    viewMode: 1,
+                    autoCropArea: 1,
+                });
+            };
+            reader.readAsDataURL(file);
+        });
+
+        function cropImage() {
+            if(!cropperInstance) return;
+            croppedBase64 = cropperInstance.getCroppedCanvas({
+                width: 600,
+                height: 800
+            }).toDataURL('image/jpeg', 0.7);
+            
+            document.getElementById('cropped-preview').src = croppedBase64;
+            document.getElementById('cropper-box').style.display = 'none';
+            document.getElementById('cropped-preview-box').style.display = 'block';
+            document.getElementById('submit-btn').style.display = 'block';
+        }
+
+        async function submitPayment(e) {
+            e.preventDefault();
+            const btn = document.getElementById('submit-btn');
+
+            if (!croppedBase64) {
+                alert("Please attach and crop your payment slip first.");
+                return;
+            }
+
+            const tid = document.getElementById('user-tid').value;
+            const extName = document.getElementById('ext-name').value;
+            const extId = document.getElementById('ext-id').value;
+
+            btn.textContent = 'Uploading Slip to Drive...'; btn.disabled = true;
+
+            try {
+                // 1. Upload Slip
+                let slipUrl = "No Slip";
+                if (SLIP_UPLOAD_SCRIPT_URL !== 'YOUR_SLIP_SCRIPT_URL_HERE') {
+                    const slipRes = await fetch(SLIP_UPLOAD_SCRIPT_URL, {
+                        method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                        body: JSON.stringify({ image: croppedBase64, filename: `Slip_${tid}_${currentUser}.jpg` })
+                    });
+                    const slipData = await slipRes.json();
+                    if (slipData.status === "success") {
+                        slipUrl = slipData.url;
+                    }
+                }
+                
+                btn.textContent = 'Submitting Request...';
+
+                // 2. Save to Cloudflare DB
+                const cfUrl = `${CLOUDFLARE_URL}/?table=Purchased_data&token=${API_TOKEN}`;
+                const dbPayload = {
+                    OrderID: tid,
+                    UserEmail: currentUser,
+                    ExtName: extName,
+                    ExtensionID: extId,
+                    PaymentStatus: "Pending",
+                    SlipUrl: slipUrl
+                };
+                
+                await fetch(cfUrl, {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(dbPayload)
+                });
+
+                // 3. Send to Google Sheet (To trigger Email to Admin)
+                await fetch(GOOGLE_SHEET_URL, {
+                    method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        email: currentUser, tid: tid, extId: extId, extName: extName,
+                        type: "paid", date: new Date().toISOString(), slipUrl: slipUrl
+                    })
+                });
+
+                alert('Payment submitted! Admin will review your slip. Once approved, you can download it.');
+                closeModal('payment-modal');
+                
+                // Refresh
+                croppedBase64 = null;
+                document.getElementById('slip-file').value = "";
+                document.getElementById('cropped-preview-box').style.display = 'none';
+                await fetchUserPurchases(currentUser);
+                renderExtensions();
+                
+            } catch (error) {
+                alert('Error submitting details.');
+            } finally {
+                btn.textContent = 'Verify & Submit Order'; btn.disabled = false;
+            }
+        }
+
+        function openModal(id) { document.getElementById(id).classList.add('active'); }
+        function closeModal(id) { document.getElementById(id).classList.remove('active'); }
+
+        // Start
+        initApp();
+    </script>
+</body>
+</html>
