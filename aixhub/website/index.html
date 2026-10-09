@@ -7,6 +7,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.css" />
     <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
     <style>
         :root {
             --bg-color: #0f172a;
@@ -293,6 +294,30 @@
                     <input type="password" id="auth-password" required placeholder="••••••••" autocomplete="new-password">
                 </div>
                 <button type="submit" class="buy-btn" id="auth-btn">Login</button>
+
+                <div style="text-align: center; margin: 15px 0; color: var(--text-muted); position: relative;">
+                    <hr style="border: 0; border-top: 1px solid var(--card-border); position: absolute; width: 100%; top: 50%; z-index: 1;">
+                    <span style="background: var(--card-bg); padding: 0 10px; position: relative; z-index: 2; font-size: 0.9rem;">OR</span>
+                </div>
+                
+                <!-- Google Login Button Configuration -->
+                <div id="g_id_onload"
+                     data-client_id="193237010723-07b2hnj75aeta74udil8vjgnam0t291b.apps.googleusercontent.com"
+                     data-context="signin"
+                     data-ux_mode="popup"
+                     data-callback="handleGoogleLogin"
+                     data-auto_prompt="false">
+                </div>
+
+                <div class="g_id_signin"
+                     data-type="standard"
+                     data-shape="rectangular"
+                     data-theme="outline"
+                     data-text="signin_with"
+                     data-size="large"
+                     data-logo_alignment="left"
+                     style="display: flex; justify-content: center; margin-bottom: 10px;">
+                </div>
             </form>
         </div>
     </div>
@@ -554,6 +579,32 @@
             }
         }
 
+        async function handleGoogleLogin(response) {
+            if (!response.credential) return;
+            try {
+                let res = await fetch(CLOUDFLARE_URL, {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ action: "google_login", credential: response.credential })
+                });
+                let data = await res.json();
+
+                if (data.status === "success") {
+                    localStorage.setItem('userEmail', data.email);
+                    if (data.profile) localStorage.setItem('userProfile', data.profile);
+                    currentUser = data.email;
+                    await fetchUserPurchases(data.email);
+                    updateAuthUI();
+                    closeModal('auth-modal');
+                    renderExtensions();
+                } else {
+                    alert(data.error || "Google Login failed.");
+                }
+            } catch (err) { 
+                alert("Network error: Could not reach authentication server."); 
+                console.error(err);
+            }
+        }
+
         async function fetchUserPurchases(email) {
             try {
                 const url = `${CLOUDFLARE_URL}/?table=Purchased_data&col=UserEmail&val=${email}&token=${API_TOKEN}&format=object`;
@@ -625,7 +676,7 @@
                 let isPurchased = false;
                 let isPending = false;
                 if (currentUser && !isFree) {
-                    const purchaseRecord = purchasedItems.find(p => (p.ExtName === title || p.ExtensionName === title || p.ExtensionID === extId || p.OrderID === extId));
+                    const purchaseRecord = purchasedItems.find(p => (p.ItemName === title || p.ExtName === title || p.ExtensionName === title || p.ItemID === extId || p.ExtensionID === extId || p.OrderID === extId));
                     if (purchaseRecord) {
                         if (purchaseRecord.PaymentStatus === 'Approved') isPurchased = true;
                         else isPending = true;
@@ -859,7 +910,7 @@
                 // 2. Save to Cloudflare DB
                 const cfUrl = `${CLOUDFLARE_URL}/?table=Purchased_data&token=${API_TOKEN}`;
                 const dbPayload = {
-                    OrderID: tid,
+                    OrderID: extId,
                     UserEmail: currentUser,
                     ItemID: extId,
                     ItemName: extName,
