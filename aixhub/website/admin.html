@@ -1248,6 +1248,8 @@
         let tableColumns = [];
         let currentMode = 'add'; // 'add' or 'edit'
         let editingId = null;
+        let editingCol2 = null;
+        let editingVal2 = null;
         let globalCategories = ['Category', 'Tag'];
 
         // Initialize
@@ -1513,19 +1515,25 @@
 
                 let actionsHtml = `<div class="actions-cell">`;
                 
+                let extraArgs = '';
+                if (currentTable === 'Purchased_data' && row['UserEmail']) {
+                    const safeEmail = String(row['UserEmail']).replace(/'/g, "\\'");
+                    extraArgs = `, 'UserEmail', '${safeEmail}'`;
+                }
+
                 // Extra actions for Purchased_data
                 if (currentTable === 'Purchased_data') {
                     const status = row['PaymentStatus'];
                     if (status === 'Approved') {
-                        actionsHtml += `<button class="btn-icon btn-danger" onclick="updateStatus('${rowId}', 'Rejected')" title="Reject"><i class="fa-solid fa-xmark"></i></button>`;
+                        actionsHtml += `<button class="btn-icon btn-danger" onclick="updateStatus('${rowId}', 'Rejected'${extraArgs})" title="Reject"><i class="fa-solid fa-xmark"></i></button>`;
                     } else {
-                        actionsHtml += `<button class="btn-icon btn-success" onclick="updateStatus('${rowId}', 'Approved')" title="Approve"><i class="fa-solid fa-check"></i></button>`;
+                        actionsHtml += `<button class="btn-icon btn-success" onclick="updateStatus('${rowId}', 'Approved'${extraArgs})" title="Approve"><i class="fa-solid fa-check"></i></button>`;
                     }
                 }
                 
                 actionsHtml += `
-                    <button class="btn-icon btn-edit" onclick="openModal('edit', '${rowId}')" title="Edit"><i class="fa-solid fa-pen"></i></button>
-                    <button class="btn-icon btn-delete" onclick="deleteRecord('${rowId}')" title="Delete"><i class="fa-solid fa-trash"></i></button>
+                    <button class="btn-icon btn-edit" onclick="openModal('edit', '${rowId}'${extraArgs})" title="Edit"><i class="fa-solid fa-pen"></i></button>
+                    <button class="btn-icon btn-delete" onclick="deleteRecord('${rowId}'${extraArgs})" title="Delete"><i class="fa-solid fa-trash"></i></button>
                 </div>`;
                 
                 tr.innerHTML += `<td>${actionsHtml}</td>`;
@@ -1621,9 +1629,11 @@
             return `Enter ${col} data...`;
         }
 
-        function openModal(mode, id = null) {
+        function openModal(mode, id = null, col2 = null, val2 = null) {
             currentMode = mode;
             editingId = id;
+            editingCol2 = col2;
+            editingVal2 = val2;
             document.getElementById('modalTitle').textContent = mode === 'add' ? 'Add New Record' : 'Edit Record';
             
             const body = document.getElementById('modalFormBody');
@@ -1632,7 +1642,11 @@
             let recordData = {};
             if (mode === 'edit') {
                 const idCol = getIdColumn();
-                recordData = tableData.find(r => String(r[idCol]) === String(id)) || {};
+                if (col2 && val2) {
+                    recordData = tableData.find(r => String(r[idCol]) === String(id) && String(r[col2]) === String(val2)) || {};
+                } else {
+                    recordData = tableData.find(r => String(r[idCol]) === String(id)) || {};
+                }
             }
 
             // Human-readable title generator
@@ -1786,6 +1800,9 @@
                     const idCol = getIdColumn();
                     method = 'PUT';
                     endpoint += `&id=${encodeURIComponent(editingId)}&col=${idCol}`;
+                    if (editingCol2 && editingVal2) {
+                        endpoint += `&col2=${encodeURIComponent(editingCol2)}&val2=${encodeURIComponent(editingVal2)}`;
+                    }
                 }
 
                 const response = await fetch(endpoint, {
@@ -1815,14 +1832,18 @@
             }
         }
 
-        async function deleteRecord(id) {
+        async function deleteRecord(id, col2 = null, val2 = null) {
             if (!confirm('Are you sure you want to delete this record? This action cannot be undone.')) return;
 
             const url = getBaseUrl();
             const idCol = getIdColumn();
             try {
                 startProgress();
-                const response = await fetch(`${url}/?table=${currentTable}&col=${idCol}&val=${encodeURIComponent(id)}`, {
+                let endpoint = `${url}/?table=${currentTable}&col=${idCol}&val=${encodeURIComponent(id)}`;
+                if (col2 && val2) {
+                    endpoint += `&col2=${encodeURIComponent(col2)}&val2=${encodeURIComponent(val2)}`;
+                }
+                const response = await fetch(endpoint, {
                     method: 'DELETE',
                     headers: { 'Authorization': getAuthHeader() }
                 });
@@ -1840,10 +1861,13 @@
         }
 
         // Specific function for quick Approve/Reject without opening modal
-        async function updateStatus(id, newStatus) {
+        async function updateStatus(id, newStatus, col2 = null, val2 = null) {
             const url = getBaseUrl();
             const idCol = getIdColumn();
-            const record = tableData.find(r => String(r[idCol]) === String(id));
+            let record = tableData.find(r => String(r[idCol]) === String(id));
+            if (col2 && val2) {
+                record = tableData.find(r => String(r[idCol]) === String(id) && String(r[col2]) === String(val2));
+            }
             if(!record) {
                 showToast("Error: Record not found to update!", "error");
                 return;
@@ -1854,7 +1878,11 @@
             
             try {
                 startProgress();
-                const response = await fetch(`${url}/?table=${currentTable}&col=${idCol}&val=${encodeURIComponent(id)}`, {
+                let endpoint = `${url}/?table=${currentTable}&col=${idCol}&val=${encodeURIComponent(id)}`;
+                if (col2 && val2) {
+                    endpoint += `&col2=${encodeURIComponent(col2)}&val2=${encodeURIComponent(val2)}`;
+                }
+                const response = await fetch(endpoint, {
                     method: 'POST',
                     headers: { 
                         'Authorization': getAuthHeader(),
@@ -2669,10 +2697,11 @@
                     </div>
                     <div class="form-group" style="margin-top: 16px;">
                         <label><strong>GDrive File (Will auto-upload to Google Drive)</strong></label>
-                        <input type="file" class="block-gdrive-file" style="padding: 10px; border: 1px dashed var(--border); width: 100%; border-radius: 8px; margin-top: 8px; background: var(--bg); color: white;">
+                        <input type="file" class="block-gdrive-file" style="padding: 10px; border: 1px dashed var(--border); width: 100%; border-radius: 8px; margin-top: 8px; background: var(--bg); color: white;" onchange="previewDocImage(this)">
                         <input type="hidden" class="block-gdrive-url" value="">
                         <input type="hidden" class="block-gdrive-filename" value="">
                         <input type="hidden" class="block-gdrive-size" value="">
+                        <img class="block-gdrive-preview" src="" style="display: none; max-width: 100%; max-height: 200px; margin-top: 10px; border-radius: 8px; border: 1px solid var(--border);">
                         <div class="gdrive-status" style="display:none; color: var(--primary); font-size: 13px; margin-top: 5px;"></div>
                     </div>
                 </div>
@@ -2685,7 +2714,10 @@
 
         function previewDocImage(input) {
             const file = input.files[0];
-            if (file) {
+            const isGDrive = input.classList.contains('block-gdrive-file');
+            const previewClass = isGDrive ? '.block-gdrive-preview' : '.block-image-preview';
+            
+            if (file && file.type.startsWith('image/')) {
                 currentDocImageInput = input;
                 const url = URL.createObjectURL(file);
                 const image = document.getElementById('docCropperImage');
@@ -2699,8 +2731,8 @@
                 });
             } else {
                 input.croppedBlob = null;
-                const preview = input.parentElement.querySelector('.block-image-preview');
-                preview.style.display = 'none';
+                const preview = input.parentElement.querySelector(previewClass);
+                if (preview) preview.style.display = 'none';
             }
         }
 
@@ -2723,10 +2755,17 @@
             }).toBlob((blob) => {
                 if (currentDocImageInput) {
                     currentDocImageInput.croppedBlob = blob;
-                    const preview = currentDocImageInput.parentElement.querySelector('.block-image-preview');
-                    preview.src = URL.createObjectURL(blob);
-                    preview.style.display = 'block';
-                    currentDocImageInput.parentElement.querySelector('.block-image-r2url').value = '';
+                    const isGDrive = currentDocImageInput.classList.contains('block-gdrive-file');
+                    const previewClass = isGDrive ? '.block-gdrive-preview' : '.block-image-preview';
+                    const urlClass = isGDrive ? '.block-gdrive-url' : '.block-image-r2url';
+                    
+                    const preview = currentDocImageInput.parentElement.querySelector(previewClass);
+                    if (preview) {
+                        preview.src = URL.createObjectURL(blob);
+                        preview.style.display = 'block';
+                    }
+                    const urlInput = currentDocImageInput.parentElement.querySelector(urlClass);
+                    if (urlInput) urlInput.value = '';
                 }
                 closeDocCropModal();
             }, 'image/jpeg', quality);
@@ -2823,15 +2862,44 @@
                         }
                         
                         const file = gdriveInput.files[0];
-                        const fileName = file.name;
+                        let fileName = file.name;
                         
+                        btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Checking GDrive duplicates ${i+1}/${blocks.length}...`;
+                        try {
+                            const checkRes = await fetch(scriptUrl, {
+                                method: 'POST',
+                                body: JSON.stringify({ action: 'check_duplicate', fileName: fileName, folderId: folderId })
+                            });
+                            const checkData = await checkRes.json();
+                            if (checkData.status === 'success' && checkData.exists) {
+                                const choice = confirm(`GDrive File "${fileName}" already exists!\n\nClick [OK] to UPDATE (Replace) the file in Google Drive.\nClick [Cancel] to RENAME this new file.`);
+                                if (!choice) {
+                                    let newName = prompt("Enter new file name:", "new_" + fileName);
+                                    if (!newName) throw new Error("Upload cancelled by user.");
+                                    fileName = newName.trim();
+                                } else {
+                                    btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Deleting old file...`;
+                                    await fetch(scriptUrl, { method: 'POST', body: JSON.stringify({ action: 'delete_gdrive_file', fileId: checkData.fileId }) }).catch(e => console.error(e));
+                                }
+                            }
+                        } catch (e) {
+                            if (e.message === "Upload cancelled by user.") throw e;
+                            console.error("Duplicate check failed, continuing upload...", e);
+                        }
+
                         btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Uploading GDrive File ${i+1}/${blocks.length}...`;
+                        
+                        const blobToUpload = gdriveInput.croppedBlob || file;
+                        let mimeType = gdriveInput.croppedBlob ? 'image/jpeg' : file.type;
+                        if (gdriveInput.croppedBlob && !fileName.toLowerCase().match(/\.(jpg|jpeg|png|gif|webp)$/i)) {
+                            fileName += '.jpg';
+                        }
                         
                         const base64data = await new Promise((resolve, reject) => {
                             const reader = new FileReader();
                             reader.onload = () => resolve(reader.result.split(',')[1]);
                             reader.onerror = reject;
-                            reader.readAsDataURL(file);
+                            reader.readAsDataURL(blobToUpload);
                         });
 
                         const response = await fetch(scriptUrl, {
@@ -2839,17 +2907,25 @@
                             body: JSON.stringify({
                                 base64: base64data,
                                 fileName: fileName,
-                                mimeType: file.type,
+                                mimeType: mimeType,
                                 folderId: folderId
                             })
                         });
 
-                        const data = await response.json();
+                        let data;
+                        try {
+                            const text = await response.text();
+                            data = JSON.parse(text);
+                        } catch(e) {
+                            throw new Error("Invalid response from Google Drive. Ensure 'Third-Party Cookies' are enabled in your browser.");
+                        }
+                        
                         if (data.status === 'success') {
                             gdriveUrlInput.value = data.url;
                             gdriveNameInput.value = fileName;
                             gdriveSizeInput.value = data.size || file.size;
                             gdriveInput.value = '';
+                            gdriveInput.croppedBlob = null;
                             const statusDiv = block.querySelector('.gdrive-status');
                             if(statusDiv) {
                                 statusDiv.style.display = 'block';
@@ -3468,59 +3544,53 @@
 
             const originalBtnHtml = btn.innerHTML;
 
-            // --- DUPLICATE CHECK LOGIC ---
-            let existingFileKey = null;
-            if (typeof allR2Files !== 'undefined' && allR2Files) {
-                for (let i = 0; i < allR2Files.length; i++) {
-                    const f = allR2Files[i];
-                    let fName = f.key;
-                    if (f.key.startsWith('GDrive::')) {
-                        const parts = f.key.split('::');
-                        if (parts.length >= 4) fName = parts.slice(3).join('::');
-                    } else if (f.key.startsWith('GDrive_')) {
-                        const parts = f.key.split('_');
-                        if (parts.length >= 4 && !isNaN(parts[2])) {
-                            fName = parts.slice(3).join('_');
-                        } else if (parts.length >= 3) {
-                            fName = parts.slice(2).join('_');
+            // --- DUPLICATE CHECK LOGIC USING GOOGLE DRIVE DIRECTLY ---
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Checking duplicates...';
+            btn.disabled = true;
+            try {
+                const checkRes = await fetch(scriptUrl, {
+                    method: 'POST',
+                    body: JSON.stringify({ action: 'check_duplicate', fileName: fileName, folderId: folderId })
+                });
+                const checkData = await checkRes.json();
+                
+                if (checkData.status === 'success' && checkData.exists) {
+                    if (confirm(`A file named "${fileName}" already exists in Google Drive!\n\nClick OK to UPDATE (Replace) it.\nClick Cancel to change the file name.`)) {
+                        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Deleting old file...';
+                        startProgress();
+                        // Delete old file from Google Drive
+                        await fetch(scriptUrl, { method: 'POST', body: JSON.stringify({ action: 'delete_gdrive_file', fileId: checkData.fileId }) }).catch(e => console.error(e));
+                        
+                        // Also try to delete pointer from R2 if it exists
+                        try {
+                            if (typeof allR2Files !== 'undefined' && allR2Files) {
+                                for (let i = 0; i < allR2Files.length; i++) {
+                                    const f = allR2Files[i];
+                                    if ((f.key.startsWith('GDrive::') || f.key.startsWith('GDrive_')) && f.key.includes(checkData.fileId)) {
+                                        const url = getBaseUrl();
+                                        if (url) {
+                                            await fetch(`${url}/?action=delete_file&file=${encodeURIComponent(f.key)}`, {
+                                                method: 'DELETE',
+                                                headers: { 'Authorization': getAuthHeader() }
+                                            });
+                                        }
+                                        break;
+                                    }
+                                }
+                            }
+                        } catch(e) {
+                            console.error('Error deleting R2 pointer', e);
                         }
-                    }
-                    if (fName === fileName) {
-                        existingFileKey = f.key;
-                        break;
+                        endProgress();
+                    } else {
+                        btn.innerHTML = originalBtnHtml;
+                        btn.disabled = false;
+                        document.getElementById('gdriveUploadFileName').focus();
+                        return; // Stop upload, user will rename
                     }
                 }
-            }
-
-            if (existingFileKey) {
-                if (confirm(`A file named "${fileName}" already exists!\n\nClick OK to UPDATE (Replace) it.\nClick Cancel to change the file name.`)) {
-                    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Deleting old file...';
-                    btn.disabled = true;
-                    startProgress();
-                    
-                    try {
-                        if (existingFileKey.startsWith('GDrive::')) {
-                            const fileId = existingFileKey.split('::')[1];
-                            await fetch(scriptUrl, { method: 'POST', body: JSON.stringify({ action: 'delete_gdrive_file', fileId: fileId }) }).catch(e => console.error(e));
-                        } else if (existingFileKey.startsWith('GDrive_')) {
-                            const fileId = existingFileKey.split('_')[1];
-                            await fetch(scriptUrl, { method: 'POST', body: JSON.stringify({ action: 'delete_gdrive_file', fileId: fileId }) }).catch(e => console.error(e));
-                        }
-                        const url = getBaseUrl();
-                        if (url) {
-                            await fetch(`${url}/?action=delete_file&file=${encodeURIComponent(existingFileKey)}`, {
-                                method: 'DELETE',
-                                headers: { 'Authorization': getAuthHeader() }
-                            });
-                        }
-                    } catch(e) {
-                        console.error('Error replacing file', e);
-                    }
-                    endProgress();
-                } else {
-                    document.getElementById('gdriveUploadFileName').focus();
-                    return; // Stop upload, user will rename
-                }
+            } catch (e) {
+                console.error("Duplicate check failed, continuing upload...", e);
             }
             // --- END DUPLICATE CHECK LOGIC ---
 
@@ -3565,7 +3635,13 @@
                     })
                 });
 
-                const data = await response.json();
+                let data;
+                try {
+                    const text = await response.text();
+                    data = JSON.parse(text);
+                } catch(e) {
+                    throw new Error("Invalid response from Google Drive. Ensure you have enabled 'Third-Party Cookies' in your browser (Brave/Incognito blocks them), otherwise Google Apps Script blocks the upload response.");
+                }
                 updateProgress(100);
                 
                 if (data.status === 'success') {
