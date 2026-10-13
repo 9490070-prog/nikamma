@@ -561,7 +561,6 @@
             z-index: 999;
             backdrop-filter: blur(2px);
         }
-        }
     </style>
 </head>
 <body>
@@ -601,6 +600,9 @@
             </div>
             <div class="menu-item" onclick="loadTable('Aix_Apk_Update', this)">
                 <i class="fa-brands fa-android"></i> Aix Apk Update
+            </div>
+            <div class="menu-item" onclick="loadTable('Payment_Methods', this)">
+                <i class="fa-solid fa-credit-card"></i> Payment Methods
             </div>
             <div class="menu-title" style="margin-top: 16px;">Storage</div>
             <div class="menu-item" onclick="showFileManager(this)">
@@ -1385,7 +1387,8 @@
                 'Source_code': 'Source Code',
                 'Free_Paid_Register': 'Free Paid Register',
                 'Login_User': 'Login Users',
-                'Aix_Apk_Update': 'Aix Apk Update'
+                'Aix_Apk_Update': 'Aix Apk Update',
+                'Payment_Methods': 'Payment Methods'
             };
             
             document.getElementById('pageTitle').textContent = titles[tableName];
@@ -1399,11 +1402,13 @@
         }
 
         function getIdColumn() {
-            // Safely find the primary identifier column based on actual data
-            if (tableColumns.includes('ID')) return 'ID';
-            if (tableColumns.includes('id')) return 'id';
-            if (tableColumns.includes('UniqueID')) return 'UniqueID';
-            if (tableColumns.includes('OrderID')) return 'OrderID';
+            // Safely find the primary identifier column based on actual data (case-insensitive)
+            const foundId = tableColumns.find(c => c.toLowerCase() === 'id');
+            if (foundId) return foundId;
+            const foundUnique = tableColumns.find(c => c.toLowerCase() === 'uniqueid');
+            if (foundUnique) return foundUnique;
+            const foundOrder = tableColumns.find(c => c.toLowerCase() === 'orderid');
+            if (foundOrder) return foundOrder;
             return tableColumns.length > 0 ? tableColumns[0] : 'id';
         }
 
@@ -1453,6 +1458,8 @@
                 let defaultCols = ['id', 'Name', 'Date'];
                 if(currentTable === 'Purchased_data') defaultCols = ['ID', 'OrderID', 'UserEmail', 'PaymentStatus', 'Date'];
                 if(currentTable === 'Login_User') defaultCols = ['id', 'name', 'email', 'password', 'otp'];
+                if(currentTable === 'Payment_Methods') defaultCols = ['ID', 'MethodType', 'MethodName', 'AccountTitle', 'AccountNumber', 'BankName', 'IBAN', 'Network', 'IconUrl', 'QR_Code_Url', 'Instructions', 'Status', 'SortOrder'];
+                if(currentTable === 'extensions_data') defaultCols = ['id', 'name', 'author', 'version', 'description', 'TitleColors', 'platforms', 'category', 'isFree', 'price', 'currency', 'downloadCount', 'rating', 'reviewCount', 'Aia URL', 'Aix URL', 'Zip URL', 'Image Slider URL', 'Apk URL', 'Localhost Price', 'isNew', 'AixTitleList', 'publish_date', 'update_date', 'AixDetailList', 'AixScreenShotList'];
                 
                 tableColumns = defaultCols;
                 
@@ -1504,8 +1511,14 @@
                         if(val === 'Approved') badgeClass = 'badge-success';
                         else if(val === 'Rejected') badgeClass = 'badge-danger';
                         tr.innerHTML += `<td><span class="badge ${badgeClass}">${val || 'Pending'}</span></td>`;
-                    } else if (col === 'profile' && val.startsWith('http')) {
-                        tr.innerHTML += `<td><img src="${val}" style="width:32px; height:32px; border-radius:50%;"></td>`;
+                    } else if (col === 'Status' || col === 'status') {
+                        let badgeClass = 'badge-success';
+                        const sVal = String(val).toLowerCase();
+                        if(sVal === 'inactive' || sVal === 'disabled') badgeClass = 'badge-danger';
+                        else if(sVal === 'pending') badgeClass = 'badge-warning';
+                        tr.innerHTML += `<td><span class="badge ${badgeClass}">${val || 'Active'}</span></td>`;
+                    } else if ((col === 'profile' || col === 'IconUrl' || col === 'QR_Code_Url' || col === 'icon_url') && String(val).startsWith('http')) {
+                        tr.innerHTML += `<td><a href="${val}" target="_blank" title="View Image"><img src="${val}" style="width:34px; height:34px; object-fit:contain; border-radius:6px; border:1px solid var(--border); background:rgba(255,255,255,0.05);" onerror="this.onerror=null;this.src='';this.alt='Img';"></a></td>`;
                     } else {
                         // Escape HTML to prevent XSS
                         const safeVal = String(val).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
@@ -1521,6 +1534,15 @@
                     extraArgs = `, 'UserEmail', '${safeEmail}'`;
                 }
 
+                // Extra actions for Payment_Methods
+                if (currentTable === 'Payment_Methods') {
+                    const status = String(row['Status'] || row['status'] || 'Active').toLowerCase();
+                    if (status === 'active') {
+                        actionsHtml += `<button class="btn-icon btn-danger" onclick="togglePaymentMethodStatus('${rowId}', 'Inactive')" title="Deactivate Method"><i class="fa-solid fa-ban"></i></button>`;
+                    } else {
+                        actionsHtml += `<button class="btn-icon btn-success" onclick="togglePaymentMethodStatus('${rowId}', 'Active')" title="Activate Method"><i class="fa-solid fa-circle-check"></i></button>`;
+                    }
+                }
                 // Extra actions for Purchased_data
                 if (currentTable === 'Purchased_data') {
                     const status = row['PaymentStatus'];
@@ -1622,6 +1644,14 @@
         function getPlaceholder(col) {
             const lower = col.toLowerCase();
             if(lower.includes('email')) return 'e.g. user@example.com';
+            if(lower.includes('accountnumber') || lower === 'number') return 'e.g. 03449490070 or Wallet Address / Bank Account';
+            if(lower.includes('accounttitle') || lower === 'title') return 'e.g. Muhammad Abid';
+            if(lower.includes('bankname') || lower === 'bank') return 'e.g. UBL, Meezan Bank, HBL...';
+            if(lower === 'iban') return 'e.g. PK36UNIL0109000234567890';
+            if(lower === 'network') return 'e.g. TRC20, BEP20, ERC20...';
+            if(lower.includes('methodname')) return 'e.g. Easypaisa, JazzCash, USDT, UBL Bank';
+            if(lower.includes('methodtype')) return 'e.g. Easypaisa, JazzCash, Bank, Crypto';
+            if(lower.includes('instruction')) return 'e.g. Send payment to this account and upload slip screenshot';
             if(lower.includes('name')) return 'e.g. John Doe';
             if(lower.includes('url') || lower.includes('link')) return 'e.g. https://example.com';
             if(lower.includes('password')) return 'Enter secure password';
@@ -1651,6 +1681,7 @@
 
             // Human-readable title generator
             const getFriendlyName = (name) => {
+                if (name && name.includes(' ')) return name.trim();
                 return name
                     .replace(/([A-Z])/g, ' $1') // insert a space before all caps
                     .replace(/_/g, ' ') // replace underscores with spaces
@@ -1672,7 +1703,12 @@
                 
                 if (currentMode === 'add' && (colLower === 'id' || colLower === 'uniqueid' || colLower === 'orderid')) {
                     if (val === '') {
-                        val = 'APP-' + Math.floor(Math.random() * 10000000000000).toString().padStart(13, '0');
+                        if (currentTable === 'Payment_Methods') {
+                            const numericIds = tableData.map(r => parseInt(r.ID || r.id)).filter(n => !isNaN(n));
+                            val = numericIds.length > 0 ? (Math.max(...numericIds) + 1).toString() : '1';
+                        } else {
+                            val = 'APP-' + Math.floor(Math.random() * 10000000000000).toString().padStart(13, '0');
+                        }
                     }
                 }
                 
@@ -1690,6 +1726,70 @@
                         <div class="form-group">
                             <label><i class="fa-regular fa-calendar"></i> <strong>${friendlyCol}</strong></label>
                             <input type="date" id="input_${col}" value="${dateVal}" ${readOnly}>
+                        </div>
+                    `;
+                } else if ((col === 'Status' || col === 'status') && currentTable === 'Payment_Methods') {
+                    const isInactive = String(val).toLowerCase() === 'inactive';
+                    body.innerHTML += `
+                        <div class="form-group">
+                            <label><i class="fa-solid fa-toggle-on"></i> <strong>Status</strong></label>
+                            <select id="input_${col}">
+                                <option value="Active" ${!isInactive ? 'selected' : ''}>Active</option>
+                                <option value="Inactive" ${isInactive ? 'selected' : ''}>Inactive</option>
+                            </select>
+                        </div>
+                    `;
+                } else if ((colLower === 'methodtype' || colLower === 'method_type') && currentTable === 'Payment_Methods') {
+                    const commonTypes = ['Easypaisa', 'JazzCash', 'Bank', 'Crypto', 'Nayapay', 'Sadapay', 'Upaisa', 'Raast', 'Other'];
+                    let typeOptions = `<option value="">Select Method Type...</option>`;
+                    let foundType = false;
+                    commonTypes.forEach(t => {
+                        const sel = val.toLowerCase() === t.toLowerCase() ? 'selected' : '';
+                        if (sel) foundType = true;
+                        typeOptions += `<option value="${t}" ${sel}>${t}</option>`;
+                    });
+                    if (val && !foundType) typeOptions += `<option value="${val}" selected>${val}</option>`;
+                    body.innerHTML += `
+                        <div class="form-group">
+                            <label><i class="fa-solid fa-credit-card"></i> <strong>Method Type</strong></label>
+                            <div style="display:flex; gap:8px;">
+                                <select id="input_${col}" style="flex:1;">
+                                    ${typeOptions}
+                                </select>
+                                <button class="btn btn-primary" onclick="event.preventDefault(); const newT = prompt('Enter custom Method Type:'); if(newT) { const sel = document.getElementById('input_${col}'); sel.add(new Option(newT, newT, false, true)); }" title="Add Custom Type" style="padding: 0 12px;"><i class="fa-solid fa-plus"></i></button>
+                            </div>
+                        </div>
+                    `;
+                } else if ((colLower === 'sortorder' || colLower === 'sort_order') && currentTable === 'Payment_Methods') {
+                    let defaultSort = val;
+                    if (currentMode === 'add' && !defaultSort) {
+                        const numericOrders = tableData.map(r => parseInt(r.SortOrder || r.sort_order)).filter(n => !isNaN(n));
+                        defaultSort = numericOrders.length > 0 ? (Math.max(...numericOrders) + 1).toString() : '1';
+                    }
+                    body.innerHTML += `
+                        <div class="form-group">
+                            <label><i class="fa-solid fa-arrow-down-1-9"></i> <strong>Sort Order</strong></label>
+                            <input type="number" id="input_${col}" value="${defaultSort || '1'}" min="1" step="1" placeholder="e.g. 1, 2, 3...">
+                        </div>
+                    `;
+                } else if ((colLower.includes('instruction') || colLower === 'note') && currentTable === 'Payment_Methods') {
+                    body.innerHTML += `
+                        <div class="form-group">
+                            <label><i class="fa-solid fa-circle-info"></i> <strong>${friendlyCol}</strong></label>
+                            <textarea id="input_${col}" rows="3" placeholder="${placeholder}" ${readOnly}>${val}</textarea>
+                        </div>
+                    `;
+                } else if ((colLower === 'iconurl' || colLower === 'qr_code_url' || colLower === 'icon_url') && currentTable === 'Payment_Methods') {
+                    const safeVal = String(val).replace(/"/g, '&quot;');
+                    body.innerHTML += `
+                        <div class="form-group">
+                            <label><i class="fa-solid fa-image"></i> <strong>${friendlyCol}</strong></label>
+                            <div style="display:flex; gap:8px; align-items:center;">
+                                <input type="text" id="input_${col}" value="${safeVal}" placeholder="${placeholder}" style="flex:1;" oninput="updateInputPreview('preview_${col}', this.value)" ${readOnly}>
+                                <div id="preview_${col}" style="width:40px; height:40px; border-radius:6px; border:1px solid var(--border); overflow:hidden; display:flex; align-items:center; justify-content:center; background:rgba(255,255,255,0.05); flex-shrink:0;">
+                                    ${val && val.startsWith('http') ? `<img src="${val}" style="width:100%; height:100%; object-fit:contain;" onerror="this.remove()">` : `<i class="fa-regular fa-image" style="color:var(--text-muted); font-size:16px;"></i>`}
+                                </div>
+                            </div>
                         </div>
                     `;
                 } else if (col === 'PaymentStatus' && currentTable === 'Purchased_data') {
@@ -1757,10 +1857,11 @@
                         </div>
                     `;
                 } else {
+                    const safeVal = String(val).replace(/"/g, '&quot;');
                     body.innerHTML += `
                         <div class="form-group">
                             <label><i class="fa-solid fa-pen"></i> <strong>${friendlyCol}</strong></label>
-                            <input type="text" id="input_${col}" value="${val}" placeholder="${placeholder}" ${readOnly}>
+                            <input type="text" id="input_${col}" value="${safeVal}" placeholder="${placeholder}" ${readOnly}>
                         </div>
                     `;
                 }
@@ -1783,11 +1884,16 @@
             const payload = {};
             tableColumns.forEach(col => {
                 const isId = col === getIdColumn();
-                const val = document.getElementById(`input_${col}`).value;
+                const el = document.getElementById(`input_${col}`);
+                if (!el) return;
+                const val = el.value;
                 // Exclude ID from payload during edit to prevent SQL errors, and during add if empty
                 if (isId && currentMode === 'edit') return; 
                 if (isId && currentMode === 'add' && val === '') return;
                 
+                if (currentTable === 'Payment_Methods' && (col === 'SortOrder' || col === 'sort_order') && val !== '') {
+                    val = parseInt(val) || 1;
+                }
                 payload[col] = val;
             });
 
@@ -1901,6 +2007,43 @@
             } finally {
                 endProgress();
             }
+
+        // Specific function for quick Payment Method Active/Inactive toggle
+        async function togglePaymentMethodStatus(id, newStatus) {
+            const url = getBaseUrl();
+            const idCol = getIdColumn();
+            const payload = { "Status": newStatus };
+            try {
+                startProgress();
+                const endpoint = `${url}/?table=Payment_Methods&col=${idCol}&val=${encodeURIComponent(id)}`;
+                const response = await fetch(endpoint, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': getAuthHeader(),
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(payload)
+                });
+                const data = await response.json();
+                if (!response.ok || data.error) throw new Error(data.error || 'Failed to update status');
+                showToast(`Payment method status changed to ${newStatus}!`);
+                fetchData();
+            } catch (error) {
+                showToast(error.message, 'error');
+            } finally {
+                endProgress();
+            }
+        }
+
+        function updateInputPreview(elemId, url) {
+            const el = document.getElementById(elemId);
+            if (!el) return;
+            if (url && url.startsWith('http')) {
+                el.innerHTML = `<img src="${url}" style="width:100%; height:100%; object-fit:contain;" onerror="this.remove()">`;
+            } else {
+                el.innerHTML = `<i class="fa-regular fa-image" style="color:var(--text-muted); font-size:16px;"></i>`;
+            }
+        }
         }
         // --- FILE MANAGER LOGIC ---
         function showFileManager(element) {
