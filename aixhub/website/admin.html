@@ -1497,7 +1497,8 @@
             const reversedData = [...tableData].reverse();
             reversedData.forEach(row => {
                 let tr = document.createElement('tr');
-                const rowId = row[getIdColumn()];
+                const idCol = getIdColumn();
+                let rowId = (row[idCol] !== undefined && row[idCol] !== null && row[idCol] !== '') ? row[idCol] : (row['ID'] !== undefined ? row['ID'] : (row['id'] !== undefined ? row['id'] : (row['Id'] !== undefined ? row['Id'] : '')));
                 
                 // Add Checkbox
                 tr.innerHTML += `<td><input type="checkbox" class="row-checkbox" value="${rowId}" onclick="updateSelectedCount()"></td>`;
@@ -1612,8 +1613,9 @@
             // Delete one by one to avoid changing the worker code and to ensure safety
             for (let cb of checkboxes) {
                 const id = cb.value;
+                if (!id || id === 'undefined') continue;
                 try {
-                    const response = await fetch(`${url}/?table=${currentTable}&col=${idCol}&val=${encodeURIComponent(id)}`, {
+                    const response = await fetch(`${url}/?table=${currentTable}&col=${encodeURIComponent(idCol)}&val=${encodeURIComponent(id)}&id=${encodeURIComponent(id)}`, {
                         method: 'DELETE',
                         headers: { 'Authorization': getAuthHeader() }
                     });
@@ -1673,9 +1675,9 @@
             if (mode === 'edit') {
                 const idCol = getIdColumn();
                 if (col2 && val2) {
-                    recordData = tableData.find(r => String(r[idCol]) === String(id) && String(r[col2]) === String(val2)) || {};
+                    recordData = tableData.find(r => (String(r[idCol]) === String(id) || String(r.ID) === String(id) || String(r.id) === String(id)) && String(r[col2]) === String(val2)) || {};
                 } else {
-                    recordData = tableData.find(r => String(r[idCol]) === String(id)) || {};
+                    recordData = tableData.find(r => String(r[idCol]) === String(id) || String(r.ID) === String(id) || String(r.id) === String(id)) || {};
                 }
             }
 
@@ -1691,10 +1693,10 @@
 
             tableColumns.forEach(col => {
                 // Don't allow editing ID in edit mode
-                const isId = col === getIdColumn();
+                const isId = col === getIdColumn() || col.toLowerCase() === 'id';
                 const readOnly = (isId && mode === 'edit') ? 'readonly disabled style="opacity:0.5"' : '';
                 
-                let val = recordData[col] !== undefined ? recordData[col] : '';
+                let val = (recordData[col] !== undefined && recordData[col] !== null) ? recordData[col] : '';
                 const placeholder = getPlaceholder(col);
                 const colLower = col.toLowerCase();
                 const isDate = colLower.includes('date') || colLower.includes('time');
@@ -1744,7 +1746,7 @@
                     let typeOptions = `<option value="">Select Method Type...</option>`;
                     let foundType = false;
                     commonTypes.forEach(t => {
-                        const sel = val.toLowerCase() === t.toLowerCase() ? 'selected' : '';
+                        const sel = String(val).toLowerCase() === t.toLowerCase() ? 'selected' : '';
                         if (sel) foundType = true;
                         typeOptions += `<option value="${t}" ${sel}>${t}</option>`;
                     });
@@ -1883,16 +1885,22 @@
 
             const payload = {};
             tableColumns.forEach(col => {
-                const isId = col === getIdColumn();
+                const isId = col === getIdColumn() || col.toLowerCase() === 'id';
                 const el = document.getElementById(`input_${col}`);
                 if (!el) return;
-                const val = el.value;
+                let val = el.value !== undefined ? el.value.trim() : '';
                 // Exclude ID from payload during edit to prevent SQL errors, and during add if empty
                 if (isId && currentMode === 'edit') return; 
                 if (isId && currentMode === 'add' && val === '') return;
                 
-                if (currentTable === 'Payment_Methods' && (col === 'SortOrder' || col === 'sort_order') && val !== '') {
-                    val = parseInt(val) || 1;
+                if (currentTable === 'Payment_Methods') {
+                    if ((col === 'SortOrder' || col.toLowerCase() === 'sortorder' || col.toLowerCase() === 'sort_order') && val !== '') {
+                        val = parseInt(val) || 1;
+                    }
+                    if (isId && val !== '') {
+                        const numId = parseInt(val);
+                        if (!isNaN(numId)) val = numId;
+                    }
                 }
                 payload[col] = val;
             });
@@ -1905,7 +1913,7 @@
                 if (currentMode === 'edit') {
                     const idCol = getIdColumn();
                     method = 'PUT';
-                    endpoint += `&id=${encodeURIComponent(editingId)}&col=${idCol}`;
+                    endpoint += `&id=${encodeURIComponent(editingId)}&col=${encodeURIComponent(idCol)}`;
                     if (editingCol2 && editingVal2) {
                         endpoint += `&col2=${encodeURIComponent(editingCol2)}&val2=${encodeURIComponent(editingVal2)}`;
                     }
@@ -1939,13 +1947,17 @@
         }
 
         async function deleteRecord(id, col2 = null, val2 = null) {
+            if (!id || id === 'undefined' || id === 'null') {
+                showToast('Error: Invalid Record ID to delete', 'error');
+                return;
+            }
             if (!confirm('Are you sure you want to delete this record? This action cannot be undone.')) return;
 
             const url = getBaseUrl();
             const idCol = getIdColumn();
             try {
                 startProgress();
-                let endpoint = `${url}/?table=${currentTable}&col=${idCol}&val=${encodeURIComponent(id)}`;
+                let endpoint = `${url}/?table=${currentTable}&col=${encodeURIComponent(idCol)}&val=${encodeURIComponent(id)}&id=${encodeURIComponent(id)}`;
                 if (col2 && val2) {
                     endpoint += `&col2=${encodeURIComponent(col2)}&val2=${encodeURIComponent(val2)}`;
                 }
@@ -1984,7 +1996,7 @@
             
             try {
                 startProgress();
-                let endpoint = `${url}/?table=${currentTable}&col=${idCol}&val=${encodeURIComponent(id)}`;
+                let endpoint = `${url}/?table=${currentTable}&col=${encodeURIComponent(idCol)}&val=${encodeURIComponent(id)}`;
                 if (col2 && val2) {
                     endpoint += `&col2=${encodeURIComponent(col2)}&val2=${encodeURIComponent(val2)}`;
                 }
@@ -2007,15 +2019,20 @@
             } finally {
                 endProgress();
             }
+        }
 
         // Specific function for quick Payment Method Active/Inactive toggle
         async function togglePaymentMethodStatus(id, newStatus) {
+            if (!id || id === 'undefined' || id === 'null') {
+                showToast("Error: Invalid Payment Method ID", "error");
+                return;
+            }
             const url = getBaseUrl();
             const idCol = getIdColumn();
             const payload = { "Status": newStatus };
             try {
                 startProgress();
-                const endpoint = `${url}/?table=Payment_Methods&col=${idCol}&val=${encodeURIComponent(id)}`;
+                const endpoint = `${url}/?table=Payment_Methods&col=${encodeURIComponent(idCol)}&val=${encodeURIComponent(id)}`;
                 const response = await fetch(endpoint, {
                     method: 'POST',
                     headers: {
@@ -2043,7 +2060,6 @@
             } else {
                 el.innerHTML = `<i class="fa-regular fa-image" style="color:var(--text-muted); font-size:16px;"></i>`;
             }
-        }
         }
         // --- FILE MANAGER LOGIC ---
         function showFileManager(element) {
