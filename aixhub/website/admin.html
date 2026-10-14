@@ -235,6 +235,71 @@
         .btn-delete { background: rgba(239, 68, 68, 0.1); color: var(--danger); }
         .btn-delete:hover { background: var(--danger); color: white; }
 
+        .btn-restore {
+            position: relative;
+            background: linear-gradient(135deg, #ff9800 0%, #f59e0b 45%, #ea580c 100%);
+            color: #ffffff !important;
+            padding: 8px 16px;
+            font-size: 12px;
+            font-weight: 800;
+            border-radius: 9999px;
+            border: 1.5px solid rgba(255, 255, 255, 0.75);
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 7px;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            box-shadow: 0 4px 15px rgba(245, 158, 11, 0.45), 0 2px 4px rgba(0, 0, 0, 0.25), inset 0 1px 1px rgba(255, 255, 255, 0.6);
+            transition: all 0.28s cubic-bezier(0.4, 0, 0.2, 1);
+            white-space: nowrap;
+            overflow: hidden;
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.35);
+            line-height: 1;
+        }
+        .btn-restore::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+            transition: left 0.5s ease;
+        }
+        .btn-restore:hover::before {
+            left: 100%;
+        }
+        .btn-restore i {
+            font-size: 13.5px;
+            filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.3));
+            transition: transform 0.28s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+        .btn-restore:hover {
+            background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 40%, #e11d48 100%);
+            color: #ffffff !important;
+            box-shadow: 0 6px 20px rgba(245, 158, 11, 0.65), 0 3px 6px rgba(0, 0, 0, 0.35), inset 0 1px 2px rgba(255, 255, 255, 0.8);
+            transform: translateY(-2px) scale(1.05);
+            border-color: #ffffff;
+        }
+        .btn-restore:hover i {
+            transform: translateY(-2px) scale(1.15);
+        }
+        .btn-restore:active {
+            transform: translateY(1px) scale(0.97);
+            box-shadow: 0 2px 6px rgba(245, 158, 11, 0.35);
+        }
+
+        @keyframes highlightRestoreRow {
+            0% { background-color: rgba(245, 158, 11, 0.35); transform: scale(1.005); }
+            50% { background-color: rgba(245, 158, 11, 0.15); }
+            100% { background-color: transparent; transform: scale(1); }
+        }
+        .row-restored-highlight {
+            animation: highlightRestoreRow 1.8s ease-out;
+        }
+
         .content-body {
             flex: 1;
             padding: 32px;
@@ -309,7 +374,9 @@
 
         .actions-cell {
             display: flex;
+            align-items: center;
             gap: 8px;
+            white-space: nowrap;
         }
 
         /* Badges */
@@ -648,8 +715,11 @@
                         <h3 style="margin-bottom: 4px;">Records</h3>
                         <span style="font-size: 13px; color: var(--text-muted);" id="recordCount">0 total records found</span>
                     </div>
-                    <div style="display: flex; gap: 12px; align-items: center;">
+                    <div style="display: flex; gap: 12px; align-items: center; flex-wrap: wrap;">
                         <div class="loader" id="tableLoader"></div>
+                        <button class="btn-restore" id="restoreSelectedBtn" onclick="restoreSelectedToTop()" style="display: none; padding: 8px 18px; font-size: 13px;">
+                            <i class="fa-solid fa-angles-up"></i> <span>Restore Selected (<span id="restoreSelectedCount">0</span>)</span>
+                        </button>
                         <button class="btn btn-danger" id="deleteSelectedBtn" onclick="deleteSelected()" style="display: none;">
                             <i class="fa-solid fa-trash-can"></i> Delete Selected (<span id="selectedCount">0</span>)
                         </button>
@@ -1075,11 +1145,11 @@
                         <h4 style="margin-bottom: 12px; font-size: 14px; color: #10b981;"><i class="fa-brands fa-google-drive"></i> Google Drive Integration (Required for File Uploads)</h4>
                         <div class="form-group" style="margin-bottom: 12px;">
                             <label style="font-size: 12px;"><strong>Google Apps Script Web App URL</strong></label>
-                            <input type="text" id="docsGdriveScriptUrl" class="api-input" style="width: 100%; margin-top: 4px;" placeholder="https://script.google.com/macros/s/.../exec" onchange="if(document.getElementById('gdriveScriptUrl')) document.getElementById('gdriveScriptUrl').value=this.value; localStorage.setItem('gdriveScriptUrl', this.value.trim());">
+                            <input type="text" id="docsGdriveScriptUrl" class="api-input" style="width: 100%; margin-top: 4px;" placeholder="https://script.google.com/macros/s/.../exec" oninput="if(document.getElementById('gdriveScriptUrl')) document.getElementById('gdriveScriptUrl').value=this.value; localStorage.setItem('gdriveScriptUrl', this.value.trim()); localStorage.setItem('docsGdriveScriptUrl', this.value.trim());" onchange="if(document.getElementById('gdriveScriptUrl')) document.getElementById('gdriveScriptUrl').value=this.value; localStorage.setItem('gdriveScriptUrl', this.value.trim()); localStorage.setItem('docsGdriveScriptUrl', this.value.trim());">
                         </div>
                         <div class="form-group">
-                            <label style="font-size: 12px;"><strong>Google Drive Folder ID</strong></label>
-                            <input type="text" id="docsGdriveFolderId" class="api-input" style="width: 100%; margin-top: 4px;" placeholder="e.g. 148xTETECosVSbmltgA2bgl1K-prAmmmC" onchange="if(document.getElementById('gdriveFolderId')) document.getElementById('gdriveFolderId').value=this.value; localStorage.setItem('gdriveFolderId', this.value.trim());">
+                            <label style="font-size: 12px;"><strong>Google Drive Folder ID (Files & Images will upload to this Folder)</strong></label>
+                            <input type="text" id="docsGdriveFolderId" class="api-input" style="width: 100%; margin-top: 4px;" placeholder="e.g. 1Th-m_ojdxDbZfrjUa5NUUC9JwR5nSdFS" oninput="if(document.getElementById('gdriveFolderId')) document.getElementById('gdriveFolderId').value=this.value; localStorage.setItem('gdriveFolderId', this.value.trim()); localStorage.setItem('docsGdriveFolderId', this.value.trim());" onchange="if(document.getElementById('gdriveFolderId')) document.getElementById('gdriveFolderId').value=this.value; localStorage.setItem('gdriveFolderId', this.value.trim()); localStorage.setItem('docsGdriveFolderId', this.value.trim());">
                         </div>
                     </div>
 
@@ -1409,6 +1479,8 @@
             if (foundUnique) return foundUnique;
             const foundOrder = tableColumns.find(c => c.toLowerCase() === 'orderid');
             if (foundOrder) return foundOrder;
+            const foundItem = tableColumns.find(c => c.toLowerCase() === 'itemid');
+            if (foundItem) return foundItem;
             return tableColumns.length > 0 ? tableColumns[0] : 'id';
         }
 
@@ -1467,7 +1539,7 @@
                 tableColumns.forEach(col => {
                     thead.innerHTML += `<th>${col}</th>`;
                 });
-                thead.innerHTML += `<th>Actions</th>`;
+                thead.innerHTML += `<th style="min-width: 220px;">Actions</th>`;
                 
                 tbody.innerHTML = `<tr><td colspan="${tableColumns.length + 2}" class="empty-state"><i class="fa-solid fa-folder-open"></i><h3>No records found in this table</h3></td></tr>`;
                 return;
@@ -1491,7 +1563,7 @@
             tableColumns.forEach(col => {
                 thead.innerHTML += `<th>${col}</th>`;
             });
-            thead.innerHTML += `<th>Actions</th>`;
+            thead.innerHTML += `<th style="min-width: 220px;">Actions</th>`;
 
             // Render Rows (Newest First)
             const reversedData = [...tableData].reverse();
@@ -1555,6 +1627,7 @@
                 }
                 
                 actionsHtml += `
+                    <button class="btn-restore" onclick="restoreRecordToTop('${rowId}'${extraArgs})" title="Restore to Top (#1 Position)"><i class="fa-solid fa-angles-up"></i> <span>Restore Top</span></button>
                     <button class="btn-icon btn-edit" onclick="openModal('edit', '${rowId}'${extraArgs})" title="Edit"><i class="fa-solid fa-pen"></i></button>
                     <button class="btn-icon btn-delete" onclick="deleteRecord('${rowId}'${extraArgs})" title="Delete"><i class="fa-solid fa-trash"></i></button>
                 </div>`;
@@ -1578,12 +1651,18 @@
             const count = checkboxes.length;
             const btn = document.getElementById('deleteSelectedBtn');
             const span = document.getElementById('selectedCount');
+            const restoreBtn = document.getElementById('restoreSelectedBtn');
+            const restoreSpan = document.getElementById('restoreSelectedCount');
             
+            if (span) span.textContent = count;
+            if (restoreSpan) restoreSpan.textContent = count;
+
             if (count > 0) {
-                btn.style.display = 'block';
-                span.textContent = count;
+                if (btn) btn.style.display = 'inline-flex';
+                if (restoreBtn) restoreBtn.style.display = 'inline-flex';
             } else {
-                btn.style.display = 'none';
+                if (btn) btn.style.display = 'none';
+                if (restoreBtn) restoreBtn.style.display = 'none';
             }
             
             const allCheckboxes = document.querySelectorAll('.row-checkbox');
@@ -1640,6 +1719,175 @@
             endProgress();
             
             // Reload table
+            fetchData();
+        }
+
+        // --- RESTORE RECORD TO TOP (#1 POSITION) ---
+        async function executeRestoreRecordToTop(row, shouldRefresh = true) {
+            const url = getBaseUrl();
+            const idCol = getIdColumn();
+            const rowId = (row[idCol] !== undefined && row[idCol] !== null && row[idCol] !== '') 
+                ? row[idCol] 
+                : (row['ID'] !== undefined ? row['ID'] : (row['id'] !== undefined ? row['id'] : (row['Id'] !== undefined ? row['Id'] : (row['OrderID'] || row['ItemID'] || ''))));
+            
+            if (rowId === undefined || rowId === null || rowId === '') {
+                throw new Error('Record has no valid ID to restore');
+            }
+
+            // 1. STEP 1: Pehle row ko uski maujooda jagah se delete karein (DELETE)
+            let deleteEndpoint = `${url}/?table=${currentTable}&col=${encodeURIComponent(idCol)}&val=${encodeURIComponent(rowId)}&id=${encodeURIComponent(rowId)}`;
+            if (currentTable === 'Purchased_data' && row['UserEmail']) {
+                deleteEndpoint += `&col2=UserEmail&val2=${encodeURIComponent(row['UserEmail'])}`;
+            }
+            if (currentTable === 'Free_Paid_Register' && row['Email'] && row['ItemID']) {
+                deleteEndpoint = `${url}/?table=${currentTable}&col=Email&val=${encodeURIComponent(row['Email'])}&col2=ItemID&val2=${encodeURIComponent(row['ItemID'])}`;
+            }
+            
+            const delRes = await fetch(deleteEndpoint, {
+                method: 'DELETE',
+                headers: { 'Authorization': getAuthHeader() }
+            });
+            const delData = await delRes.json().catch(() => ({}));
+            if (!delRes.ok || delData.error) {
+                throw new Error(delData.error || 'Failed to remove old record position');
+            }
+
+            // 2. STEP 2: Same wahi row aur EXACT ORIGINAL ITEM ID ke sath dobara store karein (POST)
+            // Bilkul koi new ID generate nahi hogi - wahi exact original ID store hogi
+            const restorePayload = {};
+            // Pehle row ke tamam fields copy karein taake koi data miss na ho
+            Object.keys(row).forEach(key => {
+                let val = row[key];
+                if (val !== undefined && val !== null) {
+                    restorePayload[key] = val;
+                }
+            });
+            // Agar tableColumns me koi column ho jo row me na ho to use empty string rakhein
+            tableColumns.forEach(col => {
+                if (restorePayload[col] === undefined) {
+                    let val = (row[col] !== undefined && row[col] !== null) ? row[col] : '';
+                    restorePayload[col] = val;
+                }
+            });
+            // 100% Guarantee: Original ID must match rowId exactly (no new ID)
+            restorePayload[idCol] = (row[idCol] !== undefined && row[idCol] !== null) ? row[idCol] : rowId;
+            if (row['ItemID'] !== undefined && row['ItemID'] !== null) {
+                restorePayload['ItemID'] = row['ItemID'];
+            }
+            if (row['OrderID'] !== undefined && row['OrderID'] !== null) {
+                restorePayload['OrderID'] = row['OrderID'];
+            }
+
+            // Insert back with original ID (D1 appends it at the end of the table)
+            let insertEndpoint = `${url}/?table=${currentTable}`;
+            const insertRes = await fetch(insertEndpoint, {
+                method: 'POST',
+                headers: {
+                    'Authorization': getAuthHeader(),
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(restorePayload)
+            });
+            
+            const insertData = await insertRes.json().catch(() => ({}));
+            if (!insertRes.ok || insertData.error) {
+                // Retry insert once if initial attempt fails
+                const retryRes = await fetch(insertEndpoint, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': getAuthHeader(),
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(restorePayload)
+                });
+                const retryData = await retryRes.json().catch(() => ({}));
+                if (!retryRes.ok || retryData.error) {
+                    throw new Error(insertData.error || retryData.error || ('Failed to re-store record with ID ' + rowId));
+                }
+            }
+
+            if (shouldRefresh) {
+                showToast(`Record [ID: ${rowId}] restored to top successfully!`, 'success');
+                await fetchData();
+            }
+        }
+
+        async function restoreRecordToTop(id, col2 = null, val2 = null) {
+            if (!id || id === 'undefined' || id === 'null') {
+                showToast('Error: Invalid Record ID', 'error');
+                return;
+            }
+
+            const idCol = getIdColumn();
+            let row = tableData.find(r => String(r[idCol]) === String(id));
+            if (col2 && val2) {
+                row = tableData.find(r => String(r[idCol]) === String(id) && String(r[col2]) === String(val2));
+            }
+
+            if (!row) {
+                showToast('Error: Record not found in current table', 'error');
+                return;
+            }
+
+            if (!confirm(`Are you sure you want to restore this record to the top (#1 position)?\n\nOriginal Item ID [${id}] will be preserved exactly.`)) return;
+
+            startProgress();
+            showToast('Restoring record to top...', 'info');
+            try {
+                await executeRestoreRecordToTop(row, true);
+            } catch (e) {
+                showToast('Restore to top failed: ' + e.message, 'error');
+            } finally {
+                endProgress();
+            }
+        }
+
+        async function restoreSelectedToTop() {
+            const checkboxes = document.querySelectorAll('.row-checkbox:checked');
+            if (checkboxes.length === 0) return;
+
+            if (!confirm(`Are you sure you want to restore ${checkboxes.length} selected record(s) to the top (#1 position)?\n\nAll original Item IDs will be preserved.`)) return;
+
+            startProgress();
+            const btn = document.getElementById('restoreSelectedBtn');
+            const originalBtnHtml = btn ? btn.innerHTML : '';
+            if (btn) {
+                btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Restoring...';
+                btn.disabled = true;
+            }
+
+            let successCount = 0;
+            let errorCount = 0;
+
+            // Process selected checkboxes in reverse order so the first selected ends up at the very top
+            const selectedList = Array.from(checkboxes).reverse();
+            const idCol = getIdColumn();
+
+            for (let cb of selectedList) {
+                const id = cb.value;
+                if (!id || id === 'undefined') continue;
+                const row = tableData.find(r => String(r[idCol]) === String(id));
+                if (row) {
+                    try {
+                        await executeRestoreRecordToTop(row, false);
+                        successCount++;
+                    } catch (e) {
+                        errorCount++;
+                    }
+                }
+            }
+
+            if (btn) {
+                btn.innerHTML = originalBtnHtml;
+                btn.disabled = false;
+            }
+            endProgress();
+
+            if (errorCount === 0) {
+                showToast(`Successfully restored ${successCount} record(s) to the top!`, 'success');
+            } else {
+                showToast(`Restored ${successCount} record(s), failed for ${errorCount} record(s).`, 'warning');
+            }
             fetchData();
         }
 
@@ -2240,7 +2488,8 @@
                         <td>${sizeMb}</td>
                         <td>${date}</td>
                         <td>
-                            <button class="btn-icon" style="color: var(--primary);" onclick="copyToClipboard('${link}')" title="Copy ${isPublic ? 'Public CDN / Google Drive Link' : 'Master Link'}"><i class="fa-solid fa-link"></i></button>
+                            <button class="btn-restore" onclick="restoreFileRowToTop(this)" title="Restore to Top (#1 Position)"><i class="fa-solid fa-angles-up"></i> <span>Restore Top</span></button>
+                            <button class="btn-icon" style="color: var(--primary); margin-left: 4px;" onclick="copyToClipboard('${link}')" title="Copy ${isPublic ? 'Public CDN / Google Drive Link' : 'Master Link'}"><i class="fa-solid fa-link"></i></button>
                             ${proxyBtn}
                             ${appScriptBtn}
                             ${tempLinkBtn}
@@ -2255,6 +2504,19 @@
             const selectAll = document.getElementById('selectAllR2');
             if (selectAll) selectAll.checked = false;
             toggleDeleteSelectedBtn();
+        }
+
+        function restoreFileRowToTop(btn) {
+            const tr = btn.closest('tr');
+            const tbody = document.getElementById('r2FileTableBody');
+            if (!tr || !tbody) return;
+            if (tbody.firstElementChild === tr) {
+                showToast('This file is already at the top!', 'info');
+                return;
+            }
+            tr.classList.add('row-restored-highlight');
+            tbody.insertBefore(tr, tbody.firstElementChild);
+            showToast('File restored to top (#1 position)!', 'success');
         }
         
         function toggleSelectAllR2(checkbox) {
@@ -2827,9 +3089,167 @@
             document.getElementById('docsCreatorCard').style.display = 'flex';
             document.getElementById('pageTitle').innerHTML = 'Extension Docs Creator';
             
+            // Auto-populate Google Drive Script URL and Folder ID from saved storage
+            const savedFolder = localStorage.getItem('docsGdriveFolderId') || localStorage.getItem('gdriveFolderId') || '';
+            const folderInput = document.getElementById('docsGdriveFolderId');
+            if (folderInput && !folderInput.value && savedFolder) {
+                folderInput.value = savedFolder;
+            }
+            const savedScript = localStorage.getItem('docsGdriveScriptUrl') || localStorage.getItem('gdriveScriptUrl') || '';
+            const scriptInput = document.getElementById('docsGdriveScriptUrl');
+            if (scriptInput && !scriptInput.value && savedScript) {
+                scriptInput.value = savedScript;
+            }
+
             if (document.getElementById('docBlocksContainer').children.length === 0) {
                 addDocBlock();
             }
+        }
+
+        // --- Storage Cleanup Helpers for Docs Creator ---
+        function extractGdriveFileId(url) {
+            if (!url) return null;
+            if (typeof url !== 'string') return null;
+            const cleanUrl = url.trim();
+            const matchId = cleanUrl.match(/[?&]id=([^&"'>\s]+)/);
+            if (matchId && matchId[1]) return matchId[1];
+            const matchD = cleanUrl.match(/\/d\/([a-zA-Z0-9_-]+)/);
+            if (matchD && matchD[1]) return matchD[1];
+            const matchLh3 = cleanUrl.match(/googleusercontent\.com\/d\/([a-zA-Z0-9_-]+)/);
+            if (matchLh3 && matchLh3[1]) return matchLh3[1];
+            if (/^[a-zA-Z0-9_-]{20,}$/.test(cleanUrl)) return cleanUrl;
+            return null;
+        }
+
+        function extractCloudflareFileName(url) {
+            if (!url) return null;
+            const matchFile = url.match(/[?&]file=([^&"'>\s]+)/);
+            if (matchFile && matchFile[1]) {
+                return decodeURIComponent(matchFile[1]);
+            }
+            if (!url.startsWith('http://') && !url.startsWith('https://')) {
+                return url;
+            }
+            return null;
+        }
+
+        async function deleteFromGDrive(fileId) {
+            if (!fileId) return;
+            const cleanId = extractGdriveFileId(fileId) || fileId;
+            const docsScriptEl = document.getElementById('docsGdriveScriptUrl');
+            const mainScriptEl = document.getElementById('gdriveScriptUrl');
+            const scriptUrl = (docsScriptEl && docsScriptEl.value.trim()) || 
+                              (mainScriptEl && mainScriptEl.value.trim()) || 
+                              localStorage.getItem('docsGdriveScriptUrl') || 
+                              localStorage.getItem('gdriveScriptUrl') || '';
+            if (!scriptUrl) return;
+
+            const deletePayload = JSON.stringify({ action: 'delete_gdrive_file', fileId: cleanId });
+
+            // 1. Send POST with mode: 'no-cors' so browser security NEVER blocks the request
+            try {
+                await fetch(scriptUrl, {
+                    method: 'POST',
+                    mode: 'no-cors',
+                    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                    body: deletePayload
+                });
+            } catch (e) {
+                console.warn('POST failed for GDrive delete:', e);
+            }
+
+            // 2. Also send GET request as foolproof redundant backup
+            try {
+                const getUrl = `${scriptUrl}${scriptUrl.indexOf('?') === -1 ? '?' : '&'}action=delete_gdrive_file&fileId=${encodeURIComponent(cleanId)}`;
+                await fetch(getUrl, { mode: 'no-cors' });
+            } catch (e2) {
+                console.warn('GET fallback failed for GDrive delete:', e2);
+            }
+        }
+
+        async function deleteFromCloudflare(fileName) {
+            if (!fileName) return;
+            const url = getBaseUrl();
+            if (!url) return;
+            try {
+                await fetch(`${url}/?action=delete_file&file=${encodeURIComponent(fileName)}`, {
+                    method: 'DELETE',
+                    headers: { 'Authorization': getAuthHeader() }
+                });
+            } catch (e) {
+                console.warn('Failed to delete file from Cloudflare:', fileName, e);
+            }
+        }
+
+        async function removeDocBlock(btn) {
+            const block = btn.closest('.doc-block');
+            if (!block) return;
+            
+            const r2Url = block.querySelector('.block-image-r2url') ? block.querySelector('.block-image-r2url').value.trim() : '';
+            const gdriveUrl = block.querySelector('.block-gdrive-url') ? block.querySelector('.block-gdrive-url').value.trim() : '';
+            
+            const hasFiles = Boolean(r2Url || gdriveUrl);
+            
+            if (hasFiles) {
+                if (!confirm('Are you sure you want to delete this block section and permanently remove its uploaded images/files from storage?')) {
+                    return;
+                }
+            }
+            
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
+            
+            const deleteTasks = [];
+            
+            // Check R2 / Block Image
+            if (r2Url) {
+                const gFileId = extractGdriveFileId(r2Url);
+                if (gFileId) {
+                    deleteTasks.push(deleteFromGDrive(gFileId));
+                } else {
+                    const cfFile = extractCloudflareFileName(r2Url);
+                    if (cfFile) {
+                        deleteTasks.push(deleteFromCloudflare(cfFile));
+                    }
+                }
+            }
+            
+            // Check GDrive File / Image
+            if (gdriveUrl) {
+                const gFileId = extractGdriveFileId(gdriveUrl);
+                if (gFileId) {
+                    deleteTasks.push(deleteFromGDrive(gFileId));
+                }
+            }
+            
+            if (deleteTasks.length > 0) {
+                showToast('Deleting section images/files from storage...', 'success');
+                await Promise.allSettled(deleteTasks);
+                showToast('Block and associated files deleted!', 'success');
+            }
+            
+            block.remove();
+        }
+
+        function moveDocBlockToTop(btn) {
+            const block = btn.closest('.doc-block');
+            const container = document.getElementById('docBlocksContainer');
+            if (!block || !container) return;
+            if (container.firstElementChild === block) {
+                showToast('This section is already at the top!', 'info');
+                return;
+            }
+            block.style.transition = 'all 0.3s ease';
+            block.style.opacity = '0.3';
+            block.style.transform = 'translateY(-15px)';
+            setTimeout(() => {
+                container.insertBefore(block, container.firstElementChild);
+                block.style.opacity = '1';
+                block.style.transform = 'translateY(0)';
+                block.classList.add('row-restored-highlight');
+                block.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                showToast('Block section moved to top (#1 position)!', 'success');
+            }, 200);
         }
 
         let docBlockCounter = 0;
@@ -2837,8 +3257,10 @@
             docBlockCounter++;
             const container = document.getElementById('docBlocksContainer');
             const blockHtml = `
-                <div class="doc-block" id="docBlock_${docBlockCounter}" style="background: var(--dark-panel); padding: 20px; border-radius: 12px; border: 1px solid var(--border); position: relative;">
-                    <button class="btn btn-danger" style="position: absolute; top: 16px; right: 16px; padding: 6px 12px;" onclick="this.parentElement.remove()"><i class="fa-solid fa-trash"></i></button>
+                    <div class="block-top-actions" style="position: absolute; top: 16px; right: 16px; display: flex; gap: 8px; align-items: center;">
+                        <button class="btn-restore" onclick="moveDocBlockToTop(this)" title="Restore to Top (#1 Section)"><i class="fa-solid fa-angles-up"></i> <span>Restore Top</span></button>
+                        <button class="btn btn-danger" style="padding: 6px 12px; font-size: 13px;" onclick="removeDocBlock(this)" title="Delete Section & Images"><i class="fa-solid fa-trash"></i></button>
+                    </div>
                     <h4 style="margin-bottom: 16px; color: var(--primary);">Block Section</h4>
                     <div class="form-group" style="margin-bottom: 16px;">
                         <label><strong>Block Title</strong></label>
@@ -2849,13 +3271,13 @@
                         <textarea class="api-input block-desc" style="width: 100%; margin-top: 8px; min-height: 80px;" placeholder="Describe what this block does..."></textarea>
                     </div>
                     <div class="form-group">
-                        <label><strong>Block Image (Will auto-upload to R2)</strong></label>
+                        <label><strong>Block Image (Upload to R2 / Google Drive)</strong></label>
                         <input type="file" accept="image/*" class="block-image-file" style="padding: 10px; border: 1px dashed var(--border); width: 100%; border-radius: 8px; margin-top: 8px; background: var(--bg); color: white;" onchange="previewDocImage(this)">
                         <input type="hidden" class="block-image-r2url" value="">
                         <img class="block-image-preview" src="" style="display: none; max-width: 100%; max-height: 200px; margin-top: 10px; border-radius: 8px; border: 1px solid var(--border);">
                     </div>
                     <div class="form-group" style="margin-top: 16px;">
-                        <label><strong>GDrive File (Will auto-upload to Google Drive)</strong></label>
+                        <label><strong>GDrive Image / File (Will auto-upload to your Google Drive Folder ID)</strong></label>
                         <input type="file" class="block-gdrive-file" style="padding: 10px; border: 1px dashed var(--border); width: 100%; border-radius: 8px; margin-top: 8px; background: var(--bg); color: white;" onchange="previewDocImage(this)">
                         <input type="hidden" class="block-gdrive-url" value="">
                         <input type="hidden" class="block-gdrive-filename" value="">
@@ -2974,7 +3396,111 @@
             btn.disabled = true;
             
             try {
-                // Upload images sequentially
+                // Retrieve Google Drive Script URL and Folder ID (Docs Creator input has first priority!)
+                const docsScriptEl = document.getElementById('docsGdriveScriptUrl');
+                const mainScriptEl = document.getElementById('gdriveScriptUrl');
+                const scriptUrl = (docsScriptEl && docsScriptEl.value.trim()) || 
+                                  (mainScriptEl && mainScriptEl.value.trim()) || 
+                                  localStorage.getItem('docsGdriveScriptUrl') || 
+                                  localStorage.getItem('gdriveScriptUrl') || '';
+
+                const docsFolderEl = document.getElementById('docsGdriveFolderId');
+                const mainFolderEl = document.getElementById('gdriveFolderId');
+                let folderId = (docsFolderEl && docsFolderEl.value.trim()) || 
+                               (mainFolderEl && mainFolderEl.value.trim()) || 
+                               localStorage.getItem('docsGdriveFolderId') || 
+                               localStorage.getItem('gdriveFolderId') || '';
+                if (!folderId) folderId = '148xTETECosVSbmltgA2bgl1K-prAmmmC';
+
+                // Helper to upload files/images directly to Google Drive Folder
+                const uploadToGoogleDrive = async (blobToUpload, targetFileName, mimeType, statusText) => {
+                    if (!scriptUrl) {
+                        throw new Error('Google Apps Script URL is missing. Please configure it in Google Drive Integration section.');
+                    }
+                    if (!folderId) {
+                        throw new Error('Google Drive Folder ID is missing. Please enter your Google Drive Folder ID.');
+                    }
+
+                    btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> ${statusText}...`;
+
+                    // Safe duplicate check (won't crash if Apps Script doesn't support check_duplicate)
+                    try {
+                        const checkRes = await fetch(scriptUrl, {
+                            method: 'POST',
+                            body: JSON.stringify({ action: 'check_duplicate', fileName: targetFileName, folderId: folderId })
+                        });
+                        const checkData = await checkRes.json();
+                        if (checkData && checkData.status === 'success' && checkData.exists) {
+                            const choice = confirm(`Google Drive file "${targetFileName}" already exists in the selected folder!\n\nClick [OK] to UPDATE (Replace) the file.\nClick [Cancel] to RENAME this new file.`);
+                            if (!choice) {
+                                let newName = prompt("Enter new file name:", "new_" + targetFileName);
+                                if (!newName) throw new Error("Upload cancelled by user.");
+                                targetFileName = newName.trim();
+                            } else if (checkData.fileId) {
+                                await fetch(scriptUrl, {
+                                    method: 'POST',
+                                    body: JSON.stringify({ action: 'delete_gdrive_file', fileId: checkData.fileId })
+                                }).catch(e => console.warn(e));
+                            }
+                        }
+                    } catch (chkErr) {
+                        if (chkErr.message === "Upload cancelled by user.") throw chkErr;
+                        console.warn("Duplicate check skipped or not supported:", chkErr);
+                    }
+
+                    // Convert blob to Data URL
+                    const dataUrl = await new Promise((resolve, reject) => {
+                        const reader = new FileReader();
+                        reader.onload = () => resolve(reader.result);
+                        reader.onerror = reject;
+                        reader.readAsDataURL(blobToUpload);
+                    });
+
+                    const base64data = dataUrl.includes('base64,') ? dataUrl.split('base64,')[1] : dataUrl;
+                    const finalMime = mimeType || (blobToUpload.type ? blobToUpload.type : 'application/octet-stream');
+
+                    // Comprehensive payload: works seamlessly with existing & updated Google Apps Script
+                    const payload = {
+                        action: 'upload',
+                        image: dataUrl,
+                        filename: targetFileName,
+                        fileName: targetFileName,
+                        file: dataUrl,
+                        base64: base64data,
+                        mimeType: finalMime,
+                        contentType: finalMime,
+                        folderId: folderId
+                    };
+
+                    const response = await fetch(scriptUrl, {
+                        method: 'POST',
+                        body: JSON.stringify(payload)
+                    });
+
+                    let data;
+                    try {
+                        const text = await response.text();
+                        data = JSON.parse(text);
+                    } catch(jsonErr) {
+                        throw new Error("Invalid response from Google Drive. Ensure your Google Apps Script is deployed with Access: 'Anyone'.");
+                    }
+
+                    if (data && data.status === 'success') {
+                        const directUrl = data.url || data.directUrl || data.viewUrl || (data.fileId ? `https://drive.google.com/u/0/uc?id=${data.fileId}` : '');
+                        return {
+                            url: directUrl,
+                            fileId: data.fileId || '',
+                            viewUrl: data.viewUrl || directUrl,
+                            downloadUrl: data.downloadUrl || (data.fileId ? `https://drive.google.com/uc?export=download&id=${data.fileId}` : directUrl),
+                            fileName: targetFileName,
+                            size: data.size || blobToUpload.size || 0
+                        };
+                    } else {
+                        throw new Error((data && data.message) ? data.message : 'GDrive Upload failed');
+                    }
+                };
+
+                // 1. Upload Block Images (try R2 first, fallback to GDrive Folder)
                 for (let i = 0; i < blocks.length; i++) {
                     const block = blocks[i];
                     const fileInput = block.querySelector('.block-image-file');
@@ -2984,26 +3510,51 @@
                     
                     if (blobToUpload) {
                         const originalName = fileInput.files.length > 0 ? fileInput.files[0].name : 'image.jpg';
-                        const fileName = 'docs_' + Date.now() + '_' + originalName.replace(/\s+/g, '_');
+                        let fileName = 'docs_' + Date.now() + '_' + originalName.replace(/\s+/g, '_');
+                        if (!fileName.toLowerCase().match(/\.(jpg|jpeg|png|gif|webp)$/i)) fileName += '.jpg';
                         
                         btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Uploading Image ${i+1}/${blocks.length}...`;
-                        const res = await fetch(`${url}/?action=upload_file&file=${encodeURIComponent(fileName)}`, {
-                            method: 'POST',
-                            headers: { 'Authorization': getAuthHeader() },
-                            body: blobToUpload
-                        });
-                        const data = await res.json();
-                        if (data.status === 'success') {
-                            urlInput.value = `${url}/?action=view_page&file=${encodeURIComponent(fileName)}`;
+                        let uploaded = false;
+                        
+                        if (url) {
+                            try {
+                                const res = await fetch(`${url}/?action=upload_file&file=${encodeURIComponent(fileName)}`, {
+                                    method: 'POST',
+                                    headers: { 'Authorization': getAuthHeader() },
+                                    body: blobToUpload
+                                });
+                                const data = await res.json();
+                                if (data && data.status === 'success') {
+                                    urlInput.value = `${url}/?action=view_page&file=${encodeURIComponent(fileName)}`;
+                                    fileInput.value = '';
+                                    fileInput.croppedBlob = null;
+                                    uploaded = true;
+                                }
+                            } catch (r2Err) {
+                                console.warn('R2 upload failed, attempting Google Drive fallback...', r2Err);
+                            }
+                        }
+
+                        // Fallback to Google Drive if R2 is not used or fails
+                        if (!uploaded && scriptUrl && folderId) {
+                            const gdriveRes = await uploadToGoogleDrive(blobToUpload, fileName, 'image/jpeg', `Uploading Block Image ${i+1}/${blocks.length} to GDrive`);
+                            let directImgUrl = gdriveRes.url;
+                            if (gdriveRes.fileId) {
+                                directImgUrl = `https://drive.google.com/thumbnail?id=${gdriveRes.fileId}&sz=w1000`;
+                            }
+                            urlInput.value = directImgUrl;
                             fileInput.value = '';
                             fileInput.croppedBlob = null;
-                        } else {
-                            throw new Error(data.error || 'Upload failed for image ' + (i+1));
+                            uploaded = true;
+                        }
+
+                        if (!uploaded) {
+                            throw new Error('Upload failed for image ' + (i+1));
                         }
                     }
                 }
                 
-                // Upload GDrive files sequentially
+                // 2. Upload GDrive files sequentially
                 for (let i = 0; i < blocks.length; i++) {
                     const block = blocks[i];
                     const gdriveInput = block.querySelector('.block-gdrive-file');
@@ -3011,87 +3562,27 @@
                     const gdriveNameInput = block.querySelector('.block-gdrive-filename');
                     const gdriveSizeInput = block.querySelector('.block-gdrive-size');
                     
-                    if (gdriveInput && gdriveInput.files.length > 0) {
-                        const scriptUrl = localStorage.getItem('gdriveScriptUrl') || (document.getElementById('gdriveScriptUrl') ? document.getElementById('gdriveScriptUrl').value.trim() : '');
-                        let folderId = localStorage.getItem('gdriveFolderId') || (document.getElementById('gdriveFolderId') ? document.getElementById('gdriveFolderId').value.trim() : '');
-                        if (!folderId) folderId = '148xTETECosVSbmltgA2bgl1K-prAmmmC'; // Default to provided ID
-                        
-                        if (!scriptUrl) {
-                            throw new Error('Google Apps Script URL is missing. Please configure it in Google Drive Settings first.');
-                        }
-                        
-                        const file = gdriveInput.files[0];
-                        let fileName = file.name;
-                        
-                        btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Checking GDrive duplicates ${i+1}/${blocks.length}...`;
-                        try {
-                            const checkRes = await fetch(scriptUrl, {
-                                method: 'POST',
-                                body: JSON.stringify({ action: 'check_duplicate', fileName: fileName, folderId: folderId })
-                            });
-                            const checkData = await checkRes.json();
-                            if (checkData.status === 'success' && checkData.exists) {
-                                const choice = confirm(`GDrive File "${fileName}" already exists!\n\nClick [OK] to UPDATE (Replace) the file in Google Drive.\nClick [Cancel] to RENAME this new file.`);
-                                if (!choice) {
-                                    let newName = prompt("Enter new file name:", "new_" + fileName);
-                                    if (!newName) throw new Error("Upload cancelled by user.");
-                                    fileName = newName.trim();
-                                } else {
-                                    btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Deleting old file...`;
-                                    await fetch(scriptUrl, { method: 'POST', body: JSON.stringify({ action: 'delete_gdrive_file', fileId: checkData.fileId }) }).catch(e => console.error(e));
-                                }
-                            }
-                        } catch (e) {
-                            if (e.message === "Upload cancelled by user.") throw e;
-                            console.error("Duplicate check failed, continuing upload...", e);
-                        }
-
-                        btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Uploading GDrive File ${i+1}/${blocks.length}...`;
-                        
+                    if (gdriveInput && (gdriveInput.croppedBlob || gdriveInput.files.length > 0)) {
+                        const file = gdriveInput.files.length > 0 ? gdriveInput.files[0] : null;
+                        let fileName = file ? file.name : ('file_' + Date.now());
                         const blobToUpload = gdriveInput.croppedBlob || file;
-                        let mimeType = gdriveInput.croppedBlob ? 'image/jpeg' : file.type;
+                        let mimeType = gdriveInput.croppedBlob ? 'image/jpeg' : (file ? file.type : 'application/octet-stream');
                         if (gdriveInput.croppedBlob && !fileName.toLowerCase().match(/\.(jpg|jpeg|png|gif|webp)$/i)) {
                             fileName += '.jpg';
                         }
                         
-                        const base64data = await new Promise((resolve, reject) => {
-                            const reader = new FileReader();
-                            reader.onload = () => resolve(reader.result.split(',')[1]);
-                            reader.onerror = reject;
-                            reader.readAsDataURL(blobToUpload);
-                        });
-
-                        const response = await fetch(scriptUrl, {
-                            method: 'POST',
-                            body: JSON.stringify({
-                                base64: base64data,
-                                fileName: fileName,
-                                mimeType: mimeType,
-                                folderId: folderId
-                            })
-                        });
-
-                        let data;
-                        try {
-                            const text = await response.text();
-                            data = JSON.parse(text);
-                        } catch(e) {
-                            throw new Error("Invalid response from Google Drive. Ensure 'Third-Party Cookies' are enabled in your browser.");
-                        }
+                        const gdriveResult = await uploadToGoogleDrive(blobToUpload, fileName, mimeType, `Uploading GDrive File ${i+1}/${blocks.length}`);
                         
-                        if (data.status === 'success') {
-                            gdriveUrlInput.value = data.url;
-                            gdriveNameInput.value = fileName;
-                            gdriveSizeInput.value = data.size || file.size;
-                            gdriveInput.value = '';
-                            gdriveInput.croppedBlob = null;
-                            const statusDiv = block.querySelector('.gdrive-status');
-                            if(statusDiv) {
-                                statusDiv.style.display = 'block';
-                                statusDiv.innerHTML = `<i class="fa-solid fa-check-circle"></i> Attached: ${fileName}`;
-                            }
-                        } else {
-                            throw new Error(data.message || 'GDrive Upload failed for block ' + (i+1));
+                        gdriveUrlInput.value = gdriveResult.url;
+                        gdriveNameInput.value = gdriveResult.fileName;
+                        gdriveSizeInput.value = gdriveResult.size;
+                        gdriveInput.value = '';
+                        gdriveInput.croppedBlob = null;
+                        
+                        const statusDiv = block.querySelector('.gdrive-status');
+                        if (statusDiv) {
+                            statusDiv.style.display = 'block';
+                            statusDiv.innerHTML = `<i class="fa-solid fa-check-circle"></i> Attached: ${gdriveResult.fileName} (Google Drive)`;
                         }
                     }
                 }
@@ -3149,12 +3640,13 @@
                         if (isImage) {
                             let imgUrl = bGDriveUrl;
                             const matchId = bGDriveUrl.match(/id=([^&]+)/);
-                            if (matchId && matchId[1]) {
-                                imgUrl = `https://drive.google.com/thumbnail?id=${matchId[1]}&sz=w1000`;
+                            const gFileId = matchId ? matchId[1] : '';
+                            if (gFileId) {
+                                imgUrl = `https://drive.google.com/thumbnail?id=${gFileId}&sz=w1000`;
                             }
                             gdriveHtml = `
                             <div class="block-image-container" style="margin-top: 20px;">
-                                <img src="${imgUrl}" alt="${bGDriveName}" style="width: 100%; height: auto; display: block; margin: 0 auto; border-radius: 8px; object-fit: cover;">
+                                <img src="${imgUrl}" alt="${bGDriveName}" style="width: 100%; height: auto; display: block; margin: 0 auto; border-radius: 8px; object-fit: cover;" onerror="if(!this.dataset.retry && '${gFileId}'){this.dataset.retry=1;this.src='https://lh3.googleusercontent.com/d/${gFileId}';}">
                             </div>`;
                         } else {
                             let sizeStr = '';
@@ -3391,6 +3883,7 @@
                             <td><strong id="title_${f.key}">Loading...</strong></td>
                             <td><span style="color: var(--primary);">${slug}</span></td>
                             <td class="actions-cell">
+                                <button class="btn-restore" onclick="restoreDocRowToTop(this)" title="Restore to Top (#1 Position)"><i class="fa-solid fa-angles-up"></i> <span>Restore Top</span></button>
                                 <a href="${url}/?action=view_page&file=${encodeURIComponent(slug)}" target="_blank" class="btn-icon" style="background: rgba(16, 185, 129, 0.1); color: var(--secondary);" title="View"><i class="fa-solid fa-eye"></i></a>
                                 <button class="btn-icon btn-edit" onclick="editDoc('${f.key}')" title="Edit"><i class="fa-solid fa-pen"></i></button>
                                 <button class="btn-icon btn-delete" onclick="deleteDoc('${slug}', '${f.key}')" title="Delete"><i class="fa-solid fa-trash"></i></button>
@@ -3411,6 +3904,19 @@
             } catch (e) {
                 tbody.innerHTML = '<tr><td colspan="3" style="text-align: center; color: var(--danger);">Error loading data.</td></tr>';
             }
+        }
+
+        function restoreDocRowToTop(btn) {
+            const tr = btn.closest('tr');
+            const tbody = document.getElementById('docsTableBody');
+            if (!tr || !tbody) return;
+            if (tbody.firstElementChild === tr) {
+                showToast('This document is already at the top!', 'info');
+                return;
+            }
+            tr.classList.add('row-restored-highlight');
+            tbody.insertBefore(tr, tbody.firstElementChild);
+            showToast('Documentation page restored to top (#1 position)!', 'success');
         }
 
         async function editDoc(jsonKey) {
@@ -3464,6 +3970,19 @@
                                     statusDiv.style.display = 'block';
                                     statusDiv.innerHTML = `<i class="fa-solid fa-check-circle"></i> Attached: ${b.gdriveName}`;
                                 }
+                                const isImg = (b.gdriveName || '').match(/\.(jpeg|jpg|gif|png|webp|svg|bmp)$/i);
+                                if (isImg) {
+                                    const gdriveImgPreview = currentBlock.querySelector('.block-gdrive-preview');
+                                    if (gdriveImgPreview) {
+                                        let previewUrl = b.gdriveUrl;
+                                        const matchId = b.gdriveUrl.match(/id=([^&]+)/);
+                                        if (matchId && matchId[1]) {
+                                            previewUrl = `https://drive.google.com/thumbnail?id=${matchId[1]}&sz=w1000`;
+                                        }
+                                        gdriveImgPreview.src = previewUrl;
+                                        gdriveImgPreview.style.display = 'block';
+                                    }
+                                }
                             }
                         }
                     });
@@ -3481,51 +4000,122 @@
         }
 
         async function deleteDoc(slug, jsonKey) {
-            if (!confirm(`Are you sure you want to permanently delete "${slug}" and all its images?`)) return;
+            if (!confirm(`Are you sure you want to permanently delete "${slug}"?\n\nThis will completely delete:\n• The web documentation page\n• All Cloudflare images\n• All Google Drive images & files\n• All associated state and extra files`)) return;
             
             const url = getBaseUrl();
-            if (!url) return;
+            if (!url) return showToast('API URL not connected!', 'error');
+
+            showToast(`Analyzing and deleting all files for "${slug}"...`, 'success');
             
             try {
-                // 1. Fetch JSON to find image URLs
-                const res = await fetch(`${url}/?action=view_page&file=${encodeURIComponent(jsonKey)}`);
-                const data = await res.json();
-                
-                let filesToDelete = [slug, jsonKey];
-                
-                if (data.blocks) {
-                    data.blocks.forEach(b => {
-                        if (b.imageUrl) {
-                            // Extract filename from URL (action=view_page&file=XYZ)
-                            const match = b.imageUrl.match(/file=([^&]+)/);
-                            if (match && match[1]) {
-                                filesToDelete.push(decodeURIComponent(match[1]));
-                            }
+                const cfFilesToDelete = new Set();
+                const gdriveFileIdsToDelete = new Set();
+
+                // Main web page and JSON state file
+                if (slug) cfFilesToDelete.add(slug);
+                if (jsonKey) cfFilesToDelete.add(jsonKey);
+
+                // Helper to extract Cloudflare & GDrive files from text / URLs
+                function collectFilesFromText(text) {
+                    if (!text) return;
+                    // Find Google Drive IDs
+                    const gdriveMatches = text.matchAll(/(?:drive\.google\.com\/(?:thumbnail|uc|file\/d\/|open)\?[^"'>\s]*id=|\/d\/|googleusercontent\.com\/d\/)([a-zA-Z0-9_-]{20,})/gi);
+                    for (const m of gdriveMatches) {
+                        if (m && m[1]) gdriveFileIdsToDelete.add(m[1]);
+                    }
+                    const directIdMatches = text.matchAll(/[?&]id=([a-zA-Z0-9_-]{20,})/gi);
+                    for (const m of directIdMatches) {
+                        if (m && m[1]) gdriveFileIdsToDelete.add(m[1]);
+                    }
+                    // Find Cloudflare R2 files
+                    const cfFileMatches = text.matchAll(/[?&]file=([^&"'>\s]+)/gi);
+                    for (const m of cfFileMatches) {
+                        if (m && m[1]) {
+                            const decoded = decodeURIComponent(m[1]);
+                            cfFilesToDelete.add(decoded);
                         }
-                        if (b.gdriveUrl) {
-                            const gdriveMatch = b.gdriveUrl.match(/id=([^&]+)/);
-                            if (gdriveMatch && gdriveMatch[1]) {
-                                const fileId = gdriveMatch[1];
-                                const scriptUrl = localStorage.getItem('gdriveScriptUrl') || (document.getElementById('gdriveScriptUrl') ? document.getElementById('gdriveScriptUrl').value.trim() : '');
-                                if (scriptUrl) {
-                                    fetch(scriptUrl, { method: 'POST', body: JSON.stringify({ action: 'delete_gdrive_file', fileId: fileId }) }).catch(e => console.error(e));
-                                }
-                            }
-                        }
-                    });
+                    }
                 }
-                
-                showToast(`Deleting ${filesToDelete.length} files...`, 'success');
-                
-                // Delete all files
-                for (const file of filesToDelete) {
-                    await fetch(`${url}/?action=delete_file&file=${encodeURIComponent(file)}`, {
-                        method: 'DELETE',
+
+                // 1. Fetch JSON state to find all blocks and their images/files
+                if (jsonKey) {
+                    try {
+                        const res = await fetch(`${url}/?action=view_page&file=${encodeURIComponent(jsonKey)}`);
+                        const data = await res.json();
+                        if (data && data.blocks) {
+                            data.blocks.forEach(b => {
+                                if (b.imageUrl) {
+                                    const gId = extractGdriveFileId(b.imageUrl);
+                                    if (gId) {
+                                        gdriveFileIdsToDelete.add(gId);
+                                    } else {
+                                        const cfFile = extractCloudflareFileName(b.imageUrl);
+                                        if (cfFile) cfFilesToDelete.add(cfFile);
+                                    }
+                                    collectFilesFromText(b.imageUrl);
+                                }
+                                if (b.gdriveUrl) {
+                                    const gId = extractGdriveFileId(b.gdriveUrl);
+                                    if (gId) gdriveFileIdsToDelete.add(gId);
+                                    collectFilesFromText(b.gdriveUrl);
+                                }
+                            });
+                        }
+                    } catch (e) {
+                        console.warn('Could not parse JSON state during deletion:', e);
+                    }
+                }
+
+                // 2. Fetch HTML page to catch any extra embedded images
+                if (slug) {
+                    try {
+                        const htmlRes = await fetch(`${url}/?action=view_page&file=${encodeURIComponent(slug)}`);
+                        const htmlText = await htmlRes.text();
+                        collectFilesFromText(htmlText);
+                    } catch (e) {
+                        console.warn('Could not fetch HTML during deletion:', e);
+                    }
+                }
+
+                // 3. Search R2 file list for any extra files created for this slug
+                try {
+                    const baseSlug = slug.replace('.html', '');
+                    const listRes = await fetch(`${url}/?action=list_files`, {
                         headers: { 'Authorization': getAuthHeader() }
                     });
+                    const listData = await listRes.json();
+                    if (listData && listData.files) {
+                        listData.files.forEach(f => {
+                            if (f.key && (f.key.startsWith('docs_data_' + baseSlug) || f.key === baseSlug + '.json' || f.key === baseSlug + '.html')) {
+                                cfFilesToDelete.add(f.key);
+                            }
+                        });
+                    }
+                } catch (e) {
+                    console.warn('Could not search file list during deletion:', e);
                 }
-                
-                showToast('Documentation deleted successfully!', 'success');
+
+                // 4. Delete all Google Drive files & images
+                const gdriveArray = Array.from(gdriveFileIdsToDelete);
+                if (gdriveArray.length > 0) {
+                    showToast(`Deleting ${gdriveArray.length} file(s) from Google Drive...`, 'success');
+                    const gdrivePromises = gdriveArray.map(fId => deleteFromGDrive(fId));
+                    await Promise.allSettled(gdrivePromises);
+                }
+
+                // 5. Delete all Cloudflare files & images
+                const cfArray = Array.from(cfFilesToDelete);
+                if (cfArray.length > 0) {
+                    showToast(`Deleting ${cfArray.length} file(s) from Cloudflare...`, 'success');
+                    for (const file of cfArray) {
+                        await fetch(`${url}/?action=delete_file&file=${encodeURIComponent(file)}`, {
+                            method: 'DELETE',
+                            headers: { 'Authorization': getAuthHeader() }
+                        }).catch(e => console.warn(e));
+                    }
+                }
+
+                showToast(`"${slug}" and all associated images/files were completely deleted!`, 'success');
                 loadDocsList();
             } catch (e) {
                 showToast('Error deleting document: ' + e.message, 'error');
