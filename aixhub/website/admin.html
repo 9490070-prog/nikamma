@@ -237,58 +237,53 @@
 
         .btn-restore {
             position: relative;
-            background: linear-gradient(135deg, #ff9800 0%, #f59e0b 45%, #ea580c 100%);
+            background: linear-gradient(135deg, #f59e0b 0%, #ea580c 100%);
             color: #ffffff !important;
-            padding: 8px 16px;
-            font-size: 12px;
-            font-weight: 800;
-            border-radius: 9999px;
-            border: 1.5px solid rgba(255, 255, 255, 0.75);
+            padding: 5px 9px;
+            font-size: 11px;
+            font-weight: 600;
+            border-radius: 6px;
+            border: 1px solid rgba(255, 255, 255, 0.3);
             cursor: pointer;
             display: inline-flex;
             align-items: center;
             justify-content: center;
-            gap: 7px;
-            text-transform: uppercase;
-            letter-spacing: 0.8px;
-            box-shadow: 0 4px 15px rgba(245, 158, 11, 0.45), 0 2px 4px rgba(0, 0, 0, 0.25), inset 0 1px 1px rgba(255, 255, 255, 0.6);
-            transition: all 0.28s cubic-bezier(0.4, 0, 0.2, 1);
+            gap: 4px;
+            letter-spacing: 0.3px;
+            box-shadow: 0 2px 6px rgba(234, 88, 12, 0.25);
+            transition: all 0.2s ease;
             white-space: nowrap;
-            overflow: hidden;
-            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.35);
-            line-height: 1;
-        }
-        .btn-restore::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: -100%;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
-            transition: left 0.5s ease;
-        }
-        .btn-restore:hover::before {
-            left: 100%;
+            line-height: 1.2;
+            height: 28px;
+            box-sizing: border-box;
         }
         .btn-restore i {
-            font-size: 13.5px;
-            filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.3));
-            transition: transform 0.28s cubic-bezier(0.34, 1.56, 0.64, 1);
+            font-size: 11px;
+            transition: transform 0.2s ease;
         }
         .btn-restore:hover {
-            background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 40%, #e11d48 100%);
+            background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
             color: #ffffff !important;
-            box-shadow: 0 6px 20px rgba(245, 158, 11, 0.65), 0 3px 6px rgba(0, 0, 0, 0.35), inset 0 1px 2px rgba(255, 255, 255, 0.8);
-            transform: translateY(-2px) scale(1.05);
-            border-color: #ffffff;
+            box-shadow: 0 3px 10px rgba(245, 158, 11, 0.45);
+            transform: translateY(-1px);
+            border-color: rgba(255, 255, 255, 0.6);
         }
         .btn-restore:hover i {
-            transform: translateY(-2px) scale(1.15);
+            transform: translateY(-1px);
         }
         .btn-restore:active {
-            transform: translateY(1px) scale(0.97);
-            box-shadow: 0 2px 6px rgba(245, 158, 11, 0.35);
+            transform: translateY(0);
+            box-shadow: 0 1px 3px rgba(245, 158, 11, 0.3);
+        }
+
+        @media (max-width: 768px) {
+            .btn-restore {
+                padding: 5px 7px;
+                gap: 0;
+            }
+            .btn-restore span {
+                display: none;
+            }
         }
 
         @keyframes highlightRestoreRow {
@@ -717,8 +712,8 @@
                     </div>
                     <div style="display: flex; gap: 12px; align-items: center; flex-wrap: wrap;">
                         <div class="loader" id="tableLoader"></div>
-                        <button class="btn-restore" id="restoreSelectedBtn" onclick="restoreSelectedToTop()" style="display: none; padding: 8px 18px; font-size: 13px;">
-                            <i class="fa-solid fa-angles-up"></i> <span>Restore Selected (<span id="restoreSelectedCount">0</span>)</span>
+                        <button class="btn-restore" id="restoreSelectedBtn" onclick="restoreSelectedToTop()" style="display: none;">
+                            <i class="fa-solid fa-angles-up"></i> <span>Top (<span id="restoreSelectedCount">0</span>)</span>
                         </button>
                         <button class="btn btn-danger" id="deleteSelectedBtn" onclick="deleteSelected()" style="display: none;">
                             <i class="fa-solid fa-trash-can"></i> Delete Selected (<span id="selectedCount">0</span>)
@@ -1605,6 +1600,13 @@
                 if (currentTable === 'Purchased_data' && row['UserEmail']) {
                     const safeEmail = String(row['UserEmail']).replace(/'/g, "\\'");
                     extraArgs = `, 'UserEmail', '${safeEmail}'`;
+                } else if (!rowId || rowId === 'null' || rowId === 'undefined') {
+                    // Fallback to delete by another identifying column if ID is null/missing
+                    const fallbackCol = tableColumns.find(c => c.toLowerCase() !== 'id' && c.toLowerCase() !== 'uniqueid' && row[c] && typeof row[c] === 'string' && row[c].trim() !== '');
+                    if (fallbackCol && row[fallbackCol]) {
+                        const safeVal = String(row[fallbackCol]).replace(/'/g, "\\'");
+                        extraArgs = `, '${fallbackCol}', '${safeVal}'`;
+                    }
                 }
 
                 // Extra actions for Payment_Methods
@@ -1627,7 +1629,7 @@
                 }
                 
                 actionsHtml += `
-                    <button class="btn-restore" onclick="restoreRecordToTop('${rowId}'${extraArgs})" title="Restore to Top (#1 Position)"><i class="fa-solid fa-angles-up"></i> <span>Restore Top</span></button>
+                    <button class="btn-restore" onclick="restoreRecordToTop('${rowId}'${extraArgs})" title="Restore to Top (#1 Position)"><i class="fa-solid fa-angles-up"></i> <span>Top</span></button>
                     <button class="btn-icon btn-edit" onclick="openModal('edit', '${rowId}'${extraArgs})" title="Edit"><i class="fa-solid fa-pen"></i></button>
                     <button class="btn-icon btn-delete" onclick="deleteRecord('${rowId}'${extraArgs})" title="Delete"><i class="fa-solid fa-trash"></i></button>
                 </div>`;
@@ -2488,7 +2490,7 @@
                         <td>${sizeMb}</td>
                         <td>${date}</td>
                         <td>
-                            <button class="btn-restore" onclick="restoreFileRowToTop(this)" title="Restore to Top (#1 Position)"><i class="fa-solid fa-angles-up"></i> <span>Restore Top</span></button>
+                            <button class="btn-restore" onclick="restoreFileRowToTop(this)" title="Restore to Top (#1 Position)"><i class="fa-solid fa-angles-up"></i> <span>Top</span></button>
                             <button class="btn-icon" style="color: var(--primary); margin-left: 4px;" onclick="copyToClipboard('${link}')" title="Copy ${isPublic ? 'Public CDN / Google Drive Link' : 'Master Link'}"><i class="fa-solid fa-link"></i></button>
                             ${proxyBtn}
                             ${appScriptBtn}
@@ -3258,7 +3260,7 @@
             const container = document.getElementById('docBlocksContainer');
             const blockHtml = `
                     <div class="block-top-actions" style="position: absolute; top: 16px; right: 16px; display: flex; gap: 8px; align-items: center;">
-                        <button class="btn-restore" onclick="moveDocBlockToTop(this)" title="Restore to Top (#1 Section)"><i class="fa-solid fa-angles-up"></i> <span>Restore Top</span></button>
+                        <button class="btn-restore" onclick="moveDocBlockToTop(this)" title="Restore to Top (#1 Section)"><i class="fa-solid fa-angles-up"></i> <span>Top</span></button>
                         <button class="btn btn-danger" style="padding: 6px 12px; font-size: 13px;" onclick="removeDocBlock(this)" title="Delete Section & Images"><i class="fa-solid fa-trash"></i></button>
                     </div>
                     <h4 style="margin-bottom: 16px; color: var(--primary);">Block Section</h4>
@@ -3883,7 +3885,7 @@
                             <td><strong id="title_${f.key}">Loading...</strong></td>
                             <td><span style="color: var(--primary);">${slug}</span></td>
                             <td class="actions-cell">
-                                <button class="btn-restore" onclick="restoreDocRowToTop(this)" title="Restore to Top (#1 Position)"><i class="fa-solid fa-angles-up"></i> <span>Restore Top</span></button>
+                                <button class="btn-restore" onclick="restoreDocRowToTop(this)" title="Restore to Top (#1 Position)"><i class="fa-solid fa-angles-up"></i> <span>Top</span></button>
                                 <a href="${url}/?action=view_page&file=${encodeURIComponent(slug)}" target="_blank" class="btn-icon" style="background: rgba(16, 185, 129, 0.1); color: var(--secondary);" title="View"><i class="fa-solid fa-eye"></i></a>
                                 <button class="btn-icon btn-edit" onclick="editDoc('${f.key}')" title="Edit"><i class="fa-solid fa-pen"></i></button>
                                 <button class="btn-icon btn-delete" onclick="deleteDoc('${slug}', '${f.key}')" title="Delete"><i class="fa-solid fa-trash"></i></button>
