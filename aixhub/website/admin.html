@@ -1527,6 +1527,7 @@
                 if(currentTable === 'Login_User') defaultCols = ['id', 'name', 'email', 'password', 'otp'];
                 if(currentTable === 'Payment_Methods') defaultCols = ['ID', 'MethodType', 'MethodName', 'AccountTitle', 'AccountNumber', 'BankName', 'IBAN', 'Network', 'IconUrl', 'QR_Code_Url', 'Instructions', 'Status', 'SortOrder'];
                 if(currentTable === 'extensions_data') defaultCols = ['id', 'name', 'author', 'version', 'description', 'TitleColors', 'platforms', 'category', 'isFree', 'price', 'currency', 'downloadCount', 'rating', 'reviewCount', 'Aia URL', 'Aix URL', 'Zip URL', 'Image Slider URL', 'Apk URL', 'Localhost Price', 'isNew', 'AixTitleList', 'publish_date', 'update_date', 'AixDetailList', 'AixScreenShotList'];
+                if(currentTable === 'Aix_Apk_Update') defaultCols = ['Id', 'AppName', 'Description', 'Version', 'Downloads', 'UpdateURL', 'ApkDownloadURL', 'PrivacyPolicyURL', 'WebsiteURL', 'pin_slide_timer', 'slide_animation_type', 'slider_layout_show_hide'];
                 
                 tableColumns = defaultCols;
                 
@@ -1906,6 +1907,7 @@
             if(lower.includes('instruction')) return 'e.g. Send payment to this account and upload slip screenshot';
             if(lower.includes('name')) return 'e.g. John Doe';
             if(lower.includes('url') || lower.includes('link')) return 'e.g. https://example.com';
+            if(lower.includes('timer')) return 'e.g. 3';
             if(lower.includes('password')) return 'Enter secure password';
             if(lower === 'id' || lower === 'orderid') return 'Unique Identifier (Auto-generated if left blank)';
             return `Enter ${col} data...`;
@@ -1949,7 +1951,7 @@
                 let val = (recordData[col] !== undefined && recordData[col] !== null) ? recordData[col] : '';
                 const placeholder = getPlaceholder(col);
                 const colLower = col.toLowerCase();
-                const isDate = colLower.includes('date') || colLower.includes('time');
+                const isDate = (colLower.includes('date') || (colLower.includes('time') && !colLower.includes('timer'))) && !colLower.includes('timer');
                 
                 const friendlyCol = getFriendlyName(col);
                 
