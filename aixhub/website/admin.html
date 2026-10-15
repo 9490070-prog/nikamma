@@ -808,6 +808,133 @@
                     </div>
                 </div>
                 <div style="padding: 24px;">
+                    <!-- Dual Cloud Storage Overview (Cloudflare R2 & Google Drive) -->
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 16px; margin-bottom: 22px;">
+                        
+                        <!-- Cloudflare R2 Storage Card -->
+                        <div style="background: rgba(59, 130, 246, 0.04); border: 1px solid rgba(59, 130, 246, 0.22); border-radius: 12px; padding: 18px 20px; display: flex; flex-direction: column; justify-content: space-between; position: relative; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.15);">
+                            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 14px;">
+                                <div style="display: flex; align-items: center; gap: 12px;">
+                                    <div style="width: 42px; height: 42px; border-radius: 10px; background: rgba(59, 130, 246, 0.15); display: flex; align-items: center; justify-content: center; color: #3b82f6; font-size: 20px; flex-shrink: 0; box-shadow: 0 2px 8px rgba(59, 130, 246, 0.25);">
+                                        <i class="fa-solid fa-cloud"></i>
+                                    </div>
+                                    <div>
+                                        <h4 style="margin: 0; font-size: 15px; font-weight: 700; color: var(--text-main); display: flex; align-items: center; gap: 6px;">
+                                            <span>Cloudflare R2 Storage</span>
+                                        </h4>
+                                        <span style="font-size: 12px; color: var(--text-muted);">Free Tier: 10 GB Limit</span>
+                                    </div>
+                                </div>
+                                <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 4px;">
+                                    <span style="background: rgba(59, 130, 246, 0.15); color: #60a5fa; border: 1px solid rgba(59, 130, 246, 0.3); font-size: 11px; font-weight: 700; padding: 3px 8px; border-radius: 6px;">
+                                        <i class="fa-solid fa-file"></i> <span id="cfCardFileCount">0</span> Files
+                                    </span>
+                                    <button type="button" class="btn" onclick="fetchStorageStats()" style="padding: 3px 8px; font-size: 11px; background: transparent; color: var(--text-muted); border: 1px solid var(--border); border-radius: 6px;" title="Refresh R2 Stats">
+                                        <i class="fa-solid fa-rotate"></i> Refresh
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Metrics Row -->
+                            <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 8px;">
+                                <div>
+                                    <span style="font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-muted); font-weight: 600; display: block;">Used Storage</span>
+                                    <span id="cfStorageUsedDetail" style="font-size: 18px; font-weight: 800; color: #60a5fa;">0.00 MB</span>
+                                    <span id="cfStorageUsedPercent" style="font-size: 12px; color: var(--text-muted); font-weight: 600; margin-left: 4px;">(0%)</span>
+                                </div>
+                                <div style="text-align: right;">
+                                    <span style="font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-muted); font-weight: 600; display: block;">Free Remaining</span>
+                                    <span id="cfStorageFreeDetail" style="font-size: 15px; font-weight: 700; color: #10b981;">10.00 GB Free</span>
+                                    <span id="cfStorageFreePercent" style="font-size: 12px; color: var(--text-muted); font-weight: 600; margin-left: 4px;">(100%)</span>
+                                </div>
+                            </div>
+
+                            <!-- Visual Progress Bar / Line -->
+                            <div style="width: 100%; height: 10px; background: rgba(255, 255, 255, 0.08); border-radius: 999px; overflow: hidden; position: relative; margin-top: 4px; box-shadow: inset 0 1px 3px rgba(0,0,0,0.4);">
+                                <div id="cfStorageProgressBar" style="width: 0%; height: 100%; background: linear-gradient(90deg, #3b82f6, #06b6d4); border-radius: 999px; transition: width 0.7s cubic-bezier(0.4, 0, 0.2, 1); box-shadow: 0 0 10px rgba(59, 130, 246, 0.5);"></div>
+                            </div>
+                            <div style="display: flex; justify-content: space-between; font-size: 11px; color: var(--text-muted); margin-top: 6px;">
+                                <span>0 GB</span>
+                                <span style="font-weight: 600; color: var(--text-main);">10 GB Limit</span>
+                            </div>
+                        </div>
+
+                        <!-- Google Drive Storage Card -->
+                        <div style="background: rgba(16, 185, 129, 0.04); border: 1px solid rgba(16, 185, 129, 0.22); border-radius: 12px; padding: 18px 20px; display: flex; flex-direction: column; justify-content: space-between; position: relative; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.15);">
+                            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 14px;">
+                                <div style="display: flex; align-items: center; gap: 12px;">
+                                    <div style="width: 42px; height: 42px; border-radius: 10px; background: rgba(16, 185, 129, 0.15); display: flex; align-items: center; justify-content: center; color: #10b981; font-size: 20px; flex-shrink: 0; box-shadow: 0 2px 8px rgba(16, 185, 129, 0.25);">
+                                        <i class="fa-brands fa-google-drive"></i>
+                                    </div>
+                                    <div>
+                                        <h4 style="margin: 0; font-size: 15px; font-weight: 700; color: var(--text-main); display: flex; align-items: center; gap: 6px;">
+                                            <span>Google Drive Storage</span>
+                                        </h4>
+                                        <span id="gdriveAccountSubtitle" style="font-size: 12px; color: var(--text-muted);">Personal / Workspace Quota</span>
+                                    </div>
+                                </div>
+                                <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 4px;">
+                                    <span id="gdriveStatusBadge" style="background: rgba(245, 158, 11, 0.15); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.3); font-size: 11px; font-weight: 700; padding: 3px 8px; border-radius: 6px; display: inline-flex; align-items: center; gap: 4px;">
+                                        <i class="fa-solid fa-circle-notch fa-spin" style="display: none;" id="gdriveSpinner"></i>
+                                        <span id="gdriveStatusText">Checking...</span>
+                                    </span>
+                                    <div style="display: flex; gap: 4px;">
+                                        <button type="button" class="btn" onclick="fetchGDriveStorageStats()" style="padding: 3px 8px; font-size: 11px; background: transparent; color: var(--text-muted); border: 1px solid var(--border); border-radius: 6px;" title="Refresh GDrive Stats">
+                                            <i class="fa-solid fa-rotate"></i> Refresh
+                                        </button>
+                                        <button type="button" class="btn" onclick="toggleGDriveConfigDrawer()" style="padding: 3px 8px; font-size: 11px; background: transparent; color: #10b981; border: 1px solid rgba(16, 185, 129, 0.3); border-radius: 6px;" title="Configure Google Drive Apps Script URL">
+                                            <i class="fa-solid fa-gear"></i> Setup
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Metrics Row -->
+                            <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 8px;">
+                                <div>
+                                    <span style="font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-muted); font-weight: 600; display: block;">Used Storage</span>
+                                    <span id="gdriveStorageUsedDetail" style="font-size: 18px; font-weight: 800; color: #10b981;">--</span>
+                                    <span id="gdriveStorageUsedPercent" style="font-size: 12px; color: var(--text-muted); font-weight: 600; margin-left: 4px;">(--%)</span>
+                                </div>
+                                <div style="text-align: right;">
+                                    <span style="font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-muted); font-weight: 600; display: block;">Free Remaining</span>
+                                    <span id="gdriveStorageFreeDetail" style="font-size: 15px; font-weight: 700; color: #34d399;">--</span>
+                                    <span id="gdriveStorageFreePercent" style="font-size: 12px; color: var(--text-muted); font-weight: 600; margin-left: 4px;">(--%)</span>
+                                </div>
+                            </div>
+
+                            <!-- Visual Progress Bar / Line -->
+                            <div style="width: 100%; height: 10px; background: rgba(255, 255, 255, 0.08); border-radius: 999px; overflow: hidden; position: relative; margin-top: 4px; box-shadow: inset 0 1px 3px rgba(0,0,0,0.4);">
+                                <div id="gdriveStorageProgressBar" style="width: 0%; height: 100%; background: linear-gradient(90deg, #10b981, #059669); border-radius: 999px; transition: width 0.7s cubic-bezier(0.4, 0, 0.2, 1); box-shadow: 0 0 10px rgba(16, 185, 129, 0.5);"></div>
+                            </div>
+                            <div style="display: flex; justify-content: space-between; font-size: 11px; color: var(--text-muted); margin-top: 6px;">
+                                <span>0 GB</span>
+                                <span id="gdriveStorageTotalLabel" style="font-weight: 600; color: var(--text-main);">15 GB Total</span>
+                            </div>
+
+                            <!-- Collapsible Configuration Drawer -->
+                            <div id="gdriveConfigDrawer" style="display: none; margin-top: 14px; padding-top: 14px; border-top: 1px dashed rgba(16, 185, 129, 0.25);">
+                                <div style="display: flex; flex-direction: column; gap: 8px;">
+                                    <label style="font-size: 12px; color: var(--text-main); font-weight: 600;">
+                                        <i class="fa-solid fa-link" style="color: #10b981;"></i> Google Apps Script Web App URL:
+                                    </label>
+                                    <div style="display: flex; gap: 8px;">
+                                        <input type="text" id="gdriveConfigUrlInput" class="api-input" placeholder="https://script.google.com/macros/s/.../exec" style="flex: 1; font-size: 12px; padding: 7px 10px;">
+                                        <button type="button" class="btn btn-primary" onclick="saveAndApplyGDriveUrl()" style="padding: 7px 14px; font-size: 12px; white-space: nowrap;">
+                                            <i class="fa-solid fa-check"></i> Save & Test
+                                        </button>
+                                    </div>
+                                    <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 4px; flex-wrap: wrap; gap: 6px;">
+                                        <button type="button" class="btn" onclick="copyGDriveScriptToClipboard()" style="padding: 4px 10px; font-size: 11px; background: rgba(16, 185, 129, 0.15); color: #10b981; border: 1px solid rgba(16, 185, 129, 0.3); border-radius: 6px;">
+                                            <i class="fa-regular fa-copy"></i> Copy Google Apps Script Code
+                                        </button>
+                                        <span style="font-size: 11px; color: var(--text-muted);">Syncs with GDrive Upload Script URL</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
                     <!-- Cloudflare Free Limits Info -->
                     <div style="background: rgba(59, 130, 246, 0.05); border: 1px solid rgba(59, 130, 246, 0.2); border-radius: 8px; padding: 12px 16px; margin-bottom: 20px; display: flex; align-items: flex-start; gap: 12px;">
                         <i class="fa-solid fa-circle-info" style="color: var(--primary); margin-top: 2px;"></i>
@@ -1328,8 +1455,10 @@
             
             const savedGdriveScriptUrl = localStorage.getItem('gdriveScriptUrl');
             const savedGdriveFolderId = localStorage.getItem('gdriveFolderId');
-            if (savedGdriveScriptUrl && document.getElementById('docsGdriveScriptUrl')) {
-                document.getElementById('docsGdriveScriptUrl').value = savedGdriveScriptUrl;
+            if (savedGdriveScriptUrl) {
+                if (document.getElementById('docsGdriveScriptUrl')) document.getElementById('docsGdriveScriptUrl').value = savedGdriveScriptUrl;
+                if (document.getElementById('gdriveScriptUrl')) document.getElementById('gdriveScriptUrl').value = savedGdriveScriptUrl;
+                if (document.getElementById('gdriveConfigUrlInput')) document.getElementById('gdriveConfigUrlInput').value = savedGdriveScriptUrl;
             }
             if (savedGdriveFolderId && document.getElementById('docsGdriveFolderId')) {
                 document.getElementById('docsGdriveFolderId').value = savedGdriveFolderId;
@@ -2333,6 +2462,7 @@
             document.getElementById('uploadResult').style.display = 'none'; // reset
             
             fetchStorageStats();
+            fetchGDriveStorageStats();
         }
         
         let allR2Files = [];
@@ -2352,9 +2482,38 @@
                     const data = await response.json();
                     
                     // Update stats
-                    const mb = (data.totalBytes / (1024 * 1024)).toFixed(2);
-                    document.getElementById('storageUsed').innerText = `${mb} MB`;
-                    document.getElementById('fileCount').innerText = data.fileCount;
+                    const totalCfBytes = 10 * 1024 * 1024 * 1024; // 10 GB limit for R2 Free tier
+                    const usedBytes = Number(data.totalBytes) || 0;
+                    const freeBytes = Math.max(0, totalCfBytes - usedBytes);
+
+                    const mb = (usedBytes / (1024 * 1024)).toFixed(2);
+                    const gb = (usedBytes / (1024 * 1024 * 1024)).toFixed(2);
+                    const freeGb = (freeBytes / (1024 * 1024 * 1024)).toFixed(2);
+
+                    const pctUsed = Math.min(100, Math.max(0, (usedBytes / totalCfBytes) * 100));
+                    const pctFree = Math.max(0, 100 - pctUsed);
+
+                    const displayUsed = usedBytes >= (1024 * 1024 * 1024) ? `${gb} GB` : `${mb} MB`;
+                    const displayFree = `${freeGb} GB Free`;
+
+                    if (document.getElementById('storageUsed')) document.getElementById('storageUsed').innerText = displayUsed;
+                    if (document.getElementById('fileCount')) document.getElementById('fileCount').innerText = data.fileCount || 0;
+
+                    if (document.getElementById('cfCardFileCount')) document.getElementById('cfCardFileCount').innerText = data.fileCount || 0;
+                    if (document.getElementById('cfStorageUsedDetail')) document.getElementById('cfStorageUsedDetail').innerText = displayUsed;
+                    if (document.getElementById('cfStorageUsedPercent')) document.getElementById('cfStorageUsedPercent').innerText = `(${pctUsed.toFixed(1)}%)`;
+                    if (document.getElementById('cfStorageFreeDetail')) document.getElementById('cfStorageFreeDetail').innerText = displayFree;
+                    if (document.getElementById('cfStorageFreePercent')) document.getElementById('cfStorageFreePercent').innerText = `(${pctFree.toFixed(1)}%)`;
+                    if (document.getElementById('cfStorageProgressBar')) {
+                        document.getElementById('cfStorageProgressBar').style.width = `${pctUsed > 0 && pctUsed < 1 ? 1 : pctUsed.toFixed(1)}%`;
+                        if (pctUsed >= 90) {
+                            document.getElementById('cfStorageProgressBar').style.background = 'linear-gradient(90deg, #ef4444, #dc2626)';
+                        } else if (pctUsed >= 75) {
+                            document.getElementById('cfStorageProgressBar').style.background = 'linear-gradient(90deg, #f59e0b, #d97706)';
+                        } else {
+                            document.getElementById('cfStorageProgressBar').style.background = 'linear-gradient(90deg, #3b82f6, #06b6d4)';
+                        }
+                    }
                     
                     allR2Files = data.files || [];
                     renderFileCategories();
@@ -2364,6 +2523,325 @@
                 }
             } catch(e) {
                 document.getElementById('r2FileTableBody').innerHTML = '<tr><td colspan="5" style="text-align: center; color: #ef4444;">Network error.</td></tr>';
+            }
+        }
+
+        // --- GOOGLE DRIVE STORAGE LOGIC ---
+        const GDRIVE_APPS_SCRIPT_STORAGE_CODE = `function doGet(e) {
+  var action = (e && e.parameter && e.parameter.action) ? e.parameter.action : "storage";
+  
+  if (action === "storage" || !e || !e.parameter || !e.parameter.action) {
+    try {
+      var totalBytes = 0;
+      var usedBytes = 0;
+      var trashBytes = 0;
+      var driveFilesBytes = 0;
+      var source = "driveapp";
+
+      // Method 1: Google Drive API v3 (Exact live match with drive.google.com storage quota including Trash)
+      try {
+        var token = ScriptApp.getOAuthToken();
+        var resp = UrlFetchApp.fetch("https://www.googleapis.com/drive/v3/about?fields=storageQuota", {
+          headers: { "Authorization": "Bearer " + token },
+          muteHttpExceptions: true
+        });
+        if (resp.getResponseCode() === 200) {
+          var data = JSON.parse(resp.getContentText());
+          if (data && data.storageQuota) {
+            var sq = data.storageQuota;
+            if (sq.limit) totalBytes = Number(sq.limit);
+            if (sq.usage) usedBytes = Number(sq.usage);
+            if (sq.usageInDrive) driveFilesBytes = Number(sq.usageInDrive);
+            if (sq.usageInDriveTrash) trashBytes = Number(sq.usageInDriveTrash);
+            source = "drive_api_v3";
+          }
+        }
+      } catch (apiErr) {
+        // Fallback to DriveApp
+      }
+
+      // Method 2: Fallback to DriveApp native methods
+      if (!totalBytes || totalBytes <= 0) {
+        try { totalBytes = DriveApp.getStorageLimit(); } catch (e1) {}
+      }
+      if (!usedBytes || usedBytes <= 0) {
+        try { 
+          usedBytes = DriveApp.getStorageUsed(); 
+          driveFilesBytes = usedBytes;
+        } catch (e2) {}
+      }
+
+      var isUnlimited = (totalBytes <= 0);
+      var freeBytes = isUnlimited ? -1 : Math.max(0, totalBytes - usedBytes);
+      var percentUsed = isUnlimited ? 0 : ((usedBytes / totalBytes) * 100);
+      var percentFree = isUnlimited ? 100 : (100 - percentUsed);
+
+      var result = {
+        status: "success",
+        totalBytes: totalBytes,
+        usedBytes: usedBytes,
+        driveFilesBytes: driveFilesBytes,
+        trashBytes: trashBytes,
+        freeBytes: freeBytes,
+        isUnlimited: isUnlimited,
+        percentUsed: Number(percentUsed.toFixed(2)),
+        percentFree: Number(percentFree.toFixed(2)),
+        totalFormatted: formatGDriveBytes(totalBytes, true),
+        usedFormatted: formatGDriveBytes(usedBytes, false),
+        freeFormatted: isUnlimited ? "Unlimited" : formatGDriveBytes(freeBytes, true),
+        source: source
+      };
+
+      return ContentService.createTextOutput(JSON.stringify(result))
+        .setMimeType(ContentService.MimeType.JSON);
+    } catch (err) {
+      return ContentService.createTextOutput(JSON.stringify({
+        status: "error",
+        message: err.toString()
+      })).setMimeType(ContentService.MimeType.JSON);
+    }
+  }
+  
+  return ContentService.createTextOutput(JSON.stringify({ status: "ok" }))
+    .setMimeType(ContentService.MimeType.JSON);
+}
+
+function formatGDriveBytes(bytes, isQuota) {
+  if (!bytes || bytes <= 0) return "0 MB";
+  
+  // Google Drive standard quota tiers (e.g. 5 TB = 5 * 1024^4 = 5,497,558,138,880)
+  var tb1024 = 1099511627776;
+  var gb1024 = 1073741824;
+  if (isQuota) {
+    if (bytes >= tb1024 * 0.95) {
+      var tb = bytes / tb1024;
+      return (Math.abs(tb - Math.round(tb)) < 0.05 ? Math.round(tb) : tb.toFixed(1)) + " TB";
+    }
+    if (bytes >= gb1024 * 0.95) {
+      var gb = bytes / gb1024;
+      return (Math.abs(gb - Math.round(gb)) < 0.05 ? Math.round(gb) : gb.toFixed(1)) + " GB";
+    }
+  }
+
+  // Google Drive UI decimal units (SI: 1000 base, 1 MB = 1,000,000 bytes)
+  var tb = 1000000000000;
+  var gb = 1000000000;
+  var mb = 1000000;
+  var kb = 1000;
+
+  if (bytes >= tb) {
+    var v = bytes / tb;
+    return (v % 1 === 0 ? v.toFixed(0) : v.toFixed(1)) + " TB";
+  }
+  if (bytes >= gb) {
+    var v = bytes / gb;
+    return (v % 1 === 0 ? v.toFixed(0) : v.toFixed(1)) + " GB";
+  }
+  if (bytes >= mb) {
+    var v = bytes / mb;
+    return (v % 1 === 0 ? v.toFixed(0) : v.toFixed(1)) + " MB";
+  }
+  if (bytes >= kb) {
+    var v = bytes / kb;
+    return (v % 1 === 0 ? v.toFixed(0) : v.toFixed(1)) + " KB";
+  }
+  return bytes + " B";
+}`;
+
+        function getEffectiveGDriveScriptUrl() {
+            return (localStorage.getItem('gdriveScriptUrl') || 
+                    document.getElementById('gdriveScriptUrl')?.value || 
+                    document.getElementById('docsGdriveScriptUrl')?.value || 
+                    document.getElementById('gdriveConfigUrlInput')?.value || '').trim();
+        }
+
+        function toggleGDriveConfigDrawer() {
+            const drawer = document.getElementById('gdriveConfigDrawer');
+            if (!drawer) return;
+            const isHidden = drawer.style.display === 'none' || drawer.style.display === '';
+            drawer.style.display = isHidden ? 'block' : 'none';
+            if (isHidden) {
+                const input = document.getElementById('gdriveConfigUrlInput');
+                if (input) input.value = getEffectiveGDriveScriptUrl();
+            }
+        }
+
+        function saveAndApplyGDriveUrl() {
+            const input = document.getElementById('gdriveConfigUrlInput');
+            if (!input) return;
+            const val = input.value.trim();
+            if (!val) {
+                showToast('Please enter a valid Google Apps Script URL', 'error');
+                return;
+            }
+            localStorage.setItem('gdriveScriptUrl', val);
+            localStorage.setItem('docsGdriveScriptUrl', val);
+            if (document.getElementById('gdriveScriptUrl')) document.getElementById('gdriveScriptUrl').value = val;
+            if (document.getElementById('docsGdriveScriptUrl')) document.getElementById('docsGdriveScriptUrl').value = val;
+            showToast('Google Drive Script URL saved! Testing...', 'info');
+            fetchGDriveStorageStats(val);
+        }
+
+        function copyGDriveScriptToClipboard() {
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(GDRIVE_APPS_SCRIPT_STORAGE_CODE).then(() => {
+                    showToast('Google Apps Script copied! Deploy as New Version in script.google.com 📋', 'success');
+                }).catch(() => {
+                    prompt('Copy Google Apps Script:', GDRIVE_APPS_SCRIPT_STORAGE_CODE);
+                });
+            } else {
+                prompt('Copy Google Apps Script:', GDRIVE_APPS_SCRIPT_STORAGE_CODE);
+            }
+        }
+
+        async function fetchGDriveStorageStats(manualUrl = null) {
+            const scriptUrl = manualUrl || getEffectiveGDriveScriptUrl();
+            const statusBadge = document.getElementById('gdriveStatusBadge');
+            const statusText = document.getElementById('gdriveStatusText');
+            const spinner = document.getElementById('gdriveSpinner');
+            const usedEl = document.getElementById('gdriveStorageUsedDetail');
+            const usedPctEl = document.getElementById('gdriveStorageUsedPercent');
+            const freeEl = document.getElementById('gdriveStorageFreeDetail');
+            const freePctEl = document.getElementById('gdriveStorageFreePercent');
+            const totalLabel = document.getElementById('gdriveStorageTotalLabel');
+            const bar = document.getElementById('gdriveStorageProgressBar');
+
+            if (!scriptUrl) {
+                if (statusBadge) {
+                    statusBadge.style.background = 'rgba(245, 158, 11, 0.15)';
+                    statusBadge.style.color = '#fbbf24';
+                    statusBadge.style.borderColor = 'rgba(245, 158, 11, 0.3)';
+                }
+                if (statusText) statusText.innerText = '⚙️ URL Needed';
+                if (usedEl) usedEl.innerText = '--';
+                if (usedPctEl) usedPctEl.innerText = '(0%)';
+                if (freeEl) freeEl.innerText = '--';
+                if (freePctEl) freePctEl.innerText = '(100%)';
+                if (bar) bar.style.width = '0%';
+                return;
+            }
+
+            if (spinner) spinner.style.display = 'inline-block';
+            if (statusText) statusText.innerText = 'Checking...';
+
+            try {
+                const endpoint = scriptUrl.includes('?') ? `${scriptUrl}&action=storage` : `${scriptUrl}?action=storage`;
+                const res = await fetch(endpoint, { method: 'GET', redirect: 'follow' });
+                if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                const data = await res.json();
+                
+                if (data.status === 'error') {
+                    throw new Error(data.message || 'Script error');
+                }
+
+                const totalBytes = Number(data.totalBytes || data.total || data.storageLimit) || 0;
+                let usedBytes = Number(data.usedBytes || data.used || data.storageUsed) || 0;
+                if (data.trashBytes && data.source !== 'drive_api_v3') {
+                    usedBytes += Number(data.trashBytes);
+                }
+                const isUnlimited = Boolean(data.isUnlimited || totalBytes <= 0);
+                const freeBytes = isUnlimited ? 0 : (data.freeBytes != null ? Number(data.freeBytes) : Math.max(0, totalBytes - usedBytes));
+
+                function formatGoogleDriveBytes(bytes, isQuota) {
+                    if (!bytes || bytes <= 0) return '0 MB';
+                    const tb1024 = 1099511627776;
+                    const gb1024 = 1073741824;
+                    if (isQuota) {
+                        if (bytes >= tb1024 * 0.95) {
+                            const tb = bytes / tb1024;
+                            return (Math.abs(tb - Math.round(tb)) < 0.05 ? Math.round(tb) : tb.toFixed(1)) + ' TB';
+                        }
+                        if (bytes >= gb1024 * 0.95) {
+                            const gb = bytes / gb1024;
+                            return (Math.abs(gb - Math.round(gb)) < 0.05 ? Math.round(gb) : gb.toFixed(1)) + ' GB';
+                        }
+                    }
+
+                    // Google Drive UI decimal units (SI: 1000-base, 1 MB = 1,000,000 bytes)
+                    const tb = 1000000000000;
+                    const gb = 1000000000;
+                    const mb = 1000000;
+                    const kb = 1000;
+
+                    if (bytes >= tb) {
+                        const v = bytes / tb;
+                        return (v % 1 === 0 ? v.toFixed(0) : v.toFixed(1)) + ' TB';
+                    }
+                    if (bytes >= gb) {
+                        const v = bytes / gb;
+                        return (v % 1 === 0 ? v.toFixed(0) : v.toFixed(1)) + ' GB';
+                    }
+                    if (bytes >= mb) {
+                        const v = bytes / mb;
+                        return (v % 1 === 0 ? v.toFixed(0) : v.toFixed(1)) + ' MB';
+                    }
+                    if (bytes >= kb) {
+                        const v = bytes / kb;
+                        return (v % 1 === 0 ? v.toFixed(0) : v.toFixed(1)) + ' KB';
+                    }
+                    return bytes + ' B';
+                }
+
+                let pctUsed = 0;
+                let pctFree = 100;
+                if (!isUnlimited && totalBytes > 0) {
+                    pctUsed = data.percentUsed != null ? Number(data.percentUsed) : Math.min(100, Math.max(0, (usedBytes / totalBytes) * 100));
+                    pctFree = data.percentFree != null ? Number(data.percentFree) : Math.max(0, 100 - pctUsed);
+                }
+
+                // If data has already formatted with Google Drive convention (new script), use it;
+                // otherwise format client-side using Google Drive decimal rules so even old scripts show decimal MB instead of binary 106 MB!
+                const formattedTotal = (data.source === 'drive_api_v3' && data.totalFormatted) 
+                    ? data.totalFormatted 
+                    : (isUnlimited ? 'Unlimited' : formatGoogleDriveBytes(totalBytes, true));
+                
+                const formattedUsed = (data.source === 'drive_api_v3' && data.usedFormatted) 
+                    ? data.usedFormatted 
+                    : formatGoogleDriveBytes(usedBytes, false);
+                
+                const formattedFree = (data.source === 'drive_api_v3' && data.freeFormatted) 
+                    ? data.freeFormatted 
+                    : (isUnlimited ? 'Unlimited Free' : `${formatGoogleDriveBytes(freeBytes, true)} Free`);
+
+                if (usedEl) {
+                    usedEl.innerText = formattedUsed;
+                    if (data.trashBytes) {
+                        usedEl.title = `Total Google Drive Quota (Drive Files + Trash: ${formatGoogleDriveBytes(data.trashBytes, false)})`;
+                    }
+                }
+                if (usedPctEl) usedPctEl.innerText = isUnlimited ? '' : `(${pctUsed.toFixed(1)}%)`;
+                if (freeEl) freeEl.innerText = formattedFree;
+                if (freePctEl) freePctEl.innerText = isUnlimited ? '' : `(${pctFree.toFixed(1)}%)`;
+                if (totalLabel) totalLabel.innerText = `${formattedTotal} Total`;
+
+                if (bar) {
+                    bar.style.width = isUnlimited ? '15%' : `${pctUsed > 0 && pctUsed < 1 ? 1 : pctUsed.toFixed(1)}%`;
+                    if (pctUsed >= 90) {
+                        bar.style.background = 'linear-gradient(90deg, #ef4444, #dc2626)';
+                    } else if (pctUsed >= 75) {
+                        bar.style.background = 'linear-gradient(90deg, #f59e0b, #d97706)';
+                    } else {
+                        bar.style.background = 'linear-gradient(90deg, #10b981, #059669)';
+                    }
+                }
+
+                if (statusBadge) {
+                    statusBadge.style.background = 'rgba(16, 185, 129, 0.15)';
+                    statusBadge.style.color = '#10b981';
+                    statusBadge.style.borderColor = 'rgba(16, 185, 129, 0.3)';
+                }
+                if (statusText) statusText.innerText = '🟢 Connected';
+
+            } catch (err) {
+                console.warn('GDrive Storage Stats error:', err);
+                if (statusBadge) {
+                    statusBadge.style.background = 'rgba(239, 68, 68, 0.15)';
+                    statusBadge.style.color = '#ef4444';
+                    statusBadge.style.borderColor = 'rgba(239, 68, 68, 0.3)';
+                }
+                if (statusText) statusText.innerText = '❌ Check URL';
+            } finally {
+                if (spinner) spinner.style.display = 'none';
             }
         }
         
