@@ -3259,6 +3259,7 @@
             docBlockCounter++;
             const container = document.getElementById('docBlocksContainer');
             const blockHtml = `
+                <div class="doc-block" id="docBlock_${docBlockCounter}" style="background: var(--dark-panel); padding: 20px; border-radius: 12px; border: 1px solid var(--border); position: relative;">
                     <div class="block-top-actions" style="position: absolute; top: 16px; right: 16px; display: flex; gap: 8px; align-items: center;">
                         <button class="btn-restore" onclick="moveDocBlockToTop(this)" title="Restore to Top (#1 Section)"><i class="fa-solid fa-angles-up"></i> <span>Top</span></button>
                         <button class="btn btn-danger" style="padding: 6px 12px; font-size: 13px;" onclick="removeDocBlock(this)" title="Delete Section & Images"><i class="fa-solid fa-trash"></i></button>
@@ -3931,13 +3932,26 @@
                 
                 document.getElementById('docExtTitle').value = data.title || '';
                 document.getElementById('docExtDesc').value = data.description || '';
-                document.getElementById('docSlug').value = data.slug.replace('.html', '');
+                document.getElementById('docSlug').value = (data.slug || '').replace('.html', '');
                 
                 if (data.theme) {
-                    document.getElementById('docBgColor').value = data.theme.bgColor || '#0f172a';
-                    document.getElementById('docTitleColor').value = data.theme.titleColor || '#3b82f6';
-                    document.getElementById('docSubtitleColor').value = data.theme.subtitleColor || '#94a3b8';
-                    document.getElementById('docCardColor').value = data.theme.cardColor || '#1e293b';
+                    if (document.getElementById('docBgColor')) document.getElementById('docBgColor').value = data.theme.bgColor || '#0f172a';
+                    if (document.getElementById('docTitleColor')) document.getElementById('docTitleColor').value = data.theme.titleColor || '#3b82f6';
+                    if (document.getElementById('docSubtitleColor')) document.getElementById('docSubtitleColor').value = data.theme.subtitleColor || '#94a3b8';
+                    if (document.getElementById('docCardColor')) document.getElementById('docCardColor').value = data.theme.cardColor || '#1e293b';
+                    if (data.theme.headerPadding && document.getElementById('docHeaderPadding')) document.getElementById('docHeaderPadding').value = data.theme.headerPadding;
+                    if (data.theme.titleSize && document.getElementById('docTitleSize')) document.getElementById('docTitleSize').value = data.theme.titleSize;
+                    if (data.theme.subtitleSize && document.getElementById('docSubtitleSize')) document.getElementById('docSubtitleSize').value = data.theme.subtitleSize;
+                    if (data.theme.cardRadius && document.getElementById('docCardRadius')) document.getElementById('docCardRadius').value = data.theme.cardRadius;
+                    if (data.theme.cardPadding && document.getElementById('docCardPadding')) document.getElementById('docCardPadding').value = data.theme.cardPadding;
+                    if (data.theme.cardMargin && document.getElementById('docCardMargin')) document.getElementById('docCardMargin').value = data.theme.cardMargin;
+                    if (data.theme.cardTitlePadding && document.getElementById('docCardTitlePadding')) document.getElementById('docCardTitlePadding').value = data.theme.cardTitlePadding;
+                    if (data.theme.cardSubtitlePadding && document.getElementById('docCardSubtitlePadding')) document.getElementById('docCardSubtitlePadding').value = data.theme.cardSubtitlePadding;
+                    if (data.theme.cardTitleSize && document.getElementById('docCardTitleSize')) document.getElementById('docCardTitleSize').value = data.theme.cardTitleSize;
+                    if (data.theme.cardSubtitleSize && document.getElementById('docCardSubtitleSize')) document.getElementById('docCardSubtitleSize').value = data.theme.cardSubtitleSize;
+                    if (data.theme.cardTitleColor && document.getElementById('docCardTitleColor')) document.getElementById('docCardTitleColor').value = data.theme.cardTitleColor;
+                    if (data.theme.cardSubtitleColor && document.getElementById('docCardSubtitleColor')) document.getElementById('docCardSubtitleColor').value = data.theme.cardSubtitleColor;
+                    if (document.getElementById('docEnableCardView')) document.getElementById('docEnableCardView').checked = (data.theme.enableCardView !== false);
                 } else {
                     document.getElementById('docBgColor').value = '#0f172a';
                     document.getElementById('docTitleColor').value = '#3b82f6';
@@ -3952,37 +3966,42 @@
                     data.blocks.forEach(b => {
                         addDocBlock();
                         const currentBlock = document.getElementById(`docBlock_${docBlockCounter}`);
-                        currentBlock.querySelector('.block-title').value = b.title || '';
-                        currentBlock.querySelector('.block-desc').value = b.description || '';
-                        currentBlock.querySelector('.block-image-r2url').value = b.imageUrl || '';
-                        if (b.imageUrl) {
-                            const imgPreview = currentBlock.querySelector('.block-image-preview');
-                            imgPreview.src = b.imageUrl;
-                            imgPreview.style.display = 'block';
-                        }
-                        
-                        const gdriveUrlInput = currentBlock.querySelector('.block-gdrive-url');
-                        if (gdriveUrlInput) {
-                            gdriveUrlInput.value = b.gdriveUrl || '';
-                            currentBlock.querySelector('.block-gdrive-filename').value = b.gdriveName || '';
-                            currentBlock.querySelector('.block-gdrive-size').value = b.gdriveSize || '';
-                            if (b.gdriveUrl) {
-                                const statusDiv = currentBlock.querySelector('.gdrive-status');
-                                if(statusDiv) {
-                                    statusDiv.style.display = 'block';
-                                    statusDiv.innerHTML = `<i class="fa-solid fa-check-circle"></i> Attached: ${b.gdriveName}`;
+                        if (currentBlock) {
+                            if (currentBlock.querySelector('.block-title')) currentBlock.querySelector('.block-title').value = b.title || '';
+                            if (currentBlock.querySelector('.block-desc')) currentBlock.querySelector('.block-desc').value = b.description || '';
+                            const r2Input = currentBlock.querySelector('.block-image-r2url');
+                            if (r2Input) r2Input.value = b.imageUrl || '';
+                            if (b.imageUrl) {
+                                const imgPreview = currentBlock.querySelector('.block-image-preview');
+                                if (imgPreview) {
+                                    imgPreview.src = b.imageUrl;
+                                    imgPreview.style.display = 'block';
                                 }
-                                const isImg = (b.gdriveName || '').match(/\.(jpeg|jpg|gif|png|webp|svg|bmp)$/i);
-                                if (isImg) {
-                                    const gdriveImgPreview = currentBlock.querySelector('.block-gdrive-preview');
-                                    if (gdriveImgPreview) {
-                                        let previewUrl = b.gdriveUrl;
-                                        const matchId = b.gdriveUrl.match(/id=([^&]+)/);
-                                        if (matchId && matchId[1]) {
-                                            previewUrl = `https://drive.google.com/thumbnail?id=${matchId[1]}&sz=w1000`;
+                            }
+                            
+                            const gdriveUrlInput = currentBlock.querySelector('.block-gdrive-url');
+                            if (gdriveUrlInput) {
+                                gdriveUrlInput.value = b.gdriveUrl || '';
+                                if (currentBlock.querySelector('.block-gdrive-filename')) currentBlock.querySelector('.block-gdrive-filename').value = b.gdriveName || '';
+                                if (currentBlock.querySelector('.block-gdrive-size')) currentBlock.querySelector('.block-gdrive-size').value = b.gdriveSize || '';
+                                if (b.gdriveUrl) {
+                                    const statusDiv = currentBlock.querySelector('.gdrive-status');
+                                    if(statusDiv) {
+                                        statusDiv.style.display = 'block';
+                                        statusDiv.innerHTML = `<i class="fa-solid fa-check-circle"></i> Attached: ${b.gdriveName || 'File'}`;
+                                    }
+                                    const isImg = (b.gdriveName || '').match(/\.(jpeg|jpg|gif|png|webp|svg|bmp)$/i);
+                                    if (isImg) {
+                                        const gdriveImgPreview = currentBlock.querySelector('.block-gdrive-preview');
+                                        if (gdriveImgPreview) {
+                                            let previewUrl = b.gdriveUrl;
+                                            const matchId = b.gdriveUrl.match(/id=([^&]+)/);
+                                            if (matchId && matchId[1]) {
+                                                previewUrl = `https://drive.google.com/thumbnail?id=${matchId[1]}&sz=w1000`;
+                                            }
+                                            gdriveImgPreview.src = previewUrl;
+                                            gdriveImgPreview.style.display = 'block';
                                         }
-                                        gdriveImgPreview.src = previewUrl;
-                                        gdriveImgPreview.style.display = 'block';
                                     }
                                 }
                             }
@@ -3997,6 +4016,7 @@
                 document.getElementById('generateDocsBtn').innerHTML = '<i class="fa-solid fa-arrows-rotate"></i> Update & Publish to R2';
                 
             } catch (e) {
+                console.error('Error loading document data:', e);
                 showToast('Error loading document data', 'error');
             }
         }
