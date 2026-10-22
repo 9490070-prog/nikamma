@@ -232,6 +232,9 @@
         .btn-edit { background: rgba(79, 70, 229, 0.1); color: var(--primary); }
         .btn-edit:hover { background: var(--primary); color: white; }
 
+        .btn-version { background: rgba(124, 58, 237, 0.12); color: #a78bfa; }
+        .btn-version:hover { background: linear-gradient(135deg, #7c3aed, #a855f7); color: white; box-shadow: 0 4px 12px rgba(124,58,237,0.45); }
+
         .btn-delete { background: rgba(239, 68, 68, 0.1); color: var(--danger); }
         .btn-delete:hover { background: var(--danger); color: white; }
 
@@ -2056,6 +2059,22 @@
                     } else {
                         actionsHtml += `<button class="btn-icon btn-success" onclick="updateStatus('${rowId}', 'Approved'${extraArgs})" title="Approve"><i class="fa-solid fa-check"></i></button>`;
                     }
+                }
+                // Extra actions for Free_Paid_Register
+                if (currentTable === 'Free_Paid_Register' && (row['ItemID'] || row['itemId'])) {
+                    const rawItemId   = row['ItemID'] || row['itemId'] || '';
+                    const rawItemName = row['ItemName'] || row['itemName'] || '';
+                    let rawVer        = row['Version'] || row['version'] || '';
+                    let rawUrl        = row['Redirect_URL'] || row['redirect_url'] || row['RedirectUrl'] || '';
+                    if (rawVer === 'null' || rawVer === 'undefined') rawVer = '';
+                    if (rawUrl === 'null' || rawUrl === 'undefined') rawUrl = '';
+
+                    const encId   = encodeURIComponent(String(rawItemId));
+                    const encName = encodeURIComponent(String(rawItemName));
+                    const encVer  = encodeURIComponent(String(rawVer));
+                    const encUrl  = encodeURIComponent(String(rawUrl));
+
+                    actionsHtml += `<button class="btn-icon btn-version" data-itemid="${encId}" data-itemname="${encName}" data-ver="${encVer}" data-url="${encUrl}" onclick="openVersionModalFromBtn(this)" title="Update Version & Redirect URL"><i class="fa-solid fa-rocket"></i></button>`;
                 }
                 
                 actionsHtml += `
@@ -6163,6 +6182,151 @@ function createResponse(obj) {
                 btn.disabled = false;
             }
         }
+    </script>
+
+    <!-- ===== Update Item Version & Redirect URL Modal ===== -->
+    <div id="versionUpdateModal" style="display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.6);backdrop-filter:blur(4px);display:none;align-items:center;justify-content:center;">
+      <div style="background:linear-gradient(135deg,#1a1a2e 0%,#16213e 60%,#0f3460 100%);border:1px solid rgba(255,255,255,.12);border-radius:16px;padding:32px 28px;width:100%;max-width:480px;box-shadow:0 24px 64px rgba(0,0,0,.7);position:relative;font-family:'Segoe UI',sans-serif;">
+        <button onclick="closeVersionModal()" style="position:absolute;top:14px;right:16px;background:none;border:none;color:#aaa;font-size:20px;cursor:pointer;line-height:1;" title="Close">&times;</button>
+        <h2 style="margin:0 0 6px;font-size:1.3rem;color:#e2e8f0;display:flex;align-items:center;gap:8px;"><i class="fa-solid fa-rocket" style="color:#7c3aed;"></i> Update Version &amp; URL</h2>
+        <p style="margin:0 0 20px;font-size:.82rem;color:#94a3b8;">Updates <strong style="color:#a78bfa;">ALL records</strong> sharing this Item ID.</p>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;">
+          <div style="background:rgba(255,255,255,.05);border-radius:10px;padding:10px 14px;">
+            <div style="font-size:.7rem;color:#64748b;text-transform:uppercase;letter-spacing:.06em;margin-bottom:3px;">Item ID</div>
+            <div id="vmItemId" style="font-size:.85rem;color:#e2e8f0;word-break:break-all;">—</div>
+          </div>
+          <div style="background:rgba(255,255,255,.05);border-radius:10px;padding:10px 14px;">
+            <div style="font-size:.7rem;color:#64748b;text-transform:uppercase;letter-spacing:.06em;margin-bottom:3px;">Item Name</div>
+            <div id="vmItemName" style="font-size:.85rem;color:#e2e8f0;">—</div>
+          </div>
+        </div>
+
+        <div style="background:rgba(255,255,255,.05);border-radius:10px;padding:10px 14px;margin-bottom:18px;">
+          <div style="font-size:.7rem;color:#64748b;text-transform:uppercase;letter-spacing:.06em;margin-bottom:3px;">Current Version</div>
+          <div id="vmCurrentVersion" style="font-size:.85rem;color:#fbbf24;font-weight:600;">—</div>
+        </div>
+
+        <label style="display:block;margin-bottom:14px;">
+          <span style="display:block;font-size:.8rem;color:#94a3b8;margin-bottom:5px;">New Version <span style="color:#f87171;">*</span></span>
+          <input id="vmNewVersion" type="text" placeholder="e.g. 3.0" style="width:100%;box-sizing:border-box;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);border-radius:8px;padding:10px 14px;color:#e2e8f0;font-size:.9rem;outline:none;transition:border .2s;" onfocus="this.style.borderColor='#7c3aed'" onblur="this.style.borderColor='rgba(255,255,255,.15)'" />
+        </label>
+
+        <label style="display:block;margin-bottom:24px;">
+          <span style="display:block;font-size:.8rem;color:#94a3b8;margin-bottom:5px;">Redirect URL <span style="color:#64748b;font-style:italic;">(optional)</span></span>
+          <input id="vmRedirectUrl" type="url" placeholder="https://example.com/download" style="width:100%;box-sizing:border-box;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);border-radius:8px;padding:10px 14px;color:#e2e8f0;font-size:.9rem;outline:none;transition:border .2s;" onfocus="this.style.borderColor='#7c3aed'" onblur="this.style.borderColor='rgba(255,255,255,.15)'" />
+        </label>
+
+        <div style="display:flex;gap:10px;justify-content:flex-end;">
+          <button onclick="closeVersionModal()" style="padding:10px 20px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);border-radius:8px;color:#94a3b8;cursor:pointer;font-size:.88rem;transition:background .2s;" onmouseover="this.style.background='rgba(255,255,255,.12)'" onmouseout="this.style.background='rgba(255,255,255,.07)'">Cancel</button>
+          <button id="vmSubmitBtn" onclick="submitVersionUpdate()" style="padding:10px 24px;background:linear-gradient(135deg,#7c3aed,#a855f7);border:none;border-radius:8px;color:#fff;cursor:pointer;font-size:.88rem;font-weight:600;box-shadow:0 4px 15px rgba(124,58,237,.4);transition:opacity .2s;" onmouseover="this.style.opacity='.85'" onmouseout="this.style.opacity='1'"><i class="fa-solid fa-rocket"></i> Update All Records</button>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      // ===== Version & URL Update Modal Logic =====
+      let _vmItemId = '';
+
+      function openVersionModalFromBtn(btn) {
+        const itemId             = decodeURIComponent(btn.getAttribute('data-itemid') || '');
+        const itemName           = decodeURIComponent(btn.getAttribute('data-itemname') || '');
+        const currentVersion     = decodeURIComponent(btn.getAttribute('data-ver') || '');
+        const currentRedirectUrl = decodeURIComponent(btn.getAttribute('data-url') || '');
+        openVersionModal(itemId, itemName, currentVersion, currentRedirectUrl);
+      }
+
+      function openVersionModal(itemId, itemName, currentVersion, currentRedirectUrl) {
+        _vmItemId = itemId;
+
+        let ver = (currentVersion !== undefined && currentVersion !== null) ? String(currentVersion) : '';
+        let url = (currentRedirectUrl !== undefined && currentRedirectUrl !== null) ? String(currentRedirectUrl) : '';
+        if (ver === 'null' || ver === 'undefined') ver = '';
+        if (url === 'null' || url === 'undefined') url = '';
+
+        // If either version or redirect url is blank on this specific row, check tableData for any other row with this ItemID
+        if ((!ver || !url) && typeof tableData !== 'undefined' && Array.isArray(tableData)) {
+          const match = tableData.find(r => r && (r['ItemID'] === itemId || r['itemId'] === itemId) && (r['Redirect_URL'] || r['redirect_url'] || r['RedirectUrl'] || r['Version'] || r['version']));
+          if (match) {
+            if (!ver) {
+              const matchedVer = match['Version'] || match['version'] || '';
+              if (matchedVer && matchedVer !== 'null' && matchedVer !== 'undefined') ver = String(matchedVer);
+            }
+            if (!url) {
+              const matchedUrl = match['Redirect_URL'] || match['redirect_url'] || match['RedirectUrl'] || '';
+              if (matchedUrl && matchedUrl !== 'null' && matchedUrl !== 'undefined') url = String(matchedUrl);
+            }
+          }
+        }
+
+        document.getElementById('vmItemId').textContent        = itemId || '—';
+        document.getElementById('vmItemName').textContent      = itemName || '—';
+        document.getElementById('vmCurrentVersion').textContent = ver || '(not set)';
+        
+        // Pre-fill both input textboxes with existing values so user can easily edit them
+        document.getElementById('vmNewVersion').value          = ver;
+        document.getElementById('vmRedirectUrl').value         = url;
+
+        const modal = document.getElementById('versionUpdateModal');
+        modal.style.display = 'flex';
+        setTimeout(() => {
+          const vInput = document.getElementById('vmNewVersion');
+          if (vInput) {
+            vInput.focus();
+            vInput.select();
+          }
+        }, 80);
+      }
+
+      function closeVersionModal() {
+        document.getElementById('versionUpdateModal').style.display = 'none';
+      }
+
+      async function submitVersionUpdate() {
+        const newVersion  = document.getElementById('vmNewVersion').value.trim();
+        const redirectUrl = document.getElementById('vmRedirectUrl').value.trim();
+        const btn         = document.getElementById('vmSubmitBtn');
+
+        if (!newVersion) {
+          showToast('Please enter a new version.', 'error');
+          document.getElementById('vmNewVersion').focus();
+          return;
+        }
+
+        btn.disabled   = true;
+        btn.innerHTML  = '<i class="fa-solid fa-spinner fa-spin"></i> Updating...';
+
+        try {
+          const cfUrl = (typeof getBaseUrl === 'function') ? getBaseUrl() : (window.API_BASE_URL || '');
+          const token = (typeof getAuthHeader === 'function') ? getAuthHeader() : '';
+
+          const res = await fetch(`${cfUrl}/?action=update_item_version`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', ...(token ? { 'Authorization': token } : {}) },
+            body: JSON.stringify({ itemId: _vmItemId, version: newVersion, redirectUrl: redirectUrl || null })
+          });
+
+          const data = await res.json();
+
+          if (data.status === 'success') {
+            showToast(`✅ Version updated to ${newVersion} for all "${_vmItemId}" records!`, 'success');
+            closeVersionModal();
+            if (typeof fetchData === 'function') fetchData();
+          } else {
+            showToast('Error: ' + (data.message || 'Update failed.'), 'error');
+          }
+        } catch (err) {
+          showToast('Network error: ' + err.message, 'error');
+        } finally {
+          btn.disabled  = false;
+          btn.innerHTML = '<i class="fa-solid fa-rocket"></i> Update All Records';
+        }
+      }
+
+      // Close modal on backdrop click
+      document.getElementById('versionUpdateModal').addEventListener('click', function(e) {
+        if (e.target === this) closeVersionModal();
+      });
     </script>
 </body>
 </html>
