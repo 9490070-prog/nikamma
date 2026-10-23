@@ -934,6 +934,29 @@
                         </button>
                     </div>
                 </div>
+
+                <!-- Section Google Drive Folder Bar (Visible for Extensions Data, Source Code, Tag List) -->
+                <div id="sectionTopFolderBar" style="display: none; padding: 10px 24px; background: rgba(16, 185, 129, 0.08); border-bottom: 1px solid rgba(16, 185, 129, 0.25); align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px;">
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <span style="display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 28px; border-radius: 6px; background: rgba(16, 185, 129, 0.2); color: #10b981; font-size: 15px;">
+                            <i class="fa-brands fa-google-drive"></i>
+                        </span>
+                        <div>
+                            <span style="font-size: 13px; font-weight: 700; color: #fff;" id="sectionTopFolderTitle">Section Google Drive Folder:</span>
+                            <span style="font-size: 11px; color: var(--text-muted); display: block;">All images uploaded for this section will go directly into this Google Drive folder.</span>
+                        </div>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 8px; flex: 1; max-width: 550px; min-width: 280px;">
+                        <input type="text" id="sectionTopFolderInput" class="api-input" style="flex: 1; font-size: 12px; padding: 7px 10px; font-family: monospace; color: #34d399; background: rgba(0,0,0,0.3); border: 1px solid rgba(16, 185, 129, 0.35); border-radius: 6px;" placeholder="Google Drive Folder ID..." oninput="setSectionFolderId(currentTable, this.value)">
+                        <a id="sectionTopFolderOpenLink" href="#" target="_blank" class="btn btn-secondary" style="font-size: 11px; padding: 7px 12px; text-decoration: none; display: inline-flex; align-items: center; gap: 5px; color: #60a5fa; border-color: rgba(96, 165, 250, 0.3);" title="Open Folder in Google Drive">
+                            <i class="fa-solid fa-arrow-up-right-from-square"></i> Open
+                        </a>
+                        <button type="button" class="btn btn-primary" onclick="saveSectionTopFolderId(document.getElementById('sectionTopFolderInput').value)" style="font-size: 11px; padding: 7px 14px; background: #10b981; border: none; white-space: nowrap; font-weight: 600;">
+                            <i class="fa-solid fa-floppy-disk"></i> Save ID
+                        </button>
+                    </div>
+                </div>
+
                 <div class="table-responsive">
                     <table id="dataTable">
                         <thead>
@@ -1889,6 +1912,152 @@
         </div>
     </div>
 
+    <!-- Hidden File Input for Table Image Uploads -->
+    <input type="file" id="tableColImageFileInput" accept="image/*" style="display: none;">
+
+    <!-- Table Column Google Drive Image Upload & Crop Modal -->
+    <div class="modal-overlay" id="tableImageCropModal" style="z-index: 10050;">
+        <div class="modal" style="max-width: 820px; width: 92%; max-height: 92vh; display: flex; flex-direction: column;">
+            <div class="modal-header" style="background: rgba(16, 185, 129, 0.08); border-bottom: 1px solid rgba(16, 185, 129, 0.25);">
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <div style="width: 36px; height: 36px; border-radius: 8px; background: rgba(16, 185, 129, 0.2); display: flex; align-items: center; justify-content: center; color: #10b981; font-size: 18px;">
+                        <i class="fa-brands fa-google-drive"></i>
+                    </div>
+                    <div>
+                        <h3 id="tableImageCropModalTitle" style="font-size: 16px; margin: 0; color: #fff;">Upload & Crop Image to Google Drive</h3>
+                        <small id="tableImageCropModalSubtitle" style="color: #34d399; font-size: 11px;">Extensions Data &bull; Image Slider URL</small>
+                    </div>
+                </div>
+                <button class="modal-close" onclick="closeTableImageCropModal()"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            
+            <div class="modal-body" style="padding: 20px; overflow-y: auto;">
+                <!-- Folder ID & Filename settings bar -->
+                <div style="background: rgba(255, 255, 255, 0.03); border: 1px solid var(--border); border-radius: 10px; padding: 14px; margin-bottom: 16px;">
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px;">
+                        <div>
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                                <label style="font-size: 12px; font-weight: 600; margin: 0; color: #10b981;">
+                                    <i class="fa-brands fa-google-drive"></i> Google Drive Folder ID
+                                </label>
+                                <a id="tableCropFolderLink" href="https://drive.google.com/drive/folders/1Th-m_ojdxDbZfrjUa5NUUC9JwR5nSdFS" target="_blank" style="color: #60a5fa; font-size: 11px; text-decoration: none;" title="Open Folder in Google Drive">
+                                    <i class="fa-solid fa-arrow-up-right-from-square"></i> Open Folder
+                                </a>
+                            </div>
+                            <input type="text" id="tableCropFolderId" class="api-input" style="width: 100%; font-size: 12px; padding: 7px 10px; font-family: monospace; color: #34d399;" placeholder="e.g. 1Th-m_ojdxDbZfrjUa5NUUC9JwR5nSdFS" oninput="updateTableCropFolderLink(this.value); setSectionFolderId(currentTable, this.value);">
+                            <small style="font-size: 10px; color: var(--text-muted); display: block; margin-top: 3px;">Image will upload directly into this Google Drive Folder</small>
+                        </div>
+                        <div>
+                            <label style="font-size: 12px; font-weight: 600; display: block; margin-bottom: 6px;">
+                                <i class="fa-solid fa-file-signature"></i> Save As Filename (Optional)
+                            </label>
+                            <input type="text" id="tableCropFileName" class="api-input" style="width: 100%; font-size: 12px; padding: 7px 10px;" placeholder="e.g. image_name.jpg">
+                            <small style="font-size: 10px; color: var(--text-muted); display: block; margin-top: 3px;">Leave blank to use original image name</small>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- STEP 1: Cropper Section -->
+                <div id="tableCropStep1">
+                    <div id="tableCropperContainer" style="width: 100%; max-height: 380px; height: 350px; background: #000; border-radius: 10px; overflow: hidden; display: flex; align-items: center; justify-content: center; border: 1px solid var(--border); position: relative;">
+                        <img id="tableCropperImage" src="" style="max-width: 100%; display: block;">
+                    </div>
+
+                    <!-- Crop Controls & Aspect Ratio -->
+                    <div style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 10px; margin-top: 14px; padding: 10px; background: rgba(255,255,255,0.02); border-radius: 8px; border: 1px solid var(--border);">
+                        <div style="display: flex; align-items: center; gap: 6px;">
+                            <span style="font-size: 11px; color: var(--text-muted); font-weight: 600; text-transform: uppercase;">Aspect Ratio:</span>
+                            <button type="button" class="btn btn-secondary table-crop-aspect-btn active" data-aspect="free" onclick="setTableCropAspect(NaN, this)" style="padding: 3px 8px; font-size: 11px;">Free</button>
+                            <button type="button" class="btn btn-secondary table-crop-aspect-btn" data-aspect="16:9" onclick="setTableCropAspect(16/9, this)" style="padding: 3px 8px; font-size: 11px;">16:9 (Slider)</button>
+                            <button type="button" class="btn btn-secondary table-crop-aspect-btn" data-aspect="4:3" onclick="setTableCropAspect(4/3, this)" style="padding: 3px 8px; font-size: 11px;">4:3</button>
+                            <button type="button" class="btn btn-secondary table-crop-aspect-btn" data-aspect="1:1" onclick="setTableCropAspect(1, this)" style="padding: 3px 8px; font-size: 11px;">1:1 (Icon/Tag)</button>
+                        </div>
+                        <div style="display: flex; align-items: center; gap: 6px;">
+                            <button type="button" class="btn btn-secondary" onclick="rotateTableCrop(-90)" title="Rotate Left" style="padding: 3px 9px; font-size: 11px;"><i class="fa-solid fa-rotate-left"></i></button>
+                            <button type="button" class="btn btn-secondary" onclick="rotateTableCrop(90)" title="Rotate Right" style="padding: 3px 9px; font-size: 11px;"><i class="fa-solid fa-rotate-right"></i></button>
+                            <button type="button" class="btn btn-secondary" onclick="resetTableCrop()" title="Reset Crop" style="padding: 3px 9px; font-size: 11px;"><i class="fa-solid fa-arrows-rotate"></i> Reset</button>
+                        </div>
+                    </div>
+
+                    <!-- Compression Quality Slider -->
+                    <div style="margin-top: 14px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                            <label style="font-size: 12px; font-weight: 600; margin: 0;">
+                                <i class="fa-solid fa-sliders"></i> Compression Quality: <span id="tableCropQualityLabel" style="color: #10b981; font-weight: 700;">85%</span>
+                            </label>
+                            <span style="font-size: 11px; color: var(--text-muted);">Recommended: 80% - 90%</span>
+                        </div>
+                        <input type="range" id="tableCropQuality" min="10" max="100" value="85" style="width: 100%; accent-color: #10b981;" oninput="document.getElementById('tableCropQualityLabel').innerText = this.value + '%'">
+                    </div>
+                </div>
+
+                <!-- STEP 2: Cropped Confirmation & Preview Section -->
+                <div id="tableCropStep2" style="display: none;">
+                    <div style="background: rgba(16, 185, 129, 0.08); border: 1px solid rgba(16, 185, 129, 0.3); border-radius: 10px; padding: 14px; margin-bottom: 14px; display: flex; justify-content: space-between; align-items: center;">
+                        <div>
+                            <span style="color: #10b981; font-weight: 700; font-size: 13px;">
+                                <i class="fa-solid fa-circle-check"></i> Image Cropped Successfully!
+                            </span>
+                            <div style="font-size: 11px; color: var(--text-muted); margin-top: 2px;">
+                                Review the cropped preview below. Ready to upload to Google Drive.
+                            </div>
+                        </div>
+                        <button type="button" class="btn btn-secondary" onclick="backToCropStep()" style="font-size: 11px; padding: 5px 12px;">
+                            <i class="fa-solid fa-crop-simple"></i> Re-Crop Image
+                        </button>
+                    </div>
+
+                    <div style="width: 100%; max-height: 360px; height: 320px; background: #000; border-radius: 10px; overflow: hidden; display: flex; align-items: center; justify-content: center; border: 1px solid var(--border); padding: 8px;">
+                        <img id="tableCroppedResultPreview" src="" style="max-height: 100%; max-width: 100%; object-fit: contain; border-radius: 6px;">
+                    </div>
+                    <div id="tableCroppedMeta" style="text-align: right; font-size: 11px; color: var(--text-muted); margin-top: 6px;"></div>
+                </div>
+
+                <!-- Upload Progress / Status display -->
+                <div id="tableCropUploadProgress" style="display: none; margin-top: 14px; padding: 14px; background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.3); border-radius: 8px;">
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <i class="fa-solid fa-spinner fa-spin" style="color: #10b981; font-size: 18px;"></i>
+                        <span id="tableCropUploadStatusText" style="font-size: 13px; color: #34d399; font-weight: 600;">Uploading to Google Drive... Please wait, do not close</span>
+                    </div>
+                </div>
+
+                <!-- Success Box with Copyable URL -->
+                <div id="tableCropSuccessBox" style="display: none; margin-top: 14px; padding: 14px; background: rgba(16, 185, 129, 0.12); border: 1px solid rgba(16, 185, 129, 0.4); border-radius: 8px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                        <span style="color: #10b981; font-weight: 700; font-size: 13px;">
+                            <i class="fa-solid fa-circle-check"></i> Uploaded & URL Inserted Successfully!
+                        </span>
+                        <span id="tableCropFolderBadge" style="font-size: 11px; color: #34d399;"></span>
+                    </div>
+                    <label style="font-size: 11px; color: var(--text-muted); display: block; margin-bottom: 4px;">Direct Google Drive Link (Injected into form box):</label>
+                    <div style="display: flex; gap: 8px;">
+                        <input type="text" id="tableCropResultUrl" readonly class="api-input" style="flex: 1; font-size: 12px; color: #34d399; font-weight: 600;" onclick="this.select()">
+                        <button type="button" class="btn btn-primary" onclick="copyText('tableCropResultUrl')" style="padding: 0 16px; background: #10b981;"><i class="fa-regular fa-copy"></i> Copy</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="modal-footer" style="padding: 16px 20px; border-top: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center;">
+                <button type="button" class="btn btn-danger" style="background: transparent; border: 1px solid var(--border);" onclick="closeTableImageCropModal()">Close</button>
+                <div style="display: flex; gap: 10px;">
+                    <button type="button" class="btn" style="background: rgba(255,255,255,0.07); color: #fff; border: 1px solid var(--border);" onclick="document.getElementById('tableColImageFileInput').click()">
+                        <i class="fa-solid fa-folder-open"></i> Choose Another
+                    </button>
+                    
+                    <!-- Step 1 Button: Crop Image -->
+                    <button type="button" class="btn btn-primary" id="btnTableApplyCrop" style="background: #4f46e5; border-color: #4f46e5; padding: 10px 22px; font-weight: 600; display: inline-flex; align-items: center; gap: 8px;" onclick="handleApplyCropStep()">
+                        <i class="fa-solid fa-crop-simple"></i> Crop Image
+                    </button>
+                    
+                    <!-- Step 2 Button: Upload to Google Drive -->
+                    <button type="button" class="btn btn-primary" id="btnTableUploadDirect" style="display: none; background: #10b981; border-color: #10b981; padding: 10px 22px; font-weight: 600; align-items: center; gap: 8px;" onclick="handleUploadCroppedStep()">
+                        <i class="fa-solid fa-cloud-arrow-up"></i> Upload to Google Drive
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Toast Notifications -->
     <div class="toast-container" id="toastContainer"></div>
 
@@ -1911,14 +2080,22 @@
             
             if (document.getElementById('apiUrl')) document.getElementById('apiUrl').value = savedUrl;
             if (document.getElementById('apiSecret')) document.getElementById('apiSecret').value = savedSecret;
-            
             const defaultGdriveUrl = 'https://script.google.com/macros/s/AKfycbxFCEFUGjr0Esy_c4smYKMdjfSZIxtmh_COeaJMMFh7tybrYfyYmZFvjqeRerqCzccw/exec';
             const defaultGdriveFolder = '1Th-m_ojdxDbZfrjUa5NUUC9JwR5nSdFS';
-            const savedGdriveScriptUrl = localStorage.getItem('gdriveScriptUrl') || localStorage.getItem('docsGdriveScriptUrl') || defaultGdriveUrl;
-            const savedGdriveFolderId = localStorage.getItem('gdriveFolderId') || localStorage.getItem('docsGdriveFolderId') || defaultGdriveFolder;
+            const OLD_BROKEN_SCRIPT_URL = 'AKfycby4Voi6x2OqLNI3jLjjozVJ81J_O5C_Iw1KLWdQfiTmlC2OodjJD_Izv32iE95WWJ9f';
+            
+            // Auto-heal legacy or invalid saved script URLs in localStorage
+            let savedGdriveScriptUrl = localStorage.getItem('gdriveScriptUrl') || localStorage.getItem('docsGdriveScriptUrl') || defaultGdriveUrl;
+            if (!savedGdriveScriptUrl || savedGdriveScriptUrl.includes(OLD_BROKEN_SCRIPT_URL)) {
+                savedGdriveScriptUrl = defaultGdriveUrl;
+                localStorage.setItem('gdriveScriptUrl', defaultGdriveUrl);
+                localStorage.setItem('docsGdriveScriptUrl', defaultGdriveUrl);
+            }
+            const savedGdriveFolderId = extractCleanFolderId(localStorage.getItem('gdriveFolderId') || localStorage.getItem('docsGdriveFolderId') || defaultGdriveFolder);
             
             setEffectiveGDriveScriptUrl(savedGdriveScriptUrl);
             setEffectiveGDriveFolderId(savedGdriveFolderId);
+            if (typeof updateSectionTopFolderBar === 'function') updateSectionTopFolderBar(currentTable);
             
             testConnection(); // Auto-connect
         });
@@ -1958,15 +2135,71 @@
             return url;
         }
 
+        // Helper to extract Google Drive File ID from ANY URL or raw ID string
+        function extractDriveFileId(str) {
+            if (!str) return '';
+            const clean = String(str).trim();
+            if (!clean) return '';
+            
+            // Matches id=..., /d/..., or /file/d/...
+            const match = clean.match(/\/d\/([a-zA-Z0-9_-]{20,})/i) ||
+                          clean.match(/id=([a-zA-Z0-9_-]{20,})/i) ||
+                          clean.match(/([a-zA-Z0-9_-]{25,50})/);
+            return match ? match[1] : '';
+        }
+
+        // Convert ANY Google Drive link / file ID into a fast direct embed image URL that works in all browsers without CORS/ORB errors
+        function formatGoogleDriveImageUrl(val) {
+            if (!val) return '';
+            const str = String(val).trim();
+            if (!str) return '';
+
+            // If it's already a direct data:image URI, return as-is
+            if (str.startsWith('data:image/')) return str;
+
+            // If it's already an lh3 direct embed URL, return it directly
+            if (str.startsWith('https://lh3.googleusercontent.com/d/')) return str;
+
+            // Check if it's a Google Drive URL or bare file ID
+            const isGDrive = str.includes('drive.google.com') || 
+                             str.includes('drive.usercontent.google.com') || 
+                             str.includes('googleusercontent.com') || 
+                             /^[a-zA-Z0-9_-]{25,50}$/.test(str);
+
+            if (isGDrive) {
+                const fileId = extractDriveFileId(str);
+                if (fileId) {
+                    return `https://lh3.googleusercontent.com/d/${fileId}`;
+                }
+            }
+            return str;
+        }
+
+        // Helper function to extract clean Google Drive Folder ID from full URL or dirty string
+        function extractCleanFolderId(input) {
+            if (!input) return '';
+            let str = String(input).trim();
+            if (str.includes('folders/')) {
+                str = str.split('folders/')[1].split('?')[0].split('/')[0].split('&')[0];
+            } else if (str.includes('id=')) {
+                str = str.split('id=')[1].split('&')[0];
+            }
+            return str.replace(/['"]/g, '').trim();
+        }
+
         // Centralized Google Drive Configuration & Real-Time Synchronization
         function getEffectiveGDriveScriptUrl() {
             const defaultUrl = 'https://script.google.com/macros/s/AKfycbxFCEFUGjr0Esy_c4smYKMdjfSZIxtmh_COeaJMMFh7tybrYfyYmZFvjqeRerqCzccw/exec';
             const saved = localStorage.getItem('gdriveScriptUrl') || localStorage.getItem('docsGdriveScriptUrl');
-            if (saved && saved.trim()) return saved.trim();
+            if (saved && saved.trim() && !saved.includes('AKfycby4Voi6x2OqLNI3jLjjozVJ81J_O5C_Iw1KLWdQfiTmlC2OodjJD_Izv32iE95WWJ9f')) {
+                return saved.trim();
+            }
             const fromDom = document.getElementById('gdriveScriptUrl')?.value || 
                             document.getElementById('docsGdriveScriptUrl')?.value || 
                             document.getElementById('gdriveConfigUrlInput')?.value;
-            if (fromDom && fromDom.trim()) return fromDom.trim();
+            if (fromDom && fromDom.trim() && !fromDom.includes('AKfycby4Voi6x2OqLNI3jLjjozVJ81J_O5C_Iw1KLWdQfiTmlC2OodjJD_Izv32iE95WWJ9f')) {
+                return fromDom.trim();
+            }
             return defaultUrl;
         }
 
@@ -1984,22 +2217,107 @@
         function getEffectiveGDriveFolderId() {
             const defaultFolder = '1Th-m_ojdxDbZfrjUa5NUUC9JwR5nSdFS';
             const saved = localStorage.getItem('gdriveFolderId') || localStorage.getItem('docsGdriveFolderId');
-            if (saved && saved.trim()) return saved.trim();
+            if (saved && saved.trim()) {
+                const clean = extractCleanFolderId(saved);
+                if (clean && clean !== '1G3Lsus2QlXgAssosUi6uHzBE0P4vCjtA') return clean;
+            }
             const fromDom = document.getElementById('gdriveFolderId')?.value || 
                             document.getElementById('docsGdriveFolderId')?.value;
-            if (fromDom && fromDom.trim()) return fromDom.trim();
+            if (fromDom && fromDom.trim()) {
+                const clean = extractCleanFolderId(fromDom);
+                if (clean && clean !== '1G3Lsus2QlXgAssosUi6uHzBE0P4vCjtA') return clean;
+            }
             return defaultFolder;
         }
 
         function setEffectiveGDriveFolderId(folderId) {
             if (!folderId) return;
-            const cleanFolder = folderId.trim();
+            const strVal = String(folderId).trim();
+            // Strict defense against accidental file URL/fileId injection
+            if (strVal === '1G3Lsus2QlXgAssosUi6uHzBE0P4vCjtA' || strVal.includes('uc?id') || strVal.includes('download') || strVal.includes('googleusercontent.com')) return;
+            const cleanFolder = extractCleanFolderId(folderId);
+            if (!cleanFolder || cleanFolder === '1G3Lsus2QlXgAssosUi6uHzBE0P4vCjtA') return;
             localStorage.setItem('gdriveFolderId', cleanFolder);
             localStorage.setItem('docsGdriveFolderId', cleanFolder);
             ['gdriveFolderId', 'docsGdriveFolderId'].forEach(id => {
                 const el = document.getElementById(id);
                 if (el && el.value !== cleanFolder) el.value = cleanFolder;
             });
+        }
+
+        // Section-Specific Google Drive Folder IDs (Extensions Data, Source Code, Tag List)
+        const DEFAULT_SECTION_FOLDER_ID = '1Th-m_ojdxDbZfrjUa5NUUC9JwR5nSdFS';
+        function getSectionFolderId(table) {
+            const cleanTable = String(table || currentTable || '').trim();
+            const storageKey = 'gdrive_folder_' + cleanTable;
+            let saved = localStorage.getItem(storageKey);
+            // Auto-heal corrupted storage if it got accidentally overwritten with a file ID or file URL
+            if (saved) {
+                const trimmed = saved.trim();
+                if (trimmed === '1G3Lsus2QlXgAssosUi6uHzBE0P4vCjtA' || 
+                    trimmed.includes('1G3Lsus2QlXgAssosUi6uHzBE0P4vCjtA') || 
+                    trimmed.includes('uc?id') || 
+                    trimmed.includes('download') || 
+                    trimmed.includes('lh3.') || 
+                    trimmed.includes('googleusercontent.com') ||
+                    trimmed.includes('data:image')) {
+                    localStorage.removeItem(storageKey);
+                    saved = null;
+                }
+            }
+            if (saved && saved.trim()) {
+                const cleaned = extractCleanFolderId(saved);
+                if (cleaned && cleaned !== '1G3Lsus2QlXgAssosUi6uHzBE0P4vCjtA') return cleaned;
+            }
+            // Default Google Drive Folder ID provided by user
+            return DEFAULT_SECTION_FOLDER_ID;
+        }
+
+        function setSectionFolderId(table, folderId) {
+            if (!folderId) return;
+            const strVal = String(folderId).trim();
+            // CRITICAL DEFENSE: Strictly prevent any uploaded file ID or file URL from corrupting folder ID
+            if (strVal === '1G3Lsus2QlXgAssosUi6uHzBE0P4vCjtA' || 
+                strVal.includes('1G3Lsus2QlXgAssosUi6uHzBE0P4vCjtA') || 
+                strVal.includes('uc?id') || 
+                strVal.includes('download') || 
+                strVal.includes('googleusercontent.com') || 
+                strVal.includes('data:image')) {
+                console.warn('Blocked attempt to set file URL/fileId as folder ID:', strVal);
+                return;
+            }
+            const cleanFolder = extractCleanFolderId(folderId);
+            if (!cleanFolder || cleanFolder === '1G3Lsus2QlXgAssosUi6uHzBE0P4vCjtA') return;
+            const cleanTable = String(table || currentTable || '').trim();
+            const storageKey = 'gdrive_folder_' + cleanTable;
+            localStorage.setItem(storageKey, cleanFolder);
+            
+            // Sync with Section Top Folder Bar if visible
+            const topInput = document.getElementById('sectionTopFolderInput');
+            if (topInput && currentTable === cleanTable && topInput.value !== cleanFolder) {
+                topInput.value = cleanFolder;
+            }
+            const topLink = document.getElementById('sectionTopFolderOpenLink');
+            if (topLink && currentTable === cleanTable) {
+                topLink.href = `https://drive.google.com/drive/folders/${cleanFolder}`;
+            }
+
+            // Sync ONLY with section folder input elements in modal, NEVER regular inputs
+            const formInputs = document.querySelectorAll(`[id^="section_folder_input_"]`);
+            formInputs.forEach(inp => {
+                if (inp.value !== cleanFolder) inp.value = cleanFolder;
+            });
+            const formLinks = document.querySelectorAll(`[id^="section_folder_link_"]`);
+            formLinks.forEach(lnk => {
+                lnk.href = `https://drive.google.com/drive/folders/${cleanFolder}`;
+            });
+
+            // Sync with Crop Modal input
+            const cropInput = document.getElementById('tableCropFolderId');
+            if (cropInput && currentTable === cleanTable && cropInput.value !== cleanFolder) {
+                cropInput.value = cleanFolder;
+                if (typeof updateTableCropFolderLink === 'function') updateTableCropFolderLink(cleanFolder);
+            }
         }
 
         // Universal Google Drive Proxy & Upload Helpers (Bypasses Browser Third-Party Cookies and CORS completely)
@@ -2017,15 +2335,11 @@
                     });
                     const text = await res.text();
                     if (res.status === 404 || text.includes('does not exist') || text.includes('Page not found')) {
-                        return { status: 'error', message: 'Google Apps Script URL 404 (Not Found). Yeh URL Google par exist nahi karti ya Access "Anyone" nahi hai.' };
-                    }
-                    if (text && !text.trim().startsWith('<')) {
+                        console.warn('Worker proxy 404, falling back to direct');
+                    } else if (text && !text.trim().startsWith('<')) {
                         try {
                             return JSON.parse(text);
                         } catch(e) {}
-                    }
-                    if (text && text.trim().startsWith('<')) {
-                        return { status: 'error', message: 'Google Apps Script ne HTML error return kiya hai. Check karein ke Script "Web App" ke tor par deploy hai aur Access "Anyone" (کوئی بھی) hai.' };
                     }
                 } catch (e) {
                     console.warn('Worker proxy failed, trying direct:', e);
@@ -2035,6 +2349,7 @@
             try {
                 const directRes = await fetch(scriptUrl, {
                     method: 'POST',
+                    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
                     body: JSON.stringify(payload)
                 });
                 const directText = await directRes.text();
@@ -2061,15 +2376,18 @@
                     });
                     const text = await res.text();
                     if (res.status === 404 || text.includes('does not exist') || text.includes('Page not found')) {
-                        return { status: 'error', message: 'Google Apps Script URL 404 (Not Found). Yeh URL Google par exist nahi karti ya Access "Anyone" nahi hai.' };
-                    }
-                    if (text && !text.trim().startsWith('<')) {
+                        console.warn('Worker upload proxy 404, falling back to direct');
+                    } else if (text && !text.trim().startsWith('<')) {
                         try {
-                            return JSON.parse(text);
+                            const parsed = JSON.parse(text);
+                            // Valid upload must return fileId, id, url, or directUrl
+                            if (parsed && (parsed.fileId || parsed.id || parsed.url || parsed.directUrl)) {
+                                return parsed;
+                            }
+                            if (parsed && parsed.status === 'error') {
+                                return parsed;
+                            }
                         } catch(e) {}
-                    }
-                    if (text && text.trim().startsWith('<')) {
-                        return { status: 'error', message: 'Google Apps Script ne HTML error return kiya hai. Check karein ke Script "Web App" ke tor par deploy hai aur Access "Anyone" (کوئی بھی) hai.' };
                     }
                 } catch (e) {
                     console.warn('Worker upload proxy failed, trying direct:', e);
@@ -2079,6 +2397,7 @@
             try {
                 const directRes = await fetch(scriptUrl, {
                     method: 'POST',
+                    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
                     body: JSON.stringify(payload)
                 });
                 const directText = await directRes.text();
@@ -2779,6 +3098,7 @@
             document.getElementById('docsCreatorCard').style.display = 'none';
             if (document.getElementById('limitsManagerCard')) document.getElementById('limitsManagerCard').style.display = 'none';
             currentTable = tableName;
+            updateSectionTopFolderBar(tableName);
             
             await fetchData();
         }
@@ -2907,8 +3227,35 @@
                         if(sVal === 'inactive' || sVal === 'disabled') badgeClass = 'badge-danger';
                         else if(sVal === 'pending') badgeClass = 'badge-warning';
                         tr.innerHTML += `<td data-col="${col}"><span class="badge ${badgeClass}">${val || 'Active'}</span></td>`;
-                    } else if ((col === 'profile' || col === 'IconUrl' || col === 'QR_Code_Url' || col === 'icon_url') && String(val).startsWith('http')) {
-                        tr.innerHTML += `<td data-col="${col}"><a href="${val}" target="_blank" title="View Image"><img src="${val}" style="width:34px; height:34px; object-fit:contain; border-radius:6px; border:1px solid var(--border); background:rgba(255,255,255,0.05);" onerror="this.onerror=null;this.src='';this.alt='Img';"></a></td>`;
+                    } else if ((col === 'profile' || col === 'IconUrl' || col === 'QR_Code_Url' || col === 'icon_url') && (String(val).startsWith('http') || (typeof val === 'string' && val.length > 20))) {
+                        const imgUrl = formatGoogleDriveImageUrl(val);
+                        const fid = extractDriveFileId(val);
+                        tr.innerHTML += `<td data-col="${col}"><a href="${imgUrl || val}" target="_blank" title="View Image"><img src="${imgUrl}" style="width:34px; height:34px; object-fit:contain; border-radius:6px; border:1px solid var(--border); background:rgba(255,255,255,0.05);" onerror="if(!this.dataset.triedThumb && '${fid}') { this.dataset.triedThumb='1'; this.src='https://drive.google.com/thumbnail?id=${fid}&sz=w500'; } else { this.onerror=null; this.src=''; this.alt='Img'; }"></a></td>`;
+                    } else if (isSliderOrTagUrlCol(col, currentTable)) {
+                        const safeVal = String(val).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+                        const safeCol = String(col).replace(/'/g, "\\'");
+                        const safeRowId = String(rowId).replace(/'/g, "\\'");
+                        const imgUrl = formatGoogleDriveImageUrl(val);
+                        const fid = extractDriveFileId(val);
+                        tr.innerHTML += `
+                            <td data-col="${col}" data-raw-val="${encodeURIComponent(String(val))}">
+                                <div style="display: flex; align-items: center; gap: 8px;">
+                                    ${imgUrl ? `
+                                        <a href="${imgUrl}" target="_blank" title="Click to view full image" style="display:inline-flex; align-items:center; flex-shrink:0;">
+                                            <img src="${imgUrl}" style="width:34px; height:34px; object-fit:cover; border-radius:6px; border:1px solid var(--border); background:rgba(255,255,255,0.05);" onerror="if(!this.dataset.triedThumb && '${fid}') { this.dataset.triedThumb='1'; this.src='https://drive.google.com/thumbnail?id=${fid}&sz=w500'; } else { this.onerror=null; this.src=''; this.alt='Img'; }">
+                                        </a>
+                                        <button class="btn-icon" style="width:28px; height:28px; font-size:11px; background:rgba(16,185,129,0.15); color:#10b981; border:1px solid rgba(16,185,129,0.3); border-radius:6px;" onclick="openTableImageUploadModal('${safeCol}', '${safeRowId}')" title="Upload / Replace Image in Google Drive">
+                                            <i class="fa-brands fa-google-drive"></i>
+                                        </button>
+                                        <span style="font-size:11px; color:var(--text-muted); max-width:110px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="${safeVal}">${safeVal}</span>
+                                    ` : `
+                                        <button class="btn" style="padding:4px 8px; font-size:11px; background:rgba(16,185,129,0.15); color:#34d399; border:1px solid rgba(16,185,129,0.3); border-radius:6px; display:inline-flex; align-items:center; gap:5px;" onclick="openTableImageUploadModal('${safeCol}', '${safeRowId}')" title="Upload Image to Google Drive">
+                                            <i class="fa-brands fa-google-drive"></i> Add Image
+                                        </button>
+                                    `}
+                                </div>
+                            </td>
+                        `;
                     } else {
                         // Escape HTML to prevent XSS
                         const safeVal = String(val).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
@@ -3390,7 +3737,62 @@
                             <div style="display:flex; gap:8px; align-items:center;">
                                 <input type="text" id="input_${col}" value="${safeVal}" placeholder="${placeholder}" style="flex:1;" oninput="updateInputPreview('preview_${col}', this.value)" ${readOnly}>
                                 <div id="preview_${col}" style="width:40px; height:40px; border-radius:6px; border:1px solid var(--border); overflow:hidden; display:flex; align-items:center; justify-content:center; background:rgba(255,255,255,0.05); flex-shrink:0;">
-                                    ${val && val.startsWith('http') ? `<img src="${val}" style="width:100%; height:100%; object-fit:contain;" onerror="this.remove()">` : `<i class="fa-regular fa-image" style="color:var(--text-muted); font-size:16px;"></i>`}
+                                    ${val ? `<img src="${formatGoogleDriveImageUrl(val)}" style="width:100%; height:100%; object-fit:contain;" onerror="const fid='${extractDriveFileId(val)}'; if(!this.dataset.triedThumb && fid){ this.dataset.triedThumb='1'; this.src='https://drive.google.com/thumbnail?id='+fid+'&sz=w500'; } else { this.remove(); }">` : `<i class="fa-regular fa-image" style="color:var(--text-muted); font-size:16px;"></i>`}
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                } else if (isSliderOrTagUrlCol(col, currentTable)) {
+                    const safeVal = String(val).replace(/"/g, '&quot;');
+                    const sectionFolderId = getSectionFolderId(currentTable);
+                    const safeCol = String(col).replace(/'/g, "\\'");
+                    const sectionName = (currentTable === 'extensions_data') ? 'Extensions Data' :
+                                        (currentTable === 'Source_code') ? 'Source Code' :
+                                        (currentTable === 'Tag_list') ? 'Tag List' : currentTable;
+                    const previewImgUrl = formatGoogleDriveImageUrl(val);
+                    const previewFid = extractDriveFileId(val);
+                    body.innerHTML += `
+                        <div class="form-group" style="background: rgba(16, 185, 129, 0.05); border: 1px solid rgba(16, 185, 129, 0.3); padding: 14px; border-radius: 10px; margin-bottom: 16px;">
+                            <!-- Section-Specific Google Drive Folder ID Input & Link -->
+                            <div style="margin-bottom: 12px; padding-bottom: 10px; border-bottom: 1px solid rgba(16, 185, 129, 0.18);">
+                                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                                    <label style="margin: 0; font-size: 12px; font-weight: 700; color: #10b981; display: flex; align-items: center; gap: 6px;">
+                                        <i class="fa-brands fa-google-drive"></i> ${sectionName} Google Drive Folder ID
+                                    </label>
+                                    <a id="section_folder_link_${col}" href="https://drive.google.com/drive/folders/${sectionFolderId}" target="_blank" style="color: #60a5fa; font-size: 11px; text-decoration: none; display: flex; align-items: center; gap: 4px;" title="Open Folder in Google Drive">
+                                        <i class="fa-solid fa-arrow-up-right-from-square"></i> Open Folder
+                                    </a>
+                                </div>
+                                <div style="display: flex; gap: 8px; align-items: center;">
+                                    <input type="text" id="section_folder_input_${col}" value="${sectionFolderId}" placeholder="Enter Google Drive Folder ID for ${sectionName}..." style="flex: 1; font-size: 12px; padding: 7px 10px; background: rgba(0,0,0,0.25); border: 1px solid rgba(16, 185, 129, 0.35); color: #34d399; font-family: monospace; border-radius: 6px;" oninput="onSectionFolderIdChanged('${currentTable}', this.value, '${safeCol}')">
+                                    <button type="button" class="btn btn-secondary" onclick="saveSectionFolderFromForm('${currentTable}', '${safeCol}')" style="font-size: 11px; padding: 7px 12px; white-space: nowrap; border-color: rgba(16, 185, 129, 0.4); color: #34d399;" title="Save Folder ID for this section">
+                                        <i class="fa-solid fa-floppy-disk"></i> Save ID
+                                    </button>
+                                </div>
+                                <small style="font-size: 10px; color: var(--text-muted); display: block; margin-top: 4px;">
+                                    <i class="fa-solid fa-circle-info"></i> All images uploaded for ${sectionName} will go directly into this Google Drive folder.
+                                </small>
+                            </div>
+
+                            <!-- Target Image URL Box & Add Image Button -->
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                                <label style="margin: 0; font-size: 13px; font-weight: 600; color: #fff;">
+                                    <i class="fa-solid fa-image" style="color: #10b981; margin-right: 6px;"></i> <strong>${friendlyCol}</strong>
+                                </label>
+                                <span style="font-size: 11px; color: #10b981; background: rgba(16, 185, 129, 0.15); padding: 2px 8px; border-radius: 4px; font-weight: 600;">
+                                    <i class="fa-brands fa-google-drive"></i> Auto Direct Link
+                                </span>
+                            </div>
+                            
+                            <div style="display: flex; gap: 8px; align-items: center;">
+                                <input type="text" id="input_${col}" value="${safeVal}" placeholder="Direct image link (https://lh3.googleusercontent.com/d/...) will appear here" style="flex: 1;" oninput="updateInputPreview('preview_${col}', this.value)" ${readOnly}>
+                                
+                                <button type="button" class="btn" style="background: #10b981; color: white; border: none; padding: 0 14px; height: 42px; display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; font-size: 13px; font-weight: 600; border-radius: 8px; cursor: pointer;" onclick="openTableImageUploadModal('${safeCol}')" title="Upload Image to Google Drive (with Crop)">
+                                    <i class="fa-brands fa-google-drive"></i> Add Image
+                                </button>
+                                
+                                <div id="preview_${col}" style="width: 42px; height: 42px; border-radius: 8px; border: 1px solid var(--border); overflow: hidden; display: flex; align-items: center; justify-content: center; background: rgba(255,255,255,0.05); flex-shrink: 0;" title="Image Preview">
+                                    ${previewImgUrl ? `<img src="${previewImgUrl}" style="width: 100%; height: 100%; object-fit: cover;" onerror="if(!this.dataset.triedThumb && '${previewFid}'){ this.dataset.triedThumb='1'; this.src='https://drive.google.com/thumbnail?id=${previewFid}&sz=w500'; } else { this.src=''; this.alt='Error'; }">` : `<i class="fa-regular fa-image" style="color: var(--text-muted); font-size: 18px;"></i>`}
                                 </div>
                             </div>
                         </div>
@@ -3656,10 +4058,724 @@
         function updateInputPreview(elemId, url) {
             const el = document.getElementById(elemId);
             if (!el) return;
-            if (url && url.startsWith('http')) {
-                el.innerHTML = `<img src="${url}" style="width:100%; height:100%; object-fit:contain;" onerror="this.remove()">`;
+            if (url && (String(url).startsWith('http') || (typeof url === 'string' && url.length > 20))) {
+                const imgUrl = formatGoogleDriveImageUrl(url);
+                const fid = extractDriveFileId(url);
+                el.innerHTML = `<img src="${imgUrl}" style="width:100%; height:100%; object-fit:contain;" onerror="if(!this.dataset.triedThumb && '${fid}') { this.dataset.triedThumb='1'; this.src='https://drive.google.com/thumbnail?id=${fid}&sz=w500'; } else { this.remove(); }">`;
             } else {
                 el.innerHTML = `<i class="fa-regular fa-image" style="color:var(--text-muted); font-size:16px;"></i>`;
+            }
+        }
+
+        // ==========================================
+        // GOOGLE DRIVE IMAGE UPLOAD & CROP (Extensions Data, Source Code, Tag List)
+        // ==========================================
+        let tableCropInstance = null;
+        let tableCropTargetCol = null;
+        let tableCropTargetRowId = null;
+        let tableCropOriginalFile = null;
+        let tableCroppedBlob = null;
+        let tableCroppedDataUrl = null;
+        let isTableColUploading = false;
+
+        function isSliderOrTagUrlCol(col, table) {
+            if (!col) return false;
+            const cleanCol = String(col).toLowerCase().replace(/[\s_-]/g, '');
+            const cleanTable = String(table || currentTable || '').toLowerCase().replace(/[\s_-]/g, '');
+
+            // Extensions Data & Source Code: "Image Slider URL"
+            if ((cleanTable === 'extensionsdata' || cleanTable === 'sourcecode') && cleanCol === 'imagesliderurl') {
+                return true;
+            }
+            // Tag List: "Tag URL" / "TagUrl"
+            if (cleanTable === 'taglist' && (cleanCol === 'tagurl' || cleanCol === 'tagimage' || cleanCol === 'tagimageurl')) {
+                return true;
+            }
+            // Direct column name matching
+            if (cleanCol === 'imagesliderurl' || cleanCol === 'tagurl') {
+                return true;
+            }
+            return false;
+        }
+
+        function updateTableCropFolderLink(val) {
+            const cleanFolder = (val || '').trim() || getSectionFolderId(currentTable);
+            const link = document.getElementById('tableCropFolderLink');
+            if (link) {
+                link.href = `https://drive.google.com/drive/folders/${cleanFolder}`;
+            }
+        }
+
+        function updateSectionTopFolderBar(tableName) {
+            const bar = document.getElementById('sectionTopFolderBar');
+            if (!bar) return;
+            const allowed = ['extensions_data', 'Source_code', 'Tag_list'];
+            if (!allowed.includes(tableName)) {
+                bar.style.display = 'none';
+                return;
+            }
+            bar.style.display = 'flex';
+            const friendlyNames = {
+                'extensions_data': 'Extensions Data',
+                'Source_code': 'Source Code',
+                'Tag_list': 'Tag List'
+            };
+            const fName = friendlyNames[tableName] || tableName;
+            const folderId = getSectionFolderId(tableName);
+            
+            const titleEl = document.getElementById('sectionTopFolderTitle');
+            if (titleEl) titleEl.textContent = `${fName} Google Drive Folder:`;
+            
+            const inputEl = document.getElementById('sectionTopFolderInput');
+            if (inputEl) inputEl.value = folderId;
+            
+            const linkEl = document.getElementById('sectionTopFolderOpenLink');
+            if (linkEl) linkEl.href = `https://drive.google.com/drive/folders/${folderId}`;
+        }
+
+        function saveSectionTopFolderId(newVal) {
+            if (!newVal || !newVal.trim()) return;
+            const cleanVal = newVal.trim();
+            setSectionFolderId(currentTable, cleanVal);
+            showToast(`Saved Google Drive Folder ID for ${currentTable}!`, 'success');
+            updateSectionTopFolderBar(currentTable);
+        }
+
+        function onSectionFolderIdChanged(table, val, col) {
+            if (!val || !val.trim()) return;
+            const clean = val.trim();
+            setSectionFolderId(table, clean);
+            const link = document.getElementById(`section_folder_link_${col}`);
+            if (link) link.href = `https://drive.google.com/drive/folders/${clean}`;
+        }
+
+        function saveSectionFolderFromForm(table, col) {
+            const input = document.getElementById(`section_folder_input_${col}`);
+            const val = input ? input.value.trim() : '';
+            if (!val) {
+                return showToast('Please enter a Google Drive Folder ID', 'error');
+            }
+            setSectionFolderId(table, val);
+            showToast(`Saved Folder ID for ${table} successfully!`, 'success');
+        }
+
+        function openTableImageUploadModal(col, rowId = null) {
+            tableCropTargetCol = col;
+            tableCropTargetRowId = rowId;
+            tableCroppedBlob = null;
+            tableCroppedDataUrl = null;
+            isTableColUploading = false;
+            
+            // Priority check: Read folder ID directly from form input if user just typed it!
+            const formFolderInp = document.getElementById(`section_folder_input_${col}`);
+            let effectiveFolderId = '';
+            if (formFolderInp && formFolderInp.value && formFolderInp.value.trim()) {
+                const typed = extractCleanFolderId(formFolderInp.value.trim());
+                if (typed && typed !== '1G3Lsus2QlXgAssosUi6uHzBE0P4vCjtA' && !typed.includes('download') && !typed.includes('googleusercontent.com')) {
+                    effectiveFolderId = typed;
+                    setSectionFolderId(currentTable, effectiveFolderId);
+                } else {
+                    effectiveFolderId = getSectionFolderId(currentTable);
+                }
+            } else {
+                effectiveFolderId = getSectionFolderId(currentTable);
+            }
+            
+            // Set modal labels
+            const friendlyTable = (currentTable === 'extensions_data') ? 'Extensions Data' :
+                                  (currentTable === 'Source_code') ? 'Source Code' :
+                                  (currentTable === 'Tag_list') ? 'Tag List' : currentTable;
+            
+            const subTitleEl = document.getElementById('tableImageCropModalSubtitle');
+            if (subTitleEl) {
+                subTitleEl.innerHTML = `${friendlyTable} &bull; <strong>${col}</strong> &bull; Folder: <code style="color:#34d399;">${effectiveFolderId}</code>`;
+            }
+            
+            const folderInput = document.getElementById('tableCropFolderId');
+            if (folderInput) {
+                folderInput.value = effectiveFolderId;
+            }
+            updateTableCropFolderLink(effectiveFolderId);
+
+            // Trigger file picker
+            const fileInput = document.getElementById('tableColImageFileInput');
+            if (fileInput) {
+                fileInput.value = '';
+                fileInput.click();
+            }
+        }
+
+        function setupTableImageUploadListener() {
+            const fileInput = document.getElementById('tableColImageFileInput');
+            if (!fileInput || fileInput._hasTableCropListener) return;
+            fileInput._hasTableCropListener = true;
+
+            fileInput.addEventListener('change', function(e) {
+                const file = e.target.files[0];
+                if (!file) return;
+                if (!file.type.startsWith('image/')) {
+                    return showToast('Please select a valid image file (PNG, JPG, WebP, etc.)', 'error');
+                }
+
+                tableCropOriginalFile = file;
+                tableCroppedBlob = null;
+                tableCroppedDataUrl = null;
+
+                // Reset view to Step 1 (Cropping)
+                document.getElementById('tableCropStep1').style.display = 'block';
+                document.getElementById('tableCropStep2').style.display = 'none';
+                document.getElementById('tableCropUploadProgress').style.display = 'none';
+                document.getElementById('tableCropSuccessBox').style.display = 'none';
+                
+                const btnApply = document.getElementById('btnTableApplyCrop');
+                const btnUpload = document.getElementById('btnTableUploadDirect');
+                if (btnApply) {
+                    btnApply.style.display = 'inline-flex';
+                    btnApply.disabled = false;
+                }
+                if (btnUpload) {
+                    btnUpload.style.display = 'none';
+                    btnUpload.disabled = false;
+                    btnUpload.innerHTML = '<i class="fa-solid fa-cloud-arrow-up"></i> Upload to Google Drive';
+                }
+
+                // Set suggested file name
+                const nameInput = document.getElementById('tableCropFileName');
+                if (nameInput) {
+                    nameInput.value = file.name.replace(/\s+/g, '_');
+                }
+
+                // Set aspect ratio default based on table/column
+                const cleanCol = (tableCropTargetCol || '').toLowerCase().replace(/[\s_-]/g, '');
+                let defaultAspect = NaN; // Free crop by default
+                if (cleanCol === 'imagesliderurl') {
+                    defaultAspect = 16 / 9; // Recommended for slider
+                } else if (cleanCol === 'tagurl') {
+                    defaultAspect = 1; // Recommended for tag icon
+                }
+
+                // Load into image cropper
+                const reader = new FileReader();
+                reader.onload = function(evt) {
+                    const img = document.getElementById('tableCropperImage');
+                    if (!img) return;
+                    img.src = evt.target.result;
+
+                    // Show modal
+                    const modalEl = document.getElementById('tableImageCropModal');
+                    if (modalEl) modalEl.classList.add('active');
+
+                    // Destroy existing cropper
+                    if (tableCropInstance) {
+                        tableCropInstance.destroy();
+                        tableCropInstance = null;
+                    }
+
+                    // Initialize new Cropper
+                    tableCropInstance = new Cropper(img, {
+                        viewMode: 1,
+                        autoCropArea: 1,
+                        aspectRatio: defaultAspect,
+                        responsive: true,
+                        background: false
+                    });
+
+                    // Update active aspect button
+                    document.querySelectorAll('.table-crop-aspect-btn').forEach(btn => {
+                        const aspectVal = btn.getAttribute('data-aspect');
+                        if ((isNaN(defaultAspect) && aspectVal === 'free') ||
+                            (defaultAspect === 16/9 && aspectVal === '16:9') ||
+                            (defaultAspect === 1 && aspectVal === '1:1')) {
+                            btn.classList.add('active');
+                            btn.style.background = '#10b981';
+                            btn.style.color = '#fff';
+                        } else {
+                            btn.classList.remove('active');
+                            btn.style.background = 'rgba(255,255,255,0.08)';
+                            btn.style.color = 'var(--text-muted)';
+                        }
+                    });
+                };
+                reader.readAsDataURL(file);
+            });
+
+            // Close on backdrop click
+            const modalEl = document.getElementById('tableImageCropModal');
+            if (modalEl) {
+                modalEl.addEventListener('click', function(evt) {
+                    if (evt.target === this) closeTableImageCropModal();
+                });
+            }
+        }
+
+        // Initialize table image upload listener
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', setupTableImageUploadListener);
+        } else {
+            setupTableImageUploadListener();
+        }
+
+        function setTableCropAspect(aspect, btn) {
+            if (!tableCropInstance) return;
+            tableCropInstance.setAspectRatio(aspect);
+            document.querySelectorAll('.table-crop-aspect-btn').forEach(b => {
+                b.classList.remove('active');
+                b.style.background = 'rgba(255,255,255,0.08)';
+                b.style.color = 'var(--text-muted)';
+            });
+            if (btn) {
+                btn.classList.add('active');
+                btn.style.background = '#10b981';
+                btn.style.color = '#fff';
+            }
+        }
+
+        function rotateTableCrop(deg) {
+            if (tableCropInstance) tableCropInstance.rotate(deg);
+        }
+
+        function resetTableCrop() {
+            if (tableCropInstance) tableCropInstance.reset();
+        }
+
+        function closeTableImageCropModal() {
+            const modal = document.getElementById('tableImageCropModal');
+            if (modal) modal.classList.remove('active');
+            if (tableCropInstance) {
+                tableCropInstance.destroy();
+                tableCropInstance = null;
+            }
+            tableCropOriginalFile = null;
+            tableCroppedBlob = null;
+            tableCroppedDataUrl = null;
+            isTableColUploading = false;
+            const fileInput = document.getElementById('tableColImageFileInput');
+            if (fileInput) fileInput.value = '';
+        }
+
+        // STEP 1: Apply Crop and Show Confirmation Preview
+        async function handleApplyCropStep() {
+            if (!tableCropInstance) {
+                return showToast('Please select an image first', 'error');
+            }
+
+            const quality = (parseInt(document.getElementById('tableCropQuality')?.value || '85')) / 100;
+            const canvas = tableCropInstance.getCroppedCanvas({
+                fillColor: '#fff',
+                imageSmoothingEnabled: true,
+                imageSmoothingQuality: 'high'
+            });
+
+            if (!canvas) {
+                return showToast('Failed to crop image. Please adjust selection.', 'error');
+            }
+
+            const dataUrl = canvas.toDataURL('image/jpeg', quality);
+            tableCroppedDataUrl = dataUrl;
+
+            tableCroppedBlob = await new Promise(resolve => {
+                canvas.toBlob(resolve, 'image/jpeg', quality);
+            });
+
+            // Display in Step 2 preview
+            const previewImg = document.getElementById('tableCroppedResultPreview');
+            if (previewImg) previewImg.src = dataUrl;
+
+            const metaEl = document.getElementById('tableCroppedMeta');
+            if (metaEl && tableCroppedBlob) {
+                const kb = (tableCroppedBlob.size / 1024).toFixed(1);
+                metaEl.innerHTML = `<strong>${canvas.width} &times; ${canvas.height} px</strong> &bull; Size: <strong>${kb} KB</strong> &bull; Quality: <strong>${Math.round(quality*100)}%</strong>`;
+            }
+
+            // Switch view from Step 1 to Step 2
+            document.getElementById('tableCropStep1').style.display = 'none';
+            document.getElementById('tableCropStep2').style.display = 'block';
+
+            // Switch action buttons
+            const btnApply = document.getElementById('btnTableApplyCrop');
+            const btnUpload = document.getElementById('btnTableUploadDirect');
+            if (btnApply) btnApply.style.display = 'none';
+            if (btnUpload) {
+                btnUpload.style.display = 'inline-flex';
+                btnUpload.disabled = false;
+                btnUpload.style.pointerEvents = 'auto';
+                btnUpload.style.opacity = '1';
+                btnUpload.innerHTML = '<i class="fa-solid fa-cloud-arrow-up"></i> Upload to Google Drive';
+            }
+
+            showToast('Image cropped! Click "Upload to Google Drive" to finish.', 'info');
+        }
+
+        // Switch back to cropping step
+        function backToCropStep() {
+            document.getElementById('tableCropStep1').style.display = 'block';
+            document.getElementById('tableCropStep2').style.display = 'none';
+            document.getElementById('tableCropSuccessBox').style.display = 'none';
+
+            const btnApply = document.getElementById('btnTableApplyCrop');
+            const btnUpload = document.getElementById('btnTableUploadDirect');
+            if (btnApply) btnApply.style.display = 'inline-flex';
+            if (btnUpload) btnUpload.style.display = 'none';
+        }
+
+        // Helper to insert direct URL into all matching form inputs & update previews
+        function applyUrlToFormAndTable(targetCol, rawUrl, folderId) {
+            if (!rawUrl) {
+                console.warn('applyUrlToFormAndTable called without directUrl');
+                return false;
+            }
+            const directUrl = formatGoogleDriveImageUrl(rawUrl);
+            let populated = false;
+
+            // 1. Direct match by exact ID (e.g. input_TagUrl, input_Image Slider URL)
+            if (targetCol) {
+                const directInput = document.getElementById(`input_${targetCol}`);
+                if (directInput) {
+                    directInput.value = directUrl;
+                    directInput.dispatchEvent(new Event('input', { bubbles: true }));
+                    directInput.dispatchEvent(new Event('change', { bubbles: true }));
+                    updateInputPreview(`preview_${targetCol}`, directUrl);
+                    populated = true;
+                }
+            }
+
+            // 2. Space/underscore variations
+            if (!populated && targetCol) {
+                const altIds = [
+                    'input_' + targetCol.replace(/\s+/g, '_'),
+                    'input_' + targetCol.replace(/[\s_-]/g, ''),
+                    targetCol,
+                    targetCol.replace(/\s+/g, '_')
+                ];
+                for (const altId of altIds) {
+                    const el = document.getElementById(altId);
+                    if (el && !el.id.startsWith('section_folder_') && !el.id.toLowerCase().includes('folder')) {
+                        el.value = directUrl;
+                        el.dispatchEvent(new Event('input', { bubbles: true }));
+                        el.dispatchEvent(new Event('change', { bubbles: true }));
+                        updateInputPreview(`preview_${targetCol}`, directUrl);
+                        populated = true;
+                        break;
+                    }
+                }
+            }
+
+            // 3. Fallback fuzzy match across modal inputs ONLY if still not populated
+            if (!populated) {
+                const allFormInputs = document.querySelectorAll('#modalFormBody input, #modalFormBody textarea');
+                allFormInputs.forEach(inp => {
+                    const inpId = inp.id || '';
+                    // CRITICAL IMMUNITY: NEVER touch any folder ID input or any element containing 'folder'
+                    if (inpId.startsWith('section_folder_') || inpId.toLowerCase().includes('folder')) {
+                        return;
+                    }
+
+                    const cleanInpId = inpId.toLowerCase().replace(/[\s_-]/g, '');
+                    const cleanTarget = (targetCol || '').toLowerCase().replace(/[\s_-]/g, '');
+
+                    const isSliderMatch = (cleanTarget.includes('slider') || cleanTarget.includes('image')) &&
+                                          (cleanInpId.includes('slider') || cleanInpId.includes('imageslider'));
+                    const isTagMatch = (cleanTarget.includes('tag') || cleanInpId.includes('tag')) && (cleanInpId.includes('url') || cleanInpId.includes('image'));
+                    const isTargetDirect = cleanInpId === ('input' + cleanTarget) || cleanInpId === cleanTarget;
+
+                    if (isSliderMatch || isTagMatch || isTargetDirect) {
+                        inp.value = directUrl;
+                        inp.dispatchEvent(new Event('input', { bubbles: true }));
+                        inp.dispatchEvent(new Event('change', { bubbles: true }));
+                        
+                        // Update preview thumbnail right next to it
+                        const parentGroup = inp.closest('.form-group');
+                        if (parentGroup) {
+                            const prevBox = parentGroup.querySelector('[id^="preview_"]');
+                            if (prevBox) {
+                                prevBox.innerHTML = `<img src="${directUrl}" style="width: 100%; height: 100%; object-fit: cover;" onerror="this.src=''; this.alt='Error';">`;
+                            }
+                        }
+                        populated = true;
+                    }
+                });
+            }
+
+            // 4. Update folder ID inputs and links in form with CLEAN section folder ID only
+            const sectionFolderId = (folderId && folderId !== '1G3Lsus2QlXgAssosUi6uHzBE0P4vCjtA' && !folderId.includes('download') && !folderId.includes('uc?id')) ? folderId : getSectionFolderId(currentTable);
+            document.querySelectorAll(`[id^="section_folder_input_"]`).forEach(fi => {
+                if (fi.value !== sectionFolderId) fi.value = sectionFolderId;
+            });
+            document.querySelectorAll(`[id^="section_folder_link_"]`).forEach(fl => {
+                fl.href = `https://drive.google.com/drive/folders/${sectionFolderId}`;
+            });
+
+            // 5. Visual highlight effect on the updated input
+            if (targetCol) {
+                const targetInput = document.getElementById(`input_${targetCol}`) || 
+                                    document.querySelector(`input[id="input_${targetCol.replace(/\s+/g, '_')}"]`);
+                if (targetInput) {
+                    targetInput.style.transition = 'all 0.4s ease';
+                    targetInput.style.borderColor = '#10b981';
+                    targetInput.style.boxShadow = '0 0 0 3px rgba(16, 185, 129, 0.35)';
+                    setTimeout(() => {
+                        targetInput.style.borderColor = '';
+                        targetInput.style.boxShadow = '';
+                    }, 3500);
+                }
+            }
+
+            return populated;
+        }
+
+        // STEP 2: Execute Upload to Google Drive
+        async function handleUploadCroppedStep() {
+            // Anti-duplicate protection: strictly prevent multiple clicks while uploading
+            if (isTableColUploading) return;
+            if (!navigator.onLine) {
+                return showToast('No internet connection. Please check your network.', 'error');
+            }
+
+            isTableColUploading = true;
+
+            const scriptUrl = getEffectiveGDriveScriptUrl();
+            const folderInput = document.getElementById('tableCropFolderId');
+            const customFolderId = folderInput ? extractCleanFolderId(folderInput.value.trim()) : '';
+            const effectiveFolderId = customFolderId || getSectionFolderId(currentTable);
+            
+            // Persist the folder ID for this specific section!
+            setSectionFolderId(currentTable, effectiveFolderId);
+
+            const btn = document.getElementById('btnTableUploadDirect');
+            const originalBtnHtml = btn ? btn.innerHTML : '<i class="fa-solid fa-cloud-arrow-up"></i> Upload to Google Drive';
+            const progressBox = document.getElementById('tableCropUploadProgress');
+            const statusText = document.getElementById('tableCropUploadStatusText');
+
+            // 1. Lock button immediately upon single click
+            if (btn) {
+                btn.disabled = true;
+                btn.style.pointerEvents = 'none';
+                btn.style.opacity = '0.6';
+                btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Uploading... Please wait';
+            }
+            if (progressBox) progressBox.style.display = 'block';
+
+            try {
+                // 2. Defensive check: Ensure image data URL is ready
+                let dataUrl = tableCroppedDataUrl;
+                if (!dataUrl && tableCropInstance) {
+                    try {
+                        const quality = (parseInt(document.getElementById('tableCropQuality')?.value || '85')) / 100;
+                        const canvas = tableCropInstance.getCroppedCanvas({
+                            fillColor: '#fff',
+                            imageSmoothingEnabled: true,
+                            imageSmoothingQuality: 'high'
+                        });
+                        if (canvas) {
+                            dataUrl = canvas.toDataURL('image/jpeg', quality);
+                            tableCroppedDataUrl = dataUrl;
+                        }
+                    } catch(e) {
+                        console.warn('Canvas export fallback failed:', e);
+                    }
+                }
+                if (!dataUrl && tableCropOriginalFile) {
+                    dataUrl = await new Promise((resolve, reject) => {
+                        const reader = new FileReader();
+                        reader.onload = () => resolve(reader.result);
+                        reader.onerror = reject;
+                        reader.readAsDataURL(tableCropOriginalFile);
+                    });
+                }
+                if (!dataUrl) {
+                    isTableColUploading = false;
+                    if (btn) {
+                        btn.disabled = false;
+                        btn.style.pointerEvents = 'auto';
+                        btn.style.opacity = '1';
+                        btn.innerHTML = originalBtnHtml;
+                    }
+                    if (progressBox) progressBox.style.display = 'none';
+                    return showToast('No image data found. Please select an image.', 'error');
+                }
+
+                let fileName = (document.getElementById('tableCropFileName')?.value || '').trim();
+                if (!fileName && tableCropOriginalFile) {
+                    fileName = tableCropOriginalFile.name;
+                }
+                if (!fileName) fileName = 'image_' + Date.now() + '.jpg';
+                fileName = fileName.replace(/\s+/g, '_');
+                if (!fileName.toLowerCase().match(/\.(jpg|jpeg|png|gif|webp)$/i)) {
+                    fileName += '.jpg';
+                }
+
+                // 3. Duplicate check in Google Drive folder
+                if (statusText) statusText.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Checking duplicates in Google Drive...';
+                try {
+                    const checkData = await callGdriveProxy({
+                        scriptUrl,
+                        action: 'check_duplicate',
+                        fileName: fileName,
+                        folderId: effectiveFolderId
+                    });
+
+                    if (checkData && checkData.status === 'success' && checkData.exists) {
+                        if (confirm(`A file named "${fileName}" already exists in Google Drive folder!\n\nClick [OK] to REPLACE (Update) it.\nClick [Cancel] to keep original and rename.`)) {
+                            if (statusText) statusText.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Replacing previous file...';
+                            await callGdriveProxy({
+                                scriptUrl,
+                                action: 'delete_gdrive_file',
+                                fileId: checkData.fileId
+                            }).catch(e => console.error(e));
+                        } else {
+                            if (progressBox) progressBox.style.display = 'none';
+                            if (btn) {
+                                btn.disabled = false;
+                                btn.style.pointerEvents = 'auto';
+                                btn.style.opacity = '1';
+                                btn.innerHTML = originalBtnHtml;
+                            }
+                            isTableColUploading = false;
+                            document.getElementById('tableCropFileName')?.focus();
+                            return;
+                        }
+                    }
+                } catch(e) {
+                    console.warn('Duplicate check warning:', e);
+                }
+
+                // 4. Upload payload to Google Apps Script
+                const base64data = dataUrl.includes('base64,') ? dataUrl.split('base64,')[1] : dataUrl;
+                const finalMime = 'image/jpeg';
+
+                if (statusText) statusText.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Uploading to Google Drive (Folder: ${effectiveFolderId})...`;
+                startProgress();
+                updateProgress(50);
+
+                const payload = {
+                    scriptUrl: scriptUrl,
+                    action: 'upload',
+                    type: 'upload',
+                    table: currentTable,
+                    image: dataUrl,
+                    file: dataUrl,
+                    base64: base64data,
+                    filename: fileName,
+                    fileName: fileName,
+                    name: fileName,
+                    mimeType: finalMime,
+                    contentType: finalMime,
+                    folderId: effectiveFolderId
+                };
+
+                const uploadRes = await callGdriveUpload(payload);
+                updateProgress(100);
+
+                const isSuccess = uploadRes && (uploadRes.status === 'success' || uploadRes.fileId || uploadRes.id || uploadRes.url || uploadRes.directUrl);
+                if (!isSuccess) {
+                    throw new Error((uploadRes && (uploadRes.message || uploadRes.error)) ? (uploadRes.message || uploadRes.error) : 'Upload failed. Invalid response from Google Drive.');
+                }
+
+                // 5. Direct embed image URL format: https://lh3.googleusercontent.com/d/{fileId}
+                const fileId = uploadRes.fileId || uploadRes.id || '';
+                const fileSize = Number(uploadRes.size || (tableCroppedBlob ? tableCroppedBlob.size : 0));
+                const directUrl = fileId ? ('https://lh3.googleusercontent.com/d/' + fileId) : formatGoogleDriveImageUrl(uploadRes.url || uploadRes.directUrl || uploadRes.viewUrl || '');
+
+                if (!fileId && !directUrl) {
+                    throw new Error((uploadRes && uploadRes.message) ? uploadRes.message : 'Upload succeeded but no Google Drive file ID or URL was returned.');
+                }
+
+                // Save to File Manager persistent storage
+                const gdrivePointerKey = 'GDrive::' + fileId + '::' + fileSize + '::' + fileName;
+                const fileRecord = {
+                    key: gdrivePointerKey,
+                    size: fileSize,
+                    uploaded: new Date().toISOString(),
+                    bucket: 'GDrive',
+                    fileId: fileId,
+                    fileName: fileName,
+                    name: fileName,
+                    url: directUrl
+                };
+                if (typeof saveLocalGDriveFile === 'function') {
+                    saveLocalGDriveFile(fileRecord);
+                }
+                if (typeof allR2Files !== 'undefined' && Array.isArray(allR2Files)) {
+                    allR2Files = allR2Files.filter(f => f.key !== gdrivePointerKey && !(fileId && f.key && f.key.includes(fileId)));
+                    allR2Files.unshift(fileRecord);
+                    if (typeof renderFileCategories === 'function') renderFileCategories();
+                    if (typeof renderFileTable === 'function') renderFileTable();
+                }
+                if (typeof fetchGDriveStorageStats === 'function') {
+                    fetchGDriveStorageStats();
+                }
+
+                // 6. INJECT DIRECT URL INTO FORM TEXT BOX!
+                const targetCol = tableCropTargetCol;
+                const targetRowId = tableCropTargetRowId;
+                applyUrlToFormAndTable(targetCol, directUrl, effectiveFolderId);
+
+                // 7. Update direct table row if called from table action button
+                if (targetRowId) {
+                    const url = getBaseUrl();
+                    const idCol = getIdColumn();
+                    const partialPayload = {};
+                    partialPayload[targetCol] = directUrl;
+                    
+                    if (statusText) statusText.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Updating table record...';
+                    const endpoint = `${url}/?table=${currentTable}&col=${encodeURIComponent(idCol)}&val=${encodeURIComponent(targetRowId)}`;
+                    const res = await fetch(endpoint, {
+                        method: 'POST',
+                        headers: {
+                            'Authorization': getAuthHeader(),
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify(partialPayload)
+                    });
+                    const resData = await res.json();
+                    if (!res.ok || resData.error) {
+                        console.warn('Direct row update warning:', resData.error);
+                    } else {
+                        // Update in-memory data
+                        const row = tableData.find(r => String(r[idCol]) === String(targetRowId));
+                        if (row) row[targetCol] = directUrl;
+                        if (typeof renderTable === 'function') renderTable();
+                    }
+                }
+
+                // 8. Show Success box with Copyable direct URL
+                if (progressBox) progressBox.style.display = 'none';
+                const successBox = document.getElementById('tableCropSuccessBox');
+                if (successBox) {
+                    successBox.style.display = 'block';
+                    const resultInput = document.getElementById('tableCropResultUrl');
+                    if (resultInput) resultInput.value = directUrl;
+                    const badge = document.getElementById('tableCropFolderBadge');
+                    if (badge) {
+                        badge.innerHTML = `<a href="https://drive.google.com/drive/folders/${effectiveFolderId}" target="_blank" style="color:#34d399; text-decoration:none;"><i class="fa-solid fa-folder"></i> Folder: ${effectiveFolderId}</a>`;
+                    }
+                }
+
+                if (btn) {
+                    btn.innerHTML = '<i class="fa-solid fa-circle-check"></i> Upload Completed';
+                    btn.style.background = '#059669';
+                }
+
+                showToast('Image uploaded to Google Drive & Direct URL applied to box! 🎉', 'success');
+
+                // Auto close after 1.8s so user sees the result in their form box
+                setTimeout(() => {
+                    closeTableImageCropModal();
+                }, 1800);
+
+            } catch (err) {
+                console.error(err);
+                showToast('Upload Error: ' + err.message, 'error');
+                if (progressBox) progressBox.style.display = 'none';
+                if (btn) {
+                    btn.disabled = false;
+                    btn.style.pointerEvents = 'auto';
+                    btn.style.opacity = '1';
+                    btn.innerHTML = originalBtnHtml;
+                }
+            } finally {
+                isTableColUploading = false;
+                endProgress();
             }
         }
         // --- FILE MANAGER LOGIC ---
@@ -3865,10 +4981,25 @@
 
         // --- GOOGLE DRIVE ALL-IN-ONE SCRIPT (STORAGE + UPLOAD + DELETE + DUPLICATE CHECK + OTP) ---
         const GDRIVE_APPS_SCRIPT_STORAGE_CODE = `// =====================================================================
-// AIX HUB STORE - ALL-IN-ONE GOOGLE APPS SCRIPT
+// AIX HUB STORE - ALL-IN-ONE MASTER GOOGLE APPS SCRIPT
 // =====================================================================
-var SLIP_FOLDER_ID = "1Th-m_ojdxDbZfrjUa5NUUC9JwR5nSdFS";
-var PROFILE_FOLDER_ID = "1n1yhsWJAl14SaLXCez64drf_xBXQzuFQ";
+var SLIP_FOLDER_ID            = "1Th-m_ojdxDbZfrjUa5NUUC9JwR5nSdFS";
+var PROFILE_FOLDER_ID         = "1n1yhsWJAl14SaLXCez64drf_xBXQzuFQ";
+var EXTENSIONS_DATA_FOLDER_ID = "1Th-m_ojdxDbZfrjUa5NUUC9JwR5nSdFS";
+var SOURCE_CODE_FOLDER_ID     = "1Th-m_ojdxDbZfrjUa5NUUC9JwR5nSdFS";
+var TAG_LIST_FOLDER_ID        = "1Th-m_ojdxDbZfrjUa5NUUC9JwR5nSdFS";
+
+// Helper function to extract clean Google Drive Folder ID from raw ID or URL
+function extractFolderId(input) {
+  if (!input) return "";
+  var str = input.toString().trim();
+  if (str.indexOf("folders/") !== -1) {
+    str = str.split("folders/")[1].split("?")[0].split("/")[0].split("&")[0];
+  } else if (str.indexOf("id=") !== -1) {
+    str = str.split("id=")[1].split("&")[0];
+  }
+  return str.replace(/['"]/g, "").trim();
+}
 
 function doPost(e) {
   try {
@@ -3919,7 +5050,7 @@ function doPost(e) {
       try {
         var checkFolder;
         var fId = data.folderId || (e.parameter ? e.parameter.folderId : "");
-        fId = fId ? fId.toString().trim() : "";
+        fId = extractFolderId(fId);
         if (fId) {
           try { checkFolder = DriveApp.getFolderById(fId); } catch(err) { checkFolder = null; }
         }
@@ -3972,14 +5103,28 @@ function doPost(e) {
 
     if (rawFile && rawFileName) {
       var targetFolderId = "";
-      if (data.folderId && data.folderId.toString().trim() !== "") {
-        targetFolderId = data.folderId.toString().trim();
+      var passedFolderId = data.folderId || (e.parameter ? e.parameter.folderId : "");
+      if (passedFolderId && passedFolderId.toString().trim() !== "") {
+        targetFolderId = extractFolderId(passedFolderId);
+      } else if (data.table || (e.parameter && e.parameter.table)) {
+        var tbl = (data.table || (e.parameter ? e.parameter.table : "")).toString().toLowerCase().replace(/[\\s_-]/g, "");
+        if (tbl === "extensionsdata") targetFolderId = extractFolderId(EXTENSIONS_DATA_FOLDER_ID);
+        else if (tbl === "sourcecode") targetFolderId = extractFolderId(SOURCE_CODE_FOLDER_ID);
+        else if (tbl === "taglist") targetFolderId = extractFolderId(TAG_LIST_FOLDER_ID);
       } else {
         var fnameLower = (rawFileName || "").toLowerCase();
         if (fnameLower.indexOf("slip") !== -1) {
-          targetFolderId = SLIP_FOLDER_ID;
+          targetFolderId = extractFolderId(SLIP_FOLDER_ID);
         } else if (fnameLower.indexOf("profile") !== -1 || fnameLower.indexOf("avatar") !== -1) {
-          targetFolderId = PROFILE_FOLDER_ID;
+          targetFolderId = extractFolderId(PROFILE_FOLDER_ID);
+        } else if (fnameLower.indexOf("slider") !== -1) {
+          targetFolderId = extractFolderId(EXTENSIONS_DATA_FOLDER_ID);
+        } else if (fnameLower.indexOf("source") !== -1) {
+          targetFolderId = extractFolderId(SOURCE_CODE_FOLDER_ID);
+        } else if (fnameLower.indexOf("tag") !== -1) {
+          targetFolderId = extractFolderId(TAG_LIST_FOLDER_ID);
+        } else {
+          targetFolderId = extractFolderId(EXTENSIONS_DATA_FOLDER_ID);
         }
       }
 
