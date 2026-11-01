@@ -878,7 +878,7 @@
                 <h1 class="page-title" id="pageTitle">Extensions Data</h1>
             </div>
             <div class="api-config" id="connectionBox">
-                <input type="text" id="apiUrl" class="api-input" value="https://aixhub.nikamma4k.workers.dev" placeholder="Cloudflare Worker URL (e.g., https://api.worker.dev)">
+                <input type="text" id="apiUrl" class="api-input" value="https://guide.aixhub.store" placeholder="Cloudflare Worker URL (e.g., https://guide.aixhub.store)">
                 <input type="password" id="apiSecret" class="api-input" style="width: 200px;" placeholder="API Secret" value="MeraSecretPassword123xyz">
                 <button class="btn btn-primary" onclick="testConnection()">
                     <i class="fa-solid fa-plug"></i> Connect
@@ -2073,9 +2073,15 @@
 
         // Initialize
         document.addEventListener('DOMContentLoaded', () => {
-            const defaultUrl = 'https://aixhub.nikamma4k.workers.dev';
+            const defaultUrl = 'https://guide.aixhub.store';
             const defaultSecret = 'MeraSecretPassword123xyz';
-            const savedUrl = localStorage.getItem('cfApiUrl') || defaultUrl;
+            
+            // Auto-heal legacy or old worker URLs in localStorage
+            let savedUrl = localStorage.getItem('cfApiUrl') || localStorage.getItem('apiUrl') || defaultUrl;
+            if (!savedUrl || savedUrl.includes('aixhub.nikamma4k.workers.dev')) {
+                savedUrl = defaultUrl;
+                localStorage.setItem('cfApiUrl', defaultUrl);
+            }
             const savedSecret = localStorage.getItem('cfApiSecret') || defaultSecret;
             
             if (document.getElementById('apiUrl')) document.getElementById('apiUrl').value = savedUrl;
@@ -2130,7 +2136,11 @@
 
         function getBaseUrl() {
             const input = document.getElementById('apiUrl');
-            let url = (input && input.value ? input.value.trim() : '') || localStorage.getItem('cfApiUrl') || localStorage.getItem('apiUrl') || 'https://aixhub.nikamma4k.workers.dev';
+            let url = (input && input.value ? input.value.trim() : '') || localStorage.getItem('cfApiUrl') || localStorage.getItem('apiUrl') || 'https://guide.aixhub.store';
+            if (url && url.includes('aixhub.nikamma4k.workers.dev')) {
+                url = 'https://guide.aixhub.store';
+                localStorage.setItem('cfApiUrl', url);
+            }
             if(url && url.endsWith('/')) url = url.slice(0, -1);
             return url;
         }
@@ -7814,7 +7824,7 @@ function formatGDriveBytes(bytes, isQuota) {
                 if (!slug.toLowerCase().endsWith('.html') && !slug.toLowerCase().endsWith('.htm')) {
                     slug += '.html';
                 }
-                const base = getBaseUrl() || 'https://your-worker.dev';
+                const base = getBaseUrl() || 'https://guide.aixhub.store';
                 previewEl.innerText = `${base}/?action=view_page&file=${encodeURIComponent(slug)}`;
             } else {
                 previewEl.innerText = '--';
