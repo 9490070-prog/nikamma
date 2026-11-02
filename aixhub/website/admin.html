@@ -2078,9 +2078,10 @@
             
             // Auto-heal legacy or old worker URLs in localStorage
             let savedUrl = localStorage.getItem('cfApiUrl') || localStorage.getItem('apiUrl') || defaultUrl;
-            if (!savedUrl || savedUrl.includes('aixhub.nikamma4k.workers.dev')) {
+            if (!savedUrl || savedUrl.includes('workers.dev') || savedUrl.includes('nikamma4k')) {
                 savedUrl = defaultUrl;
                 localStorage.setItem('cfApiUrl', defaultUrl);
+                localStorage.setItem('apiUrl', defaultUrl);
             }
             const savedSecret = localStorage.getItem('cfApiSecret') || defaultSecret;
             
@@ -2137,9 +2138,11 @@
         function getBaseUrl() {
             const input = document.getElementById('apiUrl');
             let url = (input && input.value ? input.value.trim() : '') || localStorage.getItem('cfApiUrl') || localStorage.getItem('apiUrl') || 'https://guide.aixhub.store';
-            if (url && url.includes('aixhub.nikamma4k.workers.dev')) {
+            if (url && (url.includes('workers.dev') || url.includes('nikamma4k'))) {
                 url = 'https://guide.aixhub.store';
                 localStorage.setItem('cfApiUrl', url);
+                localStorage.setItem('apiUrl', url);
+                if (input) input.value = url;
             }
             if(url && url.endsWith('/')) url = url.slice(0, -1);
             return url;
@@ -3134,7 +3137,8 @@
             startProgress();
             
             try {
-                const response = await fetch(`${url}/?table=${currentTable}&format=object&_t=${Date.now()}`, {
+                const adminSecret = (document.getElementById('apiSecret')?.value?.trim()) || localStorage.getItem('cfApiSecret') || 'MeraSecretPassword123xyz';
+                const response = await fetch(`${url}/?table=${currentTable}&format=object&token=${encodeURIComponent(adminSecret)}&_t=${Date.now()}`, {
                     method: 'GET',
                     headers: { 'Authorization': getAuthHeader() }
                 });
